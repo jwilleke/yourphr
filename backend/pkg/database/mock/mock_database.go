@@ -39,6 +39,20 @@ func (m *MockDatabaseRepository) EXPECT() *MockDatabaseRepositoryMockRecorder {
 	return m.recorder
 }
 
+// AddFavorite mocks base method.
+func (m *MockDatabaseRepository) AddFavorite(ctx context.Context, userId, sourceId, resourceType, resourceId string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AddFavorite", ctx, userId, sourceId, resourceType, resourceId)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// AddFavorite indicates an expected call of AddFavorite.
+func (mr *MockDatabaseRepositoryMockRecorder) AddFavorite(ctx, userId, sourceId, resourceType, resourceId interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddFavorite", reflect.TypeOf((*MockDatabaseRepository)(nil).AddFavorite), ctx, userId, sourceId, resourceType, resourceId)
+}
+
 // AddResourceAssociation mocks base method.
 func (m *MockDatabaseRepository) AddResourceAssociation(ctx context.Context, source *models.SourceCredential, resourceType, resourceId string, relatedSource *models.SourceCredential, relatedResourceType, relatedResourceId string) error {
 	m.ctrl.T.Helper()
@@ -79,6 +93,21 @@ func (mr *MockDatabaseRepositoryMockRecorder) BackgroundJobCheckpoint(ctx, check
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BackgroundJobCheckpoint", reflect.TypeOf((*MockDatabaseRepository)(nil).BackgroundJobCheckpoint), ctx, checkpointData, errorData)
 }
 
+// CheckFavoriteExists mocks base method.
+func (m *MockDatabaseRepository) CheckFavoriteExists(ctx context.Context, userId, sourceId, resourceType, resourceId string) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CheckFavoriteExists", ctx, userId, sourceId, resourceType, resourceId)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CheckFavoriteExists indicates an expected call of CheckFavoriteExists.
+func (mr *MockDatabaseRepositoryMockRecorder) CheckFavoriteExists(ctx, userId, sourceId, resourceType, resourceId interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckFavoriteExists", reflect.TypeOf((*MockDatabaseRepository)(nil).CheckFavoriteExists), ctx, userId, sourceId, resourceType, resourceId)
+}
+
 // Close mocks base method.
 func (m *MockDatabaseRepository) Close() error {
 	m.ctrl.T.Helper()
@@ -91,6 +120,20 @@ func (m *MockDatabaseRepository) Close() error {
 func (mr *MockDatabaseRepositoryMockRecorder) Close() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockDatabaseRepository)(nil).Close))
+}
+
+// CreateAccessToken mocks base method.
+func (m *MockDatabaseRepository) CreateAccessToken(ctx context.Context, accessToken *models.AccessToken) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateAccessToken", ctx, accessToken)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CreateAccessToken indicates an expected call of CreateAccessToken.
+func (mr *MockDatabaseRepositoryMockRecorder) CreateAccessToken(ctx, accessToken interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateAccessToken", reflect.TypeOf((*MockDatabaseRepository)(nil).CreateAccessToken), ctx, accessToken)
 }
 
 // CreateBackgroundJob mocks base method.
@@ -149,6 +192,20 @@ func (mr *MockDatabaseRepositoryMockRecorder) CreateUser(arg0, arg1 interface{})
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateUser", reflect.TypeOf((*MockDatabaseRepository)(nil).CreateUser), arg0, arg1)
 }
 
+// DeleteAccessToken mocks base method.
+func (m *MockDatabaseRepository) DeleteAccessToken(ctx context.Context, tokenID string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteAccessToken", ctx, tokenID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteAccessToken indicates an expected call of DeleteAccessToken.
+func (mr *MockDatabaseRepositoryMockRecorder) DeleteAccessToken(ctx, tokenID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteAccessToken", reflect.TypeOf((*MockDatabaseRepository)(nil).DeleteAccessToken), ctx, tokenID)
+}
+
 // DeleteCurrentUser mocks base method.
 func (m *MockDatabaseRepository) DeleteCurrentUser(ctx context.Context) error {
 	m.ctrl.T.Helper()
@@ -161,6 +218,20 @@ func (m *MockDatabaseRepository) DeleteCurrentUser(ctx context.Context) error {
 func (mr *MockDatabaseRepositoryMockRecorder) DeleteCurrentUser(ctx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteCurrentUser", reflect.TypeOf((*MockDatabaseRepository)(nil).DeleteCurrentUser), ctx)
+}
+
+// DeleteResourceByTypeAndId mocks base method.
+func (m *MockDatabaseRepository) DeleteResourceByTypeAndId(ctx context.Context, sourceResourceType, sourceResourceId string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteResourceByTypeAndId", ctx, sourceResourceType, sourceResourceId)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteResourceByTypeAndId indicates an expected call of DeleteResourceByTypeAndId.
+func (mr *MockDatabaseRepositoryMockRecorder) DeleteResourceByTypeAndId(ctx, sourceResourceType, sourceResourceId interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteResourceByTypeAndId", reflect.TypeOf((*MockDatabaseRepository)(nil).DeleteResourceByTypeAndId), ctx, sourceResourceType, sourceResourceId)
 }
 
 // DeleteSource mocks base method.
@@ -193,6 +264,21 @@ func (mr *MockDatabaseRepositoryMockRecorder) FindAllResourceAssociations(ctx, s
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindAllResourceAssociations", reflect.TypeOf((*MockDatabaseRepository)(nil).FindAllResourceAssociations), ctx, source, resourceType, resourceId)
 }
 
+// FindPractitionerEncounters mocks base method.
+func (m *MockDatabaseRepository) FindPractitionerEncounters(ctx context.Context, practitionerId string) ([]models.ResourceBase, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindPractitionerEncounters", ctx, practitionerId)
+	ret0, _ := ret[0].([]models.ResourceBase)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindPractitionerEncounters indicates an expected call of FindPractitionerEncounters.
+func (mr *MockDatabaseRepositoryMockRecorder) FindPractitionerEncounters(ctx, practitionerId interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindPractitionerEncounters", reflect.TypeOf((*MockDatabaseRepository)(nil).FindPractitionerEncounters), ctx, practitionerId)
+}
+
 // FindResourceAssociationsByTypeAndId mocks base method.
 func (m *MockDatabaseRepository) FindResourceAssociationsByTypeAndId(ctx context.Context, source *models.SourceCredential, resourceType, resourceId string) ([]models.RelatedResource, error) {
 	m.ctrl.T.Helper()
@@ -206,6 +292,36 @@ func (m *MockDatabaseRepository) FindResourceAssociationsByTypeAndId(ctx context
 func (mr *MockDatabaseRepositoryMockRecorder) FindResourceAssociationsByTypeAndId(ctx, source, resourceType, resourceId interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindResourceAssociationsByTypeAndId", reflect.TypeOf((*MockDatabaseRepository)(nil).FindResourceAssociationsByTypeAndId), ctx, source, resourceType, resourceId)
+}
+
+// GetAccessToken mocks base method.
+func (m *MockDatabaseRepository) GetAccessToken(ctx context.Context, tokenID string) (*models.AccessToken, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAccessToken", ctx, tokenID)
+	ret0, _ := ret[0].(*models.AccessToken)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAccessToken indicates an expected call of GetAccessToken.
+func (mr *MockDatabaseRepositoryMockRecorder) GetAccessToken(ctx, tokenID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAccessToken", reflect.TypeOf((*MockDatabaseRepository)(nil).GetAccessToken), ctx, tokenID)
+}
+
+// GetAccessTokenByTokenIDAndUsername mocks base method.
+func (m *MockDatabaseRepository) GetAccessTokenByTokenIDAndUsername(ctx context.Context, tokenID, username string) (*models.AccessToken, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAccessTokenByTokenIDAndUsername", ctx, tokenID, username)
+	ret0, _ := ret[0].(*models.AccessToken)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAccessTokenByTokenIDAndUsername indicates an expected call of GetAccessTokenByTokenIDAndUsername.
+func (mr *MockDatabaseRepositoryMockRecorder) GetAccessTokenByTokenIDAndUsername(ctx, tokenID, username interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAccessTokenByTokenIDAndUsername", reflect.TypeOf((*MockDatabaseRepository)(nil).GetAccessTokenByTokenIDAndUsername), ctx, tokenID, username)
 }
 
 // GetBackgroundJob mocks base method.
@@ -388,6 +504,21 @@ func (mr *MockDatabaseRepositoryMockRecorder) GetSummary(ctx interface{}) *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSummary", reflect.TypeOf((*MockDatabaseRepository)(nil).GetSummary), ctx)
 }
 
+// GetUserAccessTokens mocks base method.
+func (m *MockDatabaseRepository) GetUserAccessTokens(ctx context.Context) ([]models.AccessToken, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetUserAccessTokens", ctx)
+	ret0, _ := ret[0].([]models.AccessToken)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetUserAccessTokens indicates an expected call of GetUserAccessTokens.
+func (mr *MockDatabaseRepositoryMockRecorder) GetUserAccessTokens(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserAccessTokens", reflect.TypeOf((*MockDatabaseRepository)(nil).GetUserAccessTokens), ctx)
+}
+
 // GetUserByUsername mocks base method.
 func (m *MockDatabaseRepository) GetUserByUsername(arg0 context.Context, arg1 string) (*models.User, error) {
 	m.ctrl.T.Helper()
@@ -416,6 +547,21 @@ func (m *MockDatabaseRepository) GetUserCount(arg0 context.Context) (int, error)
 func (mr *MockDatabaseRepositoryMockRecorder) GetUserCount(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserCount", reflect.TypeOf((*MockDatabaseRepository)(nil).GetUserCount), arg0)
+}
+
+// GetUserFavorites mocks base method.
+func (m *MockDatabaseRepository) GetUserFavorites(ctx context.Context, userId, resourceType string) ([]models.Favorite, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetUserFavorites", ctx, userId, resourceType)
+	ret0, _ := ret[0].([]models.Favorite)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetUserFavorites indicates an expected call of GetUserFavorites.
+func (mr *MockDatabaseRepositoryMockRecorder) GetUserFavorites(ctx, userId, resourceType interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserFavorites", reflect.TypeOf((*MockDatabaseRepository)(nil).GetUserFavorites), ctx, userId, resourceType)
 }
 
 // GetUsers mocks base method.
@@ -549,6 +695,20 @@ func (m *MockDatabaseRepository) RemoveBulkResourceAssociations(ctx context.Cont
 func (mr *MockDatabaseRepositoryMockRecorder) RemoveBulkResourceAssociations(ctx, associationsToDelete interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveBulkResourceAssociations", reflect.TypeOf((*MockDatabaseRepository)(nil).RemoveBulkResourceAssociations), ctx, associationsToDelete)
+}
+
+// RemoveFavorite mocks base method.
+func (m *MockDatabaseRepository) RemoveFavorite(ctx context.Context, userId, sourceId, resourceType, resourceId string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RemoveFavorite", ctx, userId, sourceId, resourceType, resourceId)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RemoveFavorite indicates an expected call of RemoveFavorite.
+func (mr *MockDatabaseRepositoryMockRecorder) RemoveFavorite(ctx, userId, sourceId, resourceType, resourceId interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveFavorite", reflect.TypeOf((*MockDatabaseRepository)(nil).RemoveFavorite), ctx, userId, sourceId, resourceType, resourceId)
 }
 
 // RemoveResourceAssociation mocks base method.

@@ -101,7 +101,7 @@ func (suite *RepositoryGraphTestSuite) TestGetFlattenedResourceGraph() {
 	summary, err := manualClient.SyncAllBundle(dbRepo, bundleFile, sourcePkg.FhirVersion401)
 	require.NoError(suite.T(), err)
 	require.Equal(suite.T(), 198, summary.TotalResources)
-	require.Equal(suite.T(), 234, len(summary.UpdatedResources))
+	require.Equal(suite.T(), 198, len(summary.UpdatedResources)) // jwilleke fork: stub returns 1 entry per resource (was 234 with original fasten-sources)
 
 	//test
 	options := models.ResourceGraphOptions{
@@ -120,7 +120,7 @@ func (suite *RepositoryGraphTestSuite) TestGetFlattenedResourceGraph() {
 	//validated using http://clinfhir.com/bundleVisualizer.html
 
 	require.Equal(suite.T(), 1, len(flattenedGraph["Encounter"]))
-	require.Equal(suite.T(), 27, len(flattenedGraph["Encounter"][0].RelatedResource))
+	require.Equal(suite.T(), 28, len(flattenedGraph["Encounter"][0].RelatedResource)) // jwilleke fork: urn:uuid resolution includes 1 additional linked resource vs original fasten-sources
 
 }
 
