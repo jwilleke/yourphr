@@ -6,7 +6,7 @@
 
 # Fasten - On Premise/Self-Hosted
 
-[![CI](https://github.com/fastenhealth/fasten-onprem/actions/workflows/ci.yaml/badge.svg)](https://github.com/fastenhealth/fasten-onprem/actions/workflows/ci.yaml)
+[![CI](https://github.com/jwilleke/fasten-onprem/actions/workflows/ci.yaml/badge.svg)](https://github.com/jwilleke/fasten-onprem/actions/workflows/ci.yaml)
 [![Discord Join](https://img.shields.io/discord/1023634406935642223?style=flat-square&logo=discord)](https://discord.gg/Bykz6BAN8p)
 [![Request Providers](https://img.shields.io/static/v1?label=request+providers&message=form&color=orange&style=flat-square)](https://forms.gle/4oU8372y4KyM8DbdA)
 [![Join Newsletter](https://img.shields.io/static/v1?label=join&message=mailing+list&color=blue&style=flat-square)](https://forms.gle/SNsYX9BNMXB6TuTw6)
@@ -273,8 +273,8 @@ You can also join us on [Discord](https://discord.gg/Bykz6BAN8p) to chat with ot
 
 # Contributing
 
-[![CI](https://github.com/fastenhealth/fasten-onprem/actions/workflows/ci.yaml/badge.svg)](https://github.com/fastenhealth/fasten-onprem/actions/workflows/ci.yaml)
-[![codecov](https://codecov.io/gh/fastenhealth/fasten-onprem/branch/main/graph/badge.svg?token=6O0ZUABEHT&style=flat-square)](https://codecov.io/gh/fastenhealth/fasten-onprem)
+[![CI](https://github.com/jwilleke/fasten-onprem/actions/workflows/ci.yaml/badge.svg)](https://github.com/jwilleke/fasten-onprem/actions/workflows/ci.yaml)
+[![codecov](https://codecov.io/gh/jwilleke/fasten-onprem/branch/main/graph/badge.svg?style=flat-square)](https://codecov.io/gh/jwilleke/fasten-onprem)
 
 Please see the [CONTRIBUTING.md](CONTRIBUTING.md) for instructions for how to develop and contribute to the Fasten codebase.
 
