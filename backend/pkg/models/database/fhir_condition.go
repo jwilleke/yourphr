@@ -389,6 +389,36 @@ func (s *FhirCondition) PopulateAndExtractSearchParameters(resourceRaw json.RawM
 	if err == nil && verificationStatusResult.String() != "undefined" {
 		s.VerificationStatus = []byte(verificationStatusResult.String())
 	}
+	// jwilleke fork: set sort_title from code display text.
+	// Veradigm uses a proprietary coding system URI but always includes a human-readable display string.
+	condSortTitleResult, err := vm.RunString(`(function(){
+		var c = fhirResource.code;
+		if(!c) return undefined;
+		if(c.text) return c.text;
+		if(c.coding && c.coding[0]){
+			if(c.coding[0].display) return c.coding[0].display;
+			if(c.coding[0].code) return c.coding[0].code;
+		}
+		return undefined;
+	})()`)
+	if err == nil && condSortTitleResult.String() != "undefined" && condSortTitleResult.String() != "null" {
+		sortTitle := condSortTitleResult.String()
+		s.SetSortTitle(&sortTitle)
+	}
+	// jwilleke fork: set sort_date from recordedDate or onsetDateTime.
+	condSortDateResult, err := vm.RunString(`(function(){
+		var r = fhirResource;
+		if(r.recordedDate) return r.recordedDate;
+		if(r.onsetDateTime) return r.onsetDateTime;
+		return undefined;
+	})()`)
+	if err == nil && condSortDateResult.String() != "undefined" && condSortDateResult.String() != "null" {
+		if t, err := time.Parse(time.RFC3339, condSortDateResult.String()); err == nil {
+			s.SetSortDate(&t)
+		} else if t, err = time.Parse("2006-01-02", condSortDateResult.String()); err == nil {
+			s.SetSortDate(&t)
+		}
+	}
 	return nil
 }
 

@@ -40,6 +40,10 @@ export class EncounterModel extends FastenDisplayModel {
       'Encounter',
     );
     this.encounter_type = _.get(fhirResource, 'type');
+    // Veradigm/FollowMyHealth omits type entirely; synthesise a display-only entry from location
+    if (!this.encounter_type?.length && this.location_display && this.location_display !== 'Encounter') {
+      this.encounter_type = [{ text: this.location_display, coding: [] }] as any;
+    }
     this.has_participant = _.has(fhirResource, 'participant');
     this.reasonCode = _.get(fhirResource, 'reasonCode');
   };
@@ -83,7 +87,8 @@ export class EncounterModel extends FastenDisplayModel {
     this.period_end = _.get(fhirResource, 'period.end');
     this.period_start = _.get(fhirResource, 'period.start');
 
-    this.resource_class = _.get(fhirResource, 'class.display');
+    // Veradigm R4 exports class with system but no display or code — fall back to code
+    this.resource_class = _.get(fhirResource, 'class.display') || _.get(fhirResource, 'class.code');
     this.participant = _.get(fhirResource, 'participant', []).map((item: any) => {
       let periodStart = _.get(item, 'period.start');
       return {

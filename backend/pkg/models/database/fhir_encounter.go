@@ -411,6 +411,41 @@ func (s *FhirEncounter) PopulateAndExtractSearchParameters(resourceRaw json.RawM
 	if err == nil && typeResult.String() != "undefined" {
 		s.Type = []byte(typeResult.String())
 	}
+	// jwilleke fork: set sort_title from best available human-readable text.
+	// Standard FHIR uses type[0].text; Veradigm omits type entirely and uses location[0].location.display.
+	sortTitleResult, err := vm.RunString(`(function(){
+		var r = fhirResource;
+		if(r.type && r.type[0]){
+			var t = r.type[0];
+			if(t.text) return t.text;
+			if(t.coding && t.coding[0] && t.coding[0].display) return t.coding[0].display;
+		}
+		if(r.serviceType){
+			var st = r.serviceType;
+			if(st.text) return st.text;
+			if(st.coding && st.coding[0] && st.coding[0].display) return st.coding[0].display;
+		}
+		if(r.location && r.location[0] && r.location[0].location && r.location[0].location.display)
+			return r.location[0].location.display;
+		return undefined;
+	})()`)
+	if err == nil && sortTitleResult.String() != "undefined" && sortTitleResult.String() != "null" {
+		sortTitle := sortTitleResult.String()
+		s.SetSortTitle(&sortTitle)
+	}
+	// jwilleke fork: set sort_date from period.start for timeline ordering.
+	sortDateResult, err := vm.RunString(`(function(){
+		var r = fhirResource;
+		if(r.period && r.period.start) return r.period.start;
+		return undefined;
+	})()`)
+	if err == nil && sortDateResult.String() != "undefined" && sortDateResult.String() != "null" {
+		if t, err := time.Parse(time.RFC3339, sortDateResult.String()); err == nil {
+			s.SetSortDate(&t)
+		} else if t, err = time.Parse("2006-01-02", sortDateResult.String()); err == nil {
+			s.SetSortDate(&t)
+		}
+	}
 	return nil
 }
 
