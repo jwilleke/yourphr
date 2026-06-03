@@ -84,3 +84,5 @@ fasten.db-wal
 frontend/documentation.json
 
 certs/
+
+/private-jims/
