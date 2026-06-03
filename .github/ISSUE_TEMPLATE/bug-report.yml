@@ -1,10 +1,9 @@
 name: Bug Report
 description: File a bug report
-title: "[Bug]: "
+title: "[BUG] "
 labels: ["bug"]
-projects: ["fastenhealth/fasten-onprem"]
 assignees:
-  - AnalogJ
+  - jwilleke
 body:
   - type: markdown
     attributes:
