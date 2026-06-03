@@ -57,10 +57,15 @@ func (c *fileImportClient) GetRequest(resourceSubpath string, decodeTarget inter
 }
 
 // ExtractPatientId reads the bundle to find the Patient resource ID and detect the FHIR version.
+// Seeks back to the beginning of the reader after reading, so SyncAllBundle can read the same data.
 func (c *fileImportClient) ExtractPatientId(bundleFile io.Reader) (string, pkg.FhirVersionType, error) {
 	data, err := io.ReadAll(bundleFile)
 	if err != nil {
 		return "", pkg.FhirVersion401, err
+	}
+	// Seek back to the start so the caller can pass the same reader to SyncAllBundle.
+	if seeker, ok := bundleFile.(io.Seeker); ok {
+		seeker.Seek(0, 0)
 	}
 	patientId := extractPatientIdFromBytes(data)
 	return patientId, pkg.FhirVersion401, nil
