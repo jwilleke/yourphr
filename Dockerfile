@@ -28,12 +28,11 @@ WORKDIR /go/src/github.com/fastenhealth/fasten-onprem
 COPY . .
 
 RUN --mount=type=cache,target=/tmp/lock,sharing=locked \
-    go mod vendor \
-    && go install github.com/golang/mock/mockgen@v1.6.0 \
+    go install github.com/golang/mock/mockgen@v1.6.0 \
     && go generate ./... \
     && go vet ./... \
     && go test -timeout=20m ./... \
-    && go build -ldflags "-extldflags=-static" -tags "static" -o /go/bin/fasten ./backend/cmd/fasten/
+    && go build -mod=vendor -ldflags "-extldflags=-static" -tags "static" -o /go/bin/fasten ./backend/cmd/fasten/
 
 # create folder structure
 RUN mkdir -p /opt/fasten/db \

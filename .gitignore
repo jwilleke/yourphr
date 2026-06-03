@@ -65,7 +65,8 @@ fabric.properties
 .direnv/
 
 /dist/
-vendor
+# vendor un-ignored in jwilleke fork: bundles fasten-sources stub (see go.mod replace + issue #629)
+# vendor
 test.go
 /.couchdb
 
@@ -79,7 +80,8 @@ fasten.db
 fasten.db-shm
 fasten.db-wal
 
-backend/resources/related_versions.json
+# related_versions.json un-ignored in jwilleke fork: required embed, not generated here
+# backend/resources/related_versions.json
 frontend/documentation.json
 
 certs/

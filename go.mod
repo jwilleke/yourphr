@@ -4,7 +4,8 @@ go 1.21.1
 
 toolchain go1.24.2
 
-//replace github.com/fastenhealth/fasten-sources => ../fasten-sources
+// fasten-sources was made private (see fastenhealth/fasten-onprem#629). Use local stub.
+replace github.com/fastenhealth/fasten-sources => ./fasten-sources-stub
 
 //replace github.com/fastenhealth/gofhir-models => ../gofhir-models
 
@@ -31,7 +32,7 @@ require (
 	github.com/johnfercher/maroto/v2 v2.3.1
 	github.com/lestrrat-go/jwx/v2 v2.0.11
 	github.com/samber/lo v1.35.0
-	github.com/sirupsen/logrus v1.9.0
+	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/viper v1.12.0
 	github.com/stretchr/testify v1.8.4
 	github.com/urfave/cli/v2 v2.11.2
@@ -114,7 +115,6 @@ require (
 	github.com/pelletier/go-toml/v2 v2.0.7 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
-	github.com/seborama/govcr v4.5.0+incompatible // indirect
 	github.com/segmentio/asm v1.2.0 // indirect
 	github.com/spf13/afero v1.8.2 // indirect
 	github.com/spf13/cast v1.5.0 // indirect
