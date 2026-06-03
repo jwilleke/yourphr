@@ -373,6 +373,21 @@ func (s *FhirAllergyIntolerance) PopulateAndExtractSearchParameters(resourceRaw 
 	if err == nil && verificationStatusResult.String() != "undefined" {
 		s.VerificationStatus = []byte(verificationStatusResult.String())
 	}
+	// set sort_title from best available human-readable display text (Fasten-specific, not a FHIR search parameter)
+	sortTitleResult, err := vm.RunString("(function(){var c=fhirResource.code;if(!c)return undefined;if(c.text)return c.text;if(c.coding&&c.coding[0]&&c.coding[0].display)return c.coding[0].display;return undefined;})()")
+	if err == nil && sortTitleResult.String() != "undefined" && sortTitleResult.String() != "null" {
+		sortTitle := sortTitleResult.String()
+		s.SetSortTitle(&sortTitle)
+	}
+	// set sort_date from best available date field (Fasten-specific, not a FHIR search parameter)
+	sortDateResult, err := vm.RunString("(function(){var r=fhirResource;if(r.recordedDate)return r.recordedDate;if(r.onsetDateTime)return r.onsetDateTime;return undefined;})()")
+	if err == nil && sortDateResult.String() != "undefined" && sortDateResult.String() != "null" {
+		if t, err := time.Parse(time.RFC3339, sortDateResult.String()); err == nil {
+			s.SetSortDate(&t)
+		} else if t, err = time.Parse("2006-01-02", sortDateResult.String()); err == nil {
+			s.SetSortDate(&t)
+		}
+	}
 	return nil
 }
 

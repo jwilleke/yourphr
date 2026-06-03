@@ -443,6 +443,48 @@ func main() {
 				})
 
 			}
+
+			// Generate SetSortTitle / SetSortDate calls if this resource has a sort config entry.
+			// This populates the sort_title and sort_date fields used by the frontend timeline and
+			// resource list views. Without these calls, every resource displays only its raw FHIR ID.
+			// See: https://github.com/fastenhealth/fasten-onprem/issues/347
+			//      https://github.com/fastenhealth/fasten-onprem/issues/428
+			if sortCfg, ok := resourceSortConfig[resourceName]; ok {
+				if sortCfg.SortTitleJS != "" {
+					g.Comment("set sort_title from best available human-readable display text (Fasten-specific, not a FHIR search parameter)")
+					g.List(jen.Id("sortTitleResult"), jen.Id("err")).Op(":=").Id("vm").Dot("RunString").Call(jen.Lit(sortCfg.SortTitleJS))
+					g.If(
+						jen.Err().Op("==").Nil().Op("&&").
+							Id("sortTitleResult").Dot("String").Call().Op("!=").Lit("undefined").Op("&&").
+							Id("sortTitleResult").Dot("String").Call().Op("!=").Lit("null"),
+					).BlockFunc(func(b *jen.Group) {
+						b.Id("sortTitle").Op(":=").Id("sortTitleResult").Dot("String").Call()
+						b.Id("s").Dot("SetSortTitle").Call(jen.Op("&").Id("sortTitle"))
+					})
+				}
+				if sortCfg.SortDateJS != "" {
+					g.Comment("set sort_date from best available date field (Fasten-specific, not a FHIR search parameter)")
+					g.List(jen.Id("sortDateResult"), jen.Id("err")).Op(":=").Id("vm").Dot("RunString").Call(jen.Lit(sortCfg.SortDateJS))
+					g.If(
+						jen.Err().Op("==").Nil().Op("&&").
+							Id("sortDateResult").Dot("String").Call().Op("!=").Lit("undefined").Op("&&").
+							Id("sortDateResult").Dot("String").Call().Op("!=").Lit("null"),
+					).BlockFunc(func(b *jen.Group) {
+						b.If(
+							jen.List(jen.Id("t"), jen.Err()).Op(":=").Qual("time", "Parse").Call(jen.Qual("time", "RFC3339"), jen.Id("sortDateResult").Dot("String").Call()),
+							jen.Err().Op("==").Nil(),
+						).BlockFunc(func(e *jen.Group) {
+							e.Id("s").Dot("SetSortDate").Call(jen.Op("&").Id("t"))
+						}).Else().If(
+							jen.List(jen.Id("t"), jen.Err()).Op("=").Qual("time", "Parse").Call(jen.Lit("2006-01-02"), jen.Id("sortDateResult").Dot("String").Call()),
+							jen.Err().Op("==").Nil(),
+						).BlockFunc(func(e *jen.Group) {
+							e.Id("s").Dot("SetSortDate").Call(jen.Op("&").Id("t"))
+						})
+					})
+				}
+			}
+
 			g.Return(jen.Nil())
 
 		})
@@ -568,6 +610,71 @@ func main() {
 		log.Fatal(err)
 	}
 
+}
+
+// resourceSortConfig defines per-resource JavaScript expressions (evaluated inside the goja VM
+// that already has fhirResource in scope) used to populate sort_title and sort_date at import time.
+// sort_title drives the human-readable label shown in timeline and list views.
+// sort_date drives chronological ordering across all resource types.
+// Add an entry here whenever a resource type needs a display-text or date field that is not
+// already captured by the standard FHIR search parameters.
+type resourceSortConfigEntry struct {
+	SortTitleJS string // JS expression returning a string or undefined
+	SortDateJS  string // JS expression returning an ISO date string or undefined
+}
+
+var resourceSortConfig = map[string]resourceSortConfigEntry{
+	"Encounter": {
+		// Standard FHIR: type[0].text or type[0].coding[0].display.
+		// Veradigm/FollowMyHealth omits type[] entirely; fall back to location[0].location.display.
+		SortTitleJS: `(function(){` +
+			`var r=fhirResource;` +
+			`if(r.type&&r.type[0]){var t=r.type[0];if(t.text)return t.text;if(t.coding&&t.coding[0]&&t.coding[0].display)return t.coding[0].display;}` +
+			`if(r.serviceType){var st=r.serviceType;if(st.text)return st.text;if(st.coding&&st.coding[0]&&st.coding[0].display)return st.coding[0].display;}` +
+			`if(r.location&&r.location[0]&&r.location[0].location&&r.location[0].location.display)return r.location[0].location.display;` +
+			`return undefined;` +
+			`})()`,
+		SortDateJS: `(function(){var r=fhirResource;if(r.period&&r.period.start)return r.period.start;return undefined;})()`,
+	},
+	"Condition": {
+		// code.text is standard; fall back to coding[0].display (present even with non-standard
+		// coding systems such as the Veradigm proprietary URI).
+		SortTitleJS: `(function(){` +
+			`var c=fhirResource.code;if(!c)return undefined;` +
+			`if(c.text)return c.text;` +
+			`if(c.coding&&c.coding[0]){if(c.coding[0].display)return c.coding[0].display;if(c.coding[0].code)return c.coding[0].code;}` +
+			`return undefined;` +
+			`})()`,
+		SortDateJS: `(function(){var r=fhirResource;if(r.recordedDate)return r.recordedDate;if(r.onsetDateTime)return r.onsetDateTime;return undefined;})()`,
+	},
+	"Procedure": {
+		SortTitleJS: `(function(){var c=fhirResource.code;if(!c)return undefined;if(c.text)return c.text;if(c.coding&&c.coding[0]&&c.coding[0].display)return c.coding[0].display;return undefined;})()`,
+		SortDateJS:  `(function(){var r=fhirResource;if(r.performedDateTime)return r.performedDateTime;if(r.performedPeriod&&r.performedPeriod.start)return r.performedPeriod.start;return undefined;})()`,
+	},
+	"Observation": {
+		SortTitleJS: `(function(){var c=fhirResource.code;if(!c)return undefined;if(c.text)return c.text;if(c.coding&&c.coding[0]&&c.coding[0].display)return c.coding[0].display;return undefined;})()`,
+		SortDateJS:  `(function(){var r=fhirResource;if(r.effectiveDateTime)return r.effectiveDateTime;if(r.effectivePeriod&&r.effectivePeriod.start)return r.effectivePeriod.start;return undefined;})()`,
+	},
+	"DiagnosticReport": {
+		SortTitleJS: `(function(){var c=fhirResource.code;if(!c)return undefined;if(c.text)return c.text;if(c.coding&&c.coding[0]&&c.coding[0].display)return c.coding[0].display;return undefined;})()`,
+		SortDateJS:  `(function(){var r=fhirResource;if(r.effectiveDateTime)return r.effectiveDateTime;if(r.effectivePeriod&&r.effectivePeriod.start)return r.effectivePeriod.start;return undefined;})()`,
+	},
+	"MedicationRequest": {
+		SortTitleJS: `(function(){var m=fhirResource.medicationCodeableConcept;if(m){if(m.text)return m.text;if(m.coding&&m.coding[0]&&m.coding[0].display)return m.coding[0].display;}return undefined;})()`,
+		SortDateJS:  `(function(){var r=fhirResource;if(r.authoredOn)return r.authoredOn;return undefined;})()`,
+	},
+	"Immunization": {
+		SortTitleJS: `(function(){var c=fhirResource.vaccineCode;if(!c)return undefined;if(c.text)return c.text;if(c.coding&&c.coding[0]&&c.coding[0].display)return c.coding[0].display;return undefined;})()`,
+		SortDateJS:  `(function(){var r=fhirResource;if(r.occurrenceDateTime)return r.occurrenceDateTime;return undefined;})()`,
+	},
+	"AllergyIntolerance": {
+		SortTitleJS: `(function(){var c=fhirResource.code;if(!c)return undefined;if(c.text)return c.text;if(c.coding&&c.coding[0]&&c.coding[0].display)return c.coding[0].display;return undefined;})()`,
+		SortDateJS:  `(function(){var r=fhirResource;if(r.recordedDate)return r.recordedDate;if(r.onsetDateTime)return r.onsetDateTime;return undefined;})()`,
+	},
+	"DocumentReference": {
+		SortTitleJS: `(function(){var r=fhirResource;if(r.description)return r.description;var c=r.type;if(c){if(c.text)return c.text;if(c.coding&&c.coding[0]&&c.coding[0].display)return c.coding[0].display;}return undefined;})()`,
+		SortDateJS:  `(function(){var r=fhirResource;if(r.date)return r.date;return undefined;})()`,
+	},
 }
 
 // TODO: should we do this, or allow all resources instead of just USCore?
