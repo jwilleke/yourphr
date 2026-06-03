@@ -18,7 +18,7 @@ type identTypedClaim struct{}
 type identVerifyAuto struct{}
 
 func toSignOptions(options ...Option) ([]jws.SignOption, error) {
-	var soptions []jws.SignOption
+	soptions := make([]jws.SignOption, 0, len(options))
 	for _, option := range options {
 		//nolint:forcetypeassert
 		switch option.Ident() {
@@ -36,13 +36,16 @@ func toSignOptions(options ...Option) ([]jws.SignOption, error) {
 			}
 
 			soptions = append(soptions, jws.WithKey(wk.alg, wk.key, wksoptions...))
+		case identSignOption{}:
+			sigOpt := option.Value().(jws.SignOption) // this always succeeds
+			soptions = append(soptions, sigOpt)
 		}
 	}
 	return soptions, nil
 }
 
 func toEncryptOptions(options ...Option) ([]jwe.EncryptOption, error) {
-	var soptions []jwe.EncryptOption
+	soptions := make([]jwe.EncryptOption, 0, len(options))
 	for _, option := range options {
 		//nolint:forcetypeassert
 		switch option.Ident() {
@@ -58,13 +61,16 @@ func toEncryptOptions(options ...Option) ([]jwe.EncryptOption, error) {
 			}
 
 			soptions = append(soptions, jwe.WithKey(wk.alg, wk.key, wksoptions...))
+		case identEncryptOption{}:
+			encOpt := option.Value().(jwe.EncryptOption) // this always succeeds
+			soptions = append(soptions, encOpt)
 		}
 	}
 	return soptions, nil
 }
 
 func toVerifyOptions(options ...Option) ([]jws.VerifyOption, error) {
-	var voptions []jws.VerifyOption
+	voptions := make([]jws.VerifyOption, 0, len(options))
 	for _, option := range options {
 		//nolint:forcetypeassert
 		switch option.Ident() {
@@ -113,10 +119,13 @@ type withKey struct {
 }
 
 // WithKey is a multi-purpose option. It can be used for either jwt.Sign, jwt.Parse (and
-// its siblings), and jwt.Serializer methods.
+// its siblings), and jwt.Serializer methods. For signatures, please see the documentation
+// for `jws.WithKey` for more details. For encryption, please see the documentation
+// for `jwe.WithKey`.
 //
 // It is the caller's responsibility to match the suboptions to the operation that they
-// are performing. For example, you are not allowed to do this:
+// are performing. For example, you are not allowed to do this, because the operation
+// is to generate a signature, and yet you are passing options for jwe:
 //
 //	jwt.Sign(token, jwt.WithKey(alg, key, jweOptions...))
 //

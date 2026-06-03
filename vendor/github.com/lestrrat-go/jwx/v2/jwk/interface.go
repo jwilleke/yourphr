@@ -10,6 +10,13 @@ import (
 	"github.com/lestrrat-go/jwx/v2/internal/json"
 )
 
+// AsymmetricKey describes a Key that represents an key in an asymmetric key pair,
+// which in turn can be either a private or a public key. This interface
+// allows those keys to be queried if they are one or the other.
+type AsymmetricKey interface {
+	IsPrivate() bool
+}
+
 // KeyUsageType is used to denote what this key should be used for
 type KeyUsageType string
 
@@ -77,8 +84,9 @@ type Set interface {
 	// specify, and there is no way of knowing what type they could be.
 	Set(string, interface{}) error
 
-	// RemoveKey removes the specified non-key field from the set.
-	// Keys may not be removed using this method.
+	// Remove removes the specified non-key field from the set.
+	// Keys may not be removed using this method. See RemoveKey for
+	// removing keys.
 	Remove(string) error
 
 	// Index returns the index where the given key exists, -1 otherwise
@@ -94,6 +102,8 @@ type Set interface {
 	LookupKeyID(string) (Key, bool)
 
 	// RemoveKey removes the key from the set.
+	// RemoveKey returns an error when the specified key does not exist
+	// in set.
 	RemoveKey(Key) error
 
 	// Keys creates an iterator to iterate through all keys in the set.

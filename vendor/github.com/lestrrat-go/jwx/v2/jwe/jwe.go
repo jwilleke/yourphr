@@ -10,6 +10,7 @@ import (
 	"crypto/rsa"
 	"fmt"
 	"io"
+	"sync"
 
 	"github.com/lestrrat-go/blackmagic"
 	"github.com/lestrrat-go/jwx/v2/internal/base64"
@@ -23,6 +24,21 @@ import (
 	"github.com/lestrrat-go/jwx/v2/jwe/internal/keygen"
 	"github.com/lestrrat-go/jwx/v2/x25519"
 )
+
+var muSettings sync.RWMutex
+var maxPBES2Count = 10000
+
+func Settings(options ...GlobalOption) {
+	muSettings.Lock()
+	defer muSettings.Unlock()
+	//nolint:forcetypeassert
+	for _, option := range options {
+		switch option.Ident() {
+		case identMaxPBES2Count{}:
+			maxPBES2Count = option.Value().(int)
+		}
+	}
+}
 
 const (
 	fmtInvalid = iota
@@ -247,6 +263,29 @@ func (b *recipientBuilder) Build(cek []byte, calg jwa.ContentEncryptionAlgorithm
 // Look for options that return `jwe.EncryptOption` or `jws.EncryptDecryptOption`
 // for a complete list of options that can be passed to this function.
 func Encrypt(payload []byte, options ...EncryptOption) ([]byte, error) {
+	return encrypt(payload, nil, options...)
+}
+
+// Encryptstatic is exactly like Encrypt, except it accepts a static
+// content encryption key (CEK). It is separated out from the main
+// Encrypt function such that the latter does not accidentally use a static
+// CEK.
+//
+// DO NOT attempt to use this function unless you completely understand the
+// security implications to using static CEKs. You have been warned.
+//
+// This function is currently considered EXPERIMENTAL, and is subject to
+// future changes across minor/micro versions.
+func EncryptStatic(payload, cek []byte, options ...EncryptOption) ([]byte, error) {
+	if len(cek) <= 0 {
+		return nil, fmt.Errorf(`jwe.EncryptStatic: empty CEK`)
+	}
+	return encrypt(payload, cek, options...)
+}
+
+// encrypt is separate so it can receive cek from outside.
+// (but we don't want to receive it in the options slice)
+func encrypt(payload, cek []byte, options ...EncryptOption) ([]byte, error) {
 	// default content encryption algorithm
 	calg := jwa.A256GCM
 
@@ -327,12 +366,14 @@ func Encrypt(payload []byte, options ...EncryptOption) ([]byte, error) {
 		return nil, fmt.Errorf(`jwe.Encrypt: failed to create AES encrypter: %w`, err)
 	}
 
-	generator := keygen.NewRandom(contentcrypt.KeySize())
-	bk, err := generator.Generate()
-	if err != nil {
-		return nil, fmt.Errorf(`jwe.Encrypt: failed to generate key: %w`, err)
+	if len(cek) <= 0 {
+		generator := keygen.NewRandom(contentcrypt.KeySize())
+		bk, err := generator.Generate()
+		if err != nil {
+			return nil, fmt.Errorf(`jwe.Encrypt: failed to generate key: %w`, err)
+		}
+		cek = bk.Bytes()
 	}
-	cek := bk.Bytes()
 
 	recipients := make([]Recipient, len(builders))
 	for i, builder := range builders {
@@ -421,6 +462,7 @@ func Encrypt(payload []byte, options ...EncryptOption) ([]byte, error) {
 type decryptCtx struct {
 	msg              *Message
 	aad              []byte
+	cek              *[]byte
 	computedAad      []byte
 	keyProviders     []KeyProvider
 	protectedHeaders Headers
@@ -438,7 +480,7 @@ type decryptCtx struct {
 func Decrypt(buf []byte, options ...DecryptOption) ([]byte, error) {
 	var keyProviders []KeyProvider
 	var keyUsed interface{}
-
+	var cek *[]byte
 	var dst *Message
 	//nolint:forcetypeassert
 	for _, option := range options {
@@ -459,6 +501,8 @@ func Decrypt(buf []byte, options ...DecryptOption) ([]byte, error) {
 				alg: alg,
 				key: pair.key,
 			})
+		case identCEK{}:
+			cek = option.Value().(*[]byte)
 		}
 	}
 
@@ -517,6 +561,7 @@ func Decrypt(buf []byte, options ...DecryptOption) ([]byte, error) {
 	dctx.msg = msg
 	dctx.keyProviders = keyProviders
 	dctx.protectedHeaders = h
+	dctx.cek = cek
 
 	var lastError error
 	for _, recipient := range recipients {
@@ -583,7 +628,8 @@ func (dctx *decryptCtx) decryptContent(ctx context.Context, alg jwa.KeyEncryptio
 		AuthenticatedData(dctx.aad).
 		ComputedAuthenticatedData(dctx.computedAad).
 		InitializationVector(dctx.msg.initializationVector).
-		Tag(dctx.msg.tag)
+		Tag(dctx.msg.tag).
+		CEK(dctx.cek)
 
 	if recipient.Headers().Algorithm() != alg {
 		// algorithms don't match
@@ -671,6 +717,12 @@ func (dctx *decryptCtx) decryptContent(ctx context.Context, alg jwa.KeyEncryptio
 		countFlt, ok := count.(float64)
 		if !ok {
 			return nil, fmt.Errorf("unexpected type for 'p2c': %T", count)
+		}
+		muSettings.RLock()
+		maxCount := maxPBES2Count
+		muSettings.RUnlock()
+		if countFlt > float64(maxCount) {
+			return nil, fmt.Errorf("invalid 'p2c' value")
 		}
 		salt, err := base64.DecodeString(saltB64Str)
 		if err != nil {

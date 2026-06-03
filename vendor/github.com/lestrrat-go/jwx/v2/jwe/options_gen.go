@@ -62,6 +62,18 @@ type encryptOption struct {
 
 func (*encryptOption) encryptOption() {}
 
+// GlobalOption describes options that changes global settings for this package
+type GlobalOption interface {
+	Option
+	globalOption()
+}
+
+type globalOption struct {
+	Option
+}
+
+func (*globalOption) globalOption() {}
+
 // ReadFileOption is a type of `Option` that can be passed to `jwe.Parse`
 type ParseOption interface {
 	Option
@@ -110,12 +122,14 @@ type withKeySetSuboption struct {
 
 func (*withKeySetSuboption) withKeySetSuboption() {}
 
+type identCEK struct{}
 type identCompress struct{}
 type identContentEncryptionAlgorithm struct{}
 type identFS struct{}
 type identKey struct{}
 type identKeyProvider struct{}
 type identKeyUsed struct{}
+type identMaxPBES2Count struct{}
 type identMergeProtectedHeaders struct{}
 type identMessage struct{}
 type identPerRecipientHeaders struct{}
@@ -123,6 +137,10 @@ type identPretty struct{}
 type identProtectedHeaders struct{}
 type identRequireKid struct{}
 type identSerialization struct{}
+
+func (identCEK) String() string {
+	return "WithCEK"
+}
 
 func (identCompress) String() string {
 	return "WithCompress"
@@ -146,6 +164,10 @@ func (identKeyProvider) String() string {
 
 func (identKeyUsed) String() string {
 	return "WithKeyUsed"
+}
+
+func (identMaxPBES2Count) String() string {
+	return "WithMaxPBES2Count"
 }
 
 func (identMergeProtectedHeaders) String() string {
@@ -174,6 +196,16 @@ func (identRequireKid) String() string {
 
 func (identSerialization) String() string {
 	return "WithSerialization"
+}
+
+// WithCEK allows users to specify a variable to store the CEK used in the
+// message upon successful decryption. The variable must be a pointer to
+// a byte slice, and it will only be populated if the decryption is successful.
+//
+// This option is currently considered EXPERIMENTAL, and is subject to
+// future changes across minor/micro versions.
+func WithCEK(v *[]byte) DecryptOption {
+	return &decryptOption{option.New(identCEK{}, v)}
 }
 
 // WithCompress specifies the compression algorithm to use when encrypting
@@ -211,6 +243,13 @@ func WithKeyProvider(v KeyProvider) DecryptOption {
 // jwx API allows users to specify a raw key such as *rsa.PublicKey)
 func WithKeyUsed(v interface{}) DecryptOption {
 	return &decryptOption{option.New(identKeyUsed{}, v)}
+}
+
+// WithMaxPBES2Count specifies the maximum number of PBES2 iterations
+// to use when decrypting a message. If not specified, the default
+// value of 10,000 is used.
+func WithMaxPBES2Count(v int) GlobalOption {
+	return &globalOption{option.New(identMaxPBES2Count{}, v)}
 }
 
 // WithMergeProtectedHeaders specify that when given multiple headers

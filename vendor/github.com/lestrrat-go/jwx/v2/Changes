@@ -4,6 +4,132 @@ Changes
 v2 has many incompatibilities with v1. To see the full list of differences between
 v1 and v2, please read the Changes-v2.md file (https://github.com/lestrrat-go/jwx/blob/develop/v2/Changes-v2.md)
 
+v2.0.19 09 Jan 2023
+[New Features]
+  * [jws] Added jws.IsVerificationError to check if the error returned by `jws.Verify`
+    was caused by actual verification step or something else, for example, while fetching
+    a key from datasource
+
+[Security Fixes]
+  * [jws] JWS messages formated in full JSON format (i.e. not the compact format, which
+    consists of three base64 strings concatenated with a '.') with missing "protected"
+    headers could cause a panic, thereby introducing a possiblity of a DoS.
+
+    This has been fixed so that the `jws.Parse` function succeeds in parsing a JWS message
+    lacking a protected header. Calling `jws.Verify` on this same JWS message will result
+    in a failed verification attempt. Note that this behavior will differ slightly when
+    parsing JWS messages in compact form, which result in an error. 
+
+v2.0.18 03 Dec 2023
+[Security Fixes]
+  * [jwe] A large number in p2c parameter for PBKDF2 based encryptions could cause a DoS attack,
+    similar to https://nvd.nist.gov/vuln/detail/CVE-2022-36083.  All users who use JWE via this
+    package should upgrade. While the JOSE spec allows for encryption using JWE on JWTs, users of
+    the `jwt` package are not immediately susceptible unless they explicitly try to decrypt
+    JWTs -- by default the `jwt` package verifies signatures, but does not decrypt messages.
+    [GHSA-7f9x-gw85-8grf]
+
+v2.0.17 20 Nov 2023
+[Bug Fixes]
+  * [jws] Previously, `jws.UnregisterSigner` did not remove the previous signer instance when
+    the signer was registered and unregistered multiple times (#1016). This has been fixed.
+
+[New Features]
+  * [jwe] (EXPERIMENTAL) `jwe.WithCEK` has been added to extract the content encryption key (CEK) from the Decrypt operation.
+  * [jwe] (EXPERIMENTAL) `jwe.EncryptStatic` has been added to encrypt content using a static CEK.
+    Using static CEKs has serious security implications, and you should not use
+    this unless you completely understand the risks involved.
+
+v2.0.16 31 Oct 2023
+[Security]
+  * [jws] ECDSA signature verification requires us to check if the signature
+    is of the desired length of bytes, but this check that used to exist before
+    had been removed in #65, resulting in certain malformed signatures to pass
+    verification.
+
+    One of the ways this could happen if R is a 31 byte integer and S is 32 byte integer,
+    both containing the correct signature values, but R is not zero-padded.
+
+       Correct = R: [ 0 , ... ] (32 bytes) S: [ ... ] (32 bytes)
+       Wrong   = R: [ ... ] (31 bytes)     S: [ ... ] (32 bytes)
+
+    In order for this check to pass, you would still need to have all 63 bytes
+    populated with the correct signature. The only modification a bad actor
+    may be able to do is to add one more byte at the end, in which case the
+    first 32 bytes (including what would have been S's first byte) is used for R,
+    and S would contain the rest. But this will only result in the verification to
+    fail. Therefore this in itself should not pose any security risk, albeit
+    allowing some illegally formated messages to be verified.
+
+  * [jwk] `jwk.Key` objects now have a `Validate()` method to validate the data
+    stored in the keys. However, this still does not necessarily mean that the key's
+    are valid for use in cryptographic operations. If `Validate()` is successful,
+    it only means that the keys are in the right _format_, including the presence
+    of required fields and that certain fields have proper length, etc.
+
+[New Features]
+  * [jws] Added `jws.WithValidateKey()` to force calling `key.Validate()` before
+    signing or verification.
+
+  * [jws] `jws.Sign()` now returns a special type of error that can hold the
+    individual errors from the signers. The stringification is still the same
+    as before to preserve backwards compatibility.
+
+  * [jwk] Added `jwk.IsKeyValidationError` that checks if an error is an error
+    from `key.Validate()`.
+
+[Bug Fixes]
+  * [jwt] `jwt.ParseInsecure()` was running verification if you provided a key
+    via `jwt.WithKey()` or `jwt.WithKeySet()` (#1007)
+
+v2.0.15 19 20 Oct 2023
+[Bug fixes]
+  * [jws] jws.Sign() now properly check for valid algorithm / key type pair when
+    the key implements crypto.Signer. This was caused by the fact that when 
+    jws.WithKey() accepted keys that implemented crypto.Signer, there really
+    is no way to robustly check what algorithm the crypto.Signer implements.
+
+    The code has now been modified to check for KNOWN key types, i.e. those
+    that are defined in Go standard library, and those that are defined in
+    this library. For example, now calling jws.Sign() with jws.WithKey(jwa.RS256, ecdsaKey)
+    where ecdsaKey is either an instance of *ecdsa.PrivateKey or jwk.ECDSAPrivateKey
+    will produce an error.
+
+    However, if you use a separate library that wraps some KMS library which implements
+    crypto.Signer, this same check will not be performed due to the fact that
+    it is an unknown library to us. And there's no way to query a crypto.Signer
+    for its algorithm family.
+
+v2.0.14 17 Oct 2023
+[New Features]
+  * [jwk] jwk.IsPrivateKey(), as well as jwk.AsymmetricKey has been added.
+    The function can be used to tell if a jwk.Key is a private key of an
+    asymmetric key pair.
+[Security]
+  * golang.org/x/crypto has been updated to 0.14.0. The update contains a fix for HTTP/2
+    rapid reset DoS vulnerability, which some security scanning softwares may flag.
+    However, do note that this library is NOT affected by the issue, as it does not have
+    the capability to serve as an HTTP/2 server. This is included in this release
+    document so that users will be able to tell why this library may be flagged
+    when/if their scanning software do so.
+
+v2.0.13 26 Sep 2023
+[New Features]
+  * [jwk] jwk.Equal has been added. Please note that this is equivalent to
+  comparing the keys' thumbprints, therefore it does NOT take in consideration
+  non-essential fields.
+
+[Miscellaneous]
+  * Various documentation fixes and additions.
+
+v2.0.12 - 11 Aug 2023
+[Bug fixes]
+  * [jwt] jwt.Serializer was ignoring JWE flags (#951)
+
+[Miscellaneous]
+  * [jwk] Check for seed length on OKP JWKs to avoid panics (#947)
+  * [jws] Documentation for jws.WithKeySet()
+
 v2.0.11 - 14 Jun 2023
 [Security]
   * Potential Padding Oracle Attack Vulnerability and Timing Attack Vulnerability 
