@@ -44,7 +44,7 @@ jobs:
         with:
           tags: |
             type=raw,value=main,enable=${{ github.ref_name == 'main' }}
-            type=sha,prefix=main-
+            type=raw,value=main-${{ github.run_number }},enable=${{ github.ref_name == 'main' }}
           labels: |
             org.opencontainers.image.title=Fasten Health (jwilleke fork)
             org.opencontainers.image.description=Fork of fastenhealth/fasten-onprem — non-US-Core FHIR compatibility improvements
