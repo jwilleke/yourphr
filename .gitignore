@@ -88,3 +88,35 @@ certs/
 /private-jims/
 .claude/
 .DS_Store
+
+####################################################################
+# Personal health data & secrets — NEVER commit
+# (This is a Personal Health Record app. Real patient data and any
+#  unencrypted secret/key must never enter git history.)
+####################################################################
+# Runtime SQLite databases (contain imported PHR). docker-compose
+# mounts ./db; the dev config may put fasten.db elsewhere too.
+/db/
+*.sqlite
+*.sqlite3
+# fasten-*.db / fasten.db / -shm / -wal are also covered above.
+
+# Environment & secret files (.envrc is direnv config and is allowed)
+.env
+.env.*
+*.env
+
+# Keys, certs, and credential material
+*.pem
+*.key
+*.p12
+*.pfx
+secrets.*
+*-secret.*
+
+# Real FHIR exports dropped in the repo for manual testing.
+# Keep curated *synthetic* fixtures under frontend/.../fixtures and
+# backend/.../testdata; never commit real patient bundles.
+/sample-data/
+/phi/
+/patient-data/

@@ -8,6 +8,21 @@ Fasten OnPrem is a self-hosted personal/family electronic medical record viewer.
 
 **This is a personal fork** of `fastenhealth/fasten-onprem` (original by Jason Kulatunga / @AnalogJ, GPL v3). The fork's purpose: improve display compatibility with **non-US-Core FHIR R4 exports**, specifically Veradigm/FollowMyHealth patient portal data. See `docs/Roadmap.md` for the current focus and `README.md` for the fork notice. When fixing display issues, prefer fallbacks for missing US-Core fields (e.g. `class.code` when `type[]` is absent) rather than assuming strict US-Core conformance.
 
+## ⚠️ NEVER commit personal health data or unencrypted secrets
+
+This is a **Personal Health Record** application. Patient data (PHI) and secrets must never enter git history — a leak here is irreversible and a privacy breach. Treat this as a hard rule that overrides convenience.
+
+**Never commit:**
+
+- **The runtime database.** SQLite files contain all imported PHR. `docker-compose` writes the DB to `./db/`, and the dev config may put `fasten.db` elsewhere. All of `*.db`, `*.db-shm`, `*.db-wal`, `*.sqlite*`, and `/db/` are gitignored — keep it that way.
+- **Real FHIR bundles.** Only ever commit *synthetic* fixtures (Synthea-generated) under `frontend/src/lib/fixtures/` and `backend/pkg/database/testdata/`. Never add a real patient export. Drop ad-hoc real bundles in a gitignored dir (`/sample-data/`, `/phi/`, `/patient-data/`).
+- **Secrets / keys.** No real `jwt.issuer.key`, encryption keys, OAuth client secrets, access/refresh tokens, `.env`, `*.pem/*.key/*.p12/*.pfx`. Real config goes in `config.dev.yaml` (gitignored) or environment variables — never in the committed `config.yaml`.
+- **Certs.** `certs/` is gitignored (the app generates its own CA at runtime).
+
+**Note on `config.yaml`:** the committed file ships the upstream *default* placeholder `jwt.issuer.key` (`"thisismysupersecure..."`). That is a known public default, not a real secret — it **must** be overridden in any real deployment (via `config.dev.yaml`/env). Never replace it with a real generated key in the committed file.
+
+**Before any commit or push:** run `git status` / `git diff --staged` and confirm no DB, `.env`, key, or real-patient file is staged. Never use `git add -A`/`git add .` blindly — add specific files. If something sensitive was already committed, treat it as compromised: rotate the secret and scrub history (`git filter-repo` / BFG), don't just delete it in a new commit.
+
 ## Commands
 
 All commands are driven through the `Makefile`. There is also a Nix flake (`direnv allow`) that provisions Go, Node, Angular CLI 14.1.3, yarn, and tygo.
@@ -61,6 +76,7 @@ The upstream `github.com/fastenhealth/fasten-sources` package was made private. 
 ## Frontend architecture (`frontend/src/app/`)
 
 Standard Angular 14 module layout:
+
 - `services/` — `fasten-api.service.ts` is the main backend API client; `auth.service.ts` + `auth-interceptor.service.ts` handle JWT; `event-bus.service.ts` for SSE/streaming.
 - `pages/`, `components/`, `widgets/` — UI; `models/` — typed view models (the `patient-access-brands/` subdir is tygo-generated, don't edit).
 - Backend `/api/secure/events/stream` is a Server-Sent Events endpoint (used for sync/job progress).
