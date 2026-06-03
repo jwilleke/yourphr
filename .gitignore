@@ -65,8 +65,7 @@ fabric.properties
 .direnv/
 
 /dist/
-# vendor un-ignored in jwilleke fork: bundles fasten-sources stub (see go.mod replace + issue #629)
-# vendor
+vendor
 test.go
 /.couchdb
 

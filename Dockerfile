@@ -28,7 +28,8 @@ WORKDIR /go/src/github.com/fastenhealth/fasten-onprem
 COPY . .
 
 RUN --mount=type=cache,target=/tmp/lock,sharing=locked \
-    go vet -mod=vendor ./... \
+    go mod vendor \
+    && go vet -mod=vendor ./... \
     && go test -mod=vendor -timeout=20m ./... \
     && go build -mod=vendor -ldflags "-extldflags=-static" -tags "static" -o /go/bin/fasten ./backend/cmd/fasten/
 
