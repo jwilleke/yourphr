@@ -13,6 +13,15 @@
 
 **Fasten lets you create a secure, private personal health record that never leaves your hands**
 
+> [!NOTE]
+> **This is a personal fork of [fastenhealth/fasten-onprem](https://github.com/fastenhealth/fasten-onprem)** maintained by [@jwilleke](https://github.com/jwilleke).
+>
+> All original work is by **Jason Kulatunga ([@AnalogJ](https://github.com/AnalogJ))** and **Alex Szilagyi ([@alexszilagyi](https://github.com/alexszilagyi))** under the [GNU GPL v3 license](LICENSE.md). This fork is also GPL v3.
+>
+> **Purpose of this fork:** improve display compatibility with non-US-Core FHIR R4 exports (specifically Veradigm/FollowMyHealth patient portal data). Changes may be submitted upstream where appropriate.
+>
+> For the official project, documentation, and community support, see [fastenhealth/fasten-onprem](https://github.com/fastenhealth/fasten-onprem).
+
 > [!IMPORTANT]  
 > **This repository contains the open-source, self-hosted [Personal Health Record](https://en.wikipedia.org/wiki/Personal_health_record) app. It is maintained by the community and is not the same product as [Fasten Connect](https://www.fastenhealth.com/). Fasten OnPrem is a PHR to manage and view patient's medical data, it does not integrate with EHRs directly.**
 >
