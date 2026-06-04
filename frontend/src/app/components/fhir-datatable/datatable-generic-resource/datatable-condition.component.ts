@@ -3,9 +3,10 @@ import {GenericColumnDefn, DatatableGenericResourceComponent, ResourceListCompon
 import {FORMATTERS} from './utils';
 
 @Component({
-  selector: 'fhir-datatable-condition',
-  templateUrl: './datatable-generic-resource.component.html',
-  styleUrls: ['./datatable-generic-resource.component.scss']
+    selector: 'fhir-datatable-condition',
+    templateUrl: './datatable-generic-resource.component.html',
+    styleUrls: ['./datatable-generic-resource.component.scss'],
+    standalone: false
 })
 export class DatatableConditionComponent extends DatatableGenericResourceComponent {
   columnDefinitions: GenericColumnDefn[] = [

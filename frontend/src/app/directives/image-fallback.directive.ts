@@ -3,7 +3,8 @@ import {Directive, ElementRef, HostListener, Input} from '@angular/core';
 const DEFAULT_IMAGE_FALLBACK_PATH: string = 'assets/images/no-image.svg';
 
 @Directive({
-  selector: 'img[imageFallback]'
+    selector: 'img[imageFallback]',
+    standalone: false
 })
 export class ImageFallbackDirective {
 

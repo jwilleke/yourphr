@@ -19,18 +19,17 @@ import { IntegerModel } from 'src/lib/models/datatypes/integer-model';
 import { DataAbsentReasonModel } from 'src/lib/models/datatypes/data-absent-reason-model';
 
 @Component({
-  standalone: true,
-  imports: [
-    CommonModule,
-    NlmTypeaheadComponent,
-    ReactiveFormsModule,
-    FormsModule,
-    LoadingSpinnerComponent
-  ],
-  selector: 'app-medical-record-wizard-edit-lab-results',
-  templateUrl: './medical-record-wizard-edit-lab-results.component.html',
-  styleUrls: ['./medical-record-wizard-edit-lab-results.component.scss'],
-  schemas: [CUSTOM_ELEMENTS_SCHEMA]
+    imports: [
+        CommonModule,
+        NlmTypeaheadComponent,
+        ReactiveFormsModule,
+        FormsModule,
+        LoadingSpinnerComponent
+    ],
+    selector: 'app-medical-record-wizard-edit-lab-results',
+    templateUrl: './medical-record-wizard-edit-lab-results.component.html',
+    styleUrls: ['./medical-record-wizard-edit-lab-results.component.scss'],
+    schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })
 export class MedicalRecordWizardEditLabResultsComponent implements OnInit {
   @Input() debugMode: boolean = false;

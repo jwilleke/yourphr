@@ -16,7 +16,7 @@ const meta: Meta<MedicalSourcesCardComponent> = {
     })
   ],
   tags: ['autodocs'],
-  render: (args: MedicalSourcesCardComponent) => ({
+  render: (args) => ({
     props: {
       backgroundColor: null,
       ...args,

@@ -21,7 +21,7 @@ const meta: Meta<MedicationComponent> = {
     // }),
   ],
   tags: ['autodocs'],
-  render: (args: MedicationComponent) => ({
+  render: (args) => ({
     props: {
       backgroundColor: null,
       ...args,

@@ -7,11 +7,10 @@ import {CommonModule} from '@angular/common';
 import {HighlightModule} from 'ngx-highlightjs';
 
 @Component({
-  standalone: true,
-  imports: [NgbCollapseModule, HighlightModule, CommonModule],
-  selector: 'fhir-fallback',
-  templateUrl: './fallback.component.html',
-  styleUrls: ['./fallback.component.scss']
+    imports: [NgbCollapseModule, HighlightModule, CommonModule],
+    selector: 'fhir-fallback',
+    templateUrl: './fallback.component.html',
+    styleUrls: ['./fallback.component.scss']
 })
 export class FallbackComponent implements OnInit, FhirCardComponentInterface {
   @Input() displayModel: BinaryModel

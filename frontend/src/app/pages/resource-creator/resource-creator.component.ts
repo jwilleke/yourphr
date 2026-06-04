@@ -5,9 +5,10 @@ import {MedicalRecordWizardComponent} from '../../components/medical-record-wiza
 import {Router} from '@angular/router';
 
 @Component({
-  selector: 'app-resource-creator',
-  templateUrl: './resource-creator.component.html',
-  styleUrls: ['./resource-creator.component.scss']
+    selector: 'app-resource-creator',
+    templateUrl: './resource-creator.component.html',
+    styleUrls: ['./resource-creator.component.scss'],
+    standalone: false
 })
 export class ResourceCreatorComponent implements OnInit {
 

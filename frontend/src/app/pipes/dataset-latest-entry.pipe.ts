@@ -3,7 +3,8 @@ import {ChartDataset} from 'chart.js';
 import * as _ from 'lodash';
 
 @Pipe({
-  name: 'datasetLatestEntry'
+    name: 'datasetLatestEntry',
+    standalone: false
 })
 export class DatasetLatestEntryPipe implements PipeTransform {
 

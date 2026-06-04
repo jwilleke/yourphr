@@ -11,11 +11,10 @@ import * as _ from 'lodash';
 import {LocationModel} from '../../../../../lib/models/resources/location-model';
 
 @Component({
-  standalone: true,
-  imports: [NgbCollapseModule, CommonModule, BadgeComponent, TableComponent, RouterModule],
-  selector: 'fhir-location',
-  templateUrl: './location.component.html',
-  styleUrls: ['./location.component.scss']
+    imports: [NgbCollapseModule, CommonModule, BadgeComponent, TableComponent, RouterModule],
+    selector: 'fhir-location',
+    templateUrl: './location.component.html',
+    styleUrls: ['./location.component.scss']
 })
 export class LocationComponent implements OnInit, FhirCardComponentInterface {
   @Input() displayModel: LocationModel

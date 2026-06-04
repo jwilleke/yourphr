@@ -12,11 +12,10 @@ import {BinaryComponent} from '../binary/binary.component';
 import {GlossaryLookupComponent} from '../../../glossary-lookup/glossary-lookup.component';
 
 @Component({
-  standalone: true,
-  imports: [NgbCollapseModule, NgbNavModule, CommonModule, BadgeComponent, TableComponent, RouterModule, BinaryComponent],
-  selector: 'fhir-document-reference',
-  templateUrl: './document-reference.component.html',
-  styleUrls: ['./document-reference.component.scss']
+    imports: [NgbCollapseModule, NgbNavModule, CommonModule, BadgeComponent, TableComponent, RouterModule, BinaryComponent],
+    selector: 'fhir-document-reference',
+    templateUrl: './document-reference.component.html',
+    styleUrls: ['./document-reference.component.scss']
 })
 export class DocumentReferenceComponent implements OnInit, FhirCardComponentInterface {
   @Input() displayModel: DocumentReferenceModel

@@ -19,9 +19,10 @@ import {CodingModel} from '../../../lib/models/datatypes/coding-model';
  * @deprecated This condition panel is no longer in use, the timeline panel allows users to view resources by encounter
  */
 @Component({
-  selector: 'app-report-medical-history-condition',
-  templateUrl: './report-medical-history-condition.component.html',
-  styleUrls: ['./report-medical-history-condition.component.scss']
+    selector: 'app-report-medical-history-condition',
+    templateUrl: './report-medical-history-condition.component.html',
+    styleUrls: ['./report-medical-history-condition.component.scss'],
+    standalone: false
 })
 export class ReportMedicalHistoryConditionComponent implements OnInit {
 

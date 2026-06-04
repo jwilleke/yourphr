@@ -3,7 +3,8 @@ import {evaluate} from 'fhirpath';
 import {HumanNameModel} from '../../lib/models/datatypes/human-name-model';
 
 @Pipe({
-  name: 'humanName'
+    name: 'humanName',
+    standalone: false
 })
 export class HumanNamePipe implements PipeTransform {
 

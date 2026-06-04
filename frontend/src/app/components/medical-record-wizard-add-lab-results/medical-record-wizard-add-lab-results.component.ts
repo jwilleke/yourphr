@@ -10,18 +10,17 @@ import {fhirModelFactory} from '../../../lib/models/factory';
 import {LoadingSpinnerComponent} from '../loading-spinner/loading-spinner.component';
 
 @Component({
-  standalone: true,
-  imports: [
-    CommonModule,
-    NlmTypeaheadComponent,
-    ReactiveFormsModule,
-    FormsModule,
-    LoadingSpinnerComponent
-  ],
-  selector: 'app-medical-record-wizard-add-lab-results',
-  templateUrl: './medical-record-wizard-add-lab-results.component.html',
-  styleUrls: ['./medical-record-wizard-add-lab-results.component.scss'],
-  schemas: [CUSTOM_ELEMENTS_SCHEMA]
+    imports: [
+        CommonModule,
+        NlmTypeaheadComponent,
+        ReactiveFormsModule,
+        FormsModule,
+        LoadingSpinnerComponent
+    ],
+    selector: 'app-medical-record-wizard-add-lab-results',
+    templateUrl: './medical-record-wizard-add-lab-results.component.html',
+    styleUrls: ['./medical-record-wizard-add-lab-results.component.scss'],
+    schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })
 export class MedicalRecordWizardAddLabResultsComponent implements OnInit {
   @Input() debugMode: boolean = false;

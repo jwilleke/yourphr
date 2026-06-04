@@ -17,7 +17,7 @@ const meta: Meta<DicomComponent> = {
     // }),
   ],
   tags: ['autodocs'],
-  render: (args: DicomComponent) => ({
+  render: (args) => ({
     props: {
       backgroundColor: null,
       ...args,

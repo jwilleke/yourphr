@@ -3,11 +3,10 @@ import {CodingModel} from '../../../../../lib/models/datatypes/coding-model';
 import {CommonModule} from "@angular/common";
 
 @Component({
-  standalone: true,
-  imports: [CommonModule],
-  selector: 'fhir-coding',
-  templateUrl: './coding.component.html',
-  styleUrls: ['./coding.component.scss']
+    imports: [CommonModule],
+    selector: 'fhir-coding',
+    templateUrl: './coding.component.html',
+    styleUrls: ['./coding.component.scss']
 })
 export class CodingComponent implements OnInit {
   @Input() coding: CodingModel

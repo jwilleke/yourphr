@@ -8,9 +8,10 @@ import {ResourceGraphResponse} from '../../models/fasten/resource-graph-response
 // import {ReportEditorRelatedComponent} from '../../components/report-editor-related/report-editor-related.component';
 
 @Component({
-  selector: 'app-medical-history',
-  templateUrl: './medical-history.component.html',
-  styleUrls: ['./medical-history.component.scss']
+    selector: 'app-medical-history',
+    templateUrl: './medical-history.component.html',
+    styleUrls: ['./medical-history.component.scss'],
+    standalone: false
 })
 export class MedicalHistoryComponent implements OnInit {
   loading: boolean = false

@@ -18,20 +18,19 @@ import {PractitionerModel} from '../../../lib/models/resources/practitioner-mode
 import {parseFullName}  from 'parse-full-name'
 
 @Component({
-  standalone: true,
-  imports: [
-    CommonModule,
-    ReactiveFormsModule,
-    FormsModule,
-    NlmTypeaheadComponent,
-    HighlightModule,
-    NgbTooltipModule,
-    NgbNavModule,
-    FhirDatatableModule
-  ],
-  selector: 'app-medical-record-wizard-add-practitioner',
-  templateUrl: './medical-record-wizard-add-practitioner.component.html',
-  styleUrls: ['./medical-record-wizard-add-practitioner.component.scss']
+    imports: [
+        CommonModule,
+        ReactiveFormsModule,
+        FormsModule,
+        NlmTypeaheadComponent,
+        HighlightModule,
+        NgbTooltipModule,
+        NgbNavModule,
+        FhirDatatableModule
+    ],
+    selector: 'app-medical-record-wizard-add-practitioner',
+    templateUrl: './medical-record-wizard-add-practitioner.component.html',
+    styleUrls: ['./medical-record-wizard-add-practitioner.component.scss']
 })
 export class MedicalRecordWizardAddPractitionerComponent implements OnInit {
   @Input() debugMode: boolean = false;

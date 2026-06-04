@@ -13,18 +13,17 @@ import { parseFullName } from 'parse-full-name';
 import { uuidV4 } from '../../../lib/utils/uuid';
 
 @Component({
-  selector: 'app-add-practitioner',
-  standalone: true,
-  imports: [
-    CommonModule,
-    ReactiveFormsModule,
-    FormsModule,
-    NgbTooltipModule,
-    HighlightModule,
-    NlmTypeaheadComponent
-  ],
-  templateUrl: './practitioner-create.component.html',
-  styleUrls: ['./practitioner-create.component.scss']
+    selector: 'app-add-practitioner',
+    imports: [
+        CommonModule,
+        ReactiveFormsModule,
+        FormsModule,
+        NgbTooltipModule,
+        HighlightModule,
+        NlmTypeaheadComponent
+    ],
+    templateUrl: './practitioner-create.component.html',
+    styleUrls: ['./practitioner-create.component.scss']
 })
 export class PractitionerCreateComponent implements OnInit {
   debugMode: boolean = false;

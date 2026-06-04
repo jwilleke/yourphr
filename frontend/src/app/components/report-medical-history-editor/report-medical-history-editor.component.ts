@@ -19,9 +19,10 @@ class RelatedNode {
  * @deprecated This editor is no longer in use, the timeline panel allows users to tag resources associated with a single condition.
  */
 @Component({
-  selector: 'app-report-medical-history-editor',
-  templateUrl: './report-medical-history-editor.component.html',
-  styleUrls: ['./report-medical-history-editor.component.scss']
+    selector: 'app-report-medical-history-editor',
+    templateUrl: './report-medical-history-editor.component.html',
+    styleUrls: ['./report-medical-history-editor.component.scss'],
+    standalone: false
 })
 export class ReportMedicalHistoryEditorComponent implements OnInit {
 

@@ -4,7 +4,8 @@ import {FastenDisplayModel} from '../../lib/models/fasten/fasten-display-model';
 import {Reference, Resource} from 'fhir/r4';
 
 @Pipe({
-  name: 'referenceUri'
+    name: 'referenceUri',
+    standalone: false
 })
 export class ReferenceUriPipe implements PipeTransform {
 

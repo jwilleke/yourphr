@@ -4,9 +4,10 @@ import { FormRequestHealthSystem } from '../../models/fasten/form-request-health
 import { FastenApiService } from '../../services/fasten-api.service';
 
 @Component({
-  selector: 'app-form-request-health-system',
-  templateUrl: './form-request-health-system.component.html',
-  styleUrls: ['./form-request-health-system.component.scss']
+    selector: 'app-form-request-health-system',
+    templateUrl: './form-request-health-system.component.html',
+    styleUrls: ['./form-request-health-system.component.scss'],
+    standalone: false
 })
 export class FormRequestHealthSystemComponent implements OnInit {
   formRequestHealthSystem: FormRequestHealthSystem = null

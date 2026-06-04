@@ -3,7 +3,8 @@ import {ResourceFhir} from '../models/fasten/resource_fhir';
 import { evaluate } from 'fhirpath'
 
 @Pipe({
-  name: 'fhirPath'
+    name: 'fhirPath',
+    standalone: false
 })
 export class FhirPathPipe implements PipeTransform {
 

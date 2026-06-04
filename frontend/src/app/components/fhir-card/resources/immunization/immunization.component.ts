@@ -10,11 +10,10 @@ import { TableComponent } from "../../common/table/table.component";
 import { FhirCardComponentInterface } from '../../fhir-card/fhir-card-component-interface';
 
 @Component({
-  standalone: true,
-  imports: [NgbCollapseModule, CommonModule, BadgeComponent, TableComponent, RouterModule],
-  selector: 'fhir-immunization',
-  templateUrl: './immunization.component.html',
-  styleUrls: ['./immunization.component.scss']
+    imports: [NgbCollapseModule, CommonModule, BadgeComponent, TableComponent, RouterModule],
+    selector: 'fhir-immunization',
+    templateUrl: './immunization.component.html',
+    styleUrls: ['./immunization.component.scss']
 })
 export class ImmunizationComponent implements OnInit, FhirCardComponentInterface {
   @Input() displayModel: ImmunizationModel

@@ -1,5 +1,4 @@
 import { Component, OnInit } from '@angular/core';
-import {BaseChartDirective} from 'ng2-charts';
 import {CommonModule} from '@angular/common';
 import {LoadingWidgetComponent} from '../loading-widget/loading-widget.component';
 import {EmptyWidgetComponent} from '../empty-widget/empty-widget.component';
@@ -7,11 +6,10 @@ import {DashboardWidgetComponent} from '../dashboard-widget/dashboard-widget.com
 import {DashboardWidgetConfig} from '../../models/widget/dashboard-widget-config';
 
 @Component({
-  standalone: true,
-  imports: [BaseChartDirective, CommonModule, LoadingWidgetComponent, EmptyWidgetComponent],
-  selector: 'image-list-group-widget',
-  templateUrl: './image-list-group-widget.component.html',
-  styleUrls: ['./image-list-group-widget.component.scss']
+    imports: [CommonModule, LoadingWidgetComponent, EmptyWidgetComponent],
+    selector: 'image-list-group-widget',
+    templateUrl: './image-list-group-widget.component.html',
+    styleUrls: ['./image-list-group-widget.component.scss']
 })
 export class ImageListGroupWidgetComponent extends DashboardWidgetComponent implements OnInit {
 

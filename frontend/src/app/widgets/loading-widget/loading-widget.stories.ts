@@ -29,7 +29,7 @@ const meta: Meta<LoadingWidgetComponent> = {
     })
   ],
   tags: ['autodocs'],
-  render: (args: LoadingWidgetComponent) => ({
+  render: (args) => ({
     props: {
       backgroundColor: null,
       ...args,

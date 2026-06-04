@@ -5,9 +5,10 @@ import { FastenApiService } from 'src/app/services/fasten-api.service';
 import { ToastService } from 'src/app/services/toast.service';
 
 @Component({
-  selector: 'app-get-encryption-key-wizard',
-  templateUrl: './get-encryption-key-wizard.component.html',
-  styleUrls: ['./get-encryption-key-wizard.component.scss'],
+    selector: 'app-get-encryption-key-wizard',
+    templateUrl: './get-encryption-key-wizard.component.html',
+    styleUrls: ['./get-encryption-key-wizard.component.scss'],
+    standalone: false
 })
 export class GetEncryptionKeyWizardComponent implements OnInit {
   gridImages: string[] = [

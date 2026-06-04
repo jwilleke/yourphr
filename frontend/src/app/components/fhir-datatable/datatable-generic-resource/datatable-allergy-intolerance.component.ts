@@ -3,9 +3,10 @@ import {GenericColumnDefn, DatatableGenericResourceComponent} from './datatable-
 import {attributeXTime} from './utils';
 
 @Component({
-  selector: 'fhir-datatable-allergy-intolerance',
-  templateUrl: './datatable-generic-resource.component.html',
-  styleUrls: ['./datatable-generic-resource.component.scss']
+    selector: 'fhir-datatable-allergy-intolerance',
+    templateUrl: './datatable-generic-resource.component.html',
+    styleUrls: ['./datatable-generic-resource.component.scss'],
+    standalone: false
 })
 export class DatatableAllergyIntoleranceComponent extends DatatableGenericResourceComponent {
   columnDefinitions: GenericColumnDefn[] = [

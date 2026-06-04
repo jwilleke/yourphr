@@ -6,9 +6,10 @@ import { ResourceFhir } from 'src/app/models/fasten/resource_fhir';
 import { FastenApiService } from 'src/app/services/fasten-api.service';
 
 @Component({
-  selector: 'app-practitioner-history',
-  templateUrl: './practitioner-history.component.html',
-  styleUrls: ['./practitioner-history.component.scss'],
+    selector: 'app-practitioner-history',
+    templateUrl: './practitioner-history.component.html',
+    styleUrls: ['./practitioner-history.component.scss'],
+    standalone: false
 })
 export class PractitionerHistoryComponent implements OnInit {
   loading: boolean = false;

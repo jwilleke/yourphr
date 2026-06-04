@@ -14,7 +14,7 @@ const meta: Meta<BadgeComponent> = {
     // }),
   ],
   tags: ['autodocs'],
-  render: (args: BadgeComponent) => ({
+  render: (args) => ({
     props: {
       backgroundColor: null,
       ...args,

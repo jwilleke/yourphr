@@ -14,7 +14,7 @@ const meta: Meta<LoadingSpinnerComponent> = {
     // }),
   ],
   tags: ['autodocs'],
-  render: (args: LoadingSpinnerComponent) => ({
+  render: (args) => ({
     props: {
       backgroundColor: null,
       ...args,

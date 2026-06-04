@@ -8,11 +8,10 @@ import {EmptyWidgetComponent} from '../empty-widget/empty-widget.component';
 import {PipesModule} from '../../pipes/pipes.module';
 
 @Component({
-  standalone: true,
-  imports: [BaseChartDirective,CommonModule, LoadingWidgetComponent, EmptyWidgetComponent, PipesModule],
-  selector: 'dual-gauges-widget',
-  templateUrl: './dual-gauges-widget.component.html',
-  styleUrls: ['./dual-gauges-widget.component.scss']
+    imports: [BaseChartDirective, CommonModule, LoadingWidgetComponent, EmptyWidgetComponent, PipesModule],
+    selector: 'dual-gauges-widget',
+    templateUrl: './dual-gauges-widget.component.html',
+    styleUrls: ['./dual-gauges-widget.component.scss']
 })
 export class DualGaugesWidgetComponent extends DashboardWidgetComponent implements OnInit  {
 

@@ -29,7 +29,7 @@ const meta: Meta<RecordsSummaryWidgetComponent> = {
     })
   ],
   tags: ['autodocs'],
-  render: (args: RecordsSummaryWidgetComponent) => ({
+  render: (args) => ({
     props: {
       backgroundColor: null,
       ...args,

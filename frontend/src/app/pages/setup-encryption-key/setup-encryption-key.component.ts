@@ -5,9 +5,10 @@ import { FastenApiService } from 'src/app/services/fasten-api.service';
 import { Subscription } from 'rxjs';
 
 @Component({
-  selector: 'app-setup-encryption-key',
-  templateUrl: './setup-encryption-key.component.html',
-  styleUrls: ['./setup-encryption-key.component.scss'],
+    selector: 'app-setup-encryption-key',
+    templateUrl: './setup-encryption-key.component.html',
+    styleUrls: ['./setup-encryption-key.component.scss'],
+    standalone: false
 })
 export class SetupEncryptionKeyComponent implements OnInit {
   encryptionKeyForm: FormGroup;

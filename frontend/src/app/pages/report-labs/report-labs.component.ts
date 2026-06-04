@@ -23,9 +23,10 @@ class LabResultCodeByDate {
 
 
 @Component({
-  selector: 'app-report-labs',
-  templateUrl: './report-labs.component.html',
-  styleUrls: ['./report-labs.component.scss']
+    selector: 'app-report-labs',
+    templateUrl: './report-labs.component.html',
+    styleUrls: ['./report-labs.component.scss'],
+    standalone: false
 })
 export class ReportLabsComponent implements OnInit {
   loading: boolean = false

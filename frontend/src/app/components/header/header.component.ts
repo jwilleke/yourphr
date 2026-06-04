@@ -13,9 +13,10 @@ import {ToastNotification, ToastType} from '../../models/fasten/toast';
 import {ThemeService} from '../../theme.service';
 
 @Component({
-  selector: 'app-header',
-  templateUrl: './header.component.html',
-  styleUrls: ['./header.component.scss']
+    selector: 'app-header',
+    templateUrl: './header.component.html',
+    styleUrls: ['./header.component.scss'],
+    standalone: false
 })
 export class HeaderComponent implements OnInit, OnDestroy {
   current_user_claims: UserRegisteredClaims

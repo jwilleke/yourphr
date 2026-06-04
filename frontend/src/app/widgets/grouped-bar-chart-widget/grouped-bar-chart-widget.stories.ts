@@ -29,7 +29,7 @@ const meta: Meta<GroupedBarChartWidgetComponent> = {
     })
   ],
   tags: ['autodocs'],
-  render: (args: GroupedBarChartWidgetComponent) => ({
+  render: (args) => ({
     props: {
       backgroundColor: null,
       ...args,

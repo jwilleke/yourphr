@@ -1,7 +1,8 @@
 import { Pipe, PipeTransform } from '@angular/core';
 
 @Pipe({
-  name: 'medicalSourcesCategoryLookup'
+    name: 'medicalSourcesCategoryLookup',
+    standalone: false
 })
 export class MedicalSourcesCategoryLookupPipe implements PipeTransform {
 

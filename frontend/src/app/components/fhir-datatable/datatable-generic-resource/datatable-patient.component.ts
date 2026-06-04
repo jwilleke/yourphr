@@ -3,9 +3,10 @@ import {attributeXTime} from './utils';
 import {GenericColumnDefn, DatatableGenericResourceComponent} from './datatable-generic-resource.component';
 
 @Component({
-  selector: 'fhir-datatable-patient',
-  templateUrl: './datatable-generic-resource.component.html',
-  styleUrls: ['./datatable-generic-resource.component.scss']
+    selector: 'fhir-datatable-patient',
+    templateUrl: './datatable-generic-resource.component.html',
+    styleUrls: ['./datatable-generic-resource.component.scss'],
+    standalone: false
 })
 export class DatatablePatientComponent extends DatatableGenericResourceComponent {
   columnDefinitions: GenericColumnDefn[] = [

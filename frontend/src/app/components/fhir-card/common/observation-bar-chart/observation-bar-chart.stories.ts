@@ -11,7 +11,7 @@ const meta: Meta<ObservationBarChartComponent> = {
   decorators: [
   ],
   tags: ['autodocs'],
-  render: (args: ObservationBarChartComponent) => ({
+  render: (args) => ({
     props: {
       backgroundColor: null,
       ...args,

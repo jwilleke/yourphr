@@ -59,27 +59,26 @@ import { MedicalRecordWizardEditLabResultsComponent } from '../medical-record-wi
 import { MedicationRequestModel } from 'src/lib/models/resources/medication-request-model';
 
 @Component({
-  standalone: true,
-  imports: [
-    NgbNavModule,
-    CommonModule,
-    ReactiveFormsModule,
-    FormsModule,
-    NgbTypeaheadModule,
-    NgbDatepickerModule,
-    NgbTooltipModule,
-    NlmTypeaheadComponent,
-    NgSelectModule,
-    HighlightModule,
-    FhirCardModule,
-    PipesModule
-  ],
-  selector: 'app-medical-record-wizard',
-  templateUrl: './medical-record-wizard.component.html',
-  styleUrls: ['./medical-record-wizard.component.scss'],
-  host: {
-    class: 'medical-record-wizard',
-  }
+    imports: [
+        NgbNavModule,
+        CommonModule,
+        ReactiveFormsModule,
+        FormsModule,
+        NgbTypeaheadModule,
+        NgbDatepickerModule,
+        NgbTooltipModule,
+        NlmTypeaheadComponent,
+        NgSelectModule,
+        HighlightModule,
+        FhirCardModule,
+        PipesModule
+    ],
+    selector: 'app-medical-record-wizard',
+    templateUrl: './medical-record-wizard.component.html',
+    styleUrls: ['./medical-record-wizard.component.scss'],
+    host: {
+        class: 'medical-record-wizard',
+    }
 })
 export class MedicalRecordWizardComponent implements OnInit {
   @Input() existingEncounter: EncounterModel;

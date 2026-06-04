@@ -18,7 +18,7 @@ const meta: Meta<ToastComponent> = {
     // }),
   ],
   tags: ['autodocs'],
-  render: (args: ToastComponent) => ({
+  render: (args) => ({
     props: {
       backgroundColor: null,
       ...args,

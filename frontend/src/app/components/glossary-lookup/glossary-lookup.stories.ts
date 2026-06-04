@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/angular';
 import {GlossaryLookupComponent} from "./glossary-lookup.component";
 import {componentWrapperDecorator, moduleMetadata} from "@storybook/angular";
-import { DecoratorFunction } from '@storybook/types';
+import type { Decorator } from '@storybook/angular';
 import {HttpClient, HttpClientModule} from "@angular/common/http";
 import {Observable, of} from "rxjs";
 import {HTTP_CLIENT_TOKEN} from "../../dependency-injection";
@@ -12,7 +12,7 @@ import {HTTP_CLIENT_TOKEN} from "../../dependency-injection";
 // https://www.tektutorialshub.com/angular/injection-token-in-angular/
 // https://medium.com/ngconf/configure-your-angular-apps-with-an-injection-token-be16eee59c40
 
-const withHttpClientProvider: DecoratorFunction<any> = (storyFunc, context) => {
+const withHttpClientProvider: Decorator = (storyFunc, context) => {
   const { httpClientResp } = context.parameters;
   // uses `moduleMetadata` decorator to cleanly add locale provider into module metadata
 
@@ -54,7 +54,7 @@ const meta: Meta<GlossaryLookupComponent> = {
     }),
   ],
   tags: ['autodocs'],
-  render: (args: GlossaryLookupComponent) => ({
+  render: (args) => ({
     props: {
       backgroundColor: null,
       ...args,

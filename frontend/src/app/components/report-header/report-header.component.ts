@@ -6,9 +6,10 @@ import {PractitionerModel} from '../../../lib/models/resources/practitioner-mode
 import {Summary} from '../../../app/models/fasten/summary';
 
 @Component({
-  selector: 'report-header',
-  templateUrl: './report-header.component.html',
-  styleUrls: ['./report-header.component.scss']
+    selector: 'report-header',
+    templateUrl: './report-header.component.html',
+    styleUrls: ['./report-header.component.scss'],
+    standalone: false
 })
 export class ReportHeaderComponent implements OnInit {
   patient: ResourceFhir = null

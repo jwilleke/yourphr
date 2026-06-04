@@ -21,7 +21,7 @@ const meta: Meta<ProcedureComponent> = {
     // }),
   ],
   tags: ['autodocs'],
-  render: (args: ProcedureComponent) => ({
+  render: (args) => ({
     props: {
       backgroundColor: null,
       ...args,

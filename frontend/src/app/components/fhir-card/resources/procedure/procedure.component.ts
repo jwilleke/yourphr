@@ -11,11 +11,10 @@ import {GlossaryLookupComponent} from '../../../glossary-lookup/glossary-lookup.
 import { FastenDisplayModel } from 'src/lib/models/fasten/fasten-display-model';
 
 @Component({
-  standalone: true,
-  imports: [NgbCollapseModule, CommonModule, BadgeComponent, TableComponent, GlossaryLookupComponent, RouterModule],
-  selector: 'fhir-procedure',
-  templateUrl: './procedure.component.html',
-  styleUrls: ['./procedure.component.scss']
+    imports: [NgbCollapseModule, CommonModule, BadgeComponent, TableComponent, GlossaryLookupComponent, RouterModule],
+    selector: 'fhir-procedure',
+    templateUrl: './procedure.component.html',
+    styleUrls: ['./procedure.component.scss']
 })
 export class ProcedureComponent implements OnInit, FhirCardEditableComponentInterface {
   @Input() displayModel: ProcedureModel | null

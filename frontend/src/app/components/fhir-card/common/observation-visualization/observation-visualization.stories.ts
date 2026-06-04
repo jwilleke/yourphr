@@ -11,7 +11,7 @@ const meta: Meta<ObservationVisualizationComponent> = {
   decorators: [
   ],
   tags: ['autodocs'],
-  render: (args: ObservationVisualizationComponent) => ({
+  render: (args) => ({
     props: {
       backgroundColor: null,
       ...args,

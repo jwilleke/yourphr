@@ -7,9 +7,10 @@ import {ResourceType} from '../../../lib/models/constants';
 import {FastenDisplayModel} from '../../../lib/models/fasten/fasten-display-model';
 
 @Component({
-  selector: 'app-resource-detail',
-  templateUrl: './resource-detail.component.html',
-  styleUrls: ['./resource-detail.component.scss']
+    selector: 'app-resource-detail',
+    templateUrl: './resource-detail.component.html',
+    styleUrls: ['./resource-detail.component.scss'],
+    standalone: false
 })
 export class ResourceDetailComponent implements OnInit {
   loading: boolean = false

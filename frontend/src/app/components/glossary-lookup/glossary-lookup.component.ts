@@ -7,12 +7,11 @@ import {CommonModule} from "@angular/common";
 import {DirectivesModule} from '../../directives/directives.module';
 
 @Component({
-  standalone: true,
-  imports: [LoadingSpinnerComponent, CommonModule, DirectivesModule],
-  providers: [FastenApiService, AuthService],
-  selector: 'app-glossary-lookup',
-  templateUrl: './glossary-lookup.component.html',
-  styleUrls: ['./glossary-lookup.component.scss'],
+    imports: [LoadingSpinnerComponent, CommonModule, DirectivesModule],
+    providers: [FastenApiService, AuthService],
+    selector: 'app-glossary-lookup',
+    templateUrl: './glossary-lookup.component.html',
+    styleUrls: ['./glossary-lookup.component.scss']
 })
 export class GlossaryLookupComponent implements OnInit {
 

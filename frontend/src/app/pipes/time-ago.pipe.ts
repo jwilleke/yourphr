@@ -5,7 +5,10 @@ import { Pipe, PipeTransform } from '@angular/core';
  * Pure pipe: computes once at render — fine for transient/refreshed views
  * (toasts, the background-jobs list). Falls back to '' for empty input.
  */
-@Pipe({ name: 'timeAgo' })
+@Pipe({
+    name: 'timeAgo',
+    standalone: false
+})
 export class TimeAgoPipe implements PipeTransform {
   transform(value: string | number | Date | null | undefined): string {
     if (value === null || value === undefined || value === '') {

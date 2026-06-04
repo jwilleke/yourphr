@@ -11,7 +11,7 @@ const meta: Meta<ObservationTableComponent> = {
   decorators: [
   ],
   tags: ['autodocs'],
-  render: (args: ObservationTableComponent) => ({
+  render: (args) => ({
     props: {
       backgroundColor: null,
       ...args,

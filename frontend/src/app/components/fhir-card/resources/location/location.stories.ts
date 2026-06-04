@@ -20,7 +20,7 @@ const meta: Meta<LocationComponent> = {
     // }),
   ],
   tags: ['autodocs'],
-  render: (args: LocationComponent) => ({
+  render: (args) => ({
     props: {
       backgroundColor: null,
       ...args,

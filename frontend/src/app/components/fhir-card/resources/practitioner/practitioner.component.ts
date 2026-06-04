@@ -11,11 +11,10 @@ import {TableComponent} from "../../common/table/table.component";
 import { FastenDisplayModel } from 'src/lib/models/fasten/fasten-display-model';
 
 @Component({
-  standalone: true,
-  imports: [NgbCollapseModule, CommonModule, BadgeComponent, TableComponent, RouterModule],
-  selector: 'fhir-practitioner',
-  templateUrl: './practitioner.component.html',
-  styleUrls: ['./practitioner.component.scss']
+    imports: [NgbCollapseModule, CommonModule, BadgeComponent, TableComponent, RouterModule],
+    selector: 'fhir-practitioner',
+    templateUrl: './practitioner.component.html',
+    styleUrls: ['./practitioner.component.scss']
 })
 export class PractitionerComponent implements OnInit, FhirCardEditableComponentInterface {
   @Input() displayModel: PractitionerModel | null

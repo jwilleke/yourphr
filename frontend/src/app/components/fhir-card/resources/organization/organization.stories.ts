@@ -21,7 +21,7 @@ const meta: Meta<OrganizationComponent> = {
     // }),
   ],
   tags: ['autodocs'],
-  render: (args: OrganizationComponent) => ({
+  render: (args) => ({
     props: {
       backgroundColor: null,
       ...args,

@@ -17,7 +17,7 @@ const meta: Meta<PdfComponent> = {
     // }),
   ],
   tags: ['autodocs'],
-  render: (args: PdfComponent) => ({
+  render: (args) => ({
     props: {
       backgroundColor: null,
       ...args,

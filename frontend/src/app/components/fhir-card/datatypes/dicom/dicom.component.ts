@@ -18,12 +18,11 @@ dwv.image.decoderScripts = {
 
 
 @Component({
-  standalone: true,
-  imports: [CommonModule, NgbModalModule, NgbTooltipModule, NgbPaginationModule],
-  providers: [NgbModalModule],
-  selector: 'fhir-dicom',
-  templateUrl: './dicom.component.html',
-  styleUrls: ['./dicom.component.scss']
+    imports: [CommonModule, NgbModalModule, NgbTooltipModule, NgbPaginationModule],
+    providers: [NgbModalModule],
+    selector: 'fhir-dicom',
+    templateUrl: './dicom.component.html',
+    styleUrls: ['./dicom.component.scss']
 })
 export class DicomComponent implements OnInit {
   @Input() displayModel: BinaryModel

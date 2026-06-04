@@ -14,7 +14,7 @@ const meta: Meta<TableComponent> = {
     })
   ],
   tags: ['autodocs'],
-  render: (args: TableComponent) => ({
+  render: (args) => ({
     props: {
       backgroundColor: null,
       ...args,

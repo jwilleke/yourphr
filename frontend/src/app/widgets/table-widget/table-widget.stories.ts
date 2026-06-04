@@ -29,7 +29,7 @@ const meta: Meta<TableWidgetComponent> = {
     })
   ],
   tags: ['autodocs'],
-  render: (args: TableWidgetComponent) => ({
+  render: (args) => ({
     props: {
       backgroundColor: null,
       ...args,

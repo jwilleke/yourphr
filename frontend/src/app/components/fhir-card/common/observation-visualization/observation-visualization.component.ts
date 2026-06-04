@@ -5,11 +5,10 @@ import { ObservationBarChartComponent } from '../observation-bar-chart/observati
 import { ObservationTableComponent } from '../observation-table/observation-table.component';
 
 @Component({
-  standalone: true,
-  selector: 'observation-visualization',
-  imports: [ CommonModule, ObservationBarChartComponent, ObservationTableComponent ],
-  templateUrl: './observation-visualization.component.html',
-  styleUrls: ['./observation-visualization.component.scss']
+    selector: 'observation-visualization',
+    imports: [CommonModule, ObservationBarChartComponent, ObservationTableComponent],
+    templateUrl: './observation-visualization.component.html',
+    styleUrls: ['./observation-visualization.component.scss']
 })
 export class ObservationVisualizationComponent implements OnInit {
   @Input() observations: ObservationModel[]

@@ -11,11 +11,10 @@ import {TableComponent} from '../../common/table/table.component';
 import {BinaryComponent} from '../binary/binary.component';
 
 @Component({
-  standalone: true,
-  imports: [NgbCollapseModule, CommonModule, BadgeComponent, TableComponent, RouterModule, BinaryComponent],
-  selector: 'fhir-media',
-  templateUrl: './media.component.html',
-  styleUrls: ['./media.component.scss']
+    imports: [NgbCollapseModule, CommonModule, BadgeComponent, TableComponent, RouterModule, BinaryComponent],
+    selector: 'fhir-media',
+    templateUrl: './media.component.html',
+    styleUrls: ['./media.component.scss']
 })
 export class MediaComponent implements OnInit, FhirCardComponentInterface{
   @Input() displayModel: MediaModel

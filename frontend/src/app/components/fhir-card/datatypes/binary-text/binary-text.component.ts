@@ -3,11 +3,10 @@ import {BinaryModel} from '../../../../../lib/models/resources/binary-model';
 import {CommonModule} from "@angular/common";
 
 @Component({
-  standalone: true,
-  imports: [CommonModule],
-  selector: 'fhir-binary-text',
-  templateUrl: './binary-text.component.html',
-  styleUrls: ['./binary-text.component.scss']
+    imports: [CommonModule],
+    selector: 'fhir-binary-text',
+    templateUrl: './binary-text.component.html',
+    styleUrls: ['./binary-text.component.scss']
 })
 export class BinaryTextComponent implements OnInit {
   @Input() displayModel: BinaryModel

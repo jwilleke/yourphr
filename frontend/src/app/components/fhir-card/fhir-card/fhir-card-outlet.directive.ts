@@ -1,7 +1,8 @@
 import {Directive, ViewContainerRef} from '@angular/core';
 
 @Directive({
-  selector: '[fhirCardOutlet]'
+    selector: '[fhirCardOutlet]',
+    standalone: false
 })
 export class FhirCardOutletDirective {
 

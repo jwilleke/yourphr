@@ -2,9 +2,10 @@ import {Component, OnChanges, OnInit} from '@angular/core';
 import {GenericColumnDefn, DatatableGenericResourceComponent, ResourceListComponentInterface} from './datatable-generic-resource.component';
 
 @Component({
-  selector: 'fhir-datatable-goal',
-  templateUrl: './datatable-generic-resource.component.html',
-  styleUrls: ['./datatable-generic-resource.component.scss']
+    selector: 'fhir-datatable-goal',
+    templateUrl: './datatable-generic-resource.component.html',
+    styleUrls: ['./datatable-generic-resource.component.scss'],
+    standalone: false
 })
 export class DatatableGoalComponent extends DatatableGenericResourceComponent  {
   columnDefinitions: GenericColumnDefn[] = [

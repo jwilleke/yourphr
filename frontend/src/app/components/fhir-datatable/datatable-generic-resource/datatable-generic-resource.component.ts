@@ -35,9 +35,10 @@ class PageInfo {
 }
 
 @Component({
-  selector: 'fhir-datatable-generic-resource',
-  templateUrl: './datatable-generic-resource.component.html',
-  styleUrls: ['./datatable-generic-resource.component.scss']
+    selector: 'fhir-datatable-generic-resource',
+    templateUrl: './datatable-generic-resource.component.html',
+    styleUrls: ['./datatable-generic-resource.component.scss'],
+    standalone: false
 })
 export class DatatableGenericResourceComponent implements OnInit, ResourceListComponentInterface  {
   @Input() totalElements: number;

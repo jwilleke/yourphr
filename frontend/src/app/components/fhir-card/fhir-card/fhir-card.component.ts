@@ -35,10 +35,11 @@ import {PatientComponent} from '../resources/patient/patient.component';
 
 
 @Component({
-  selector: 'fhir-card',
-  changeDetection: ChangeDetectionStrategy.Default,
-  templateUrl: './fhir-card.component.html',
-  styleUrls: ['./fhir-card.component.scss']
+    selector: 'fhir-card',
+    changeDetection: ChangeDetectionStrategy.Default,
+    templateUrl: './fhir-card.component.html',
+    styleUrls: ['./fhir-card.component.scss'],
+    standalone: false
 })
 export class FhirCardComponent implements OnInit, OnChanges {
 

@@ -16,7 +16,7 @@ const meta: Meta<ObservationComponent> = {
     })
   ],
   tags: ['autodocs'],
-  render: (args: ObservationComponent) => ({
+  render: (args) => ({
     props: {
       backgroundColor: null,
       ...args,

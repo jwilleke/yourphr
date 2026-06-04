@@ -17,7 +17,7 @@ const meta: Meta<MarkdownComponent> = {
     // }),
   ],
   tags: ['autodocs'],
-  render: (args: MarkdownComponent) => ({
+  render: (args) => ({
     props: {
       backgroundColor: null,
       ...args,

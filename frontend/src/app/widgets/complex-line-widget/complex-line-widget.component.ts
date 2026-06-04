@@ -5,11 +5,10 @@ import {CommonModule} from '@angular/common';
 import {NgbPopoverModule} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
-  standalone: true,
-  imports: [BaseChartDirective, CommonModule, NgbPopoverModule],
-  selector: 'complex-line-widget',
-  templateUrl: './complex-line-widget.component.html',
-  styleUrls: ['./complex-line-widget.component.scss']
+    imports: [BaseChartDirective, CommonModule, NgbPopoverModule],
+    selector: 'complex-line-widget',
+    templateUrl: './complex-line-widget.component.html',
+    styleUrls: ['./complex-line-widget.component.scss']
 })
 export class ComplexLineWidgetComponent implements OnInit {
 

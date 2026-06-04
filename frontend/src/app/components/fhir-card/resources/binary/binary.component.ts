@@ -20,24 +20,23 @@ import {AuthService} from "../../../../services/auth.service";
 import {RtfComponent} from '../../datatypes/rtf/rtf.component';
 
 @Component({
-  standalone: true,
-  imports: [
-    NgbCollapseModule,
-    CommonModule,
-    PdfComponent,
-    ImgComponent,
-    HtmlComponent,
-    MarkdownComponent,
-    RtfComponent,
-    BinaryTextComponent,
-    DicomComponent,
-    HighlightModule,
-    RouterModule
-  ],
-  providers: [FastenApiService, AuthService],
-  selector: 'fhir-binary',
-  templateUrl: './binary.component.html',
-  styleUrls: ['./binary.component.scss']
+    imports: [
+        NgbCollapseModule,
+        CommonModule,
+        PdfComponent,
+        ImgComponent,
+        HtmlComponent,
+        MarkdownComponent,
+        RtfComponent,
+        BinaryTextComponent,
+        DicomComponent,
+        HighlightModule,
+        RouterModule
+    ],
+    providers: [FastenApiService, AuthService],
+    selector: 'fhir-binary',
+    templateUrl: './binary.component.html',
+    styleUrls: ['./binary.component.scss']
 })
 export class BinaryComponent implements OnInit, FhirCardComponentInterface {
   @Input() displayModel: BinaryModel

@@ -28,7 +28,7 @@ const meta: Meta<MedicalRecordWizardAddLabResultsComponent> = {
     }),
   ],
   tags: ['autodocs'],
-  render: (args: MedicalRecordWizardAddLabResultsComponent) => ({
+  render: (args) => ({
     props: {
       backgroundColor: null,
       ...args,

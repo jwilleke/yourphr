@@ -49,7 +49,7 @@ const meta: Meta<SimpleLineChartWidgetComponent> = {
     })
   ],
   tags: ['autodocs'],
-  render: (args: SimpleLineChartWidgetComponent) => ({
+  render: (args) => ({
     props: {
       backgroundColor: null,
       ...args,

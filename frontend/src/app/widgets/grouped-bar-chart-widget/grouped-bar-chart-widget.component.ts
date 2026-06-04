@@ -8,11 +8,10 @@ import {EmptyWidgetComponent} from '../empty-widget/empty-widget.component';
 import {PipesModule} from '../../pipes/pipes.module';
 
 @Component({
-  standalone: true,
-  imports: [BaseChartDirective, CommonModule, LoadingWidgetComponent, EmptyWidgetComponent, PipesModule],
-  selector: 'grouped-bar-chart-widget',
-  templateUrl: './grouped-bar-chart-widget.component.html',
-  styleUrls: ['./grouped-bar-chart-widget.component.scss']
+    imports: [BaseChartDirective, CommonModule, LoadingWidgetComponent, EmptyWidgetComponent, PipesModule],
+    selector: 'grouped-bar-chart-widget',
+    templateUrl: './grouped-bar-chart-widget.component.html',
+    styleUrls: ['./grouped-bar-chart-widget.component.scss']
 })
 export class GroupedBarChartWidgetComponent extends DashboardWidgetComponent implements OnInit {
 

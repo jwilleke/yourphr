@@ -6,9 +6,10 @@ import {ResourceFhir} from '../../models/fasten/resource_fhir';
 import {getPath} from '../../components/fhir-datatable/datatable-generic-resource/utils';
 
 @Component({
-  selector: 'app-source-detail',
-  templateUrl: './source-detail.component.html',
-  styleUrls: ['./source-detail.component.scss']
+    selector: 'app-source-detail',
+    templateUrl: './source-detail.component.html',
+    styleUrls: ['./source-detail.component.scss'],
+    standalone: false
 })
 export class SourceDetailComponent implements OnInit {
   loading: boolean = false

@@ -14,9 +14,10 @@ class UserWizard extends User {
 
 
 @Component({
-  selector: 'app-auth-signup-wizard',
-  templateUrl: './auth-signup-wizard.component.html',
-  styleUrls: ['./auth-signup-wizard.component.scss']
+    selector: 'app-auth-signup-wizard',
+    templateUrl: './auth-signup-wizard.component.html',
+    styleUrls: ['./auth-signup-wizard.component.scss'],
+    standalone: false
 })
 export class AuthSignupWizardComponent implements OnInit {
 

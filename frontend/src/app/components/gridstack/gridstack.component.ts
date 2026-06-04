@@ -45,10 +45,9 @@ export type SelectorToType = {[key: string]: Type<Object>};
  * HTML Component Wrapper for gridstack, in combination with GridstackItemComponent for the items
  */
 @Component({
-  standalone: true,
-  imports: [CommonModule, GridstackItemComponent, WidgetsModule],
-  selector: 'gridstack',
-  template: `
+    imports: [CommonModule, GridstackItemComponent, WidgetsModule],
+    selector: 'gridstack',
+    template: `
     <!-- content to show when when grid is empty, like instructions on how to add widgets -->
     <ng-content select="[empty-content]" *ngIf="isEmpty"></ng-content>
     <!-- where dynamic items go -->
@@ -56,10 +55,9 @@ export type SelectorToType = {[key: string]: Type<Object>};
     <!-- where template items go -->
     <ng-content></ng-content>
   `,
-  styles: [`
+    styles: [`
     :host { display: block; }
-  `],
-  // changeDetection: ChangeDetectionStrategy.OnPush, // IFF you want to optimize and control when ChangeDetection needs to happen...
+  `]
 })
 export class GridstackComponent implements OnInit, AfterContentInit, OnDestroy {
 

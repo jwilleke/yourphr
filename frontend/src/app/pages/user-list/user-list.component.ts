@@ -4,9 +4,10 @@ import { User } from '../../models/fasten/user';
 import { FastenApiService } from '../../services/fasten-api.service';
 
 @Component({
-  selector: 'app-user-list',
-  templateUrl: './user-list.component.html',
-  styleUrls: ['./user-list.component.scss']
+    selector: 'app-user-list',
+    templateUrl: './user-list.component.html',
+    styleUrls: ['./user-list.component.scss'],
+    standalone: false
 })
 export class UserListComponent implements OnInit {
   users: User[] = [];

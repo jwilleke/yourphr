@@ -3,11 +3,10 @@ import { ObservationModel } from '../../../../../lib/models/resources/observatio
 import { CommonModule, formatDate } from '@angular/common';
 
 @Component({
-  standalone: true,
-  selector: 'observation-table',
-  imports: [ CommonModule ],
-  templateUrl: './observation-table.component.html',
-  styleUrls: ['./observation-table.component.scss']
+    selector: 'observation-table',
+    imports: [CommonModule],
+    templateUrl: './observation-table.component.html',
+    styleUrls: ['./observation-table.component.scss']
 })
 export class ObservationTableComponent implements OnInit {
   @Input() observations: ObservationModel[]

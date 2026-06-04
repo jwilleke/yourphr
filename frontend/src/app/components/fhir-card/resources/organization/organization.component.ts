@@ -11,11 +11,10 @@ import { FhirCardEditableComponentInterface } from '../../fhir-card/fhir-card-co
 import { FastenDisplayModel } from 'src/lib/models/fasten/fasten-display-model';
 
 @Component({
-  standalone: true,
-  imports: [NgbCollapseModule, CommonModule, BadgeComponent, TableComponent, RouterModule],
-  selector: 'fhir-organization',
-  templateUrl: './organization.component.html',
-  styleUrls: ['./organization.component.scss']
+    imports: [NgbCollapseModule, CommonModule, BadgeComponent, TableComponent, RouterModule],
+    selector: 'fhir-organization',
+    templateUrl: './organization.component.html',
+    styleUrls: ['./organization.component.scss']
 })
 export class OrganizationComponent implements OnInit, FhirCardEditableComponentInterface {
   @Input() displayModel: OrganizationModel

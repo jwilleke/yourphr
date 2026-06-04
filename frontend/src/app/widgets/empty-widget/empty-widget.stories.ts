@@ -30,7 +30,7 @@ const meta: Meta<EmptyWidgetComponent> = {
     })
   ],
   tags: ['autodocs'],
-  render: (args: EmptyWidgetComponent) => ({
+  render: (args) => ({
     props: {
       backgroundColor: null,
       ...args,

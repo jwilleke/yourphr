@@ -8,9 +8,10 @@ import {AuthService} from '../../services/auth.service';
 import {Location} from '@angular/common';
 
 @Component({
-  selector: 'app-auth-signin',
-  templateUrl: './auth-signin.component.html',
-  styleUrls: ['./auth-signin.component.scss']
+    selector: 'app-auth-signin',
+    templateUrl: './auth-signin.component.html',
+    styleUrls: ['./auth-signin.component.scss'],
+    standalone: false
 })
 export class AuthSigninComponent implements OnInit {
   loading: boolean = false

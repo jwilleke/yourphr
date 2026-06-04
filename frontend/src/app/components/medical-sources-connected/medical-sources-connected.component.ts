@@ -18,9 +18,10 @@ import {BackgroundJobSyncData} from '../../models/fasten/background-job';
 import {extractErrorFromResponse, replaceErrors} from '../../../lib/utils/error_extract';
 
 @Component({
-  selector: 'app-medical-sources-connected',
-  templateUrl: './medical-sources-connected.component.html',
-  styleUrls: ['./medical-sources-connected.component.scss']
+    selector: 'app-medical-sources-connected',
+    templateUrl: './medical-sources-connected.component.html',
+    styleUrls: ['./medical-sources-connected.component.scss'],
+    standalone: false
 })
 export class MedicalSourcesConnectedComponent implements OnInit {
   loading: boolean = false

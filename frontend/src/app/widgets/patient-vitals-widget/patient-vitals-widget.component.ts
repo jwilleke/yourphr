@@ -1,5 +1,4 @@
 import { Component, OnInit } from '@angular/core';
-import {BaseChartDirective} from 'ng2-charts';
 import {DashboardWidgetComponent} from '../dashboard-widget/dashboard-widget.component';
 import {DashboardWidgetConfig} from '../../models/widget/dashboard-widget-config';
 import * as _ from 'lodash';
@@ -9,11 +8,10 @@ import fhirpath from 'fhirpath';
 import {LoadingWidgetComponent} from '../loading-widget/loading-widget.component';
 import {EmptyWidgetComponent} from '../empty-widget/empty-widget.component';
 @Component({
-  standalone: true,
-  imports: [BaseChartDirective, CommonModule, LoadingWidgetComponent, EmptyWidgetComponent],
-  selector: 'patient-vitals-widget',
-  templateUrl: './patient-vitals-widget.component.html',
-  styleUrls: ['./patient-vitals-widget.component.scss']
+    imports: [CommonModule, LoadingWidgetComponent, EmptyWidgetComponent],
+    selector: 'patient-vitals-widget',
+    templateUrl: './patient-vitals-widget.component.html',
+    styleUrls: ['./patient-vitals-widget.component.scss']
 })
 export class PatientVitalsWidgetComponent extends DashboardWidgetComponent implements OnInit {
 

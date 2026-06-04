@@ -18,20 +18,19 @@ import {ResourceFhir} from '../../models/fasten/resource_fhir';
 import {ResourceType} from '../../../lib/models/constants';
 
 @Component({
-  standalone: true,
-  imports: [
-    CommonModule,
-    ReactiveFormsModule,
-    FormsModule,
-    NlmTypeaheadComponent,
-    HighlightModule,
-    NgbTooltipModule,
-    NgbNavModule,
-    FhirDatatableModule
-  ],
-  selector: 'app-medical-record-wizard-add-organization',
-  templateUrl: './medical-record-wizard-add-organization.component.html',
-  styleUrls: ['./medical-record-wizard-add-organization.component.scss']
+    imports: [
+        CommonModule,
+        ReactiveFormsModule,
+        FormsModule,
+        NlmTypeaheadComponent,
+        HighlightModule,
+        NgbTooltipModule,
+        NgbNavModule,
+        FhirDatatableModule
+    ],
+    selector: 'app-medical-record-wizard-add-organization',
+    templateUrl: './medical-record-wizard-add-organization.component.html',
+    styleUrls: ['./medical-record-wizard-add-organization.component.scss']
 })
 export class MedicalRecordWizardAddOrganizationComponent implements OnInit {
   @Input() debugMode: boolean = false;

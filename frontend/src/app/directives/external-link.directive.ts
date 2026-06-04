@@ -12,7 +12,8 @@ import {OpenExternalLink} from '../../lib/utils/external_link';
 // https://stackoverflow.com/questions/58862558/angular-directive-cannot-attach-event-listener-to-element
 // https://github.com/wailsapp/wails/issues/2691
 @Directive({
-  selector: '[externalLink]'
+    selector: '[externalLink]',
+    standalone: false
 })
 export class ExternalLinkDirective {
   // @HostBinding('attr.rel') relAttr = '';

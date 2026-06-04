@@ -29,7 +29,7 @@ const meta: Meta<DualGaugesWidgetComponent> = {
     })
   ],
   tags: ['autodocs'],
-  render: (args: DualGaugesWidgetComponent) => ({
+  render: (args) => ({
     props: {
       backgroundColor: null,
       ...args,

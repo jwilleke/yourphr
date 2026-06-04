@@ -9,21 +9,20 @@ import {FastenApiService} from '../../services/fasten-api.service';
 import {EncounterModel} from '../../../lib/models/resources/encounter-model';
 
 @Component({
-  standalone: true,
-  imports: [
-    CommonModule,
-    ReactiveFormsModule,
-    FormsModule,
-    NlmTypeaheadComponent,
-    HighlightModule,
-    NgbTooltipModule,
-    NgbNavModule,
-    FhirDatatableModule,
-    NgbDatepickerModule
-  ],
-  selector: 'app-medical-record-wizard-edit-encounter',
-  templateUrl: './medical-record-wizard-edit-encounter.component.html',
-  styleUrls: ['./medical-record-wizard-edit-encounter.component.scss']
+    imports: [
+        CommonModule,
+        ReactiveFormsModule,
+        FormsModule,
+        NlmTypeaheadComponent,
+        HighlightModule,
+        NgbTooltipModule,
+        NgbNavModule,
+        FhirDatatableModule,
+        NgbDatepickerModule
+    ],
+    selector: 'app-medical-record-wizard-edit-encounter',
+    templateUrl: './medical-record-wizard-edit-encounter.component.html',
+    styleUrls: ['./medical-record-wizard-edit-encounter.component.scss']
 })
 export class MedicalRecordWizardEditEncounterComponent implements OnInit {
   @Input() debugMode: boolean = false;

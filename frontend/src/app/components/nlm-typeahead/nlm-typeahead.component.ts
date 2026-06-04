@@ -34,18 +34,17 @@ export enum NlmSearchType {
 }
 
 @Component({
-  standalone: true,
-  imports: [
-    CommonModule,
-    ReactiveFormsModule,
-    FormsModule,
-    NgbTypeaheadModule,
-    HighlightModule,
-  ],
-  selector: 'app-nlm-typeahead',
-  templateUrl: './nlm-typeahead.component.html',
-  styleUrls: ['./nlm-typeahead.component.scss'],
-  providers: [
+    imports: [
+        CommonModule,
+        ReactiveFormsModule,
+        FormsModule,
+        NgbTypeaheadModule,
+        HighlightModule,
+    ],
+    selector: 'app-nlm-typeahead',
+    templateUrl: './nlm-typeahead.component.html',
+    styleUrls: ['./nlm-typeahead.component.scss'],
+    providers: [
     // {
     //   provide: NG_VALUE_ACCESSOR,
     //   multi:true,
@@ -56,7 +55,7 @@ export enum NlmSearchType {
     //   multi:true,
     //   useExisting: NlmTypeaheadComponent
     // }
-  ]
+    ]
 })
 export class NlmTypeaheadComponent implements ControlValueAccessor {
   @Input() searchType: NlmSearchType = NlmSearchType.Condition;

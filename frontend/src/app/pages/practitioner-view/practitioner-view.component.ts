@@ -16,11 +16,10 @@ interface ContactDataItem {
 }
 
 @Component({
-  selector: 'app-practitioner-view',
-  standalone: true,
-  imports: [CommonModule],
-  templateUrl: './practitioner-view.component.html',
-  styleUrls: ['./practitioner-view.component.scss'] 
+    selector: 'app-practitioner-view',
+    imports: [CommonModule],
+    templateUrl: './practitioner-view.component.html',
+    styleUrls: ['./practitioner-view.component.scss']
 })
 export class PractitionerViewComponent implements OnInit {
   practitioner: Practitioner | null = null;

@@ -5,9 +5,10 @@ import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import QRCode from 'qrcode';
 
 @Component({
-  selector: 'app-settings',
-  templateUrl: './settings.component.html',
-  styleUrls: ['./settings.component.scss'],
+    selector: 'app-settings',
+    templateUrl: './settings.component.html',
+    styleUrls: ['./settings.component.scss'],
+    standalone: false
 })
 export class SettingsComponent implements OnInit {
   tokens: any[] = [];

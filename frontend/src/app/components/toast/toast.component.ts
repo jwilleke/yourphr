@@ -6,9 +6,10 @@ import {Subscription} from 'rxjs';
 import {NavigationEnd, Router} from '@angular/router';
 
 @Component({
-  selector: 'app-toast',
-  templateUrl: './toast.component.html',
-  styleUrls: ['./toast.component.scss']
+    selector: 'app-toast',
+    templateUrl: './toast.component.html',
+    styleUrls: ['./toast.component.scss'],
+    standalone: false
 })
 export class ToastComponent implements OnInit {
 

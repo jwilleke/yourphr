@@ -1,7 +1,8 @@
 import {Directive, ViewContainerRef} from '@angular/core';
 
 @Directive({
-  selector: '[fhirDatatableOutlet]'
+    selector: '[fhirDatatableOutlet]',
+    standalone: false
 })
 export class FhirDatatableOutletDirective {
 

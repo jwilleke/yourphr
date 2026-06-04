@@ -11,9 +11,10 @@ import {SourceListItem} from '../medical-sources/medical-sources.component';
 
 
 @Component({
-  selector: 'app-explore',
-  templateUrl: './explore.component.html',
-  styleUrls: ['./explore.component.scss']
+    selector: 'app-explore',
+    templateUrl: './explore.component.html',
+    styleUrls: ['./explore.component.scss'],
+    standalone: false
 })
 export class ExploreComponent implements OnInit {
   loading: boolean = false

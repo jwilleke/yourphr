@@ -11,21 +11,20 @@ import { NlmSearchResults } from 'src/app/services/nlm-clinical-table-search.ser
 import { MedicationRequestModel } from 'src/lib/models/resources/medication-request-model';
 
 @Component({
-  standalone: true,
-  imports: [
-    CommonModule,
-    ReactiveFormsModule,
-    FormsModule,
-    NlmTypeaheadComponent,
-    HighlightModule,
-    NgbTooltipModule,
-    NgbNavModule,
-    FhirDatatableModule,
-    NgbDatepickerModule
-  ],
-  selector: 'app-medical-record-wizard-edit-medication',
-  templateUrl: './medical-record-wizard-edit-medication.component.html',
-  styleUrls: ['./medical-record-wizard-edit-medication.component.scss']
+    imports: [
+        CommonModule,
+        ReactiveFormsModule,
+        FormsModule,
+        NlmTypeaheadComponent,
+        HighlightModule,
+        NgbTooltipModule,
+        NgbNavModule,
+        FhirDatatableModule,
+        NgbDatepickerModule
+    ],
+    selector: 'app-medical-record-wizard-edit-medication',
+    templateUrl: './medical-record-wizard-edit-medication.component.html',
+    styleUrls: ['./medical-record-wizard-edit-medication.component.scss']
 })
 export class MedicalRecordWizardEditMedicationComponent implements OnInit {
   @Input() debugMode: boolean = false;

@@ -3,9 +3,10 @@ import {SourceListItem} from '../../pages/medical-sources/medical-sources.compon
 import moment from 'moment/moment';
 
 @Component({
-  selector: 'app-medical-sources-card',
-  templateUrl: './medical-sources-card.component.html',
-  styleUrls: ['./medical-sources-card.component.scss']
+    selector: 'app-medical-sources-card',
+    templateUrl: './medical-sources-card.component.html',
+    styleUrls: ['./medical-sources-card.component.scss'],
+    standalone: false
 })
 export class MedicalSourcesCardComponent implements OnInit {
 

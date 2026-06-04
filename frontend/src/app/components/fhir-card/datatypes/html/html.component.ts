@@ -4,11 +4,10 @@ import {DomSanitizer, SafeHtml} from '@angular/platform-browser';
 import {CommonModule} from "@angular/common";
 
 @Component({
-  standalone: true,
-  imports: [CommonModule],
-  selector: 'fhir-html',
-  templateUrl: './html.component.html',
-  styleUrls: ['./html.component.scss']
+    imports: [CommonModule],
+    selector: 'fhir-html',
+    templateUrl: './html.component.html',
+    styleUrls: ['./html.component.scss']
 })
 export class HtmlComponent implements OnInit {
   @Input() displayModel: BinaryModel

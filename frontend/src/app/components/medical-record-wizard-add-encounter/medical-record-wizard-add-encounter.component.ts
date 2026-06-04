@@ -15,21 +15,20 @@ import {EncounterModel} from '../../../lib/models/resources/encounter-model';
 import {uuidV4} from '../../../lib/utils/uuid';
 
 @Component({
-  standalone: true,
-  imports: [
-    CommonModule,
-    ReactiveFormsModule,
-    FormsModule,
-    NlmTypeaheadComponent,
-    HighlightModule,
-    NgbTooltipModule,
-    NgbNavModule,
-    FhirDatatableModule,
-    NgbDatepickerModule
-  ],
-  selector: 'app-medical-record-wizard-add-encounter',
-  templateUrl: './medical-record-wizard-add-encounter.component.html',
-  styleUrls: ['./medical-record-wizard-add-encounter.component.scss']
+    imports: [
+        CommonModule,
+        ReactiveFormsModule,
+        FormsModule,
+        NlmTypeaheadComponent,
+        HighlightModule,
+        NgbTooltipModule,
+        NgbNavModule,
+        FhirDatatableModule,
+        NgbDatepickerModule
+    ],
+    selector: 'app-medical-record-wizard-add-encounter',
+    templateUrl: './medical-record-wizard-add-encounter.component.html',
+    styleUrls: ['./medical-record-wizard-add-encounter.component.scss']
 })
 export class MedicalRecordWizardAddEncounterComponent implements OnInit {
 

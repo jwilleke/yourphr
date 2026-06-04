@@ -13,17 +13,16 @@ import { PractitionerModel } from '../../../lib/models/resources/practitioner-mo
 import { parseFullName } from 'parse-full-name';
 
 @Component({
-  selector: 'app-practitioner-edit-page',
-  standalone: true,
-  imports: [
-    CommonModule,
-    ReactiveFormsModule,
-    NgbTooltipModule,
-    HighlightModule,
-    NlmTypeaheadComponent
-  ],
-  templateUrl: './practitioner-edit.component.html',
-  styleUrls: ['./practitioner-edit.component.scss']
+    selector: 'app-practitioner-edit-page',
+    imports: [
+        CommonModule,
+        ReactiveFormsModule,
+        NgbTooltipModule,
+        HighlightModule,
+        NlmTypeaheadComponent
+    ],
+    templateUrl: './practitioner-edit.component.html',
+    styleUrls: ['./practitioner-edit.component.scss']
 })
 export class PractitionerEditPageComponent implements OnInit {
   practitioner: Practitioner | null = null;

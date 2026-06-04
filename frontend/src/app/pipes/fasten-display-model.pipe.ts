@@ -6,7 +6,8 @@ import {fhirModelFactory, wrapFhirModel} from '../../lib/models/factory';
 import {ResourceType} from '../../lib/models/constants';
 
 @Pipe({
-  name: 'fastenDisplayModel'
+    name: 'fastenDisplayModel',
+    standalone: false
 })
 export class FastenDisplayModelPipe implements PipeTransform {
 

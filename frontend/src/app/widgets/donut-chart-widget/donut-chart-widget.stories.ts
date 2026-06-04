@@ -51,7 +51,7 @@ const meta: Meta<DonutChartWidgetComponent> = {
     })
   ],
   tags: ['autodocs'],
-  render: (args: DonutChartWidgetComponent) => ({
+  render: (args) => ({
     props: {
       backgroundColor: null,
       ...args,

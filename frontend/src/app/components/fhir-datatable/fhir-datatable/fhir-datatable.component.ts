@@ -36,10 +36,11 @@ import {Router} from '@angular/router';
 import {FastenDisplayModel} from '../../../../lib/models/fasten/fasten-display-model';
 
 @Component({
-  selector: 'fhir-datatable',
-  changeDetection: ChangeDetectionStrategy.OnPush,
-  templateUrl: './fhir-datatable.component.html',
-  styleUrls: ['./fhir-datatable.component.scss']
+    selector: 'fhir-datatable',
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    templateUrl: './fhir-datatable.component.html',
+    styleUrls: ['./fhir-datatable.component.scss'],
+    standalone: false
 })
 export class FhirDatatableComponent implements OnInit, OnChanges {
 

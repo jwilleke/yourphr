@@ -22,7 +22,7 @@ const meta: Meta<MedicationRequestComponent> = {
     // }),
   ],
   tags: ['autodocs'],
-  render: (args: MedicationRequestComponent) => ({
+  render: (args) => ({
     props: {
       backgroundColor: null,
       ...args,

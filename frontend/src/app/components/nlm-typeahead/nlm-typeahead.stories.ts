@@ -29,7 +29,7 @@ const meta: Meta<NlmTypeaheadComponent> = {
     }),
   ],
   tags: ['autodocs'],
-  render: (args: NlmTypeaheadComponent) => ({
+  render: (args) => ({
     props: {
       backgroundColor: null,
       ...args,

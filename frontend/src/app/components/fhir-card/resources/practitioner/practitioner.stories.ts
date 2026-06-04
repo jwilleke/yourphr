@@ -21,7 +21,7 @@ const meta: Meta<PractitionerComponent> = {
     // }),
   ],
   tags: ['autodocs'],
-  render: (args: PractitionerComponent) => ({
+  render: (args) => ({
     props: {
       backgroundColor: null,
       ...args,

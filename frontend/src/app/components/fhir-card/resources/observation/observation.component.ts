@@ -9,12 +9,11 @@ import {ObservationModel} from '../../../../../lib/models/resources/observation-
 import { ObservationVisualizationComponent } from '../../common/observation-visualization/observation-visualization.component';
 
 @Component({
-  standalone: true,
-  imports: [CommonModule, BadgeComponent, TableComponent, RouterModule, NgbCollapseModule, ObservationVisualizationComponent],
-  providers: [],
-  selector: 'fhir-observation',
-  templateUrl: './observation.component.html',
-  styleUrls: ['./observation.component.scss']
+    imports: [CommonModule, BadgeComponent, TableComponent, RouterModule, NgbCollapseModule, ObservationVisualizationComponent],
+    providers: [],
+    selector: 'fhir-observation',
+    templateUrl: './observation.component.html',
+    styleUrls: ['./observation.component.scss']
 })
 export class ObservationComponent implements OnInit {
   @Input() displayModel: ObservationModel

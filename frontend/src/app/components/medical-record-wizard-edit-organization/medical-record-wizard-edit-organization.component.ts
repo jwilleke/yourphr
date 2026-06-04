@@ -10,21 +10,20 @@ import { OrganizationModel } from 'src/lib/public-api';
 import { AddressModel } from 'src/lib/models/datatypes/address-model';
 
 @Component({
-  standalone: true,
-  imports: [
-    CommonModule,
-    ReactiveFormsModule,
-    FormsModule,
-    NlmTypeaheadComponent,
-    HighlightModule,
-    NgbTooltipModule,
-    NgbNavModule,
-    FhirDatatableModule,
-    NgbDatepickerModule
-  ],
-  selector: 'app-medical-record-wizard-edit-organization',
-  templateUrl: './medical-record-wizard-edit-organization.component.html',
-  styleUrls: ['./medical-record-wizard-edit-organization.component.scss']
+    imports: [
+        CommonModule,
+        ReactiveFormsModule,
+        FormsModule,
+        NlmTypeaheadComponent,
+        HighlightModule,
+        NgbTooltipModule,
+        NgbNavModule,
+        FhirDatatableModule,
+        NgbDatepickerModule
+    ],
+    selector: 'app-medical-record-wizard-edit-organization',
+    templateUrl: './medical-record-wizard-edit-organization.component.html',
+    styleUrls: ['./medical-record-wizard-edit-organization.component.scss']
 })
 export class MedicalRecordWizardEditOrganizationComponent implements OnInit {
   @Input() debugMode: boolean = false;

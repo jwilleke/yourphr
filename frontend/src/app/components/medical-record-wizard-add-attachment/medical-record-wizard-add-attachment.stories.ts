@@ -28,7 +28,7 @@ const meta: Meta<MedicalRecordWizardAddAttachmentComponent> = {
     }),
   ],
   tags: ['autodocs'],
-  render: (args: MedicalRecordWizardAddAttachmentComponent) => ({
+  render: (args) => ({
     props: {
       backgroundColor: null,
       ...args,

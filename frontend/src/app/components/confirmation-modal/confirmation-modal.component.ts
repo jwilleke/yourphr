@@ -3,11 +3,10 @@ import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 import { CommonModule } from '@angular/common';
 
 @Component({
-  selector: 'confirmation-modal',
-  standalone: true,
-  imports: [CommonModule],
-  templateUrl: './confirmation-modal.component.html',
-  styleUrls: ['./confirmation-modal.component.scss']
+    selector: 'confirmation-modal',
+    imports: [CommonModule],
+    templateUrl: './confirmation-modal.component.html',
+    styleUrls: ['./confirmation-modal.component.scss']
 })
 export class ConfirmationModalComponent {
   @Input() message: string = 'Are you sure?';

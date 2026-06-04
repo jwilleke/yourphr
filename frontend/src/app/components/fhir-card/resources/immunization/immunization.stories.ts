@@ -21,7 +21,7 @@ const meta: Meta<ImmunizationComponent> = {
     // }),
   ],
   tags: ['autodocs'],
-  render: (args: ImmunizationComponent) => ({
+  render: (args) => ({
     props: {
       backgroundColor: null,
       ...args,

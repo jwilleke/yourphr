@@ -20,9 +20,10 @@ import {LocationModel} from '../../../lib/models/resources/location-model';
  * TODO: this logic should be moved to the timeline panel before removal (Timeline doesnt have a visualization for EOBs)
  */
 @Component({
-  selector: 'app-report-medical-history-explanation-of-benefit',
-  templateUrl: './report-medical-history-explanation-of-benefit.component.html',
-  styleUrls: ['./report-medical-history-explanation-of-benefit.component.scss']
+    selector: 'app-report-medical-history-explanation-of-benefit',
+    templateUrl: './report-medical-history-explanation-of-benefit.component.html',
+    styleUrls: ['./report-medical-history-explanation-of-benefit.component.scss'],
+    standalone: false
 })
 export class ReportMedicalHistoryExplanationOfBenefitComponent implements OnInit {
 

@@ -9,11 +9,10 @@ import {BadgeComponent} from "../../common/badge/badge.component";
 import {TableComponent} from "../../common/table/table.component";
 
 @Component({
-  standalone: true,
-  imports: [NgbCollapseModule, CommonModule, BadgeComponent, TableComponent, RouterModule],
-  selector: 'fhir-allergy-intolerance',
-  templateUrl: './allergy-intolerance.component.html',
-  styleUrls: ['./allergy-intolerance.component.scss']
+    imports: [NgbCollapseModule, CommonModule, BadgeComponent, TableComponent, RouterModule],
+    selector: 'fhir-allergy-intolerance',
+    templateUrl: './allergy-intolerance.component.html',
+    styleUrls: ['./allergy-intolerance.component.scss']
 })
 export class AllergyIntoleranceComponent implements OnInit, FhirCardComponentInterface {
   @Input() displayModel: AllergyIntoleranceModel

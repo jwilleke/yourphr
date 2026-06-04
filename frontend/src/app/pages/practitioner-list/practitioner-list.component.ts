@@ -16,11 +16,10 @@ export interface Favorite {
 }
 
 @Component({
-  selector: 'app-practitioner-list',
-  templateUrl: './practitioner-list.component.html',
-  styleUrls: ['./practitioner-list.component.scss'],
-  standalone: true,
-  imports: [CommonModule]
+    selector: 'app-practitioner-list',
+    templateUrl: './practitioner-list.component.html',
+    styleUrls: ['./practitioner-list.component.scss'],
+    imports: [CommonModule]
 })
 export class PractitionerListComponent implements OnInit, OnDestroy {
   practitioners: Practitioner[] = [];

@@ -8,11 +8,10 @@ const defaultChartHeight = 65;
 const defaultChartEntryHeight = 30;
 
 @Component({
-  standalone: true,
-  selector: 'observation-bar-chart',
-  imports: [ BaseChartDirective ],
-  templateUrl: './observation-bar-chart.component.html',
-  styleUrls: ['./observation-bar-chart.component.scss']
+    selector: 'observation-bar-chart',
+    imports: [BaseChartDirective],
+    templateUrl: './observation-bar-chart.component.html',
+    styleUrls: ['./observation-bar-chart.component.scss']
 })
 export class ObservationBarChartComponent implements OnInit {
   @Input() observations: ObservationModel[]

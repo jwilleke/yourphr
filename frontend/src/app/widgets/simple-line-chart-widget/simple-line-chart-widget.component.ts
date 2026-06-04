@@ -10,11 +10,10 @@ import {EmptyWidgetComponent} from '../empty-widget/empty-widget.component';
 import {PipesModule} from '../../pipes/pipes.module';
 
 @Component({
-  standalone: true,
-  imports: [BaseChartDirective, CommonModule, LoadingWidgetComponent, EmptyWidgetComponent, PipesModule],
-  selector: 'simple-line-chart-widget',
-  templateUrl: './simple-line-chart-widget.component.html',
-  styleUrls: ['./simple-line-chart-widget.component.scss']
+    imports: [BaseChartDirective, CommonModule, LoadingWidgetComponent, EmptyWidgetComponent, PipesModule],
+    selector: 'simple-line-chart-widget',
+    templateUrl: './simple-line-chart-widget.component.html',
+    styleUrls: ['./simple-line-chart-widget.component.scss']
 })
 export class SimpleLineChartWidgetComponent extends DashboardWidgetComponent implements OnInit {
 

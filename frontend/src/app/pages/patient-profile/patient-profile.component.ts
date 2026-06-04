@@ -9,9 +9,10 @@ import {AllergyIntoleranceModel} from '../../../lib/models/resources/allergy-int
 import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
-  selector: 'app-patient-profile',
-  templateUrl: './patient-profile.component.html',
-  styleUrls: ['./patient-profile.component.scss']
+    selector: 'app-patient-profile',
+    templateUrl: './patient-profile.component.html',
+    styleUrls: ['./patient-profile.component.scss'],
+    standalone: false
 })
 export class PatientProfileComponent implements OnInit {
   loading: {[name: string]: boolean} = {page: false, delete: false}

@@ -6,18 +6,17 @@ import {HighlightModule} from 'ngx-highlightjs';
 import {NgbActiveModal, NgbTooltipModule} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
-  standalone: true,
-  imports: [
-    CommonModule,
-    ReactiveFormsModule,
-    FormsModule,
-    NlmTypeaheadComponent,
-    HighlightModule,
-    NgbTooltipModule
-  ],
-  selector: 'app-medical-record-wizard-add-attachment',
-  templateUrl: './medical-record-wizard-add-attachment.component.html',
-  styleUrls: ['./medical-record-wizard-add-attachment.component.scss']
+    imports: [
+        CommonModule,
+        ReactiveFormsModule,
+        FormsModule,
+        NlmTypeaheadComponent,
+        HighlightModule,
+        NgbTooltipModule
+    ],
+    selector: 'app-medical-record-wizard-add-attachment',
+    templateUrl: './medical-record-wizard-add-attachment.component.html',
+    styleUrls: ['./medical-record-wizard-add-attachment.component.scss']
 })
 export class MedicalRecordWizardAddAttachmentComponent implements OnInit {
   @Input() debugMode: boolean = false;

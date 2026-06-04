@@ -21,7 +21,7 @@ const meta: Meta<AllergyIntoleranceComponent> = {
     // }),
   ],
   tags: ['autodocs'],
-  render: (args: AllergyIntoleranceComponent) => ({
+  render: (args) => ({
     props: {
       backgroundColor: null,
       ...args,

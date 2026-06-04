@@ -10,11 +10,10 @@ import {TableComponent} from "../../common/table/table.component";
 import {GlossaryLookupComponent} from '../../../glossary-lookup/glossary-lookup.component';
 
 @Component({
-  standalone: true,
-  imports: [NgbCollapseModule, CommonModule, BadgeComponent, TableComponent, GlossaryLookupComponent, RouterModule],
-  selector: 'fhir-medication-request',
-  templateUrl: './medication-request.component.html',
-  styleUrls: ['./medication-request.component.scss']
+    imports: [NgbCollapseModule, CommonModule, BadgeComponent, TableComponent, GlossaryLookupComponent, RouterModule],
+    selector: 'fhir-medication-request',
+    templateUrl: './medication-request.component.html',
+    styleUrls: ['./medication-request.component.scss']
 })
 export class MedicationRequestComponent implements OnInit, FhirCardComponentInterface {
   @Input() displayModel: MedicationRequestModel | null

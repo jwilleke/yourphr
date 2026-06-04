@@ -5,9 +5,10 @@ import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import {interval, Observable, Subscription, timer} from 'rxjs';
 import {mergeMap} from 'rxjs/operators';
 @Component({
-  selector: 'app-background-jobs',
-  templateUrl: './background-jobs.component.html',
-  styleUrls: ['./background-jobs.component.scss']
+    selector: 'app-background-jobs',
+    templateUrl: './background-jobs.component.html',
+    styleUrls: ['./background-jobs.component.scss'],
+    standalone: false
 })
 export class BackgroundJobsComponent implements OnInit, OnDestroy {
   backgroundJobsSubscription: Subscription = null

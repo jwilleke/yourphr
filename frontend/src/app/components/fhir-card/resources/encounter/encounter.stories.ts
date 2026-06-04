@@ -21,7 +21,7 @@ const meta: Meta<EncounterComponent> = {
     // }),
   ],
   tags: ['autodocs'],
-  render: (args: EncounterComponent) => ({
+  render: (args) => ({
     props: {
       backgroundColor: null,
       ...args,

@@ -30,9 +30,10 @@ export class SourceListItem {
 }
 
 @Component({
-  selector: 'app-medical-sources',
-  templateUrl: './medical-sources.component.html',
-  styleUrls: ['./medical-sources.component.scss']
+    selector: 'app-medical-sources',
+    templateUrl: './medical-sources.component.html',
+    styleUrls: ['./medical-sources.component.scss'],
+    standalone: false
 })
 export class MedicalSourcesComponent implements OnInit {
   loading: boolean = false

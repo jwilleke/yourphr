@@ -17,11 +17,10 @@ class GroupedSummary {
 
 
 @Component({
-  standalone: true,
-  imports: [CommonModule, LoadingWidgetComponent, EmptyWidgetComponent],
-  selector: 'records-summary-widget',
-  templateUrl: './records-summary-widget.component.html',
-  styleUrls: ['./records-summary-widget.component.scss']
+    imports: [CommonModule, LoadingWidgetComponent, EmptyWidgetComponent],
+    selector: 'records-summary-widget',
+    templateUrl: './records-summary-widget.component.html',
+    styleUrls: ['./records-summary-widget.component.scss']
 })
 export class RecordsSummaryWidgetComponent extends DashboardWidgetComponent implements OnInit {
 

@@ -17,7 +17,7 @@ const meta: Meta<ImgComponent> = {
     // }),
   ],
   tags: ['autodocs'],
-  render: (args: ImgComponent) => ({
+  render: (args) => ({
     props: {
       backgroundColor: null,
       ...args,

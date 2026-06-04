@@ -14,7 +14,7 @@ const meta: Meta<ComplexLineWidgetComponent> = {
     // }),
   ],
   tags: ['autodocs'],
-  render: (args: ComplexLineWidgetComponent) => ({
+  render: (args) => ({
     props: {
       backgroundColor: null,
       ...args,

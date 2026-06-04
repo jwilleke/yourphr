@@ -9,9 +9,10 @@ import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 import {ReportMedicalHistoryEditorComponent} from '../report-medical-history-editor/report-medical-history-editor.component';
 
 @Component({
-  selector: 'app-report-medical-history-timeline-panel',
-  templateUrl: './report-medical-history-timeline-panel.component.html',
-  styleUrls: ['./report-medical-history-timeline-panel.component.scss']
+    selector: 'app-report-medical-history-timeline-panel',
+    templateUrl: './report-medical-history-timeline-panel.component.html',
+    styleUrls: ['./report-medical-history-timeline-panel.component.scss'],
+    standalone: false
 })
 export class ReportMedicalHistoryTimelinePanelComponent implements OnInit {
   @Input() resourceFhir: ResourceFhir

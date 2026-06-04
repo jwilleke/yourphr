@@ -1,7 +1,8 @@
 import { Pipe, PipeTransform } from '@angular/core';
 
 @Pipe({
-  name: 'shortDomain'
+    name: 'shortDomain',
+    standalone: false
 })
 export class ShortDomainPipe implements PipeTransform {
 

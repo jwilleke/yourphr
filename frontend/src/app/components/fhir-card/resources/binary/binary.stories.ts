@@ -39,7 +39,7 @@ const meta: Meta<BinaryComponent> = {
     // }),
   ],
   tags: ['autodocs'],
-  render: (args: BinaryComponent) => ({
+  render: (args) => ({
     props: {
       backgroundColor: null,
       ...args,

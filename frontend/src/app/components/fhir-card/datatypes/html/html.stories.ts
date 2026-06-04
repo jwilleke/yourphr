@@ -19,7 +19,7 @@ const meta: Meta<HtmlComponent> = {
     // }),
   ],
   tags: ['autodocs'],
-  render: (args: HtmlComponent) => ({
+  render: (args) => ({
     props: {
       backgroundColor: null,
       ...args,

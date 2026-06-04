@@ -29,7 +29,7 @@ const meta: Meta<PatientVitalsWidgetComponent> = {
     })
   ],
   tags: ['autodocs'],
-  render: (args: PatientVitalsWidgetComponent) => ({
+  render: (args) => ({
     props: {
       backgroundColor: null,
       ...args,

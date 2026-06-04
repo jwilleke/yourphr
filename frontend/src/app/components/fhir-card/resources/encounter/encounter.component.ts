@@ -11,11 +11,10 @@ import {EncounterModel} from '../../../../../lib/models/resources/encounter-mode
 import { FastenDisplayModel } from 'src/lib/models/fasten/fasten-display-model';
 
 @Component({
-  standalone: true,
-  imports: [NgbCollapseModule, CommonModule, BadgeComponent, TableComponent, GlossaryLookupComponent, RouterModule],
-  selector: 'fhir-encounter',
-  templateUrl: './encounter.component.html',
-  styleUrls: ['./encounter.component.scss']
+    imports: [NgbCollapseModule, CommonModule, BadgeComponent, TableComponent, GlossaryLookupComponent, RouterModule],
+    selector: 'fhir-encounter',
+    templateUrl: './encounter.component.html',
+    styleUrls: ['./encounter.component.scss']
 })
 export class EncounterComponent implements OnInit, FhirCardEditableComponentInterface {
   @Input() displayModel: EncounterModel | null
