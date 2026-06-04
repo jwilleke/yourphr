@@ -39,8 +39,10 @@ describe('MedicalSourcesConnectedComponent', () => {
     const tokenResponse = {
       token_type: "Bearer",
       expires_in: "3600",
-      access_token: "OXgK8mrfvMrxIMK38T6CAjKiLMDV",
-      refresh_token: "5Oq5ZgcTgi9-xxxxxxx",
+      // Dummy values — this test only exercises expires_in; the token strings are
+      // unused by the assertion. Kept obviously-fake so secret scanners don't flag them.
+      access_token: "fake-access-token-for-test",
+      refresh_token: "fake-refresh-token-for-test",
       patient: "a-80000.xxxx"
     }
 
