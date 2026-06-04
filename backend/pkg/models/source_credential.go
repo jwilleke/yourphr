@@ -14,6 +14,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 )
 
@@ -44,6 +45,12 @@ type SourceCredential struct {
 	ExpiresAt     int64  `json:"expires_at"`
 	CodeChallenge string `json:"code_challenge"`
 	CodeVerifier  string `json:"code_verifier"`
+
+	// SMART config (self-describing credential — issue #49). ApiEndpointBaseUrl is the FHIR
+	// base URL; Scopes is the space-separated SMART scope string. The generic SMART client
+	// discovers authorize/token endpoints from {ApiEndpointBaseUrl}/.well-known/smart-configuration.
+	ApiEndpointBaseUrl string `json:"api_endpoint_base_url"`
+	Scopes             string `json:"scopes"`
 
 	//dynamic client auth/credential data
 	DynamicClientJWKS []map[string]string `json:"dynamic_client_jwks" gorm:"type:text;serializer:json"`
@@ -88,6 +95,18 @@ func (s *SourceCredential) GetAccessToken() string {
 
 func (s *SourceCredential) GetExpiresAt() int64 {
 	return s.ExpiresAt
+}
+
+func (s *SourceCredential) GetApiEndpointBaseUrl() string {
+	return s.ApiEndpointBaseUrl
+}
+
+// GetScopes splits the space-separated Scopes string into individual SMART scopes.
+func (s *SourceCredential) GetScopes() []string {
+	if strings.TrimSpace(s.Scopes) == "" {
+		return nil
+	}
+	return strings.Fields(s.Scopes)
 }
 
 func (s *SourceCredential) SetTokens(accessToken string, refreshToken string, expiresAt int64) {

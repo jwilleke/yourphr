@@ -240,6 +240,14 @@ func (gr *GormRepository) Migrate() error {
 				)
 			},
 		},
+		{
+			ID: "20260604000000", // add SMART config fields (api_endpoint_base_url, scopes) to source_credential (#49)
+			Migrate: func(tx *gorm.DB) error {
+				return tx.AutoMigrate(
+					&models.SourceCredential{},
+				)
+			},
+		},
 	})
 
 	// run when database is empty

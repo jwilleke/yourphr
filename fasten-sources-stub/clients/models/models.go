@@ -20,13 +20,13 @@ type UpsertSummary struct {
 // RawResourceFhir is the struct passed to UpsertRawResource.
 // Fields are flat (not embedded) to match composite literal usage in handlers.
 type RawResourceFhir struct {
-	SourceResourceID   string
-	SourceResourceType string
-	ResourceRaw        json.RawMessage
-	SourceUri          string
+	SourceResourceID    string
+	SourceResourceType  string
+	ResourceRaw         json.RawMessage
+	SourceUri           string
 	ReferencedResources []string
-	SortTitle          *string
-	SortDate           *time.Time
+	SortTitle           *string
+	SortDate            *time.Time
 }
 
 // SourceCredential is the interface implemented by models.SourceCredential.
@@ -43,6 +43,12 @@ type SourceCredential interface {
 	GetExpiresAt() int64
 	SetTokens(accessToken string, refreshToken string, expiresAt int64)
 	IsDynamicClient() bool
+
+	// SMART config (self-describing credential — issue #49): the FHIR base URL the client
+	// talks to, and the requested scopes. Authorize/token endpoints are discovered from
+	// {ApiEndpointBaseUrl}/.well-known/smart-configuration.
+	GetApiEndpointBaseUrl() string
+	GetScopes() []string
 }
 
 // DatabaseRepository is the subset of the DB interface needed by source clients.

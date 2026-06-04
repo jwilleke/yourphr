@@ -1,7 +1,7 @@
-// Stub for github.com/fastenhealth/fasten-sources/clients/factory
-// GetSourceClient returns a minimal implementation that handles manual FHIR file import
-// (JSON Bundle and NDJSON). Live provider sync is not available without the commercial
-// Fasten Lighthouse service (see fastenhealth/fasten-onprem#629).
+// Replacement for github.com/fastenhealth/fasten-sources/clients/factory.
+// GetSourceClient returns a file-import client for manual sources and the generic SMART on
+// FHIR R4 client (clients/smart) for live EHR sources — no commercial Fasten Lighthouse
+// dependency (see fastenhealth/fasten-onprem#629 and EPIC #20).
 package factory
 
 import (
@@ -18,8 +18,8 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// GetSourceClient returns a source client. For manual/fasten platform types it returns
-// a working file-import client. For live EHR sync it returns an error.
+// GetSourceClient returns a source client. For manual/fasten platform types it returns a
+// file-import client; for live EHR sources it returns the generic SMART-R4 client.
 func GetSourceClient(
 	env pkg.FastenLighthouseEnvType,
 	ctx context.Context,
@@ -30,7 +30,8 @@ func GetSourceClient(
 	if platformType == pkg.PlatformTypeManual || platformType == pkg.PlatformTypeFasten || platformType == "" {
 		return &fileImportClient{ctx: ctx, logger: logger, cred: cred}, nil
 	}
-	return nil, fmt.Errorf("live provider sync not available: fasten-sources is commercial (see fastenhealth/fasten-onprem#629)")
+	// EHR / live SMART on FHIR providers: drive the generic SMART-R4 client (EPIC #20, #49).
+	return newSmartClient(ctx, logger, cred), nil
 }
 
 // fileImportClient implements SourceClient for manual FHIR file import (JSON Bundle / NDJSON).
@@ -123,7 +124,7 @@ func extractResources(data []byte) ([]json.RawMessage, error) {
 	// json.Valid returns false for multi-line NDJSON (multiple root objects).
 	if json.Valid(trimmed) {
 		var bundle struct {
-			ResourceType string          `json:"resourceType"`
+			ResourceType string            `json:"resourceType"`
 			Contained    []json.RawMessage `json:"contained"`
 			Entry        []struct {
 				FullURL  string          `json:"fullUrl"`
