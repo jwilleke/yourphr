@@ -25,6 +25,7 @@ import {ResourceGraphResponse} from '../models/fasten/resource-graph-response';
 import { fetchEventSource } from '@microsoft/fetch-event-source';
 import {BackgroundJob, BackgroundJobSyncData} from '../models/fasten/background-job';
 import {SupportRequest} from '../models/fasten/support-request';
+import {SmartConnectRequest} from '../models/fasten/smart-connect-request';
 import {
   List
 } from 'fhir/r4';
@@ -135,6 +136,19 @@ export class FastenApiService {
 
   createSource(source: Source): Observable<any> {
     return this._httpClient.post<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/source`, source)
+      .pipe(
+        map((response: ResponseWrapper) => {
+          // @ts-ignore
+          return {summary: response.data, source: response.source}
+        })
+      );
+  }
+
+  // connectSource completes a SMART on FHIR connection: the backend exchanges the authorization
+  // code (with PKCE verifier) for tokens, stores the source, and starts the initial sync. The
+  // browser never handles tokens. See backend handler.ConnectSource (#51) and the relay (#50).
+  connectSource(req: SmartConnectRequest): Observable<any> {
+    return this._httpClient.post<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/source/connect`, req)
       .pipe(
         map((response: ResponseWrapper) => {
           // @ts-ignore
