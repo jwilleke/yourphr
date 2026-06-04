@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/fastenhealth/fasten-onprem/backend/pkg"
 	"github.com/fastenhealth/fasten-onprem/backend/pkg/database"
@@ -13,12 +14,95 @@ import (
 	"github.com/fastenhealth/fasten-onprem/backend/pkg/models"
 	"github.com/fastenhealth/fasten-sources/clients/factory"
 	sourceModels "github.com/fastenhealth/fasten-sources/clients/models"
+	"github.com/fastenhealth/fasten-sources/clients/smart"
 	sourceDefinitions "github.com/fastenhealth/fasten-sources/definitions"
 	sourcePkg "github.com/fastenhealth/fasten-sources/pkg"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 )
+
+// SmartConnectRequest is the payload to complete a SMART on FHIR connection: the self-describing
+// provider config plus the authorization code (and its PKCE verifier) obtained via the relay.
+type SmartConnectRequest struct {
+	ApiEndpointBaseUrl string `json:"api_endpoint_base_url"`
+	ClientId           string `json:"client_id"`
+	Scopes             string `json:"scopes"`
+	RedirectUri        string `json:"redirect_uri"`
+	Code               string `json:"code"`
+	CodeVerifier       string `json:"code_verifier"`
+	Display            string `json:"display"`
+}
+
+// ConnectSource completes a SMART on FHIR connection entirely in the backend (EPIC #20, #51):
+// it discovers the provider endpoints, exchanges the authorization code (with PKCE verifier) for
+// tokens, stores a self-describing SourceCredential, and kicks off the initial sync. The browser
+// never handles tokens. The authorization code is obtained via the relay (#50); how it arrives
+// (relay poll vs direct) is the caller's concern.
+func ConnectSource(c *gin.Context) {
+	logger := c.MustGet(pkg.ContextKeyTypeLogger).(*logrus.Entry)
+	databaseRepo := c.MustGet(pkg.ContextKeyTypeDatabase).(database.DatabaseRepository)
+
+	var req SmartConnectRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": fmt.Sprintf("invalid request: %s", err)})
+		return
+	}
+	if req.ApiEndpointBaseUrl == "" || req.ClientId == "" || req.Code == "" || req.CodeVerifier == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "api_endpoint_base_url, client_id, code, and code_verifier are required"})
+		return
+	}
+
+	cfg := smart.Config{
+		FHIRBaseURL: req.ApiEndpointBaseUrl,
+		ClientID:    req.ClientId,
+		Scopes:      strings.Fields(req.Scopes),
+		RedirectURI: req.RedirectUri,
+	}
+	ep, err := cfg.Discover(c)
+	if err != nil {
+		logger.Errorln(err)
+		c.JSON(http.StatusBadGateway, gin.H{"success": false, "error": fmt.Sprintf("SMART discovery failed: %s", err)})
+		return
+	}
+	tok, err := cfg.ExchangeCode(c, ep, req.Code, req.CodeVerifier)
+	if err != nil {
+		logger.Errorln(err)
+		c.JSON(http.StatusBadGateway, gin.H{"success": false, "error": fmt.Sprintf("token exchange failed: %s", err)})
+		return
+	}
+	patientId, _ := tok.Extra("patient").(string)
+	if patientId == "" {
+		c.JSON(http.StatusBadGateway, gin.H{"success": false, "error": "token response did not include a patient id (check the launch/patient scope)"})
+		return
+	}
+
+	sourceCred := models.SourceCredential{
+		PlatformType:       sourcePkg.PlatformTypeEhr,
+		Display:            req.Display,
+		ApiEndpointBaseUrl: req.ApiEndpointBaseUrl,
+		ClientId:           req.ClientId,
+		Scopes:             req.Scopes,
+		Patient:            patientId,
+		AccessToken:        tok.AccessToken,
+		RefreshToken:       tok.RefreshToken,
+		ExpiresAt:          tok.Expiry.Unix(),
+	}
+	if err := databaseRepo.CreateSource(c, &sourceCred); err != nil {
+		err = fmt.Errorf("an error occurred while storing source credential: %w", err)
+		logger.Errorln(err)
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": err.Error()})
+		return
+	}
+
+	summary, err := BackgroundJobSyncResources(GetBackgroundContext(c), logger, databaseRepo, &sourceCred)
+	if err != nil {
+		logger.Errorln(err)
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "initial record sync failed. See background jobs page for more details"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"success": true, "source": sourceCred, "data": summary})
+}
 
 func CreateReconnectSource(c *gin.Context) {
 	logger := c.MustGet(pkg.ContextKeyTypeLogger).(*logrus.Entry)

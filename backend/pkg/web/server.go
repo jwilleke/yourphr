@@ -26,10 +26,10 @@ import (
 )
 
 type AppEngine struct {
-	Config     config.Interface
-	Logger     *logrus.Entry
-	EventBus   event_bus.Interface
-	deviceRepo database.DatabaseRepository
+	Config      config.Interface
+	Logger      *logrus.Entry
+	EventBus    event_bus.Interface
+	deviceRepo  database.DatabaseRepository
 	StandbyMode bool
 
 	RelatedVersions map[string]string //related versions metadata provided & embedded by the build process
@@ -99,8 +99,8 @@ func (ae *AppEngine) Setup() (*gin.RouterGroup, *gin.Engine) {
 					c.JSON(http.StatusOK, gin.H{
 						"success": true,
 						"data": gin.H{
-							"first_run_wizard":   firstRunWizard,
-							"standby_mode":       true,
+							"first_run_wizard": firstRunWizard,
+							"standby_mode":     true,
 						},
 					})
 					return
@@ -125,8 +125,8 @@ func (ae *AppEngine) Setup() (*gin.RouterGroup, *gin.Engine) {
 				c.JSON(http.StatusOK, gin.H{
 					"success": true,
 					"data": gin.H{
-						"first_run_wizard":   firstRunWizard,
-						"standby_mode":       false,
+						"first_run_wizard": firstRunWizard,
+						"standby_mode":     false,
 					},
 				})
 			})
@@ -167,6 +167,7 @@ func (ae *AppEngine) Setup() (*gin.RouterGroup, *gin.Engine) {
 					secure.GET("/summary/ips", handler.GetIPSSummary)
 
 					secure.POST("/source", handler.CreateReconnectSource)
+					secure.POST("/source/connect", handler.ConnectSource)
 					secure.POST("/source/manual", handler.CreateManualSource)
 					secure.GET("/source", handler.ListSource)
 					secure.GET("/source/:sourceId", handler.GetSource)

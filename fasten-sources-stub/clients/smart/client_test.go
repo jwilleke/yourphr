@@ -136,3 +136,34 @@ func TestFetchEverythingPagination(t *testing.T) {
 		t.Errorf("did not expect a token refresh for a non-expired token")
 	}
 }
+
+func TestExchangeCode(t *testing.T) {
+	var gotCode, gotVerifier, gotGrant string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_ = r.ParseForm()
+		gotCode = r.Form.Get("code")
+		gotVerifier = r.Form.Get("code_verifier")
+		gotGrant = r.Form.Get("grant_type")
+		w.Header().Set("Content-Type", "application/json")
+		fmt.Fprint(w, `{"access_token":"AT","refresh_token":"RT","token_type":"Bearer","expires_in":3600,"patient":"pat-123"}`)
+	}))
+	defer srv.Close()
+
+	cfg := Config{FHIRBaseURL: "https://fhir.example/r4", ClientID: "cid", RedirectURI: "https://relay/callback", HTTPClient: srv.Client()}
+	ep := Endpoints{Token: srv.URL}
+
+	tok, err := cfg.ExchangeCode(context.Background(), ep, "the-code", "the-verifier")
+	if err != nil {
+		t.Fatalf("ExchangeCode: %v", err)
+	}
+	if tok.AccessToken != "AT" || tok.RefreshToken != "RT" {
+		t.Errorf("unexpected tokens: access=%q refresh=%q", tok.AccessToken, tok.RefreshToken)
+	}
+	if pid, _ := tok.Extra("patient").(string); pid != "pat-123" {
+		t.Errorf("patient extra = %q, want pat-123", pid)
+	}
+	// PKCE verifier and code must be sent in the token request body.
+	if gotCode != "the-code" || gotVerifier != "the-verifier" || gotGrant != "authorization_code" {
+		t.Errorf("token request form: code=%q verifier=%q grant=%q", gotCode, gotVerifier, gotGrant)
+	}
+}
