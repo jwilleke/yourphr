@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>YourPHR — Self-Hosted Personal Health Record</title>
+  <meta name="description" content="YourPHR is a free, open-source, self-hosted personal & family health record. Import your FHIR records from many providers into one private place you control.">
+  <meta property="og:title" content="YourPHR — Self-Hosted Personal Health Record">
+  <meta property="og:description" content="A free, open-source, self-hosted personal health record that never leaves your hands.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://yourphr.org">
+  <style>
+    :root {
+      --bg: #0f1419; --panel: #161b22; --fg: #e6edf3; --muted: #9aa7b4;
+      --accent: #4f9cf9; --border: #2a313c; --code: #0b0f14;
+      --maxw: 880px;
+    }
+    @media (prefers-color-scheme: light) {
+      :root { --bg:#ffffff; --panel:#f6f8fa; --fg:#1f2328; --muted:#57606a; --accent:#0969da; --border:#d0d7de; --code:#f6f8fa; }
+    }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background:var(--bg); color:var(--fg); line-height:1.6; }
+    a { color:var(--accent); text-decoration:none; }
+    a:hover { text-decoration:underline; }
+    .wrap { max-width:var(--maxw); margin:0 auto; padding:0 20px; }
+    header.hero { text-align:center; padding:72px 20px 40px; }
+    .logo { font-size:2.6rem; font-weight:800; letter-spacing:-0.5px; margin:0; }
+    .logo span { color:var(--accent); }
+    .tagline { font-size:1.25rem; color:var(--muted); margin:14px auto 0; max-width:620px; }
+    .cta { margin-top:28px; display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
+    .btn { display:inline-block; padding:11px 20px; border-radius:8px; font-weight:600; border:1px solid var(--border); }
+    .btn.primary { background:var(--accent); color:#fff; border-color:var(--accent); }
+    .btn.primary:hover { filter:brightness(1.08); text-decoration:none; }
+    .btn.ghost:hover { background:var(--panel); text-decoration:none; }
+    section { padding:32px 0; border-top:1px solid var(--border); }
+    h2 { font-size:1.4rem; margin:0 0 16px; }
+    .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:16px; }
+    .card { background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:18px; }
+    .card h3 { margin:0 0 6px; font-size:1.05rem; }
+    .card p { margin:0; color:var(--muted); font-size:0.95rem; }
+    pre { background:var(--code); border:1px solid var(--border); border-radius:10px; padding:16px; overflow:auto; font-size:0.9rem; }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .note { background:var(--panel); border:1px solid var(--border); border-left:3px solid var(--accent); border-radius:8px; padding:14px 16px; color:var(--muted); font-size:0.95rem; }
+    footer { color:var(--muted); font-size:0.9rem; text-align:center; padding:36px 20px 56px; border-top:1px solid var(--border); }
+  </style>
+</head>
+<body>
+  <header class="hero">
+    <div class="wrap">
+      <h1 class="logo">Your<span>PHR</span></h1>
+      <p class="tagline">A free, open-source, self-hosted personal &amp; family health record — your medical history from every provider, in one private place <strong>you</strong> control.</p>
+      <div class="cta">
+        <a class="btn primary" href="https://github.com/jwilleke/yourphr">View on GitHub</a>
+        <a class="btn ghost" href="#get-started">Get started</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section id="what">
+      <h2>What is YourPHR?</h2>
+      <p>Your health records are scattered across insurers, hospitals, clinics, and labs. YourPHR lets you import them — as <strong>FHIR R4</strong> bundles exported from patient portals, or entered manually — and view your whole history in one self-hosted dashboard. No cloud, no data-mining: it runs on <em>your</em> hardware and never leaves your hands.</p>
+    </section>
+
+    <section>
+      <h2>Why YourPHR</h2>
+      <div class="grid">
+        <div class="card"><h3>🔒 Self-hosted &amp; private</h3><p>Runs on your own machine. Your medical data is never sent to a third party.</p></div>
+        <div class="card"><h3>👪 Built for families</h3><p>Designed for individuals and households — not clinics.</p></div>
+        <div class="card"><h3>🧬 FHIR R4</h3><p>Imports the medical industry's standard format, including non-US-Core exports (e.g. Veradigm/FollowMyHealth).</p></div>
+        <div class="card"><h3>🆓 Open source (GPL v3)</h3><p>Auditable, community-maintained, free forever.</p></div>
+      </div>
+    </section>
+
+    <section id="get-started">
+      <h2>Get started</h2>
+      <p>With <a href="https://docs.docker.com/get-docker/">Docker</a> installed:</p>
+      <pre><code>curl https://raw.githubusercontent.com/jwilleke/yourphr/refs/heads/main/docker-compose-prod.yml -o docker-compose.yml
+curl https://raw.githubusercontent.com/jwilleke/yourphr/refs/heads/main/set_env.sh -o set_env.sh
+chmod +x ./set_env.sh && ./set_env.sh
+docker compose up -d</code></pre>
+      <p>Then open <code>https://localhost:9090</code>. Full instructions are in the <a href="https://github.com/jwilleke/yourphr#readme">README</a>.</p>
+    </section>
+
+    <section>
+      <h2>Project</h2>
+      <div class="grid">
+        <div class="card"><h3><a href="https://github.com/jwilleke/yourphr">Source &amp; README →</a></h3><p>Code, install guide, and architecture.</p></div>
+        <div class="card"><h3><a href="https://github.com/jwilleke/yourphr/issues">Issues →</a></h3><p>Report a bug or request a feature.</p></div>
+        <div class="card"><h3><a href="https://github.com/jwilleke/yourphr/blob/main/docs/Roadmap.md">Roadmap →</a></h3><p>What's planned and in progress.</p></div>
+      </div>
+    </section>
+
+    <section>
+      <div class="note">
+        <strong>YourPHR</strong> is a standalone, community-maintained continuation of
+        <a href="https://github.com/fastenhealth/fasten-onprem">Fasten OnPrem</a>, originally created by
+        Jason Kulatunga (<a href="https://github.com/AnalogJ">@AnalogJ</a>) and
+        Alex Szilagyi (<a href="https://github.com/alexszilagyi">@alexszilagyi</a>) under the GNU GPL v3 license,
+        carried forward after upstream development stalled. YourPHR remains GPL v3 with full attribution.
+        It is <strong>not affiliated</strong> with Fasten Health, Inc. or its commercial Fasten Connect product.
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    YourPHR · <a href="https://github.com/jwilleke/yourphr">GitHub</a> ·
+    <a href="https://github.com/jwilleke/yourphr/blob/main/LICENSE.md">GPL v3</a><br>
+    Self-hosted personal health records you control.
+  </footer>
+</body>
+</html>
