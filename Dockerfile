@@ -9,7 +9,7 @@
 #
 # instead, we use https://depot.dev/ to do our multi-arch builds on native ARM and AMD nodes.
 
-FROM node:20 as frontend-build
+FROM node:24 as frontend-build
 ARG FASTEN_ENV=sandbox
 WORKDIR /usr/src/fastenhealth/frontend
 COPY frontend/package.json frontend/yarn.lock ./
