@@ -8,9 +8,9 @@ Fasten is made up of a handful of different components. Here's a summary of the 
 
 ## Frontend
 
-- Node.js `v20` — pinned in `frontend/.nvmrc` (run `nvm use` in `frontend/`)
+- Node.js `v24` — pinned in `frontend/.nvmrc` (run `nvm use` in `frontend/`)
 - Yarn `1.22.22` — classic, pinned via `package.json` `packageManager` (`corepack enable`)
-- Angular `v14.1.3` — upgrade to `v20` is in progress (see [#12](https://github.com/jwilleke/yourphr/issues/12))
+- Angular `v20` — `package.json` `engines.node` allows `^20.19 || ^22.12 || >=24` for contributors, but `v24` is the standard
 
 ## Backend
 
@@ -20,7 +20,7 @@ Fasten is made up of a handful of different components. Here's a summary of the 
 
 - Docker `v24+`
 
-> Stack modernization (target: Node 24, Angular 20, Go 1.24, Docker distroless debian12) is tracked in [#12](https://github.com/jwilleke/yourphr/issues/12). The authoritative pinned versions live in `frontend/.nvmrc`, `frontend/package.json`, `go.mod`, and `Dockerfile` — keep this section in sync with those.
+> Stack modernization (Node 24, Angular 20, Go 1.24, Docker distroless debian12) is tracked in [#12](https://github.com/jwilleke/yourphr/issues/12); the Angular 14 → 20 climb and the Node → 24 flip are complete. The authoritative pinned versions live in `frontend/.nvmrc`, `frontend/package.json`, `go.mod`, and `Dockerfile` — keep this section in sync with those.
 
 # Development Environment Setup
 
