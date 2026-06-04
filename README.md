@@ -10,6 +10,8 @@
 
 **YourPHR lets you create a secure, private personal health record that never leaves your hands** — self-hosted, open source, and yours. Project home: [yourphr.org](https://yourphr.org)
 
+> **Mission:** fulfill the promise of the [21st Century Cures Act](https://www.healthit.gov/topic/oncs-cures-act-final-rule) — give patients **immediate access to their own medical records**.
+
 > [!NOTE]
 > **YourPHR is a standalone, community-maintained continuation of [Fasten OnPrem](https://github.com/fastenhealth/fasten-onprem)**, carried forward by [@jwilleke](https://github.com/jwilleke) after upstream development stalled.
 >
