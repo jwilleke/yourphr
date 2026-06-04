@@ -1,7 +1,7 @@
 version: "3.9"
 services:
   fasten-prod:
-    image: ghcr.io/fastenhealth/fasten-onprem:main
+    image: ghcr.io/jwilleke/yourphr:main
     hostname: ${HOSTNAME:-fasten}
     environment:
       - HOST_IP=${IP}

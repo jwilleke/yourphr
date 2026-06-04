@@ -31,7 +31,7 @@
   <img alt="fasten_view" src="https://i.imgur.com/jfqv5Q5.png">
   </a>
   <br/>
-  <a href="https://imgur.com/a/vfgojBD">See more Fasten screenshots</a>
+  <a href="https://imgur.com/a/vfgojBD">See more screenshots</a>
 </p>
 
 
@@ -69,25 +69,25 @@ It's pretty basic right now, but it's designed with a easily extensible core aro
 
 ## Instructions
 
-[![GitHub release (latest by date)](https://img.shields.io/github/v/release/fastenhealth/fasten-onprem?style=flat-square)](https://github.com/fastenhealth/fasten-onprem/releases/latest)
+[![GitHub release (latest by date)](https://img.shields.io/github/v/release/jwilleke/yourphr?style=flat-square)](https://github.com/jwilleke/yourphr/releases/latest)
 
 First, if you don't have Docker installed on your computer, get Docker by following this [install guide](https://docs.docker.com/get-docker/).
 
-Next, run the following commands from the Windows command line or Mac/Linux terminal in order to download and start the Fasten docker container.
+Next, run the following commands from the Windows command line or Mac/Linux terminal in order to download and start the YourPHR docker container.
 
 
 ### 🚀 Launch
 
 Launch the application. Please choose a location where `docker-compose.yml` and `set_env.sh` will be downloaded.
 
-To make your Fasten instance discoverable by companion mobile apps and other devices on your local network, you need to run the `set_env.sh` script before starting Docker Compose. This script sets the necessary `HOSTNAME` and `IP` values in a `.env` file, which is required for syncing.
+To make your YourPHR instance discoverable by companion mobile apps and other devices on your local network, you need to run the `set_env.sh` script before starting Docker Compose. This script sets the necessary `HOSTNAME` and `IP` values in a `.env` file, which is required for syncing.
 
 Here are the step-by-step instructions:
 
 1.  **Download necessary files:**
     ```bash
-    curl https://raw.githubusercontent.com/fastenhealth/fasten-onprem/refs/heads/main/docker-compose-prod.yml -o docker-compose.yml
-    curl https://raw.githubusercontent.com/fastenhealth/fasten-onprem/refs/heads/main/set_env.sh -o set_env.sh
+    curl https://raw.githubusercontent.com/jwilleke/yourphr/refs/heads/main/docker-compose-prod.yml -o docker-compose.yml
+    curl https://raw.githubusercontent.com/jwilleke/yourphr/refs/heads/main/set_env.sh -o set_env.sh
     ```
 
 2.  **Prepare and run the environment setup script:**
@@ -127,11 +127,11 @@ Next, open a browser to `https://localhost:9090`
 
 ### <a name="using-https"></a>🔒 Using HTTPS and Trusting the Self-Signed Certificate
 
-By default, Fasten On-Prem runs with HTTPS enabled to ensure your data is secure. It uses a self-signed **TLS** certificate, which offers the same level of encryption as a commercially issued certificate. The first time you connect, your browser will display a security warning because it doesn't yet trust the certificate's issuer. The steps below will guide you through the simple, one-time process of telling your browser to trust the certificate, ensuring a secure connection without future warnings. Please note that the generated certificates can be replaced at any time with your own valid TLS certificates.
+By default, YourPHR runs with HTTPS enabled to ensure your data is secure. It uses a self-signed **TLS** certificate, which offers the same level of encryption as a commercially issued certificate. The first time you connect, your browser will display a security warning because it doesn't yet trust the certificate's issuer. The steps below will guide you through the simple, one-time process of telling your browser to trust the certificate, ensuring a secure connection without future warnings. Please note that the generated certificates can be replaced at any time with your own valid TLS certificates.
 
 #### How it Works: The Chain of Trust
 
-To establish a secure connection, your browser needs to trust the server's TLS certificate. Here’s how the process works in Fasten On-Prem:
+To establish a secure connection, your browser needs to trust the server's TLS certificate. Here’s how the process works in YourPHR:
 
 1.  **Root Certificate Authority (CA):** When the application first starts, it generates its own self-contained Certificate Authority, called `"Fasten Health CA"`. Think of this as the highest level of trust. The public part of this CA is the `rootCA.pem` file.
 2.  **Server Certificate:** The application then uses the `"Fasten Health CA"` to issue and sign a specific certificate for the web server (e.g., for `localhost`).
@@ -204,20 +204,20 @@ make serve-docker
 ### Optional
 
 ```
-docker pull ghcr.io/fastenhealth/fasten-onprem:main
+docker pull ghcr.io/jwilleke/yourphr:main
 
 docker run --rm \
 -p 9090:8080 \
 -v ./db:/opt/fasten/db \
 -v ./cache:/opt/fasten/cache \
-ghcr.io/fastenhealth/fasten-onprem:main
+ghcr.io/jwilleke/yourphr:main
 ```
 
 At this point you'll be redirected to the login page.
 
 ### Logging In
 
-Before you can use the Fasten BETA, you'll need to [Create an Account](https://localhost:9090/web/auth/signup).
+Before you can use the YourPHR BETA, you'll need to [Create an Account](https://localhost:9090/web/auth/signup).
 
 It can be as simple as
 - **Username:** `testuser`
@@ -229,9 +229,9 @@ It can be as simple as
 > [!NOTE]
 > NOTE: Multi-user features are a work in progress. This section describes the eventual goals.
 
-Fasten is designd to work well for an individual or a family. Since it is self-hosted, by nature the person running the service will have full root access to all user records. For most families, this is perfect! If you need stronger security, Fasten might not be for you.
+YourPHR is designed to work well for an individual or a family. Since it is self-hosted, by nature the person running the service will have full root access to all user records. For most families, this is perfect! If you need stronger security, YourPHR might not be for you.
 
-Fasten assumes that all records connected from a single user account (from one or more sources) belong to a single individual, and thus will show aggregations that will only make sense for a single person. Be careful to not connect sources for different people to the same Fasten user account.
+YourPHR assumes that all records connected from a single user account (from one or more sources) belong to a single individual, and thus will show aggregations that will only make sense for a single person. Be careful to not connect sources for different people to the same YourPHR user account.
 
 Tracking health data for multiple family members works by creating new user accounts for each person. Any user with the `admin` role can manage users and permissions. Any user can be granted access (by an admin) to view another user's records. Through this mechanism, it's easy to setup any family configuration needed. For example: a family of four can have two parents that can each see the records of the two children.
 
@@ -246,25 +246,23 @@ This allows for a more complex example:
 
 # FAQ's
 
-See [FAQs](https://docs.fastenhealth.com/faqs.html) for common questions (& answers) regarding Fasten
+See [FAQs](https://docs.fastenhealth.com/faqs.html) for common questions (& answers) regarding YourPHR
 
 # Support
 
-Have questions? Need help? Found a bug? [Create an issue](https://github.com/fastenhealth/fasten-onprem/issues/new) and we'll do our best to help you out.
-You can also join us on [Discord](https://discord.gg/Bykz6BAN8p) to chat with other Fasten users.
+Have questions? Need help? Found a bug? [Create an issue](https://github.com/jwilleke/yourphr/issues/new) and we'll do our best to help you out.
 
-[![Discord Join](https://img.shields.io/discord/1023634406935642223?style=flat-square&logo=discord)](https://discord.gg/Bykz6BAN8p)
 
 # Contributing
 
-[![CI](https://github.com/jwilleke/fasten-onprem/actions/workflows/ci.yaml/badge.svg)](https://github.com/jwilleke/fasten-onprem/actions/workflows/ci.yaml)
-[![codecov](https://codecov.io/gh/jwilleke/fasten-onprem/branch/main/graph/badge.svg?style=flat-square)](https://codecov.io/gh/jwilleke/fasten-onprem)
+[![CI](https://github.com/jwilleke/yourphr/actions/workflows/ci.yaml/badge.svg)](https://github.com/jwilleke/yourphr/actions/workflows/ci.yaml)
+[![codecov](https://codecov.io/gh/jwilleke/yourphr/branch/main/graph/badge.svg?style=flat-square)](https://codecov.io/gh/jwilleke/yourphr)
 
-Please see the [CONTRIBUTING.md](CONTRIBUTING.md) for instructions for how to develop and contribute to the Fasten codebase.
+Please see the [CONTRIBUTING.md](CONTRIBUTING.md) for instructions for how to develop and contribute to the YourPHR codebase.
 
 Work your magic and then submit a pull request. We love pull requests!
 
-If you find the documentation lacking, help us out and update this README.md. If you don't have the time to work on Fasten, but found something we should know about, please submit an issue.
+If you find the documentation lacking, help us out and update this README.md. If you don't have the time to work on YourPHR, but found something we should know about, please submit an issue.
 
 This project is tested with BrowserStack.
 
@@ -279,7 +277,7 @@ We use SemVer for versioning. For the versions available, see the tags on this r
 
 # Licenses
 
-[![GitHub license](https://img.shields.io/github/license/fastenhealth/fasten-onprem?style=flat-square)](https://github.com/fastenhealth/fasten-onprem/blob/main/LICENSE.md)
+[![GitHub license](https://img.shields.io/github/license/jwilleke/yourphr?style=flat-square)](https://github.com/jwilleke/yourphr/blob/main/LICENSE.md)
 
 # Fundraising & Sponsorships
 

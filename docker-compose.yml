@@ -3,7 +3,7 @@ services:
   fasten:
     # NOTE: only developers need to build Fasten from source
     # For production, use the pre-built image from GitHub Packages
-    # ghcr.io/fastenhealth/fasten-onprem:main
+    # ghcr.io/jwilleke/yourphr:main
     build:
       context: .
       dockerfile: Dockerfile

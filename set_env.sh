@@ -68,4 +68,4 @@ else
     rm .env.bak
 fi
 
-echo "Fasten .env updated successfully."
+echo "YourPHR .env updated successfully."
