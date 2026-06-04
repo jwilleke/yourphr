@@ -435,7 +435,7 @@ export class PractitionerListComponent implements OnInit, OnDestroy {
           this.escapeCsvValue(practitioner.full_name || ''),
           this.escapeCsvValue(practitioner.organization || ''),
           this.escapeCsvValue(practitioner.jobTitle || ''),
-          this.escapeCsvValue('Fasten Health'),
+          this.escapeCsvValue('YourPHR'),
           this.escapeCsvValue(practitioner.emailUse),
           this.escapeCsvValue(practitioner.email),
           this.escapeCsvValue(practitioner.phoneUse),

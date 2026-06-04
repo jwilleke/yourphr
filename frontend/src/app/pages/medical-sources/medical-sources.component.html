@@ -12,12 +12,12 @@
         <strong>Work-in-Progress!</strong> Some sources may not be implemented correctly.
         Some sources may require frequent re-connection, as background refresh has not been implemented yet.
         <br/>
-        If you have feedback regarding healthcare sources, please <a href="https://github.com/fastenhealth/fasten-onprem/issues" externalLink>file a ticket <i class="fab fa-github"></i></a>
+        If you have feedback regarding healthcare sources, please <a href="https://github.com/jwilleke/yourphr/issues" externalLink>file a ticket <i class="fab fa-github"></i></a>
 
         <span *ngIf="environment_name == 'sandbox'">
           <br/>
           <br/>
-        In <strong>Sandbox mode</strong> Fasten Health cannot access real patient information. You must use Sandbox credentials when authenticating to healthcare sources.
+        In <strong>Sandbox mode</strong> YourPHR cannot access real patient information. You must use Sandbox credentials when authenticating to healthcare sources.
           <a href="https://docs.fastenhealth.com/getting-started/sandbox.html#connecting-a-new-source" externalLink>These credentials are available in our Sandbox Guide</a>
         </span>
       </div>
@@ -28,7 +28,7 @@
       <h2 class="az-content-title mg-t-40">Medical Record Sources</h2>
 
       <div class="az-content-label mg-b-5">Manual Upload</div>
-      <p class="mg-b-20">Fasten also supports manually uploaded electronic medical records (EMR/EHR). Click below to upload.</p>
+      <p class="mg-b-20">YourPHR also supports manually uploaded electronic medical records (EMR/EHR). Click below to upload.</p>
 
       <div class="row row-sm">
         <div class="col-lg">
@@ -69,8 +69,8 @@
 
   <div class="modal-body">
     <h6>Connect Source</h6>
-    <p>Would you like to connect this healthcare institution with Fasten Health? You will be redirected to their patient portal,
-      where you can authenticate and select data to import into Fasten Health.
+    <p>Would you like to connect this healthcare institution with YourPHR? You will be redirected to their patient portal,
+      where you can authenticate and select data to import into YourPHR.
     </p>
     <div class="alert alert-warning">
       Patients must safeguard their health information, as HIPAA doesn't cover individual handling or most personal apps
@@ -109,7 +109,7 @@
   </div>
 
   <div class="modal-body">
-    <h6>Fasten does not natively support <a href="https://en.wikipedia.org/wiki/Consolidated_Clinical_Document_Architecture"  externalLink >CCDA</a> Health Records</h6>
+    <h6>YourPHR does not natively support <a href="https://en.wikipedia.org/wiki/Consolidated_Clinical_Document_Architecture"  externalLink >CCDA</a> Health Records</h6>
 
     <p>However we can convert it automatically using <a href="https://github.com/metriport/metriport/tree/master/packages/fhir-converter" externalLink>open-source software</a> generously provided the team at <a href="https://www.metriport.com/"  externalLink>Metriport</a><br/><br/>
       This converter is hosted by <a href="https://www.fastenhealth.com/" externalLink>Fasten Health, Inc.</a> and is subject to our <a href="https://policy.fastenhealth.com/privacy_policy.html" externalLink>Privacy Policy</a>.
