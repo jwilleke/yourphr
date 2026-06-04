@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { NlmTypeaheadComponent } from './nlm-typeahead.component';
-import {HttpClientTestingModule} from '@angular/common/http/testing';
+import {} from '@angular/common/http/testing';
 import {NgbActiveModal, NgbCollapseModule, NgbTypeaheadModule} from '@ng-bootstrap/ng-bootstrap';
 import {FastenApiService} from '../../services/fasten-api.service';
 import {NlmClinicalTableSearchService} from '../../services/nlm-clinical-table-search.service';

@@ -1,5 +1,5 @@
 import {Component, Input, OnInit} from '@angular/core';
-import {NgChartsModule} from 'ng2-charts';
+import {BaseChartDirective} from 'ng2-charts';
 import {DashboardWidgetConfig} from '../../models/widget/dashboard-widget-config';
 import {FastenApiService} from '../../services/fasten-api.service';
 import {DashboardWidgetComponent} from '../dashboard-widget/dashboard-widget.component';
@@ -11,7 +11,7 @@ import {PipesModule} from '../../pipes/pipes.module';
 
 @Component({
   standalone: true,
-  imports: [NgChartsModule, CommonModule, LoadingWidgetComponent, EmptyWidgetComponent, PipesModule],
+  imports: [BaseChartDirective, CommonModule, LoadingWidgetComponent, EmptyWidgetComponent, PipesModule],
   selector: 'simple-line-chart-widget',
   templateUrl: './simple-line-chart-widget.component.html',
   styleUrls: ['./simple-line-chart-widget.component.scss']

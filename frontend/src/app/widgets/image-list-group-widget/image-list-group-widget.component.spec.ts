@@ -3,8 +3,8 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ImageListGroupWidgetComponent } from './image-list-group-widget.component';
 import {FastenApiService} from '../../services/fasten-api.service';
 import {HTTP_CLIENT_TOKEN} from '../../dependency-injection';
-import {HttpClient} from '@angular/common/http';
-import {HttpClientTestingModule} from '@angular/common/http/testing';
+import { HttpClient, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 
 describe('ImageListGroupWidgetComponent', () => {
   let component: ImageListGroupWidgetComponent;
@@ -12,14 +12,16 @@ describe('ImageListGroupWidgetComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [ ImageListGroupWidgetComponent, HttpClientTestingModule ],
-      providers: [
+    imports: [ImageListGroupWidgetComponent],
+    providers: [
         {
-          provide: HTTP_CLIENT_TOKEN,
-          useClass: HttpClient,
+            provide: HTTP_CLIENT_TOKEN,
+            useClass: HttpClient,
         },
-      ]
-    })
+        provideHttpClient(withInterceptorsFromDi()),
+        provideHttpClientTesting(),
+    ]
+})
     .compileComponents();
 
     fixture = TestBed.createComponent(ImageListGroupWidgetComponent);

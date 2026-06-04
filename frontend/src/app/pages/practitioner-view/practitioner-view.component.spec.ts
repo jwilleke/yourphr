@@ -3,7 +3,7 @@ import { PractitionerViewComponent } from './practitioner-view.component';
 import { ActivatedRoute } from '@angular/router';
 import { of } from 'rxjs';
 import { HTTP_CLIENT_TOKEN } from 'src/app/dependency-injection';
-import { HttpClient, HttpClientModule } from '@angular/common/http';
+import { HttpClient, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 
 describe('PractitionerViewComponent', () => {
   let component: PractitionerViewComponent;
@@ -11,23 +11,24 @@ describe('PractitionerViewComponent', () => {
 
   beforeEach(async () => {
     TestBed.configureTestingModule({
-      imports: [PractitionerViewComponent, HttpClientModule],
-      providers: [
+    imports: [PractitionerViewComponent],
+    providers: [
         {
-          provide: ActivatedRoute,
-          useValue: {
-            snapshot: {
-              paramMap: { get: (key: string) => 'test-practitioner-id' },
+            provide: ActivatedRoute,
+            useValue: {
+                snapshot: {
+                    paramMap: { get: (key: string) => 'test-practitioner-id' },
+                },
+                params: of({ id: 'test-practitioner-id' }),
             },
-            params: of({ id: 'test-practitioner-id' }),
-          },
         },
         {
-          provide: HTTP_CLIENT_TOKEN,
-          useClass: HttpClient,
+            provide: HTTP_CLIENT_TOKEN,
+            useClass: HttpClient,
         },
-      ],
-    }).compileComponents();
+        provideHttpClient(withInterceptorsFromDi()),
+    ]
+}).compileComponents();
   });
 
   beforeEach(() => {

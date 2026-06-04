@@ -5,8 +5,8 @@ import {NgbCollapseModule} from '@ng-bootstrap/ng-bootstrap';
 import {FastenApiService} from '../../../../services/fasten-api.service';
 import {RouterTestingModule} from '@angular/router/testing';
 import {HTTP_CLIENT_TOKEN} from '../../../../dependency-injection';
-import {HttpClient} from '@angular/common/http';
-import {HttpClientTestingModule} from '@angular/common/http/testing';
+import { HttpClient, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 
 describe('BinaryComponent', () => {
   let component: BinaryComponent;
@@ -17,18 +17,20 @@ describe('BinaryComponent', () => {
     mockedFastenApiService = jasmine.createSpyObj('FastenApiService', ['getBinaryModel'])
 
     await TestBed.configureTestingModule({
-      imports: [HttpClientTestingModule, BinaryComponent, NgbCollapseModule, RouterTestingModule],
-      providers: [
+    imports: [BinaryComponent, NgbCollapseModule, RouterTestingModule],
+    providers: [
         {
-          provide: FastenApiService,
-          useValue: mockedFastenApiService
+            provide: FastenApiService,
+            useValue: mockedFastenApiService
         },
         {
-          provide: HTTP_CLIENT_TOKEN,
-          useClass: HttpClient,
+            provide: HTTP_CLIENT_TOKEN,
+            useClass: HttpClient,
         },
-      ]
-    })
+        provideHttpClient(withInterceptorsFromDi()),
+        provideHttpClientTesting(),
+    ]
+})
     .compileComponents();
 
     fixture = TestBed.createComponent(BinaryComponent);

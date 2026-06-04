@@ -1,7 +1,7 @@
-import { async, ComponentFixture, TestBed } from '@angular/core/testing';
+import { waitForAsync, ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { HttpClient } from '@angular/common/http';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { HttpClient, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { RouterModule } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 import { IconsModule } from 'src/app/icon-module';
@@ -16,7 +16,7 @@ describe('HeaderComponent', () => {
   let fixture: ComponentFixture<HeaderComponent>;
   let mockedAuthService;
 
-  beforeEach(async(() => {
+  beforeEach(waitForAsync(() => {
     mockedAuthService = jasmine.createSpyObj(
       'AuthService',
       {
@@ -25,19 +25,21 @@ describe('HeaderComponent', () => {
       }
     )
     TestBed.configureTestingModule({
-      imports: [HttpClientTestingModule, RouterTestingModule, RouterModule, IconsModule],
-      declarations: [HeaderComponent],
-      providers: [
+    declarations: [HeaderComponent],
+    imports: [RouterTestingModule, RouterModule, IconsModule],
+    providers: [
         {
-          provide: HTTP_CLIENT_TOKEN,
-          useClass: HttpClient,
+            provide: HTTP_CLIENT_TOKEN,
+            useClass: HttpClient,
         },
         {
-          provide: AuthService,
-          useValue: mockedAuthService
-        }
-      ]
-    })
+            provide: AuthService,
+            useValue: mockedAuthService
+        },
+        provideHttpClient(withInterceptorsFromDi()),
+        provideHttpClientTesting()
+    ]
+})
       .compileComponents();
   }));
 

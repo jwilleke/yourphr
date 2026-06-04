@@ -3,10 +3,10 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { RecordsSummaryWidgetComponent } from './records-summary-widget.component';
 import {FastenApiService} from '../../services/fasten-api.service';
 import {HTTP_CLIENT_TOKEN} from '../../dependency-injection';
-import {HttpClient} from '@angular/common/http';
+import { HttpClient, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 import {RouterTestingModule} from '@angular/router/testing';
 import {of} from 'rxjs';
-import {HttpClientTestingModule} from '@angular/common/http/testing';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 
 //skipping this test, cannot figure out why the `getSummary` function call is not correctly mocked.
 // this.fastenApi: FastenApiService seems to be null
@@ -18,18 +18,20 @@ xdescribe('RecordsSummaryWidgetComponent', () => {
   beforeEach(async () => {
     mockedFastenApiService = jasmine.createSpyObj('FastenApiService', ['queryResources', 'getSummary']) as FastenApiService
     await TestBed.configureTestingModule({
-      imports: [ RecordsSummaryWidgetComponent, RouterTestingModule, HttpClientTestingModule ],
-      providers: [
+    imports: [RecordsSummaryWidgetComponent, RouterTestingModule],
+    providers: [
         {
-          provide: FastenApiService,
-          useValue: mockedFastenApiService
+            provide: FastenApiService,
+            useValue: mockedFastenApiService
         },
         {
-          provide: HTTP_CLIENT_TOKEN,
-          useClass: HttpClient,
-        }
-      ]
-    }).compileComponents();
+            provide: HTTP_CLIENT_TOKEN,
+            useClass: HttpClient,
+        },
+        provideHttpClient(withInterceptorsFromDi()),
+        provideHttpClientTesting()
+    ]
+}).compileComponents();
     mockedFastenApiService.getSummary.and.returnValue();
 
     fixture = TestBed.createComponent(RecordsSummaryWidgetComponent);

@@ -3,7 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { GroupedBarChartWidgetComponent } from './grouped-bar-chart-widget.component';
 import {FastenApiService} from '../../services/fasten-api.service';
 import {HTTP_CLIENT_TOKEN} from '../../dependency-injection';
-import {HttpClient} from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 
 describe('GroupedBarChartWidgetComponent', () => {
   let component: GroupedBarChartWidgetComponent;

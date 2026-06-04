@@ -2,7 +2,7 @@ import { Component, Input, OnInit } from '@angular/core';
 import { formatDate } from '@angular/common';
 import { ObservationModel } from '../../../../../lib/models/resources/observation-model';
 import { ChartConfiguration } from 'chart.js';
-import { NgChartsModule } from 'ng2-charts';
+import { BaseChartDirective } from 'ng2-charts';
 
 const defaultChartHeight = 65;
 const defaultChartEntryHeight = 30;
@@ -10,7 +10,7 @@ const defaultChartEntryHeight = 30;
 @Component({
   standalone: true,
   selector: 'observation-bar-chart',
-  imports: [ NgChartsModule ],
+  imports: [ BaseChartDirective ],
   templateUrl: './observation-bar-chart.component.html',
   styleUrls: ['./observation-bar-chart.component.scss']
 })

@@ -2,13 +2,13 @@ import { BrowserModule } from '@angular/platform-browser';
 import { NgModule, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
-import {HttpClientModule, HTTP_INTERCEPTORS, HttpClient} from '@angular/common/http';
+import { HTTP_INTERCEPTORS, HttpClient, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 import { NgbModule } from "@ng-bootstrap/ng-bootstrap";
 import { HeaderComponent } from './components/header/header.component';
 import { FooterComponent } from './components/footer/footer.component';
 import { DashboardComponent } from './pages/dashboard/dashboard.component';
 import { MedicalSourcesComponent } from './pages/medical-sources/medical-sources.component';
-import { NgChartsModule } from 'ng2-charts';
+import { BaseChartDirective } from 'ng2-charts';
 import {SharedModule} from './components/shared.module';
 import { ResourceDetailComponent } from './pages/resource-detail/resource-detail.component';
 import { AuthSignupComponent } from './pages/auth-signup/auth-signup.component';
@@ -43,75 +43,70 @@ import { SettingsComponent } from './pages/settings/settings.component';
 import { SetupEncryptionKeyComponent } from './pages/setup-encryption-key/setup-encryption-key.component';
 import { GetEncryptionKeyWizardComponent } from './pages/get-encryption-key-wizard/get-encryption-key-wizard.component';
 
-@NgModule({
-  declarations: [
-    AppComponent,
-    SettingsComponent,
-    HeaderComponent,
-    FooterComponent,
-    DashboardComponent,
-    MedicalSourcesComponent,
-    ResourceDetailComponent,
-    AuthSignupComponent,
-    AuthSigninComponent,
-    SourceDetailComponent,
-    PatientProfileComponent,
-    MedicalHistoryComponent,
-    ReportLabsComponent,
-    ResourceCreatorComponent,
-    ExploreComponent,
-    DesktopCallbackComponent,
-    BackgroundJobsComponent,
-    AuthSignupWizardComponent,
-    UserListComponent,
-    PractitionerHistoryComponent,
-    SetupEncryptionKeyComponent,
-    GetEncryptionKeyWizardComponent,
-  ],
-  imports: [
-    FormsModule,
-    ReactiveFormsModule,
-    BrowserModule,
-    SharedModule,
-    FhirCardModule,
-    FhirDatatableModule,
-    AppRoutingModule,
-    HttpClientModule,
-    NgbModule,
-    NgChartsModule,
-    HighlightModule,
-    PipesModule,
-    InfiniteScrollModule,
-    NgSelectModule,
-    WidgetsModule,
-    DirectivesModule,
-    IconsModule,
-  ],
-  providers: [
-    {
-      provide: HTTP_CLIENT_TOKEN,
-      useClass: HttpClient,
-    },
-    {
-      provide: HTTP_INTERCEPTORS,
-      useClass: AuthInterceptorService,
-      multi: true,
-      deps: [AuthService, Router]
-    },
-    IsAuthenticatedAuthGuard,
-    {
-      provide: HIGHLIGHT_OPTIONS,
-      useValue: {
-        coreLibraryLoader: () => import('highlight.js/lib/core'),
-        lineNumbersLoader: () => import('highlightjs-line-numbers.js'), // Optional, only if you want the line numbers
-        languages: {
-          json: () => import('highlight.js/lib/languages/json')
+@NgModule({ declarations: [
+        AppComponent,
+        SettingsComponent,
+        HeaderComponent,
+        FooterComponent,
+        DashboardComponent,
+        MedicalSourcesComponent,
+        ResourceDetailComponent,
+        AuthSignupComponent,
+        AuthSigninComponent,
+        SourceDetailComponent,
+        PatientProfileComponent,
+        MedicalHistoryComponent,
+        ReportLabsComponent,
+        ResourceCreatorComponent,
+        ExploreComponent,
+        DesktopCallbackComponent,
+        BackgroundJobsComponent,
+        AuthSignupWizardComponent,
+        UserListComponent,
+        PractitionerHistoryComponent,
+        SetupEncryptionKeyComponent,
+        GetEncryptionKeyWizardComponent,
+    ],
+    exports: [],
+    bootstrap: [AppComponent],
+    schemas: [CUSTOM_ELEMENTS_SCHEMA] //required for lhncbc/lforms (webcomponent)
+    , imports: [FormsModule,
+        ReactiveFormsModule,
+        BrowserModule,
+        SharedModule,
+        FhirCardModule,
+        FhirDatatableModule,
+        AppRoutingModule,
+        NgbModule,
+        BaseChartDirective,
+        HighlightModule,
+        PipesModule,
+        InfiniteScrollModule,
+        NgSelectModule,
+        WidgetsModule,
+        DirectivesModule,
+        IconsModule], providers: [
+        {
+            provide: HTTP_CLIENT_TOKEN,
+            useClass: HttpClient,
         },
-      }
-    }
-  ],
-  exports: [],
-  bootstrap: [AppComponent],
-  schemas: [CUSTOM_ELEMENTS_SCHEMA] //required for lhncbc/lforms (webcomponent)
-})
+        {
+            provide: HTTP_INTERCEPTORS,
+            useClass: AuthInterceptorService,
+            multi: true,
+            deps: [AuthService, Router]
+        },
+        IsAuthenticatedAuthGuard,
+        {
+            provide: HIGHLIGHT_OPTIONS,
+            useValue: {
+                coreLibraryLoader: () => import('highlight.js/lib/core'),
+                lineNumbersLoader: () => import('highlightjs-line-numbers.js'), // Optional, only if you want the line numbers
+                languages: {
+                    json: () => import('highlight.js/lib/languages/json')
+                },
+            }
+        },
+        provideHttpClient(withInterceptorsFromDi())
+    ] })
 export class AppModule {}

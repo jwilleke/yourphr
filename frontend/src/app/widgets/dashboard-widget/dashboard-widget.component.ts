@@ -1,7 +1,7 @@
 import {Component, Input, OnInit} from '@angular/core';
 import {ChartConfiguration, ChartDataset, ChartOptions} from 'chart.js';
 import {DashboardWidgetConfig} from '../../models/widget/dashboard-widget-config';
-import {NgChartsModule} from 'ng2-charts';
+import {BaseChartDirective} from 'ng2-charts';
 import {CommonModule} from '@angular/common';
 import {NgbDatepickerModule} from '@ng-bootstrap/ng-bootstrap';
 import {DashboardWidgetComponentInterface} from '../dashboard-widget-component-interface';
@@ -18,7 +18,7 @@ import {map} from 'rxjs/operators';
 
 @Component({
   standalone: true,
-  imports: [NgChartsModule, CommonModule, NgbDatepickerModule, LoadingWidgetComponent],
+  imports: [BaseChartDirective, CommonModule, NgbDatepickerModule, LoadingWidgetComponent],
   selector: 'app-dashboard-widget',
   templateUrl: './dashboard-widget.component.html',
   styleUrls: ['./dashboard-widget.component.scss'],

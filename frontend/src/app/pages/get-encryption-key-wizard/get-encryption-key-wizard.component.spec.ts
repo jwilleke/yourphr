@@ -1,11 +1,12 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Router } from '@angular/router';
 import { of } from 'rxjs';
 
 import { GetEncryptionKeyWizardComponent } from './get-encryption-key-wizard.component';
 import { FastenApiService } from '../../services/fasten-api.service';
 import { AuthService } from '../../services/auth.service';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 
 describe('GetEncryptionKeyWizardComponent', () => {
   let component: GetEncryptionKeyWizardComponent;
@@ -25,14 +26,16 @@ describe('GetEncryptionKeyWizardComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ GetEncryptionKeyWizardComponent ],
-      imports: [ HttpClientTestingModule ],
-      providers: [
+    declarations: [GetEncryptionKeyWizardComponent],
+    imports: [],
+    providers: [
         { provide: Router, useValue: mockRouter },
         { provide: AuthService, useValue: mockAuthService },
-        { provide: FastenApiService, useValue: mockFastenApiService }
-      ]
-    })
+        { provide: FastenApiService, useValue: mockFastenApiService },
+        provideHttpClient(withInterceptorsFromDi()),
+        provideHttpClientTesting()
+    ]
+})
     .compileComponents();
 
     fixture = TestBed.createComponent(GetEncryptionKeyWizardComponent);

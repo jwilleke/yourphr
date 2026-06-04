@@ -3,6 +3,8 @@ import { platformBrowserDynamic } from '@angular/platform-browser-dynamic';
 
 import { AppModule } from './app/app.module';
 import { environment } from './environments/environment';
+import { Chart, registerables } from 'chart.js';
+Chart.register(...registerables);
 
 if (environment.production) {
   enableProdMode();

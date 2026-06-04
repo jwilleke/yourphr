@@ -3,7 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { PractitionerEditPageComponent } from './practitioner-edit.component';
 import { ActivatedRoute } from '@angular/router';
 import { HTTP_CLIENT_TOKEN } from 'src/app/dependency-injection';
-import { HttpClient, HttpClientModule } from '@angular/common/http';
+import { HttpClient, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 import { of } from 'rxjs';
 
 describe('PractitionerEditComponent', () => {
@@ -12,23 +12,24 @@ describe('PractitionerEditComponent', () => {
 
   beforeEach(async () => {
     TestBed.configureTestingModule({
-      imports: [PractitionerEditPageComponent, HttpClientModule],
-      providers: [
+    imports: [PractitionerEditPageComponent],
+    providers: [
         {
-          provide: ActivatedRoute,
-          useValue: {
-            snapshot: {
-              paramMap: { get: (key: string) => 'test-practitioner-id' },
+            provide: ActivatedRoute,
+            useValue: {
+                snapshot: {
+                    paramMap: { get: (key: string) => 'test-practitioner-id' },
+                },
+                params: of({ id: 'test-practitioner-id' })
             },
-            params: of({ id: 'test-practitioner-id' })
-          },
         },
         {
-          provide: HTTP_CLIENT_TOKEN,
-          useClass: HttpClient,
+            provide: HTTP_CLIENT_TOKEN,
+            useClass: HttpClient,
         },
-      ],
-    }).compileComponents();
+        provideHttpClient(withInterceptorsFromDi()),
+    ]
+}).compileComponents();
   });
 
   beforeEach(() => {

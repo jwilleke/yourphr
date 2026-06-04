@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import {NgChartsModule} from 'ng2-charts';
+import {BaseChartDirective} from 'ng2-charts';
 import {ChartConfiguration} from 'chart.js';
 import {DashboardWidgetComponent} from '../dashboard-widget/dashboard-widget.component';
 import {CommonModule} from '@angular/common';
@@ -9,7 +9,7 @@ import {PipesModule} from '../../pipes/pipes.module';
 
 @Component({
   standalone: true,
-  imports: [NgChartsModule, CommonModule, LoadingWidgetComponent, EmptyWidgetComponent, PipesModule],
+  imports: [BaseChartDirective, CommonModule, LoadingWidgetComponent, EmptyWidgetComponent, PipesModule],
   selector: 'grouped-bar-chart-widget',
   templateUrl: './grouped-bar-chart-widget.component.html',
   styleUrls: ['./grouped-bar-chart-widget.component.scss']

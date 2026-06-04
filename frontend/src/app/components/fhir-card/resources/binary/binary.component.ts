@@ -15,7 +15,7 @@ import {MarkdownComponent} from "../../datatypes/markdown/markdown.component";
 import {BinaryTextComponent} from "../../datatypes/binary-text/binary-text.component";
 import {DicomComponent} from "../../datatypes/dicom/dicom.component";
 import {HighlightModule} from "ngx-highlightjs";
-import {HttpClient, HttpClientModule} from "@angular/common/http";
+import { HttpClient } from "@angular/common/http";
 import {AuthService} from "../../../../services/auth.service";
 import {RtfComponent} from '../../datatypes/rtf/rtf.component';
 

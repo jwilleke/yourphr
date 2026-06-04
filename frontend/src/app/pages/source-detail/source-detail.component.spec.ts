@@ -1,11 +1,11 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { SourceDetailComponent } from './source-detail.component';
-import {HttpClientTestingModule} from '@angular/common/http/testing';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import {RouterTestingModule} from '@angular/router/testing';
 import {ActivatedRoute, convertToParamMap, RouterModule} from '@angular/router';
 import {HTTP_CLIENT_TOKEN} from '../../dependency-injection';
-import {HttpClient} from '@angular/common/http';
+import { HttpClient, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 import { FhirDatatableModule } from 'src/app/components/fhir-datatable/fhir-datatable.module';
 
 describe('SourceDetailComponent', () => {
@@ -14,19 +14,21 @@ describe('SourceDetailComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [HttpClientTestingModule, RouterTestingModule, RouterModule, FhirDatatableModule],
-      declarations: [ SourceDetailComponent ],
-      providers: [
+    declarations: [SourceDetailComponent],
+    imports: [RouterTestingModule, RouterModule, FhirDatatableModule],
+    providers: [
         {
-          provide: ActivatedRoute,
-          useValue: {snapshot: {paramMap: convertToParamMap( { 'source_id': 'b64.c291cmNlOmF0aGVuYTphLTgwMDAwLkUtMTQ1NDU' } )}}
+            provide: ActivatedRoute,
+            useValue: { snapshot: { paramMap: convertToParamMap({ 'source_id': 'b64.c291cmNlOmF0aGVuYTphLTgwMDAwLkUtMTQ1NDU' }) } }
         },
         {
-          provide: HTTP_CLIENT_TOKEN,
-          useClass: HttpClient,
+            provide: HTTP_CLIENT_TOKEN,
+            useClass: HttpClient,
         },
-      ]
-    })
+        provideHttpClient(withInterceptorsFromDi()),
+        provideHttpClientTesting(),
+    ]
+})
     .compileComponents();
 
     fixture = TestBed.createComponent(SourceDetailComponent);

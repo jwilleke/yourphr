@@ -1,11 +1,11 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { FhirDatatableComponent } from './fhir-datatable.component';
-import {HttpClientTestingModule} from '@angular/common/http/testing';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import {FhirDatatableOutletDirective} from './fhir-datatable-outlet.directive';
 import {FastenApiService} from '../../../services/fasten-api.service';
 import {HTTP_CLIENT_TOKEN} from '../../../dependency-injection';
-import {HttpClient} from '@angular/common/http';
+import { HttpClient, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 
 describe('ResourceListComponent', () => {
   let component: FhirDatatableComponent;
@@ -13,16 +13,18 @@ describe('ResourceListComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [HttpClientTestingModule],
-      declarations: [ FhirDatatableComponent, FhirDatatableOutletDirective ],
-      providers: [
+    declarations: [FhirDatatableComponent, FhirDatatableOutletDirective],
+    imports: [],
+    providers: [
         FastenApiService,
         {
-          provide: HTTP_CLIENT_TOKEN,
-          useClass: HttpClient,
+            provide: HTTP_CLIENT_TOKEN,
+            useClass: HttpClient,
         },
-      ]
-    })
+        provideHttpClient(withInterceptorsFromDi()),
+        provideHttpClientTesting(),
+    ]
+})
     .compileComponents();
 
     fixture = TestBed.createComponent(FhirDatatableComponent);

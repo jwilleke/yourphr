@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import {NgChartsModule} from 'ng2-charts';
+import {BaseChartDirective} from 'ng2-charts';
 import {CommonModule} from '@angular/common';
 import {LoadingWidgetComponent} from '../loading-widget/loading-widget.component';
 import {EmptyWidgetComponent} from '../empty-widget/empty-widget.component';

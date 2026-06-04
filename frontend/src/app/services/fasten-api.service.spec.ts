@@ -1,9 +1,9 @@
 import { TestBed } from '@angular/core/testing';
 
 import { FastenApiService } from './fasten-api.service';
-import {HttpClientTestingModule} from '@angular/common/http/testing';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import {HTTP_CLIENT_TOKEN} from '../dependency-injection';
-import {HttpClient} from '@angular/common/http';
+import { HttpClient, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 import {DashboardWidgetQuery} from '../models/widget/dashboard-widget-query';
 
 describe('FastenApiService', () => {
@@ -11,14 +11,16 @@ describe('FastenApiService', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      imports: [HttpClientTestingModule],
-      providers: [
+    imports: [],
+    providers: [
         {
-          provide: HTTP_CLIENT_TOKEN,
-          useClass: HttpClient,
+            provide: HTTP_CLIENT_TOKEN,
+            useClass: HttpClient,
         },
-      ]
-    });
+        provideHttpClient(withInterceptorsFromDi()),
+        provideHttpClientTesting(),
+    ]
+});
     service = TestBed.inject(FastenApiService);
   });
 

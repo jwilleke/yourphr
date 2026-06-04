@@ -6,7 +6,7 @@ import { PipesModule } from 'src/app/pipes/pipes.module';
 import { NgbCollapse } from '@ng-bootstrap/ng-bootstrap';
 import { IResourceRaw, ResourceFhir } from 'src/app/models/fasten/resource_fhir';
 import { GlossaryLookupComponent } from '../glossary-lookup/glossary-lookup.component';
-import { NgChartsModule } from 'ng2-charts';
+import { BaseChartDirective } from 'ng2-charts';
 import { HTTP_CLIENT_TOKEN } from 'src/app/dependency-injection';
 import { HttpClient, HttpClientModule, HttpHandler } from '@angular/common/http';
 import { RouterTestingModule } from '@angular/router/testing';
@@ -42,7 +42,7 @@ const meta: Meta<ReportLabsObservationComponent> = {
   decorators: [
     withHttpClientProvider,
     moduleMetadata({
-      imports: [PipesModule, GlossaryLookupComponent, NgChartsModule, RouterTestingModule, HttpClientModule, ObservationVisualizationComponent, NgbCollapse],
+      imports: [PipesModule, GlossaryLookupComponent, BaseChartDirective, RouterTestingModule, HttpClientModule, ObservationVisualizationComponent, NgbCollapse],
       declarations: [],
       providers: [],
     })
