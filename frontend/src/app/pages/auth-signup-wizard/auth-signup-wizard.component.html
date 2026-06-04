@@ -68,15 +68,6 @@
               </div>
             </div><!-- form-group -->
 
-
-
-            <div class="form-group form-check">
-              <input [(ngModel)]="newUser.join_mailing_list" name="join_mailing_list" #join_mailing_list="ngModel" type="checkbox" class="form-check-input" id="joinMailingListCheck">
-              <label class="form-check-label" for="joinMailingListCheck">
-                Join Mailing List
-              </label>
-            </div>
-
             <button [disabled]="!userForm.form.valid || loading" type="submit" class="btn btn-az-primary btn-block">Create Account</button>
 
             <div *ngIf="errorMsg" class="alert alert-danger mt-3" role="alert">
