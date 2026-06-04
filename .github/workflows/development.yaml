@@ -65,4 +65,19 @@ jobs:
       - run: |
           make build-storybook
 
-  
+  lint-markdown:
+    name: Lint Markdown
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: markdownlint
+        uses: DavidAnson/markdownlint-cli2-action@v23
+        with:
+          # Uses .markdownlint.json at the repo root. Skip vendored/3rd-party
+          # and legal text.
+          globs: |
+            **/*.md
+            !vendor/**
+            !**/node_modules/**
+            !LICENSE.md
