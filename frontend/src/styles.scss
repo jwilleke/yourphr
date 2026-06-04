@@ -101,12 +101,12 @@
 @import 'assets/fonts/montserrat/montserrat.css';
 @import 'assets/fonts/raleway/raleway.css';
 @import 'assets/fonts/poppins/poppins.css';
-//@import "~typicons.font/src/font/typicons.css";
-//@import "~ionicons/dist/css/ionicons.css";
-//@import "~@fortawesome/fontawesome-free/css/all.min.css";
-//@import "~flag-icon-css/css/flag-icon.min.css";
-//@import "~@ng-select/ng-select/themes/default.theme.css";
-// @import "~@ng-select/ng-select/themes/material.theme.css";
+//@import "typicons.font/src/font/typicons.css";
+//@import "ionicons/dist/css/ionicons.css";
+//@import "@fortawesome/fontawesome-free/css/all.min.css";
+//@import "flag-icon-css/css/flag-icon.min.css";
+//@import "../node_modules/@ng-select/ng-select/themes/default.theme.css";
+// @import "../node_modules/@ng-select/ng-select/themes/material.theme.css";
 
 
 
@@ -116,11 +116,11 @@
 @import "./assets/scss/bootstrap/mixins";
 
 /* ############### BOOTSTRAP FRAMEWORK ############### */
-@import "~bootstrap/scss/bootstrap";
+@import "bootstrap/scss/bootstrap";
 
 /* ############### Compass Mixins ############### */
-//@import "~compass-mixins/lib/compass";
-//@import "~compass-mixins/lib/animate";
+//@import "compass-mixins/lib/compass";
+//@import "compass-mixins/lib/animate";
 
 // Custom variables and mixins
 @import "./assets/scss/custom/variables";
@@ -206,16 +206,16 @@
 @import "./assets/scss/util/width";
 
 /* ############### PLUGIN STYLES ############### */
-//@import "~morris.js/morris.css";
-//@import "~datatables.net-dt/css/jquery.dataTables.css";
-//@import '~@fullcalendar/core/main.css';
-//@import '~perfect-scrollbar/css/perfect-scrollbar.css';
+//@import "morris.js/morris.css";
+//@import "datatables.net-dt/css/jquery.dataTables.css";
+//@import '@fullcalendar/core/main.css';
+//@import 'perfect-scrollbar/css/perfect-scrollbar.css';
 
-@import '~@swimlane/ngx-datatable/index.css';
-@import '~@swimlane/ngx-datatable/themes/bootstrap.css';
-@import '~@swimlane/ngx-datatable/assets/icons.css';
-@import '~highlight.js/styles/github.css';
-@import "~@ng-select/ng-select/themes/default.theme.css";
-@import "~gridstack/dist/gridstack.min.css";
+@import '../node_modules/@swimlane/ngx-datatable/index.css';
+@import '../node_modules/@swimlane/ngx-datatable/themes/bootstrap.css';
+@import '../node_modules/@swimlane/ngx-datatable/assets/icons.css';
+@import '../node_modules/highlight.js/styles/github.css';
+@import "../node_modules/@ng-select/ng-select/themes/default.theme.css";
+@import "../node_modules/gridstack/dist/gridstack.min.css";
 
 @import 'custom';

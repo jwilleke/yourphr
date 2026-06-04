@@ -42,8 +42,8 @@ const meta: Meta<ReportLabsObservationComponent> = {
   decorators: [
     withHttpClientProvider,
     moduleMetadata({
-      imports: [PipesModule, GlossaryLookupComponent, NgChartsModule, RouterTestingModule, HttpClientModule, ObservationVisualizationComponent],
-      declarations: [ NgbCollapse ],
+      imports: [PipesModule, GlossaryLookupComponent, NgChartsModule, RouterTestingModule, HttpClientModule, ObservationVisualizationComponent, NgbCollapse],
+      declarations: [],
       providers: [],
     })
   ],

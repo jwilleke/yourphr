@@ -47,7 +47,7 @@ export class DashboardWidgetComponent implements OnInit, DashboardWidgetComponen
   chartDatasetsDefaults = [];
   chartDatasets: ChartConfiguration<'line'>['data']['datasets'] = [];
   chartLabels: any[] | string[] = [];
-  chartOptions: ChartOptions = {}
+  chartOptions: ChartOptions<any> = {}
   // chartColors: any;
 
   constructor(public fastenApi: FastenApiService) {
