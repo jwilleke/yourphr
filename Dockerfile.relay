@@ -1,0 +1,14 @@
+# YourPHR SMART on FHIR OAuth store-and-poll relay (EPIC #20, issue #50).
+# A tiny static Go service (pure stdlib); see backend/cmd/relay and
+# docs/planning/smart-on-fhir/oauth-gateway.md.
+
+FROM golang:1.24 as build
+WORKDIR /src
+COPY . .
+RUN CGO_ENABLED=0 go build -buildvcs=false -o /relay ./backend/cmd/relay
+
+FROM gcr.io/distroless/static-debian12
+COPY --from=build /relay /relay
+EXPOSE 8080
+USER nonroot:nonroot
+ENTRYPOINT ["/relay"]

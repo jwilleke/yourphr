@@ -1,0 +1,90 @@
+# Example manifests for the YourPHR SMART OAuth relay (EPIC #20, issue #50).
+# Copy into mj-infra-flux (apps/.../yourphr-relay/) and adjust. The relay must be PUBLIC and
+# EXCLUDED from Authentik forward-auth: /callback is unauthenticated; /pending is shared-secret
+# gated. Set the secret out-of-band (do not commit a real secret).
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: yourphr-relay
+  namespace: fasten
+type: Opaque
+stringData:
+  # Replace via SOPS / sealed-secrets — never commit a real value.
+  YOURPHR_RELAY_SECRET: "REPLACE_ME"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: yourphr-relay
+  namespace: fasten
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: yourphr-relay
+  template:
+    metadata:
+      labels:
+        app: yourphr-relay
+    spec:
+      containers:
+        - name: relay
+          image: ghcr.io/jwilleke/yourphr-relay:main
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - secretRef:
+                name: yourphr-relay
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              memory: 64Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: yourphr-relay
+  namespace: fasten
+spec:
+  selector:
+    app: yourphr-relay
+  ports:
+    - port: 80
+      targetPort: 8080
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: yourphr-relay
+  namespace: fasten
+  annotations:
+    # IMPORTANT: do NOT route this Ingress through Authentik forward-auth.
+    # The provider redirect to /callback must reach the relay unauthenticated.
+    cert-manager.io/cluster-issuer: letsencrypt
+spec:
+  rules:
+    - host: relay.nerdsbythehour.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: yourphr-relay
+                port:
+                  number: 80
+  tls:
+    - hosts:
+        - relay.nerdsbythehour.com
+      secretName: yourphr-relay-tls
