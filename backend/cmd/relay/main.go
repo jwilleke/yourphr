@@ -83,6 +83,19 @@ func newServer(secret string, ttl time.Duration) (http.Handler, *store) {
 		_, _ = w.Write([]byte("ok"))
 	})
 
+	// "/" is the ServeMux catch-all: respond with a friendly note at the exact root
+	// (a human landing here in a browser), but keep a real 404 for unknown paths.
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/" {
+			http.NotFound(w, r)
+			return
+		}
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		_, _ = w.Write([]byte("<!doctype html><h1>YourPHR SMART relay</h1>" +
+			"<p>OAuth store-and-poll relay — no content here. " +
+			"See <a href=\"https://github.com/jwilleke/yourphr/issues/50\">YourPHR #50</a>.</p>"))
+	})
+
 	// /callback: the provider redirects the user's browser here with ?code&state. Open by
 	// design (the provider must reach it); it only stores a short-lived code keyed by state.
 	mux.HandleFunc("/callback", func(w http.ResponseWriter, r *http.Request) {

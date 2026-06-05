@@ -58,6 +58,18 @@ func TestPendingRequiresSecret(t *testing.T) {
 	}
 }
 
+func TestRoot(t *testing.T) {
+	h, _ := newServer(testSecret, defaultTTL)
+	// Exact root: friendly 200.
+	if rec := do(t, h, http.MethodGet, "/", ""); rec.Code != http.StatusOK {
+		t.Errorf("root: got %d, want 200", rec.Code)
+	}
+	// Unknown path still 404 (root handler is the catch-all but guards on path).
+	if rec := do(t, h, http.MethodGet, "/nope", ""); rec.Code != http.StatusNotFound {
+		t.Errorf("unknown path: got %d, want 404", rec.Code)
+	}
+}
+
 func TestPendingUnknownState(t *testing.T) {
 	h, _ := newServer(testSecret, defaultTTL)
 	if rec := do(t, h, http.MethodGet, "/pending?state=nope", testSecret); rec.Code != http.StatusNotFound {
