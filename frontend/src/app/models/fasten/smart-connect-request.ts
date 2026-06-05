@@ -6,7 +6,8 @@ export interface SmartConnectRequest {
   client_id: string;
   scopes: string;
   redirect_uri?: string;
-  code: string;
+  code?: string;
+  state?: string;
   code_verifier: string;
   display?: string;
 }

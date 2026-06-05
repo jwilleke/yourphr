@@ -9,4 +9,7 @@ export const environment = {
 
   //used to specify the api server that we're going to use (can be relative or absolute). Must not have trailing slash
   fasten_api_endpoint_base: 'https://api.sandbox.fastenhealth.com/v1',
+
+  // self-hosted Go SMART OAuth store-and-poll relay; ${relay_endpoint_base}/callback is the OAuth redirect_uri (EPIC #20, issue #50)
+  relay_endpoint_base: 'https://relay.nerdsbythehour.com',
 };

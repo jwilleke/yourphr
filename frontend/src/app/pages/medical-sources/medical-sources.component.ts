@@ -20,6 +20,8 @@ import {PatientAccessBrand} from '../../models/patient-access-brands';
 import {PlatformService} from '../../services/platform.service';
 import {FormRequestHealthSystemComponent} from '../../components/form-request-health-system/form-request-health-system.component';
 import {extractErrorFromResponse} from '../../../lib/utils/error_extract';
+import {SmartAuthorizeResponse} from '../../models/fasten/smart-authorize';
+import {SmartConnectRequest} from '../../models/fasten/smart-connect-request';
 
 export const sourceConnectWindowTimeout = 24*5000 //wait 2 minutes (5 * 24 = 120)
 
@@ -69,6 +71,21 @@ export class MedicalSourcesComponent implements OnInit {
 
   // CCDA-FHIR modal
   @ViewChild('ccdaWarningModalRef') ccdaWarningModalRef : any;
+
+  // BYO SMART source connect modal (EPIC #20, issue #52)
+  @ViewChild('smartConnectModal') smartConnectModalRef : any;
+  // template-driven form model
+  smartForm = {
+    api_endpoint_base_url: '',
+    client_id: '',
+    scopes: 'launch/patient patient/*.read openid fhirUser offline_access',
+    display: '',
+  }
+  smartConnecting = false
+  smartErrorMsg = ''
+  smartSuccessMsg = ''
+  // toggled to destroy/recreate <app-medical-sources-connected> so it re-loads after a connect
+  showConnectedList = true
 
   constructor(
     private connectGatewayApi: ConnectGatewayService,
@@ -238,6 +255,103 @@ export class MedicalSourcesComponent implements OnInit {
       // x or cancel button clicked, .dismiss()
       return false
     })
+  }
+
+  // -------- Bring-Your-Own SMART source connect flow (EPIC #20, issue #52) --------
+
+  // Opens the BYO SMART connect modal, resetting per-attempt status.
+  public openSmartConnectModal(): void {
+    this.smartErrorMsg = ''
+    this.smartSuccessMsg = ''
+    this.smartConnecting = false
+    this.modalService.open(this.smartConnectModalRef, {ariaLabelledBy: 'smart-connect-title'})
+  }
+
+  // Forces <app-medical-sources-connected> to be destroyed and recreated so it re-runs its
+  // ngOnInit load (it appends sources on init, so a fresh instance is the simplest correct refresh).
+  private refreshConnectedList(): void {
+    this.showConnectedList = false
+    setTimeout(() => { this.showConnectedList = true }, 0)
+  }
+
+  // Runs the 6-step BYO SMART connect flow: authorize -> popup login -> connect (poll/exchange).
+  // The backend never exposes tokens to the browser. connectSource polls our relay (~30s) for the
+  // auth code; since login can outlast one poll, retry up to 3 total attempts before surfacing an error.
+  public async connectSmartSource(): Promise<void> {
+    if (this.smartConnecting) { return } //guard against double-submit
+
+    this.smartErrorMsg = ''
+    this.smartSuccessMsg = ''
+
+    const apiEndpoint = (this.smartForm.api_endpoint_base_url || '').trim()
+    const clientId = (this.smartForm.client_id || '').trim()
+    const scopes = (this.smartForm.scopes || '').trim()
+    const display = (this.smartForm.display || '').trim()
+
+    if (!apiEndpoint || !clientId || !scopes) {
+      this.smartErrorMsg = 'FHIR base URL, Client ID and Scopes are all required.'
+      return
+    }
+
+    const redirectUri = `${environment.relay_endpoint_base}/callback`
+
+    this.smartConnecting = true
+    try {
+      // Step 3: ask backend for the PKCE authorize URL (it does SMART discovery).
+      const authorize: SmartAuthorizeResponse = await this.fastenApi.authorizeSource({
+        api_endpoint_base_url: apiEndpoint,
+        client_id: clientId,
+        scopes: scopes,
+        redirect_uri: redirectUri,
+      }).toPromise()
+
+      if (!authorize?.authorize_url || !authorize?.state || !authorize?.code_verifier) {
+        this.smartErrorMsg = 'Authorization failed: the server did not return a valid authorize URL.'
+        this.smartConnecting = false
+        return
+      }
+
+      // Step 4: open the provider login in a popup; it redirects to our relay /callback when done.
+      window.open(authorize.authorize_url, '_blank')
+
+      // Step 5: complete the connection. The backend polls the relay for the code, exchanges it,
+      // stores the source and runs the initial sync. Retry up to 3 total attempts because login
+      // may take longer than a single ~30s poll window.
+      const connectReq: SmartConnectRequest = {
+        api_endpoint_base_url: apiEndpoint,
+        client_id: clientId,
+        scopes: scopes,
+        redirect_uri: redirectUri,
+        state: authorize.state,
+        code_verifier: authorize.code_verifier,
+        display: display || undefined,
+      }
+
+      let lastErr: any = null
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+          await this.fastenApi.connectSource(connectReq).toPromise()
+          lastErr = null
+          break
+        } catch (err) {
+          lastErr = err
+        }
+      }
+
+      if (lastErr) {
+        this.smartErrorMsg = 'Connection failed: ' + (extractErrorFromResponse(lastErr) || 'Unknown Error') + ' Please complete the login in the popup window and try again.'
+        return
+      }
+
+      // Step 6: success.
+      this.smartSuccessMsg = 'Source connected successfully. Your records are being imported.'
+      this.refreshConnectedList()
+      this.modalService.dismissAll()
+    } catch (err) {
+      this.smartErrorMsg = 'Authorization failed: ' + (extractErrorFromResponse(err) || 'Unknown Error')
+    } finally {
+      this.smartConnecting = false
+    }
   }
 
 }
