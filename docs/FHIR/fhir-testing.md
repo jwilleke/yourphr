@@ -63,6 +63,11 @@ This exercises the real target's auth server (still test data).
 | Scopes | `launch/patient openid fhirUser offline_access patient/*.read` |
 
 > ⚠️ **Do not mix SMART v1 (`.read`) and v2 (`.rs`) scopes** — Veradigm rejects the app. We use **v1**.
+>
+> ⚠️ **`patient/*.read` wildcard:** FollowMyHealth's `scopes_supported` lists *individual* resource
+> scopes, **not** the wildcard. The authorize step accepts the wildcard, but if login/consent
+> rejects it or returns no data, use the explicit scope list below. Also note their identity scope
+> is advertised lowercase as **`fhiruser`** (not `fhirUser`).
 
 **2. Find the FHIR base URL (`FhirURL`).** In the endpoint directory
 (`https://open.platform.veradigm.com/fhirendpoints`) or your app's Test-org list, each org's
@@ -80,6 +85,31 @@ test-patient credentials Veradigm lists for that org.
 
 **Production** (real patients) requires the explicit Veradigm grant — request it from the portal
 only once test works; reviews take ~10 days.
+
+### Verified — FollowMyHealth Test org `76308` (2026-06-05)
+
+Automated pre-flight against `https://fhir.fhirpoint.open.allscripts.com/fhirroute/open/76308`
+(a FollowMyHealth org) passed every step our code controls, up to the interactive login:
+
+- `.well-known/smart-configuration` → **200**; `authorization_endpoint` =
+  `https://open.allscripts.com/fhirroute/fmhpatientauth/fmhorgid/<guid>/connect/authorize`,
+  `token_endpoint` = `https://muauthentication.followmyhealth.com/api/access`, PKCE `S256`.
+- Authorize request (our Client ID + `redirect_uri=…/callback` + PKCE) → **302 to the
+  FollowMyHealth login** — i.e. the Client ID is recognized and the redirect URI is accepted.
+- Remaining step is interactive: a FollowMyHealth **test-patient login** → relay `/callback` →
+  backend token exchange → `$everything` import. (Cannot be automated headlessly.)
+
+### Explicit scopes (FollowMyHealth) — fallback if `patient/*.read` is rejected
+
+Built from this org's advertised `scopes_supported` (read-only; their `DocumentReference.write` omitted).
+Paste into the **Scopes** field:
+
+```
+launch/patient openid profile fhiruser offline_access patient/Patient.read patient/AllergyIntolerance.read patient/Binary.read patient/CarePlan.read patient/CareTeam.read patient/Composition.read patient/Condition.read patient/Coverage.read patient/Device.read patient/DiagnosticOrder.read patient/DiagnosticReport.read patient/DocumentReference.read patient/Encounter.read patient/Goal.read patient/Immunization.read patient/Location.read patient/Medication.read patient/MedicationDispense.read patient/MedicationOrder.read patient/MedicationRequest.read patient/MedicationStatement.read patient/Observation.read patient/Organization.read patient/Practitioner.read patient/PractitionerRole.read patient/Procedure.read patient/Provenance.read patient/QuestionnaireResponse.read patient/RelatedPerson.read patient/ServiceRequest.read patient/Specimen.read
+```
+
+(`fhiruser` lowercase to match their advertised value. Confirm a given org's exact
+`scopes_supported` from its discovery doc — see below — since it can vary by org.)
 
 ## Pre-flight a FHIR endpoint before connecting
 
