@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       # development.yaml uploads two artifacts: `backend-coverage` and `frontend-coverage`.
       # Download all of them; each lands under coverage-artifacts/<artifact-name>/.
       - name: Download coverage reports

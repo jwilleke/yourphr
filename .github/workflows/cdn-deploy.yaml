@@ -23,7 +23,7 @@ jobs:
     if: ${{ github.repository == 'fastenhealth/fasten-onprem' }}
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
     - name: Pushes to another repository
       uses: cpina/github-action-push-to-another-repository@main
       with:

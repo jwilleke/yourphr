@@ -28,7 +28,7 @@ jobs:
         flavor: [main, sandbox]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v6
       - name: "Populate frontend version information"
         run: "cd frontend && ./git.version.sh"
       - name: Set up depot.dev multi-arch runner
