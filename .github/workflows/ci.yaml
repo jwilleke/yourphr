@@ -20,7 +20,7 @@ jobs:
       # development.yaml uploads two artifacts: `backend-coverage` and `frontend-coverage`.
       # Download all of them; each lands under coverage-artifacts/<artifact-name>/.
       - name: Download coverage reports
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: coverage-artifacts
       - name: Upload coverage reports
