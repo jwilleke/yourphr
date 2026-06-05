@@ -54,7 +54,7 @@ Upstream PR [#594](https://github.com/fastenhealth/fasten-onprem/pull/594) (open
 | Item | Upstream ref | Notes |
 |---|---|---|
 | **OIDC / SSO login** | [PR #613](https://github.com/fastenhealth/fasten-onprem/pull/613) | Native OIDC (Google, Auth0, Authentik, Okta) alongside username/password. Could replace reverse-proxy SSO (forward-auth) middleware. ~23 files, 16 commits. |
-| **Delegated access** | [PR #614](https://github.com/fastenhealth/fasten-onprem/pull/614) | Grant editing permissions on specific FHIR resources to other Fasten users. Settings → Delegated Access. ~29 files, 24 commits. |
+| **Delegated access** | [PR #614](https://github.com/fastenhealth/fasten-onprem/pull/614) | Grant editing permissions on specific FHIR resources to other YourPHR users. Settings → Delegated Access. ~29 files, 24 commits. |
 | Multi-user permissions management | [PR #514](https://github.com/fastenhealth/fasten-onprem/pull/514) | |
 
 ---
@@ -71,11 +71,11 @@ Upstream PR [#609](https://github.com/fastenhealth/fasten-onprem/pull/609) (open
 
 ## Planned — Phase 5: Live provider sync (OAuth gateway)
 
-Replace the commercial Fasten Lighthouse with a self-hosted Cloudflare Worker relay. The Worker acts as the public OAuth callback endpoint; it stores the short-lived authorization code in KV (60s TTL) and the local Fasten instance polls and exchanges directly with the provider.
+Replace the commercial Fasten Lighthouse with a self-hosted Cloudflare Worker relay. The Worker acts as the public OAuth callback endpoint; it stores the short-lived authorization code in KV (60s TTL) and the local YourPHR instance polls and exchanges directly with the provider.
 
 | Item | Notes |
 |---|---|
-| **Cloudflare Worker OAuth relay** | Public callback endpoint; stores code in KV (60s TTL); Fasten polls and exchanges locally. |
+| **Cloudflare Worker OAuth relay** | Public callback endpoint; stores code in KV (60s TTL); YourPHR polls and exchanges locally. |
 | SMART on FHIR client (Veradigm) | Replace `fasten-sources` stub with real `GetSourceClient` for Veradigm/FollowMyHealth |
 | SMART on FHIR client (Epic MyChart) | Second provider |
 | Background refresh worker | Re-auth via refresh token; periodic `$everything` sync |

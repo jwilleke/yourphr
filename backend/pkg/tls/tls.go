@@ -96,8 +96,8 @@ func generateCA(caCertPath, caKeyPath string) error {
 	ca := &x509.Certificate{
 		SerialNumber: big.NewInt(2023),
 		Subject: pkix.Name{
-			Organization: []string{"Fasten Health"},
-			CommonName:   "Fasten Health CA",
+			Organization: []string{"YourPHR"},
+			CommonName:   "YourPHR CA",
 		},
 		NotBefore:             time.Now(),
 		NotAfter:              time.Now().AddDate(10, 0, 0), // 10 years
@@ -174,7 +174,7 @@ func generateServerCert(caCertPath, caKeyPath, serverCertPath, serverKeyPath str
 	serverCert := &x509.Certificate{
 		SerialNumber: big.NewInt(2024),
 		Subject: pkix.Name{
-			Organization: []string{"Fasten Health"},
+			Organization: []string{"YourPHR"},
 			CommonName:   "localhost", // Use localhost for local development
 		},
 		NotBefore:   time.Now(),

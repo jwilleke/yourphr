@@ -4,7 +4,7 @@
 
 # Tech Stack
 
-Fasten is made up of a handful of different components. Here's a summary of the technologies & languages used in Fasten:
+YourPHR is made up of a handful of different components. Here's a summary of the technologies & languages used in YourPHR:
 
 ## Frontend
 
@@ -58,7 +58,7 @@ go install github.com/gzuidhof/tygo@latest
 
 # Running Tests
 
-Before making changes to Fasten, you'll want to run the test suites to ensure that your environment is setup correctly:
+Before making changes to YourPHR, you'll want to run the test suites to ensure that your environment is setup correctly:
 
 ```bash
 make test
@@ -74,7 +74,7 @@ make test-backend
 
 # Start Development Environment
 
-To run Fasten from source, you'll need to create 2 separate processes:
+To run YourPHR from source, you'll need to create 2 separate processes:
 
 - Angular Frontend
 - Go Backend
@@ -112,23 +112,23 @@ make serve-backend
 
 ```
 
-_Note_: Fasten can run in 2 modes: sandbox or production (prod). In sandbox mode, it can only communicate with test servers (full of synthetic health data).
+_Note_: YourPHR can run in 2 modes: sandbox or production (prod). In sandbox mode, it can only communicate with test servers (full of synthetic health data).
 By default, the dev environment will run in sandbox mode.
 
-Now you can open a browser to `http://localhost:4200` to see the Fasten UI.
+Now you can open a browser to `http://localhost:4200` to see the YourPHR UI.
 
 _Note_: By default in `dev` mode, you view the frontend server and that will proxy API requests to the backend. It is also possible to build the frontend and serve it from the backend server, but this is much slower to make changes to the frontend.
 
 ## Credentials
 
-Fasten stores all user data locally, including your account information. That means on first start you'll need to register a new account.
+YourPHR stores all user data locally, including your account information. That means on first start you'll need to register a new account.
 Once you've done that, you'll want to go to the Sources tab and connect a healthcare provider.
 
 See [Connecting a new Source](https://docs.fastenhealth.com/getting-started/sandbox.html#connecting-a-new-source) for credentials to use.
 
 # Source Code Folder Structure
 
-The Fasten source code is organized into a handful of important folders, which we'll describe below:
+The YourPHR source code is organized into a handful of important folders, which we'll describe below:
 
 ## Frontend
 

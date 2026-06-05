@@ -49,7 +49,7 @@ jobs:
             type=raw,value=main-${{ github.run_number }},enable=${{ github.ref_name == 'main' }}
           labels: |
             org.opencontainers.image.title=YourPHR
-            org.opencontainers.image.description=YourPHR — self-hosted Personal Health Record (community continuation of Fasten OnPrem)
+            org.opencontainers.image.description=YourPHR — your medical records, immediately and in your hands, for free. A self-hosted Personal Health Record (community continuation of Fasten OnPrem).
             org.opencontainers.image.source=https://github.com/jwilleke/yourphr
             org.opencontainers.image.revision=${{ github.sha }}
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}

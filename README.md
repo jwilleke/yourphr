@@ -131,9 +131,9 @@ By default, YourPHR runs with HTTPS enabled to ensure your data is secure. It us
 
 To establish a secure connection, your browser needs to trust the server's TLS certificate. Here’s how the process works in YourPHR:
 
-1. **Root Certificate Authority (CA):** When the application first starts, it generates its own self-contained Certificate Authority, called `"Fasten Health CA"`. Think of this as the highest level of trust. The public part of this CA is the `rootCA.pem` file.
-2. **Server Certificate:** The application then uses the `"Fasten Health CA"` to issue and sign a specific certificate for the web server (e.g., for `localhost`).
-3. **Browser Verification:** When you connect to the server, it presents the server certificate to your browser. Your browser checks who signed it and sees it was `"Fasten Health CA"`. The browser then asks, "Do I trust the 'Fasten Health CA'?"
+1. **Root Certificate Authority (CA):** When the application first starts, it generates its own self-contained Certificate Authority, called `"YourPHR CA"`. Think of this as the highest level of trust. The public part of this CA is the `rootCA.pem` file.
+2. **Server Certificate:** The application then uses the `"YourPHR CA"` to issue and sign a specific certificate for the web server (e.g., for `localhost`).
+3. **Browser Verification:** When you connect to the server, it presents the server certificate to your browser. Your browser checks who signed it and sees it was `"YourPHR CA"`. The browser then asks, "Do I trust the 'YourPHR CA'?"
 
 Initially, the answer is no, which is why you see a security warning. By following the steps below to import the `rootCA.pem` file, you are telling your browser or operating system to trust our self-generated CA. Once the CA is trusted, any certificates it signs—including the server certificate—will also be trusted, and the connection will be secure without any warnings.
 
@@ -152,7 +152,7 @@ You will need to import this certificate into your operating system's or browser
 1. Open the **Keychain Access** application.
 2. Select the **System** keychain.
 3. Go to **File > Import Items** and select the `certs/rootCA.pem` file.
-4. Find the "Fasten Health CA" certificate in the list, double-click it, and under the **Trust** section, set "When using this certificate" to **Always Trust**.
+4. Find the "YourPHR CA" certificate in the list, double-click it, and under the **Trust** section, set "When using this certificate" to **Always Trust**.
 
 ##### Windows
 
@@ -166,7 +166,7 @@ You will need to import this certificate into your operating system's or browser
 1. Copy the certificate to the trusted certificates directory:
 
     ```bash
-    sudo cp certs/rootCA.pem /usr/local/share/ca-certificates/fasten-health-ca.crt
+    sudo cp certs/rootCA.pem /usr/local/share/ca-certificates/yourphr-ca.crt
     ```
 
 2. Update the system's certificate store:
