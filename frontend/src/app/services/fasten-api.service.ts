@@ -26,6 +26,7 @@ import { fetchEventSource } from '@microsoft/fetch-event-source';
 import {BackgroundJob, BackgroundJobSyncData} from '../models/fasten/background-job';
 import {SupportRequest} from '../models/fasten/support-request';
 import {SmartConnectRequest} from '../models/fasten/smart-connect-request';
+import {SmartAuthorizeRequest, SmartAuthorizeResponse} from '../models/fasten/smart-authorize';
 import {
   List
 } from 'fhir/r4';
@@ -140,6 +141,23 @@ export class FastenApiService {
         map((response: ResponseWrapper) => {
           // @ts-ignore
           return {summary: response.data, source: response.source}
+        })
+      );
+  }
+
+  // authorizeSource asks the backend to perform SMART on FHIR discovery and build the PKCE
+  // authorize URL. The browser opens authorize_url so the user logs in at the provider; the
+  // returned state + code_verifier are then passed to connectSource() to complete the exchange.
+  // See backend handler.AuthorizeSource (#51) and the relay (#50).
+  authorizeSource(req: SmartAuthorizeRequest): Observable<SmartAuthorizeResponse> {
+    return this._httpClient.post<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/source/authorize`, req)
+      .pipe(
+        map((response: any) => {
+          return {
+            authorize_url: response.authorize_url,
+            state: response.state,
+            code_verifier: response.code_verifier,
+          } as SmartAuthorizeResponse
         })
       );
   }
