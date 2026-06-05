@@ -1,0 +1,72 @@
+name: Docker (YourPHR relay)
+# Builds the SMART on FHIR store-and-poll relay (EPIC #20, issue #50) from
+# Dockerfile.relay and pushes to ghcr.io/<owner>/<repo>-relay (=> ghcr.io/jwilleke/yourphr-relay).
+# Separate from docker-jwilleke.yaml so the tiny relay only rebuilds when its
+# own sources change. linux/amd64 only — sufficient for the deby (x86_64 k3s node).
+# Deployed via jwilleke/mj-infra-flux (apps/production/yourphr-relay).
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "backend/cmd/relay/**"
+      - "Dockerfile.relay"
+      - ".github/workflows/docker-relay.yaml"
+      - "go.mod"
+      - "go.sum"
+  # Allow manual rebuilds (e.g. base-image refresh) without a source change.
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}-relay
+
+concurrency:
+  group: docker-relay-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log into registry ${{ env.REGISTRY }}
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          tags: |
+            type=raw,value=main,enable=${{ github.ref_name == 'main' }}
+            type=raw,value=main-${{ github.run_number }},enable=${{ github.ref_name == 'main' }}
+          labels: |
+            org.opencontainers.image.title=YourPHR relay
+            org.opencontainers.image.description=YourPHR SMART on FHIR OAuth store-and-poll relay — public bouncer for the short-lived authorization code; never sees tokens.
+            org.opencontainers.image.source=https://github.com/jwilleke/yourphr
+            org.opencontainers.image.revision=${{ github.sha }}
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile.relay
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
