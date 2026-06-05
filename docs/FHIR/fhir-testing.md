@@ -145,3 +145,45 @@ fallback is needed. If `.well-known` ever 404s, the OAuth URIs are also in `{bas
 - **Config (env):** `YOURPHR_RELAY_URL` (default `https://relay.nerdsbythehour.com`), `YOURPHR_RELAY_SECRET` (shared with the relay).
 - **Design:** [`../planning/smart-on-fhir/smart-on-fhir.md`](../planning/smart-on-fhir/smart-on-fhir.md), [`../planning/smart-on-fhir/oauth-gateway.md`](../planning/smart-on-fhir/oauth-gateway.md).
 - **Epic:** #20. Veradigm integration: #53.
+
+## Issues
+
+Known issues found during live SMART connect testing (2026-06-05).
+
+### 1. Backend must poll the relay over the in-cluster Service — FIXED
+
+**Symptom:** `POST /api/secure/source/connect` always 502'd; app logs showed
+`relay: request failed: Get "https://relay.nerdsbythehour.com/pending?state=…": context deadline exceeded`
+and `relay: timed out waiting for authorization code`. The relay *did* store the code
+(`relay: stored authorization code for state=…`), but the backend never retrieved it.
+**Cause:** the backend (in-cluster) was polling the relay's **public** Cloudflare URL, which
+hairpins out to Cloudflare and back through the tunnel and times out.
+**Fix:** set `YOURPHR_RELAY_URL=http://yourphr-relay.yourphr.svc.cluster.local:8080` on the app
+Deployment so it polls the relay pod directly (mj-infra-flux#109). The provider `redirect_uri`
+stays the public `/callback`; only the backend *poll* moves in-cluster.
+
+### 2. Veradigm `unauthorized_client` on the patient flow — BLOCKED ON VERADIGM
+
+**Symptom:** after a successful login, Veradigm's Professional-EHR auth server returns
+`unauthorized_client` (its own error page, with a Request Id; never reaches our relay). Seen
+across multiple valid orgs (A02Test, 10028917), which proves it's **app-level**, not a URL/org issue.
+**Cause:** the registered Test app (`1C6F1F13-…`) isn't authorized to run the patient
+`authorization_code` flow — a Veradigm provisioning gate. Possibly also a public-vs-confidential
+client requirement (their discovery advertises only `client_secret_*` token auth).
+**Status:** support request sent to Veradigm with Request Ids
+`400039ba-0001-cf00-b63f-84710c7967bb` (A02Test) and `40001cf7-0001-7100-b63f-84710c7967bb` (10028917).
+**Not a YourPHR bug** — the authorize request is well-formed and reaches Veradigm.
+
+### 3. Connect poll window vs slow logins — WATCH
+
+The frontend calls `connectSource` (backend polls the relay ~30s) up to 3× (~90s total). If a
+provider login takes longer than that budget, the code can arrive at the relay *after* the backend
+stopped polling (code stored, never delivered). Fine for fast sandbox logins; revisit (longer
+budget / lazy poll) if real-provider logins routinely exceed it.
+
+### 4. Token-endpoint client auth (public vs confidential) — WATCH
+
+Some Veradigm/FMH discovery docs advertise `token_endpoint_auth_methods` of only
+`client_secret_post`/`client_secret_basic` (not `none`) while also listing `client-public`. If the
+token exchange ever fails with "client authentication required," the provider requires a
+confidential client (secret) and our public/PKCE flow needs a backend change. Not hit yet.
