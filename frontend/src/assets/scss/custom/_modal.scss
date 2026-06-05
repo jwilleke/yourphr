@@ -6,7 +6,10 @@
   position: fixed;
   top: 0;
   left: 0;
-  z-index: 1050;
+  // Must sit ABOVE ng-bootstrap's backdrop, which it sets inline to z-index:1055.
+  // The azia theme originally set this to 1050 (below the backdrop), so the backdrop
+  // captured all clicks and modal inputs were unusable. See yourphr#76 / the SMART connect modal.
+  z-index: 1056;
   display: none;
   width: 100%;
   height: 100%;
