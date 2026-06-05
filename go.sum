@@ -50,8 +50,8 @@ github.com/Masterminds/sprig/v3 v3.2.3 h1:eL2fZNezLomi0uOLqjQoN6BfsDD+fyLtgbJMAj
 github.com/Masterminds/sprig/v3 v3.2.3/go.mod h1:rXcFaZ2zZbLRJv/xSysmlgIM1u11eBaRMhvYXJNkGuM=
 github.com/ProtonMail/go-crypto v0.0.0-20230217124315-7d5c6f04bbb8 h1:wPbRQzjjwFc0ih8puEVAOFGELsn1zoIIYdxvML7mDxA=
 github.com/ProtonMail/go-crypto v0.0.0-20230217124315-7d5c6f04bbb8/go.mod h1:I0gYDMZ6Z5GRU7l58bNFSkPTFN6Yl12dsUlAZ8xy98g=
-github.com/TwiN/deepmerge v0.2.1 h1:GowJr9O4THTVW4awX63x1BVg1hgr4q+35XKKCYbwsSs=
-github.com/TwiN/deepmerge v0.2.1/go.mod h1:LVBmCEBQvibYSF8Gyl/NqhHXH7yIiT7Ozqf9dHxGPW0=
+github.com/TwiN/deepmerge v0.2.2 h1:FUG9QMIYg/j2aQyPPhA3XTFJwXSNHI/swaR4Lbyxwg4=
+github.com/TwiN/deepmerge v0.2.2/go.mod h1:4OHvjV3pPNJCJZBHswYAwk6rxiD8h8YZ+9cPo7nu4oI=
 github.com/analogj/go-util v0.0.0-20210417161720-39b497cca03b h1:Y/+MfmdKPPpVY7C6ggt/FpltFSitlpUtyJEdcQyFXQg=
 github.com/analogj/go-util v0.0.0-20210417161720-39b497cca03b/go.mod h1:bRSzJXgXnT5+Ihah7RSC7Cvp16UmoLn3wq6ROciS1Ow=
 github.com/boombuler/barcode v1.0.0/go.mod h1:paBWMcWSl3LHKBqUq+rly7CNSldXjb2rDl3JlRe0mD8=
