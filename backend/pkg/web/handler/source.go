@@ -14,6 +14,7 @@ import (
 	"github.com/fastenhealth/fasten-onprem/backend/pkg/event_bus"
 	"github.com/fastenhealth/fasten-onprem/backend/pkg/models"
 	"github.com/fastenhealth/fasten-onprem/backend/pkg/relay"
+	"github.com/fastenhealth/fasten-onprem/backend/pkg/ssrf"
 	"github.com/fastenhealth/fasten-sources/clients/factory"
 	sourceModels "github.com/fastenhealth/fasten-sources/clients/models"
 	"github.com/fastenhealth/fasten-sources/clients/smart"
@@ -23,6 +24,10 @@ import (
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 )
+
+// validatePublicHTTPSURL guards the user-supplied FHIR base URL against SSRF before the backend
+// fetches it. It is a package var so tests can point discovery at an httptest loopback server.
+var validatePublicHTTPSURL = ssrf.ValidatePublicHTTPSURL
 
 // SmartConnectRequest is the payload to complete a SMART on FHIR connection: the self-describing
 // provider config plus the authorization code (and its PKCE verifier).
@@ -57,6 +62,12 @@ func ConnectSource(c *gin.Context) {
 	}
 	if req.ApiEndpointBaseUrl == "" || req.ClientId == "" || req.CodeVerifier == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "api_endpoint_base_url, client_id, and code_verifier are required"})
+		return
+	}
+	// SSRF guard: the backend fetches this user-supplied URL (discovery + token exchange).
+	// Reject non-public targets (metadata/loopback/LAN) before any server-side request. (#51)
+	if err := validatePublicHTTPSURL(req.ApiEndpointBaseUrl); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": fmt.Sprintf("invalid api_endpoint_base_url: %s", err)})
 		return
 	}
 	if req.Code == "" && req.State == "" {
@@ -131,6 +142,68 @@ func ConnectSource(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"success": true, "source": sourceCred, "data": summary})
+}
+
+// SmartAuthorizeRequest initiates a SMART on FHIR standalone-launch connection: given the
+// self-describing provider config, the backend discovers the endpoints and builds the PKCE
+// authorization URL. The browser opens that URL; the provider redirects to the relay's
+// /callback (#50). The caller must hold the returned state + code_verifier and pass them back
+// to /source/connect, which polls the relay for the code and completes the exchange (#51).
+type SmartAuthorizeRequest struct {
+	ApiEndpointBaseUrl string `json:"api_endpoint_base_url"`
+	ClientId           string `json:"client_id"`
+	Scopes             string `json:"scopes"`
+	RedirectUri        string `json:"redirect_uri"`
+}
+
+// AuthorizeSource performs SMART discovery, generates a PKCE verifier + state, and returns the
+// provider authorization URL (with code_challenge/state/aud) for the browser to open. It holds
+// no server-side state; the caller round-trips state + code_verifier back to ConnectSource.
+func AuthorizeSource(c *gin.Context) {
+	logger := c.MustGet(pkg.ContextKeyTypeLogger).(*logrus.Entry)
+
+	var req SmartAuthorizeRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": fmt.Sprintf("invalid request: %s", err)})
+		return
+	}
+	if req.ApiEndpointBaseUrl == "" || req.ClientId == "" || req.RedirectUri == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "api_endpoint_base_url, client_id, and redirect_uri are required"})
+		return
+	}
+	// SSRF guard: the backend is about to fetch this user-supplied URL (discovery). Reject
+	// non-public targets (metadata/loopback/LAN) before any server-side request. (#51)
+	if err := validatePublicHTTPSURL(req.ApiEndpointBaseUrl); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": fmt.Sprintf("invalid api_endpoint_base_url: %s", err)})
+		return
+	}
+
+	cfg := smart.Config{
+		FHIRBaseURL: req.ApiEndpointBaseUrl,
+		ClientID:    req.ClientId,
+		Scopes:      strings.Fields(req.Scopes),
+		RedirectURI: req.RedirectUri,
+	}
+	ep, err := cfg.Discover(c)
+	if err != nil {
+		logger.Errorln(err)
+		c.JSON(http.StatusBadGateway, gin.H{"success": false, "error": fmt.Sprintf("SMART discovery failed: %s", err)})
+		return
+	}
+	verifier, err := smart.GenerateVerifier()
+	if err != nil {
+		logger.Errorln(err)
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "could not generate PKCE verifier"})
+		return
+	}
+	state := uuid.New().String()
+
+	c.JSON(http.StatusOK, gin.H{
+		"success":       true,
+		"authorize_url": cfg.AuthCodeURL(ep, state, verifier),
+		"state":         state,
+		"code_verifier": verifier,
+	})
 }
 
 func CreateReconnectSource(c *gin.Context) {
