@@ -295,9 +295,22 @@ export class MedicalSourcesComponent implements OnInit {
 
     const redirectUri = `${environment.relay_endpoint_base}/callback`
 
+    // Open the login popup SYNCHRONOUSLY, inside the click handler, so the browser doesn't block
+    // it. window.open() called *after* an `await` loses the user-gesture and gets blocked — that
+    // was the flaky "no popup opened". We point this already-open window at the authorize URL once
+    // the backend returns it.
+    const popup = window.open('', '_blank')
+    if (!popup) {
+      this.smartErrorMsg = 'Your browser blocked the login popup. Please allow popups for this site, then try Connect again.'
+      return
+    }
+    try {
+      popup.document.write('<!doctype html><title>Connecting…</title><p style="font:14px sans-serif;padding:1rem">Preparing secure sign-in…</p>')
+    } catch (_) { /* ignore — popup not navigable yet */ }
+
     this.smartConnecting = true
     try {
-      // Step 3: ask backend for the PKCE authorize URL (it does SMART discovery).
+      // Ask the backend for the PKCE authorize URL (it does SMART discovery).
       const authorize: SmartAuthorizeResponse = await this.fastenApi.authorizeSource({
         api_endpoint_base_url: apiEndpoint,
         client_id: clientId,
@@ -306,13 +319,13 @@ export class MedicalSourcesComponent implements OnInit {
       }).toPromise()
 
       if (!authorize?.authorize_url || !authorize?.state || !authorize?.code_verifier) {
+        popup.close()
         this.smartErrorMsg = 'Authorization failed: the server did not return a valid authorize URL.'
-        this.smartConnecting = false
         return
       }
 
-      // Step 4: open the provider login in a popup; it redirects to our relay /callback when done.
-      window.open(authorize.authorize_url, '_blank')
+      // Send the already-open popup to the provider login; it redirects to our relay /callback.
+      popup.location.href = authorize.authorize_url
 
       // Step 5: complete the connection. The backend polls the relay for the code, exchanges it,
       // stores the source and runs the initial sync. Retry up to 3 total attempts because login
