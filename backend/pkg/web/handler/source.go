@@ -133,6 +133,62 @@ func ConnectSource(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"success": true, "source": sourceCred, "data": summary})
 }
 
+// SmartAuthorizeRequest initiates a SMART on FHIR standalone-launch connection: given the
+// self-describing provider config, the backend discovers the endpoints and builds the PKCE
+// authorization URL. The browser opens that URL; the provider redirects to the relay's
+// /callback (#50). The caller must hold the returned state + code_verifier and pass them back
+// to /source/connect, which polls the relay for the code and completes the exchange (#51).
+type SmartAuthorizeRequest struct {
+	ApiEndpointBaseUrl string `json:"api_endpoint_base_url"`
+	ClientId           string `json:"client_id"`
+	Scopes             string `json:"scopes"`
+	RedirectUri        string `json:"redirect_uri"`
+}
+
+// AuthorizeSource performs SMART discovery, generates a PKCE verifier + state, and returns the
+// provider authorization URL (with code_challenge/state/aud) for the browser to open. It holds
+// no server-side state; the caller round-trips state + code_verifier back to ConnectSource.
+func AuthorizeSource(c *gin.Context) {
+	logger := c.MustGet(pkg.ContextKeyTypeLogger).(*logrus.Entry)
+
+	var req SmartAuthorizeRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": fmt.Sprintf("invalid request: %s", err)})
+		return
+	}
+	if req.ApiEndpointBaseUrl == "" || req.ClientId == "" || req.RedirectUri == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "api_endpoint_base_url, client_id, and redirect_uri are required"})
+		return
+	}
+
+	cfg := smart.Config{
+		FHIRBaseURL: req.ApiEndpointBaseUrl,
+		ClientID:    req.ClientId,
+		Scopes:      strings.Fields(req.Scopes),
+		RedirectURI: req.RedirectUri,
+	}
+	ep, err := cfg.Discover(c)
+	if err != nil {
+		logger.Errorln(err)
+		c.JSON(http.StatusBadGateway, gin.H{"success": false, "error": fmt.Sprintf("SMART discovery failed: %s", err)})
+		return
+	}
+	verifier, err := smart.GenerateVerifier()
+	if err != nil {
+		logger.Errorln(err)
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "could not generate PKCE verifier"})
+		return
+	}
+	state := uuid.New().String()
+
+	c.JSON(http.StatusOK, gin.H{
+		"success":       true,
+		"authorize_url": cfg.AuthCodeURL(ep, state, verifier),
+		"state":         state,
+		"code_verifier": verifier,
+	})
+}
+
 func CreateReconnectSource(c *gin.Context) {
 	logger := c.MustGet(pkg.ContextKeyTypeLogger).(*logrus.Entry)
 	databaseRepo := c.MustGet(pkg.ContextKeyTypeDatabase).(database.DatabaseRepository)

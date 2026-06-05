@@ -21,6 +21,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"path/filepath"
 	"testing"
@@ -108,6 +109,67 @@ func CreateManualSourceHttpRequestFromFile(fileName string) (*http.Request, erro
 // a normal test function and pass our suite to suite.Run
 func TestSourceHandlerTestSuite(t *testing.T) {
 	suite.Run(t, new(SourceHandlerTestSuite))
+}
+
+// TestAuthorizeSource exercises the SMART authorize-initiation endpoint against a stub provider:
+// it should discover the endpoints and return a PKCE authorization URL plus the state/verifier.
+func TestAuthorizeSource(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	// Stub provider: serve .well-known/smart-configuration with authorize/token endpoints.
+	var provider *httptest.Server
+	provider = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/.well-known/smart-configuration" {
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte(fmt.Sprintf(
+				`{"authorization_endpoint":%q,"token_endpoint":%q}`,
+				provider.URL+"/authorize", provider.URL+"/token")))
+			return
+		}
+		http.NotFound(w, r)
+	}))
+	defer provider.Close()
+
+	w := httptest.NewRecorder()
+	ctx, _ := gin.CreateTestContext(w)
+	ctx.Set(pkg.ContextKeyTypeLogger, logrus.WithField("test", t.Name()))
+
+	body, _ := json.Marshal(SmartAuthorizeRequest{
+		ApiEndpointBaseUrl: provider.URL,
+		ClientId:           "my-client-id",
+		Scopes:             "launch/patient patient/*.read openid fhirUser offline_access",
+		RedirectUri:        "https://relay.nerdsbythehour.com/callback",
+	})
+	req, _ := http.NewRequest("POST", "/source/authorize", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	ctx.Request = req
+
+	AuthorizeSource(ctx)
+
+	require.Equal(t, http.StatusOK, w.Code, w.Body.String())
+
+	var resp struct {
+		Success      bool   `json:"success"`
+		AuthorizeURL string `json:"authorize_url"`
+		State        string `json:"state"`
+		CodeVerifier string `json:"code_verifier"`
+	}
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
+	require.True(t, resp.Success)
+	require.NotEmpty(t, resp.State)
+	require.NotEmpty(t, resp.CodeVerifier)
+
+	authURL, err := url.Parse(resp.AuthorizeURL)
+	require.NoError(t, err)
+	require.Equal(t, provider.URL+"/authorize", authURL.Scheme+"://"+authURL.Host+authURL.Path)
+	q := authURL.Query()
+	require.Equal(t, "my-client-id", q.Get("client_id"))
+	require.Equal(t, "code", q.Get("response_type"))
+	require.Equal(t, "https://relay.nerdsbythehour.com/callback", q.Get("redirect_uri"))
+	require.Equal(t, resp.State, q.Get("state"))
+	require.Equal(t, "S256", q.Get("code_challenge_method"))
+	require.NotEmpty(t, q.Get("code_challenge"))
+	require.Equal(t, provider.URL, q.Get("aud"))
 }
 
 func (suite *SourceHandlerTestSuite) TestCreateManualSourceHandler() {

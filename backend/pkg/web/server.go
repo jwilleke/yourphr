@@ -167,6 +167,7 @@ func (ae *AppEngine) Setup() (*gin.RouterGroup, *gin.Engine) {
 					secure.GET("/summary/ips", handler.GetIPSSummary)
 
 					secure.POST("/source", handler.CreateReconnectSource)
+					secure.POST("/source/authorize", handler.AuthorizeSource)
 					secure.POST("/source/connect", handler.ConnectSource)
 					secure.POST("/source/manual", handler.CreateManualSource)
 					secure.GET("/source", handler.ListSource)
