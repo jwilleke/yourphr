@@ -146,11 +146,12 @@ fallback is needed. If `.well-known` ever 404s, the OAuth URIs are also in `{bas
 - **Design:** [`../planning/smart-on-fhir/smart-on-fhir.md`](../planning/smart-on-fhir/smart-on-fhir.md), [`../planning/smart-on-fhir/oauth-gateway.md`](../planning/smart-on-fhir/oauth-gateway.md).
 - **Epic:** #20. Veradigm integration: #53.
 
-# Issues
+## Issues
 
 Known issues found during live SMART connect testing (2026-06-05).
 
 ### 1. Backend must poll the relay over the in-cluster Service — FIXED
+
 **Symptom:** `POST /api/secure/source/connect` always 502'd; app logs showed
 `relay: request failed: Get "https://relay.nerdsbythehour.com/pending?state=…": context deadline exceeded`
 and `relay: timed out waiting for authorization code`. The relay *did* store the code
@@ -162,6 +163,7 @@ Deployment so it polls the relay pod directly (mj-infra-flux#109). The provider 
 stays the public `/callback`; only the backend *poll* moves in-cluster.
 
 ### 2. Veradigm `unauthorized_client` on the patient flow — BLOCKED ON VERADIGM
+
 **Symptom:** after a successful login, Veradigm's Professional-EHR auth server returns
 `unauthorized_client` (its own error page, with a Request Id; never reaches our relay). Seen
 across multiple valid orgs (A02Test, 10028917), which proves it's **app-level**, not a URL/org issue.
@@ -173,12 +175,14 @@ client requirement (their discovery advertises only `client_secret_*` token auth
 **Not a YourPHR bug** — the authorize request is well-formed and reaches Veradigm.
 
 ### 3. Connect poll window vs slow logins — WATCH
+
 The frontend calls `connectSource` (backend polls the relay ~30s) up to 3× (~90s total). If a
 provider login takes longer than that budget, the code can arrive at the relay *after* the backend
 stopped polling (code stored, never delivered). Fine for fast sandbox logins; revisit (longer
 budget / lazy poll) if real-provider logins routinely exceed it.
 
 ### 4. Token-endpoint client auth (public vs confidential) — WATCH
+
 Some Veradigm/FMH discovery docs advertise `token_endpoint_auth_methods` of only
 `client_secret_post`/`client_secret_basic` (not `none`) while also listing `client-public`. If the
 token exchange ever fails with "client authentication required," the provider requires a
