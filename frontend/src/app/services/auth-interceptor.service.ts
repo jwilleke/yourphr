@@ -44,8 +44,12 @@ export class AuthInterceptorService implements HttpInterceptor {
       return next.handle(req)
     }
 
-    // Clone the request to add the new header.
-    const authReq = req.clone({headers: req.headers.set('Authorization', 'Bearer ' + this.authService.GetAuthToken())});
+    // Only attach a Bearer header if we actually have a token. In Phase 2b (#118) the session
+    // is the HttpOnly cookie (sent automatically same-origin), and GetAuthToken() returns null —
+    // so we send no Authorization header and let the cookie authenticate. (Sending "Bearer null"
+    // would defeat the backend's cookie fallback, since the header takes precedence.)
+    const token = this.authService.GetAuthToken();
+    const authReq = token ? req.clone({headers: req.headers.set('Authorization', 'Bearer ' + token)}) : req;
     // catch the error, make specific functions for catching specific errors and you can chain through them with more catch operators
     return next.handle(authReq).pipe(catchError(x=> this.handleAuthError(x))); //here use an arrow function, otherwise you may get "Cannot read property 'navigate' of undefined" on angular 4.4.2/net core 2/webpack 2.70
 

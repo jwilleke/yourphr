@@ -1,7 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Inject, Injectable } from '@angular/core';
 import * as Oauth from '@panva/oauth4webapi';
-import * as jose from 'jose';
 import { BehaviorSubject, Observable, throwError } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
@@ -148,18 +147,16 @@ export class AuthService {
 
   //TODO: now that we've moved to remote-first database, we can refactor and simplify this function significantly.
   public async IsAuthenticated(): Promise<boolean> {
-    const authToken = this.GetAuthToken()
-    const hasAuthToken = !!authToken
-    if(!hasAuthToken){
+    // Phase 2b (#118): there is no JS-readable token to inspect — ask the server. A valid
+    // HttpOnly session cookie makes /me succeed (200); otherwise it 401s. Server-authoritative.
+    try {
+      await this.GetCurrentUser()
+      this.publishAuthenticationState(true)
+      return true
+    } catch (e) {
       this.publishAuthenticationState(false)
       return false
     }
-
-    //check if the authToken has expired
-    const jwtClaims = jose.decodeJwt(authToken)
-    const valid = Date.now() < (jwtClaims.exp * 1000);
-    this.publishAuthenticationState(valid)
-    return valid
 
 
     // //check if the authToken has expired.
@@ -184,7 +181,9 @@ export class AuthService {
   }
 
   public GetAuthToken(): string {
-    return localStorage.getItem(this.FASTEN_JWT_LOCALSTORAGE_KEY);
+    // Phase 2b (#118): the session is carried by the HttpOnly cookie, which JS cannot read,
+    // so there's no bearer token to expose. Kept for back-compat; always null now.
+    return null;
   }
 
   // Identity now comes from the server (GET /secure/account/me) rather than decoding the JWT
@@ -238,8 +237,11 @@ export class AuthService {
   /////////////////////////////////////////////////////////////////////////////////////////////////
 
   private setAuthToken(token: string) {
+    // Phase 2b (#118): the backend sets the HttpOnly session cookie on login, so the SPA no
+    // longer stores the JWT (XSS can't steal what isn't in JS). Just flip the auth-state flag
+    // and clear any token left over from a pre-Phase-2b session. `token` is intentionally unused.
     this.publishAuthenticationState(true)
-    localStorage.setItem(this.FASTEN_JWT_LOCALSTORAGE_KEY, token)
+    localStorage.removeItem(this.FASTEN_JWT_LOCALSTORAGE_KEY)
   }
 
   private publishAuthenticationState(authenticated){

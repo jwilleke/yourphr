@@ -89,9 +89,9 @@ export class EventBusService {
     this.eventBus = new Observable(observer => {
       fetchEventSource(eventStreamUrl, {
         method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${this.authService.GetAuthToken()}`
-        },
+        // Phase 2b (#118): authenticate the SSE stream with the HttpOnly session cookie
+        // (same-origin) instead of a Bearer header — JS no longer holds a token.
+        credentials: 'include',
         onmessage(ev) {
           observer.next(JSON.parse(ev.data));
         },
