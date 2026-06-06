@@ -6,6 +6,9 @@
 > prioritized improvement backlog.
 >
 > Date: 2026-06-06 · Scope: `master`/`main` working tree.
+>
+> See also: [Standards Conformance](./Standards-Conformance.md) — how these findings map to
+> SMART App Launch / OAuth 2.0 / PKCE / OWASP, with verified-conformant items and tracked gaps.
 
 ---
 
