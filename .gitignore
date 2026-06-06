@@ -113,6 +113,8 @@ certs/
 *.pfx
 secrets.*
 *-secret.*
+# Auto-generated JWT signing key persisted in the data dir (#102). Never commit.
+.jwt_issuer_key
 
 # Real FHIR exports dropped in the repo for manual testing.
 # Keep curated *synthetic* fixtures under frontend/.../fixtures and
