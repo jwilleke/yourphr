@@ -146,8 +146,13 @@ func (ae *AppEngine) Setup() (*gin.RouterGroup, *gin.Engine) {
 
 			if !ae.StandbyMode { // Check ae.StandbyMode for non-standby mode
 				api.Use(middleware.CacheMiddleware())
-				api.POST("/auth/signup", handler.AuthSignup)
-				api.POST("/auth/signin", handler.AuthSignin)
+
+				// Rate-limit the unauthenticated auth endpoints to blunt online
+				// password guessing / account spraying (#104 / H3).
+				authGroup := api.Group("/auth")
+				authGroup.Use(middleware.RateLimitMiddleware(10, time.Minute))
+				authGroup.POST("/signup", handler.AuthSignup)
+				authGroup.POST("/signin", handler.AuthSignin)
 
 				//whitelisted CORS PROXY
 				api.GET("/cors/:endpointId/*proxyPath", handler.CORSProxy)
