@@ -69,6 +69,9 @@ func (ae *AppEngine) Reinitialize() error {
 func (ae *AppEngine) Setup() (*gin.RouterGroup, *gin.Engine) {
 	r := gin.New()
 
+	// Security response headers on every response (#105 / H4). First, so it covers the SPA + API.
+	r.Use(middleware.SecurityHeadersMiddleware(ae.Config.GetBool("web.listen.https.enabled")))
+
 	if !ae.StandbyMode {
 		r.Use(middleware.RepositoryMiddleware(ae.deviceRepo))
 	}
