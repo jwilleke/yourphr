@@ -2,7 +2,7 @@
 # A tiny static Go service (pure stdlib); see backend/cmd/relay and
 # docs/planning/smart-on-fhir/oauth-gateway.md.
 
-FROM golang:1.24 as build
+FROM golang:1.26 as build
 WORKDIR /src
 COPY . .
 RUN CGO_ENABLED=0 go build -buildvcs=false -o /relay ./backend/cmd/relay
