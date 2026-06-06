@@ -22,6 +22,10 @@ YourPHR is made up of a handful of different components. Here's a summary of the
 
 > Stack modernization (Node 24, Angular 20, Go 1.24, Docker distroless debian12) is tracked in [#12](https://github.com/jwilleke/yourphr/issues/12); the Angular 14 → 20 climb and the Node → 24 flip are complete. The authoritative pinned versions live in `frontend/.nvmrc`, `frontend/package.json`, `go.mod`, and `Dockerfile` — keep this section in sync with those.
 
+# Versioning
+
+YourPHR follows [SemVer](https://semver.org/): the version is bumped automatically from [Conventional Commits](https://www.conventionalcommits.org/) by release-please — `fix:` → patch, `feat:` → minor, `feat!:`/`BREAKING CHANGE:` → major — so write commit messages accordingly and never hand-edit `backend/pkg/version/version.go` or `CHANGELOG.md`.
+
 # Development Environment Setup
 
 ## Nix
