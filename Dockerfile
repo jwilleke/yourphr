@@ -27,10 +27,14 @@ FROM golang:1.26 as backend-build
 WORKDIR /go/src/github.com/fastenhealth/fasten-onprem
 COPY . .
 
+# Build only — do NOT run the test suite here. Tests (go vet + go test) run in CI
+# (development.yaml / ci.yaml); running them again during the image build added up to
+# 20 min to every deploy for no extra safety. BuildKit cache mounts keep the module
+# cache + compiled objects warm across builds so only changed packages recompile.
 RUN --mount=type=cache,target=/tmp/lock,sharing=locked \
+    --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
     go mod vendor \
-    && go vet -mod=vendor ./... \
-    && go test -mod=vendor -timeout=20m ./... \
     && go build -mod=vendor -ldflags "-extldflags=-static" -tags "static" -o /go/bin/fasten ./backend/cmd/fasten/
 
 # create folder structure

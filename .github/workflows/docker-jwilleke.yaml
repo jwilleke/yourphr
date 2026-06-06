@@ -13,6 +13,14 @@ on:
       - '**/*.md'
       - 'docs/**'
       - 'LICENSE'
+  # Manual "full loop": Actions tab -> this workflow -> Run workflow, tick no_cache for a
+  # from-scratch build that ignores the layer cache (use when you suspect stale cache).
+  workflow_dispatch:
+    inputs:
+      no_cache:
+        description: "Full clean build (ignore the layer cache)"
+        type: boolean
+        default: false
 
 env:
   REGISTRY: ghcr.io
@@ -70,5 +78,6 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          no-cache: ${{ inputs.no_cache || false }}
           build-args: |
             FASTEN_ENV=prod
