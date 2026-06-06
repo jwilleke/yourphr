@@ -34,6 +34,9 @@ log:
   level: INFO
 jwt:
   issuer:
-    # you should ABSOLUTELY change this value before deploying Fasten.
-    # TODO: in future versions, this will be generated on first run with a random value, and stored as a System Setting.
+    # This is a KNOWN PUBLIC default and is treated as "unset" (see #102): the
+    # server never signs with it. On first run it auto-generates a strong random
+    # key and persists it 0600 at <db-dir>/.jwt_issuer_key (secure-by-default,
+    # zero-config). To pin your own instead, set a non-default value here or via
+    # the FASTEN_JWT_ISSUER_KEY env var (generate one with: openssl rand -hex 32).
     key: "thisismysupersecuressessionsecretlength"

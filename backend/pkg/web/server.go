@@ -23,6 +23,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 	"os"
+	"path/filepath"
 )
 
 type AppEngine struct {
@@ -380,6 +381,20 @@ func (ae *AppEngine) Start() error {
 	if err := ae.initializeDatabase(); err != nil {
 		return err
 	}
+
+	// Resolve the JWT signing key: honor an explicit non-default override, else reuse or
+	// generate-and-persist a random key in the data dir (alongside the DB). HS256 is
+	// symmetric, so this is the root of trust for all auth — the committed public default
+	// must never sign tokens (#102). Secure-by-default with zero config; no Flux/secret-
+	// manager dependency. Set it back into config so the existing read sites use it.
+	jwtKey, err := config.ResolveJWTIssuerKey(
+		ae.Config.GetString("jwt.issuer.key"),
+		filepath.Dir(ae.Config.GetString("database.location")),
+	)
+	if err != nil {
+		return err
+	}
+	ae.Config.Set("jwt.issuer.key", jwtKey)
 
 	baseRouterGroup, ginRouter := ae.Setup()
 
