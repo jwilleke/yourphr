@@ -187,17 +187,23 @@ export class AuthService {
     return localStorage.getItem(this.FASTEN_JWT_LOCALSTORAGE_KEY);
   }
 
-  public GetCurrentUser(): UserRegisteredClaims {
-    const authToken = this.GetAuthToken()
-    if(!authToken){
-      throw new Error("no auth token found")
-    }
+  // Identity now comes from the server (GET /secure/account/me) rather than decoding the JWT
+  // client-side, so it no longer needs a JS-readable token (#103 Phase 2a / #117). The browser's
+  // session credential authenticates the call (Authorization header today; HttpOnly cookie after
+  // Phase 2b). /me is also server-authoritative — role reflects current DB state, not a token snapshot.
+  public async GetCurrentUser(): Promise<UserRegisteredClaims> {
+    const fastenApiEndpointBase = GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)
+    const resp = await this._httpClient.get<ResponseWrapper>(`${fastenApiEndpointBase}/secure/account/me`).toPromise()
+    const data: any = (resp && resp.data) || {}
 
-    //parse the authToken to get user information
-    const jwtClaims = jose.decodeJwt(authToken)
-
-    // @ts-ignore
-    return jwtClaims as UserRegisteredClaims
+    const claims = new UserRegisteredClaims()
+    claims.sub = data.username // the JWT subject is the username
+    claims.id = data.id
+    claims.full_name = data.full_name
+    claims.email = data.email
+    claims.picture = data.picture
+    claims.role = data.role
+    return claims
   }
 
   public async Logout(): Promise<any> {
@@ -218,9 +224,13 @@ export class AuthService {
     // await this.Close()
   }
 
-  public IsAdmin(): boolean {
-    const currentUser = this.GetCurrentUser();
-    return currentUser && currentUser.role === "admin";
+  public async IsAdmin(): Promise<boolean> {
+    try {
+      const currentUser = await this.GetCurrentUser();
+      return !!currentUser && currentUser.role === "admin";
+    } catch (e) {
+      return false;
+    }
   }
 
   /////////////////////////////////////////////////////////////////////////////////////////////////

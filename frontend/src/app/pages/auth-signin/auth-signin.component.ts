@@ -40,10 +40,11 @@ export class AuthSigninComponent implements OnInit {
 
       this.resetUrlOnCallback()
       this.authService.IdpCallback(idpType, state, code)
-        .then(() => {
+        .then(() => this.authService.GetCurrentUser())
+        .then((currentUser) => {
           //for cloud users ONLY, skip the encryption manager.
           //TODO: replace Pouchdb.
-          const userId = this.authService.GetCurrentUser().sub
+          const userId = currentUser.sub
           //TODO: static IV, must be removed/replaced.
           return {username: userId, key: userId}
         })

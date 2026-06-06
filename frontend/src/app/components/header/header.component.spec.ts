@@ -8,7 +8,6 @@ import { IconsModule } from 'src/app/icon-module';
 import { HTTP_CLIENT_TOKEN } from '../../dependency-injection';
 import { AuthService } from '../../services/auth.service';
 import { HeaderComponent } from './header.component';
-import { of } from 'rxjs';
 import { UserRegisteredClaims } from '../../models/fasten/user-registered-claims';
 
 describe('HeaderComponent', () => {
@@ -20,8 +19,9 @@ describe('HeaderComponent', () => {
     mockedAuthService = jasmine.createSpyObj(
       'AuthService',
       {
-        'getCurrentUser': of(new UserRegisteredClaims()),
-        'IsAdmin': of(false)
+        // GetCurrentUser/IsAdmin are now async (resolve from /me, #103 Phase 2a)
+        'GetCurrentUser': Promise.resolve(new UserRegisteredClaims()),
+        'IsAdmin': Promise.resolve(false)
       }
     )
     TestBed.configureTestingModule({

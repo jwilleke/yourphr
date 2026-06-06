@@ -19,7 +19,8 @@ import {ThemeService} from '../../theme.service';
     standalone: false
 })
 export class HeaderComponent implements OnInit, OnDestroy {
-  current_user_claims: UserRegisteredClaims
+  // default to an empty object so the template renders before the async /me resolves (#103 Phase 2a)
+  current_user_claims: UserRegisteredClaims = new UserRegisteredClaims()
   backgroundJobs: BackgroundJob[] = []
 
   newSupportRequest: SupportRequest = null
@@ -44,13 +45,12 @@ export class HeaderComponent implements OnInit, OnDestroy {
     }
 
   ngOnInit() {
-    try {
-      this.current_user_claims = this.authService.GetCurrentUser()
-    } catch(e){
-      this.current_user_claims = new UserRegisteredClaims()
-    }
+    // current-user + admin now resolve from the server (#103 Phase 2a); handle async.
+    this.authService.GetCurrentUser()
+      .then((claims) => this.current_user_claims = claims)
+      .catch(() => this.current_user_claims = new UserRegisteredClaims())
 
-    this.isAdmin = this.authService.IsAdmin();
+    this.authService.IsAdmin().then((isAdmin) => this.isAdmin = isAdmin);
 
     this.fastenApi.getBackgroundJobs().subscribe((data) => {
       this.backgroundJobs = data.filter((job) => {
