@@ -64,7 +64,7 @@ func (c *configuration) ReadConfig(configFilePath string) error {
 
 	if !utils.FileExists(configFilePath) {
 		message := fmt.Sprintf("The configuration file (%s) could not be found. Skipping", configFilePath)
-		log.Printf(message)
+		log.Print(message)
 		return errors.ConfigFileMissingError("The configuration file could not be found.")
 	}
 

@@ -58,7 +58,7 @@ func main() {
 
 			subtitle := packagrUrl + utils.LeftPad2Len(versionInfo, " ", 53-len(packagrUrl))
 
-			fmt.Fprintf(c.App.Writer, fmt.Sprintf(utils.StripIndent(
+			fmt.Fprint(c.App.Writer, fmt.Sprintf(utils.StripIndent(
 				`
 			  o888o                       o8                          
 			o888oo ooooooo    oooooooo8 o888oo ooooooooo8 oo oooooo   

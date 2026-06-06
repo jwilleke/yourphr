@@ -67,7 +67,7 @@ func CORSProxy(c *gin.Context) {
 		req.Host = remote.Host
 		req.URL.Scheme = remote.Scheme
 		req.URL.Host = remote.Host
-		log.Printf(c.Param("proxyPath"))
+		log.Print(c.Param("proxyPath"))
 		req.URL.Path = remote.Path
 		req.Body = c.Request.Body
 

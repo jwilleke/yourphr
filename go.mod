@@ -1,8 +1,8 @@
 module github.com/fastenhealth/fasten-onprem
 
-go 1.23.3
+go 1.25.0
 
-toolchain go1.24.2
+toolchain go1.25.5
 
 // fasten-sources was made private (see fastenhealth/fasten-onprem#629). Use local stub.
 replace github.com/fastenhealth/fasten-sources => ./fasten-sources-stub
