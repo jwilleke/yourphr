@@ -1492,7 +1492,12 @@ func (gr *GormRepository) getResourcesFromAllTables(queryBuilder *gorm.DB, query
 			return nil, err
 		}
 		var tempWrappedResourceModels []models.ResourceBase
+		// Start each iteration from a fresh session. We reuse queryBuilder across the loop, and
+		// gorm v1.30 mutates the shared statement in place on Where() (v1.25 cloned), so without
+		// this the previous table's struct conditions leak into this query — producing SQL like
+		// `FROM fhir_adverse_event WHERE ... AND fhir_account.user_id = ?` → "no such column".
 		results := queryBuilder.
+			Session(&gorm.Session{}).
 			Where(queryParam).
 			Table(tableName).
 			Find(&tempWrappedResourceModels)
