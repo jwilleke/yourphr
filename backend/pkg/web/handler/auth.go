@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/fastenhealth/fasten-onprem/backend/pkg"
@@ -85,15 +84,16 @@ func AuthSignin(c *gin.Context) {
 		return
 	}
 
+	// Return an identical generic response for "unknown user" and "wrong password",
+	// and never echo the attempted username, to prevent username enumeration (#104 / H3).
 	foundUser, err := databaseRepo.GetUserByUsername(c, user.Username)
 	if err != nil || foundUser == nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": fmt.Sprintf("could not find user: %s", user.Username)})
+		c.JSON(http.StatusUnauthorized, gin.H{"success": false, "error": "invalid username or password"})
 		return
 	}
 
-	err = foundUser.CheckPassword(user.Password)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"success": false, "error": fmt.Sprintf("username or password does not match: %s", user.Username)})
+	if err = foundUser.CheckPassword(user.Password); err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"success": false, "error": "invalid username or password"})
 		return
 	}
 
