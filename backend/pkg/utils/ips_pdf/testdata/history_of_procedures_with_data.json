@@ -24,7 +24,7 @@
 					"type": "row",
 					"details": {
 						"prop_background_color": "RGB(220, 220, 220)",
-						"prop_border_type": "1"
+						"prop_border_type": 15
 					},
 					"nodes": [
 						{
@@ -99,7 +99,7 @@
 					"value": 7.527777777777779,
 					"type": "row",
 					"details": {
-						"prop_border_type": "1"
+						"prop_border_type": 15
 					},
 					"nodes": [
 						{

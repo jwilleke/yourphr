@@ -20,7 +20,7 @@
 			"type": "page",
 			"nodes": [
 				{
-					"value": 8.466666666666667,
+					"value": 0,
 					"type": "row",
 					"nodes": [
 						{
@@ -61,7 +61,7 @@
 					"type": "row",
 					"details": {
 						"prop_background_color": "RGB(220, 220, 220)",
-						"prop_border_type": "1"
+						"prop_border_type": 15
 					},
 					"nodes": [
 						{
@@ -180,7 +180,7 @@
 					"value": 11.055555555555557,
 					"type": "row",
 					"details": {
-						"prop_border_type": "1"
+						"prop_border_type": 15
 					},
 					"nodes": [
 						{
@@ -304,7 +304,7 @@
 					]
 				},
 				{
-					"value": 211.475277777,
+					"value": 219.941944444,
 					"type": "row",
 					"nodes": [
 						{
