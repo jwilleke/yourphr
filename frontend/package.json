@@ -50,7 +50,7 @@
     "gridstack": "8.1.1",
     "humanize-duration": "^3.27.3",
     "idb": "^7.1.0",
-    "jose": "^4.10.4",
+    "jose": "6.2.3",
     "lforms": "34.0.0",
     "moment": "^2.29.4",
     "ng2-charts": "6",
