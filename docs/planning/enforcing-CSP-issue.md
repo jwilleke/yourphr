@@ -47,9 +47,11 @@ Moved the base-href + lforms-guard scripts to `assets/js/*.js` to satisfy `scrip
 
 ### Attempt 2 — sha256-hash the inline scripts, flip to enforcing (#124, commit `936a8dfd`)
 
-Kept the scripts inline, allowlisted by hash. **The hashes worked** (app loaded, no MIME
-breakage — #113 fully fixed). But enforcing `script-src` then **blocked inline event
-handlers**, breaking interactivity/render. Reverted (`4f3d5440`).
+Kept the scripts inline, allowlisted by **hardcoded** hash. **The hashes worked** (app
+loaded, no MIME breakage — #113 fully fixed). But enforcing `script-src` then **blocked
+inline event handlers**, breaking interactivity/render. Reverted (`4f3d5440`). Also exposed
+hash fragility: an unrelated `index.html` comment changed the prod-minified bytes and
+shifted a hash → motivates runtime hash computation (below).
 
 ## Findings (live console, Attempt 2)
 
@@ -59,7 +61,7 @@ handlers**, breaking interactivity/render. Reverted (`4f3d5440`).
 | `Executing inline event handler violates script-src` (dashboard:18/45) | inline `onX=` handlers (3rd-party/runtime, **not our templates**) | the real blocker → staged approach |
 | `oauth4webapi … Unexpected token 'export'` | ESM loaded as classic script — **bundling bug, not CSP** | investigate separately (IdpConnect path) |
 | `site.webmanifest` blocked (default-src) | manifest 302'd to Authentik; no `manifest-src` | add `manifest-src 'self'` (non-breaking) |
-| Perplexity-CDN font blocked | browser **extension**, not the app | ignore |
+| Perplexity-CDN font blocked | browser **extension**, not the app | ignore (test in incognito) |
 
 ## Decision: staged enforcement (two policies at once)
 
@@ -75,36 +77,98 @@ CSP supports a `Content-Security-Policy` (enforce) **and** a
 *cross-origin* script injection; permissive on inline so the app + handlers work).
 
 **Observe** (report-only) the strict target:
-`script-src 'self' 'sha256-66XQ…' 'sha256-EnWZB…'` — keeps visibility on what fully-strict
-would block; tighten later.
+`script-src 'self' '<base-href hash>' '<lforms-guard hash>'; report-uri /api/csp-violation`
+— keeps visibility on what fully-strict would block; tighten later with real data.
 
 **Rationale:** delivers ~80% of CSP's value **enforced and safe today**, vs. zero
 (report-only-everything) or an outage (strict-everything). Token-theft XSS is already
 mitigated by #103.
 
+### Planned Go shape (both headers)
+
+The middleware sets both headers; the report-only hashes are computed at startup (next
+section), not hardcoded:
+
+```text
+Content-Security-Policy:             <enforcing policy above>
+Content-Security-Policy-Report-Only: script-src 'self' 'sha256-…' 'sha256-…'; report-uri /api/csp-violation
+```
+
+## Decision: compute the inline-script hashes at runtime (no hardcoding)
+
+Attempt 2 hardcoded the hashes and they immediately drifted. Instead, the backend computes
+them **at startup from the `index.html` it actually serves** (disk via
+`web.src.frontend.path`, or `embed.FS` for the embedded build): read the file, extract the
+two inline `<script>` bodies, sha256 each, build the report-only `script-src`. **Zero drift,
+no build step, never rots** — the hashes are by construction equal to the served bytes. If
+`index.html` is absent (some dev setups), fall back to `script-src 'self'` (no hashes) for
+the report-only policy. This is the robust realization of "automated hash maintenance".
+
+## Decision: CSP violation reporting endpoint
+
+Add `report-uri /api/csp-violation` to the report-only policy and a handler that turns the
+browser's violation reports into **actionable prod data** (so we stop guessing):
+
+- `POST /api/csp-violation` — **public** (browsers post without auth) and **rate-limited**
+  (reuse the per-IP limiter from #104; it can be spammed). Accepts the
+  `application/csp-report` / `application/reports+json` body and structured-logs it
+  (directive, blocked-uri, document-uri). Optionally aggregate later.
+- This is how we'll actually enumerate the inline-handler violations and verify the
+  `connect-src` / `img-src` allowlists from **real traffic**, not a single console walk.
+- Note: `report-uri` is deprecated in favor of the Reporting-API (`report-to`), but
+  `report-uri` works in all current browsers — start there, add `report-to` later.
+
+## Success criteria ("done")
+
+1. Enforcing policy live in prod with **zero app-breaking violations** across the major flows.
+2. The report-only strict `script-src` collects violations via `/api/csp-violation` for
+   **≥1–2 weeks of real prod traffic**, and the remaining unique violation types are
+   understood (inline handlers enumerated to their source) before we attempt to tighten
+   `script-src` to enforcing.
+3. `connect-src` / `img-src` / `font-src` allowlists confirmed against real reports (no
+   legitimate resource blocked).
+
 ## Validation discipline (the lesson)
 
-We caused two outages by **deploying to validate**. Going forward:
-**validate the production-served path *locally* first** — `make build-frontend`, point the
-Go backend's `web.src.frontend.path` at the built `dist/`, open `http://localhost:9090/web`
-with the console open, walk every major page (dashboard, sources, records, **lforms
-questionnaire**, reports, settings). Deploy only when the local console is clean.
-`ng serve` does NOT apply the backend CSP and serves at `/`, so it cannot validate this.
+We caused two outages by **deploying to validate**. Going forward, **validate the
+production-served path *locally* first**:
+
+- `make build-frontend`, point the Go backend's `web.src.frontend.path` at the built
+  `dist/`, open `http://localhost:9090/web` with the console open. `ng serve` does NOT apply
+  the backend CSP and serves at `/`, so it cannot validate this.
+- Walk every major page with the console open: dashboard, sources, **add-source / SMART
+  relay popup + token exchange**, records, **lforms questionnaire**, **print / PDF / report
+  views**, settings.
+- Test in **incognito (no extensions** — removes the Perplexity-font noise) and in at least
+  **two browsers** (Chrome + Firefox).
+- Deploy only when the local console is clean. (Aspirational: an automated E2E pass with the
+  CSP applied.)
 
 ## Path to fully-strict `script-src` (separate, lower priority)
 
-1. Enumerate every inline event handler (local browser walk) and its source.
-2. Eliminate ours (refactor `onX=` → Angular `(event)` bindings); for third-party widgets,
-   replace/fork or accept `'unsafe-hashes'` + enumerated handler hashes.
-3. Move script loading to **nonce + `'strict-dynamic'`** (needs per-request `index.html`
-   templating in the backend; currently static `StaticFS` / `c.File`).
+1. **Enumerate** every inline event handler (local walk + the reporting endpoint) and pin
+   the **exact widget + version** injecting them (lforms? dwv?).
+2. **Eliminate / contain:**
+   - ours → refactor `onX=` to Angular `(event)` bindings;
+   - third-party → upgrade the widget if a fixed version exists; else **replace/fork**; else
+     **sandbox it in an `<iframe>` with its own relaxed CSP** so its inline handlers don't
+     force the parent policy open (cost: a `postMessage` bridge);
+   - last resort → `'unsafe-hashes'` + enumerated handler hashes (fragile).
+3. **Nonce + `'strict-dynamic'`** for script loading: the Go backend templates `index.html`
+   per-request (inject a nonce into the inline scripts + the CSP). This replaces `StaticFS` /
+   `c.File` for `index.html` with a small read-inject-serve handler (and the `embed.FS`
+   variant). Angular 14 has **no** built-in CSP-nonce support (that's Angular 16+ `ngCspNonce`),
+   so the inline scripts get manual `nonce` attributes.
 4. Likely paired with the **Angular upgrade (#114)**, which may change the widget stack.
 
 ## Worklog
 
-- **2026-06-07** — Attempt 2 (hashes) reverted (`4f3d5440`); root cause = inline event
-  handlers vs strict `script-src`. Decided on **staged enforcement**. This doc created.
-  *Next: implement the staged CSP + validate the production-served path locally before deploy.*
+- **2026-06-07** — Attempt 2 (hardcoded hashes) reverted (`4f3d5440`); root cause = inline
+  event handlers vs strict `script-src`. Decided on **staged enforcement** +
+  **runtime-computed hashes** + a **`/api/csp-violation` reporting endpoint** + success
+  criteria (review folded in additional considerations: testing breadth, widget strategy,
+  nonce roadmap, `connect-src` polish). *Next: implement the staged CSP + the reporting
+  endpoint, then validate the production-served path locally before deploy.*
 
 ## Related issues
 
