@@ -1,6 +1,6 @@
 # Enforcing Content-Security-Policy — issue & working plan
 
-> **Status:** in progress · CSP is currently **report-only** (safe) on `main`.
+> **Status:** ✅ **done (in-scope)** — staged enforcing CSP is **live in prod** and verified (2026-06-07): enforcing safe directives + report-only strict `script-src`. The only remaining item is the explicitly-deferred fully-strict `script-src`, tracked to #114.
 > **Tracking issue:** [#124](https://github.com/jwilleke/yourphr/issues/124) · Related: #105 (H4), #113, #120, #103 (H2), #114.
 > **Owner:** living doc — updated with findings as we work through it.
 > Companion to [architecture-security-review.md](./architecture-security-review.md) and [Standards-Conformance.md](./Standards-Conformance.md).
@@ -106,6 +106,11 @@ This is intentionally *not* part of the current work; it is the eventual path if
   - Both headers emit correctly end-to-end; browser walk (login + dashboard) was clean — **no app resource blocked**; the only CSP block was a *browser-extension* font (Perplexity), which incognito removes.
   - Confirmed the enforcing policy is a permissive **superset** of the report-only policy prod has run since #105 (loosened `script-src`/`img-src`, added `manifest-src`, tightened nothing), so the catastrophic strict-`script-src` outage mode is off the table.
   - Two **pre-existing, non-CSP** bugs surfaced during the walk and were filed separately: the `oauth4webapi` ESM-as-classic parse error, and the manifest icons 404'ing under `/web/`.
+- **2026-06-07 (verified live + manifest follow-up)** — Confirmed the deployed prod headers (`main-117`) from the browser console: enforcing + report-only headers exact, app fully functional, **no enforcing block on any app resource**; the report-only strict `script-src` correctly logs the inline-handler violations (as designed). Prod surfaced one Authentik-specific interaction not visible locally, now resolved deployment-agnostically:
+  - the uncredentialed manifest fetch 302's to Authentik and `manifest-src 'self'` blocks the result;
+  - app-side fix: manifest icon paths made base-href-relative (yourphr `1621a0d7`, **closes #126**);
+  - infra-side fix: a narrow public favicon/manifest ingress, kept entirely in infra (mj-infra-flux#111, **merged**) — YourPHR stays agnostic to Authentik/Traefik/Flux.
+  - Still open: **#125** (`oauth4webapi` ESM parse bug — not CSP).
 
 ## Related issues
 
