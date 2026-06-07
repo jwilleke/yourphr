@@ -1,6 +1,10 @@
 import { defineConfig, devices } from '@playwright/test';
 import { BASE_URL } from './e2e/constants';
 
+// The throwaway E2E-account password is generated once at runtime in global-setup and
+// written to a gitignored file (no committed credential, #132); the login helper reads it
+// back. See e2e/constants.ts.
+
 // E2E config: drives a real browser against the PRODUCTION-SERVED path — the Go backend
 // serving the built dist under /web (config.e2e.yaml), not `ng serve` (which wouldn't
 // apply the backend CSP). `make test-e2e` builds the frontend first.

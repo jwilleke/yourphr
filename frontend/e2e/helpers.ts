@@ -1,11 +1,11 @@
 import { Page, expect } from '@playwright/test';
-import { E2E_USER, E2E_PASS } from './constants';
+import { E2E_USER, getE2EPass } from './constants';
 
 // Log in through the real UI (exercises the cookie/JWT signin flow from #103).
 export async function login(page: Page): Promise<void> {
   await page.goto('auth/signin');
   await page.fill('input[name="username"]', E2E_USER);
-  await page.fill('input[name="password"]', E2E_PASS);
+  await page.fill('input[name="password"]', getE2EPass());
   await page.click('button[type="submit"]');
   await expect(page).toHaveURL(/\/web\/dashboard/, { timeout: 30_000 });
 }
