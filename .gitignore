@@ -105,6 +105,8 @@ certs/
 .env
 .env.*
 *.env
+# ...but the committed template IS tracked (negation must follow the patterns above) (#96)
+!.env.example
 
 # Keys, certs, and credential material
 *.pem
