@@ -22,14 +22,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version-file: frontend/.nvmrc
       - name: Test Frontend
         run: |
           make test-frontend-coverage
       - name: Upload coverage
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: frontend-coverage
           path: ${{ github.workspace }}/frontend/coverage/fastenhealth/lcov.info
@@ -47,7 +47,7 @@ jobs:
       # toolchain that GOTOOLCHAIN auto-downloads (it lives under the module cache), so each run
       # stops re-fetching it and recompiling deps from cold. Key invalidates on go.sum changes.
       - name: Cache Go modules + build
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             /go/pkg/mod
@@ -64,7 +64,7 @@ jobs:
           make test-backend-coverage
           CGO_ENABLED=0 go build -buildvcs=false ./backend/cmd/fasten/
       - name: Upload coverage
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: backend-coverage
           path: ${{ github.workspace }}/backend-coverage.txt
@@ -76,16 +76,16 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
       - name: Setup Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version-file: frontend/.nvmrc
       # Cache the Go module + build cache so the webServer's `go run` of the backend is fast.
       - name: Cache Go modules + build
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/go/pkg/mod
@@ -105,7 +105,7 @@ jobs:
         run: make test-e2e
       - name: Upload Playwright report on failure
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: playwright-report
           path: frontend/playwright-report/
@@ -118,7 +118,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
       - name: Setup
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version-file: frontend/.nvmrc
       - run: |
@@ -131,7 +131,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version-file: frontend/.nvmrc
       - name: ng lint (angular-eslint)
