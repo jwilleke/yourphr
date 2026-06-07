@@ -35,6 +35,14 @@ export default async function globalSetup(_config: FullConfig) {
         timeout: 120_000,
       });
       console.log(`[e2e] seed bundle import -> HTTP ${res.status()}`);
+      // #148 diagnostic: the import summary enumerates stored resources — log whether a
+      // Patient was actually stored (its absence here would explain the IPS "no patients").
+      try {
+        const summary = (await res.json())?.data;
+        const refs: string[] = summary?.UpdatedResources ?? [];
+        const patients = refs.filter((r) => typeof r === 'string' && r.startsWith('Patient/'));
+        console.log(`[e2e] import stored total=${summary?.TotalResources}; Patient refs=${JSON.stringify(patients)}`);
+      } catch { /* non-JSON response — ignore */ }
 
       // Readiness gate: the import processes resources (related-resources / search params)
       // asynchronously after returning 200, so a too-early IPS summary query can 500. Wait

@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"strings"
 
 	"github.com/fastenhealth/fasten-sources/clients/models"
@@ -91,6 +92,10 @@ func (c *fileImportClient) SyncAllBundle(db models.DatabaseRepository, bundleFil
 			ID           string `json:"id"`
 		}
 		if err := json.Unmarshal(raw, &header); err != nil || header.ResourceType == "" || header.ID == "" {
+			// Previously a silent skip — log it (a skipped Patient here would explain #148's
+			// "no patients to merge"). Logged via the standard logger so it shows regardless of
+			// whether the client has a structured logger wired.
+			log.Printf("import: skipping resource entry (resourceType=%q id=%q parseErr=%v)", header.ResourceType, header.ID, err)
 			continue
 		}
 		rawResource := models.RawResourceFhir{

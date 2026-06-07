@@ -18,4 +18,7 @@ database:
   encryption:
     enabled: false
 log:
-  level: WARN
+  # INFO (not WARN) so the per-resource import store logs ("insert/update FHIRResource
+  # (Patient) <id>") are visible in the CI E2E log — to diagnose #148 (whether the seeded
+  # Patient is actually stored in CI). Dial back to WARN once #148 is understood.
+  level: INFO
