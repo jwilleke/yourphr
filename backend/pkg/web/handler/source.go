@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"strings"
@@ -502,10 +503,26 @@ func storeFileLocally(c *gin.Context) (*os.File, error) {
 		return nil, fmt.Errorf("could not create temp file: %w", err)
 	}
 
-	// Upload the file to the temp bundleFile path. Wrap the underlying error so callers/clients
-	// see why it failed (previously this was swallowed, which made #148 opaque).
-	if err = c.SaveUploadedFile(file, bundleFile.Name()); err != nil {
-		return nil, fmt.Errorf("could not save uploaded file to %q: %w", bundleFile.Name(), err)
+	// Stream the upload into the temp file ourselves rather than gin.SaveUploadedFile (#148):
+	// SaveUploadedFile chmod()s the destination, which fails with "chmod /tmp: operation not
+	// permitted" on sandboxed runners (CI) where our uid can't chmod the temp dir. os.CreateTemp
+	// already created the file with safe 0600 perms, so an io.Copy is sufficient and portable.
+	src, err := file.Open()
+	if err != nil {
+		bundleFile.Close()
+		return nil, fmt.Errorf("could not open uploaded file: %w", err)
+	}
+	defer src.Close()
+
+	if _, err = io.Copy(bundleFile, src); err != nil {
+		bundleFile.Close()
+		return nil, fmt.Errorf("could not write uploaded file to %q: %w", bundleFile.Name(), err)
+	}
+
+	// rewind so the caller reads the bundle from the start
+	if _, err = bundleFile.Seek(0, io.SeekStart); err != nil {
+		bundleFile.Close()
+		return nil, fmt.Errorf("could not rewind temp file %q: %w", bundleFile.Name(), err)
 	}
 	return bundleFile, nil
 }
