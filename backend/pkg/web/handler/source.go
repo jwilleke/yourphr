@@ -3,7 +3,6 @@ package handler
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"strings"
@@ -495,18 +494,18 @@ func storeFileLocally(c *gin.Context) (*os.File, error) {
 	}
 	fmt.Printf("Uploaded filename: %s", file.Filename)
 
-	// create a temporary file to store this uploaded file
-	bundleFile, err := ioutil.TempFile("", file.Filename)
+	// create a temporary file to store this uploaded file. Use a fixed "*" pattern (clean,
+	// unique) rather than the client-supplied file.Filename — a filename with path separators
+	// or odd characters would make the temp-file creation fail.
+	bundleFile, err := os.CreateTemp("", "fasten-manual-upload-*.json")
 	if err != nil {
-		//c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "could not create temp file"})
-		return nil, fmt.Errorf("could not create temp file")
+		return nil, fmt.Errorf("could not create temp file: %w", err)
 	}
 
-	// Upload the file to specific bundleFile.
-	err = c.SaveUploadedFile(file, bundleFile.Name())
-	if err != nil {
-		//c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "could not save temp file"})
-		return nil, fmt.Errorf("could not save temp file")
+	// Upload the file to the temp bundleFile path. Wrap the underlying error so callers/clients
+	// see why it failed (previously this was swallowed, which made #148 opaque).
+	if err = c.SaveUploadedFile(file, bundleFile.Name()); err != nil {
+		return nil, fmt.Errorf("could not save uploaded file to %q: %w", bundleFile.Name(), err)
 	}
 	return bundleFile, nil
 }
