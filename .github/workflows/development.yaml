@@ -96,9 +96,9 @@ jobs:
             ${{ runner.os }}-go-
       - name: Install frontend deps
         run: make dep-frontend
-      # Browser binary + its OS libs (chromium only for Phase 1; Firefox added in Phase 3, #131).
-      - name: Install Playwright chromium
-        run: cd frontend && npx playwright install --with-deps chromium
+      # Browser binaries + OS libs (chromium + firefox for the multi-browser CSP matrix, #131).
+      - name: Install Playwright browsers
+        run: cd frontend && npx playwright install --with-deps chromium firefox
       # Builds the frontend, then Playwright boots the Go backend (config.e2e.yaml, fresh
       # ./db/fasten-e2e.db, :9191) serving dist under /web and runs the smoke suite.
       - name: Run E2E

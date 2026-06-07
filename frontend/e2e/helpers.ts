@@ -26,9 +26,11 @@ export function trackPageHealth(page: Page): PageHealth {
 
   page.on('console', (msg) => {
     const text = msg.text();
-    // The strict script-src rides along as Content-Security-Policy-Report-Only, so the
-    // browser logs report-only inline-handler violations on purpose — those are NOT failures.
-    if (/content security policy/i.test(text) && !/report.?only/i.test(text)) {
+    // Match "Content Security Policy" (Chromium) and "Content-Security-Policy" (Firefox).
+    // The strict script-src rides along as Content-Security-Policy-Report-Only, so browsers log
+    // report-only violations on purpose — those are NOT failures (Firefox says "Report-Only",
+    // Chromium "report-only"; both caught by /report.?only/i).
+    if (/content.?security.?policy/i.test(text) && !/report.?only/i.test(text)) {
       health.cspViolations.push(text);
     }
   });

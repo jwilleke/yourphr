@@ -24,8 +24,7 @@ export default defineConfig({
   },
   projects: [
     { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
-    // Phase 3: add Firefox for the multi-browser CSP matrix
-    // { name: 'firefox', use: { ...devices['Desktop Firefox'] } },
+    { name: 'firefox', use: { ...devices['Desktop Firefox'] } },
   ],
   // Boot the Go backend with a fresh test DB, serving the built dist. cwd is the repo
   // root (one level up from frontend/). `go run` recompiles, hence the generous timeout.
