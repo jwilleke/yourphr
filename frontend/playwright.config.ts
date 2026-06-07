@@ -26,8 +26,10 @@ export default defineConfig({
   // Boot the Go backend with a fresh test DB, serving the built dist. cwd is the repo
   // root (one level up from frontend/). `go run` recompiles, hence the generous timeout.
   webServer: {
+    // mkdir -p db: the db/ dir is gitignored, so it's absent on a fresh CI checkout and
+    // sqlite can't create the test DB without it (no-op locally).
     command:
-      'rm -f db/fasten-e2e.db db/fasten-e2e.db-shm db/fasten-e2e.db-wal && go run backend/cmd/fasten/fasten.go start --config config.e2e.yaml',
+      'mkdir -p db && rm -f db/fasten-e2e.db db/fasten-e2e.db-shm db/fasten-e2e.db-wal && go run backend/cmd/fasten/fasten.go start --config config.e2e.yaml',
     cwd: '..',
     url: BASE_URL,
     timeout: 180_000,
