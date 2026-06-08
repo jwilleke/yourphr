@@ -20,6 +20,12 @@ describe('AllergyIntoleranceModel', () => {
       const expected = new AllergyIntoleranceModel({})
       expected.title = 'Cashew nuts'
       expected.status = 'Confirmed'
+      expected.clinical_status = 'Active'
+      expected.criticality = 'high'
+      expected.reactions = [
+        { manifestation: ['Anaphylactic reaction'], severity: 'severe', description: 'Challenge Protocol. Severe reaction to subcutaneous cashew extract. Epinephrine administered' },
+        { manifestation: ['Urticaria'], severity: 'moderate', description: undefined },
+      ]
       expected.recorded_date = '2014-10-09T14:58:00+11:00'
       expected.substance_coding = [
         {
@@ -42,6 +48,11 @@ describe('AllergyIntoleranceModel', () => {
       const expected = new AllergyIntoleranceModel({})
       expected.title = 'Penicillin G'
       expected.status = 'Unconfirmed'
+      expected.clinical_status = 'Active'
+      expected.criticality = 'high'
+      expected.reactions = [
+        { manifestation: ['Hives'], severity: undefined, description: undefined },
+      ]
       expected.recorded_date = '2010-03-01'
       expected.substance_coding = []
       // expected.asserter = { reference: 'Patient/example' }
@@ -58,6 +69,7 @@ describe('AllergyIntoleranceModel', () => {
       const expected = new AllergyIntoleranceModel({})
       expected.title = 'No Known Allergy (situation)'
       expected.status = 'Confirmed'
+      expected.clinical_status = 'Active'
       expected.recorded_date = '2015-08-06T15:37:31-06:00'
       expected.substance_coding = []
       // expected.asserter = { reference: 'Patient/example' }
