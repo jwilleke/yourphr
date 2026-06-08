@@ -101,6 +101,10 @@
     "typescript-eslint": "8.46.4"
   },
   "resolutions": {
-    "webpack": "5.94.0"
+    "webpack": "5.94.0",
+    "serialize-javascript": "7.0.5",
+    "uuid": "11.1.1",
+    "webpack-dev-server": "5.2.4",
+    "postcss": "8.5.15"
   }
 }
