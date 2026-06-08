@@ -17,6 +17,10 @@ export class ConditionModel extends FastenDisplayModel {
   has_body_site: boolean | undefined
   body_site: CodableConceptModel[] | undefined
   clinical_status: string | undefined
+  // US Core 9.0.0 Must-Support (Condition Problems & Health Concerns, #143):
+  verification_status: string | undefined
+  categories: string[] = []        // problem-list-item vs health-concern distinction
+  subject: ReferenceModel | undefined
   date_recorded: string | undefined
   onset_datetime: string | undefined
   abatement_datetime: string | undefined
@@ -65,6 +69,13 @@ export class ConditionModel extends FastenDisplayModel {
 
   r4DTO(fhirResource:any){
     this.clinical_status = _.get(fhirResource, 'clinicalStatus.coding.0.code');
+    this.verification_status = _.get(fhirResource, 'verificationStatus.coding.0.display')
+      || _.get(fhirResource, 'verificationStatus.coding.0.code');
+    // category[] distinguishes problem-list-item vs health-concern (US Core required slice)
+    this.categories = _.get(fhirResource, 'category', [])
+      .map((c:any) => _.get(c, 'coding.0.display') || _.get(c, 'text') || _.get(c, 'coding.0.code'))
+      .filter(Boolean);
+    this.subject = _.get(fhirResource, 'subject');
     this.date_recorded = _.get(fhirResource, 'recordedDate');
     this.note = _.get(fhirResource, 'note.0.text');
   };

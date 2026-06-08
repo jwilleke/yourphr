@@ -34,6 +34,9 @@ describe('ConditionModel', () => {
         "text": "Left Ear"
       })]
       expected.clinical_status = 'active'
+      expected.verification_status = 'confirmed'
+      expected.categories = ['Encounter Diagnosis']
+      expected.subject = { reference: 'Patient/example' }
       // expected.dateRecorded: string | undefined
       expected.onset_datetime = '2012-05-24'
       expected.code = { coding: [{ system: 'http://snomed.info/sct', code: '39065001', display: 'Burn of ear' } ], text: 'Burnt Ear' }
@@ -49,6 +52,9 @@ describe('ConditionModel', () => {
       expected.has_body_site = false
       // expected.bodySite
       expected.clinical_status = 'active'
+      expected.verification_status = 'confirmed'
+      expected.categories = ['Problem List Item']
+      expected.subject = { reference: 'Patient/example' }
       // expected.dateRecorded: string | undefined
       // expected.onsetDateTime = '2012-05-24'
       //@ts-ignore
@@ -66,6 +72,9 @@ describe('ConditionModel', () => {
       expected.has_body_site = true
       expected.body_site = [new CodableConceptModel({ text: '', coding: [ Object({ system: 'http://snomed.info/sct', code: '38266002', display: 'Entire body as a whole' }) ] })]
       expected.clinical_status = 'resolved'
+      expected.verification_status = 'confirmed'
+      expected.categories = ['Problem']
+      expected.subject = { reference: 'Patient/f201', display: 'Roel' }
       expected.date_recorded = '2013-04-04'
       expected.onset_datetime =  '2013-04-02'
       expected.code ={ coding: [{ system: 'http://snomed.info/sct', code: '386661006', display: 'Fever' }] }
