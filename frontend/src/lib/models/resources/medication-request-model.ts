@@ -18,6 +18,13 @@ export class MedicationRequestModel extends FastenDisplayModel {
   created: string|undefined
   intent: string|undefined
   status: string|undefined
+  // US Core 9.0.0 Must-Support (#144):
+  subject: ReferenceModel|undefined          // Reference(Patient) — mandatory
+  encounter: ReferenceModel|undefined
+  reported_boolean: boolean|undefined        // reported[x]: was this reported rather than primary?
+  reported_reference: ReferenceModel|undefined
+  categories: string[] = []                  // category:us-core (e.g. community, discharge)
+  dosage_instruction_text: string|undefined  // dosageInstruction.text (MS)
 
   constructor(fhirResource: any, fhirVersion?: fhirVersions, fastenOptions?: FastenOptions) {
     super(fastenOptions)
@@ -34,10 +41,20 @@ export class MedicationRequestModel extends FastenDisplayModel {
     this.dosage_instruction = _.get(fhirResource, 'dosageInstruction');
     this.has_dosage_instruction =
       Array.isArray(this.dosage_instruction) && this.dosage_instruction.length > 0;
+    this.dosage_instruction_text = _.get(fhirResource, 'dosageInstruction.0.text');
     this.requester =
       _.get(fhirResource, 'requester.agent') || _.get(fhirResource, 'requester');
     this.created = _.get(fhirResource, 'authoredOn');
     this.intent = _.get(fhirResource, 'intent');
+
+    // US Core Must-Support elements (#144)
+    this.subject = _.get(fhirResource, 'subject');
+    this.encounter = _.get(fhirResource, 'encounter');
+    this.reported_boolean = _.get(fhirResource, 'reportedBoolean');
+    this.reported_reference = _.get(fhirResource, 'reportedReference');
+    this.categories = _.get(fhirResource, 'category', [])
+      .map((c: any) => _.get(c, 'coding.0.display') || _.get(c, 'text') || _.get(c, 'coding.0.code'))
+      .filter(Boolean);
 
     this.display = _.get(fhirResource, 'medicationCodeableConcept.text') || _.get(fhirResource, 'medicationCodeableConcept.0.display') || _.get(fhirResource, 'dosageInstruction.0.text') || 'unknown'
   }
