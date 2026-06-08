@@ -67,6 +67,23 @@ export class ObservationComponent implements OnInit {
         enabled: !!this.displayModel?.reference_range.hasValue(),
       }
     )
+
+    // Multi-component observations (e.g. Blood Pressure: systolic / diastolic) — US Core MS (#146).
+    for (const component of (this.displayModel?.components || [])) {
+      this.tableData.push({
+        label: component.label,
+        data: component.value_model?.display(),
+        enabled: !!component.value_model,
+      })
+    }
+
+    // Surface the declared US Core profile — only when the resource actually claims one via
+    // meta.profile (we don't present an inferred classification as if it were declared).
+    this.tableData.push({
+      label: 'US Core Profile',
+      data: this.displayModel?.us_core_profile?.profile?.display,
+      enabled: !this.displayModel?.us_core_profile?.inferred && !!this.displayModel?.us_core_profile?.profile,
+    })
   }
 
   markForCheck(){

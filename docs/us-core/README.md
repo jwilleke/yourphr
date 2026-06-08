@@ -24,9 +24,9 @@ How YourPHR relates to the [FHIR **US Core** Implementation Guide](https://hl7.o
 | Problems / health concerns | Condition (Problems), Condition (Encounter Dx) | Condition | ✅ | ✅ audited vs 9.0.0 (#143): MS clinicalStatus / verificationStatus / **category (problem-list-item vs health-concern)** / code / subject / onset / abatement / recordedDate |
 | Allergies | AllergyIntolerance | AllergyIntolerance | ✅ | ✅ audited vs 9.0.0 (#145): MS code / clinicalStatus / verificationStatus / patient + reaction.manifestation; plus criticality & reaction.severity |
 | Medications | MedicationRequest, Medication, MedicationDispense | MedicationRequest, Medication, MedicationDispense | ✅ | ✅ MedicationRequest audited vs 9.0.0 (#144): MS status / intent / medication[x] (CodeableConcept + Reference) / subject / encounter / reported[x] / authoredOn / requester / dosageInstruction.text / category |
-| Lab results | Observation (Lab Result), DiagnosticReport (Lab) | Observation, DiagnosticReport | ✅ | ⚠️ generic — Observation **not split** by sub-profile |
-| Vital signs | Vital Signs + the per-vital profiles (BP, height, weight, temp, HR, RR, SpO₂, …) | Observation | ✅ | ⚠️ generic — no per-vital handling; `component` TODO |
-| Smoking status | Smoking Status Observation | Observation | ✅ | ⚠️ generic — not differentiated |
+| Lab results | Observation (Lab Result), DiagnosticReport (Lab) | Observation, DiagnosticReport | ✅ | ✅ Observation classified by `meta.profile` + category/LOINC fallback (#146); registry covers all ~28 Observation sub-profiles. Labs: value + reference range |
+| Vital signs | Vital Signs + the per-vital profiles (BP, height, weight, temp, HR, RR, SpO₂, …) | Observation | ✅ | ✅ classified (#146); **multi-component BP** (systolic/diastolic) now rendered + `value[x]` extended. Per-vital dashboard widgets deferred |
+| Smoking status | Smoking Status Observation | Observation | ✅ | ⚠️ classified as social-history (#146); generic value render — dedicated view deferred |
 | Immunizations | Immunization | Immunization | ✅ | generic |
 | Procedures | Procedure | Procedure | ✅ | generic |
 | Clinical notes | DocumentReference, DiagnosticReport (Note) | DocumentReference, DiagnosticReport | ✅ | ✅ DocumentReference audited vs 9.0.0 (#147): MS status / type / category / subject / date / author / content.attachment (contentType, data/url — rendered & downloadable) / content.format / context |

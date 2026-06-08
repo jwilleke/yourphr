@@ -11,6 +11,14 @@ import { BooleanModel } from '../datatypes/boolean-model';
 import { ObservationValueCodeableConceptModel } from '../datatypes/observation-value-codeable-concept-model';
 import { ReferenceRangeModel } from '../datatypes/reference-range-model';
 import { DataAbsentReasonModel } from '../datatypes/data-absent-reason-model';
+import { classifyObservationProfile, ObservationClassification } from './observation-profile-registry';
+
+// A single component of a multi-component Observation (e.g. Blood Pressure systolic/diastolic).
+export interface ObservationComponent {
+  label: string
+  code: CodableConceptModel | undefined
+  value_model: ObservationValue | undefined
+}
 
 // should have either range or value
 export interface ValueObject {
@@ -37,6 +45,12 @@ export class ObservationModel extends FastenDisplayModel {
 
   value_model: ObservationValue
 
+  // US Core 9.0.0 (#146): the claimed conformance profiles + the resolved classification (meta.profile
+  // when present, else inferred from category + LOINC code), and any value-bearing components.
+  meta_profiles: string[]
+  us_core_profile: ObservationClassification
+  components: ObservationComponent[] = []
+
   constructor(fhirResource: any, fhirVersion?: fhirVersions, fastenOptions?: FastenOptions) {
     super(fastenOptions)
     this.fhirResource = fhirResource
@@ -49,13 +63,37 @@ export class ObservationModel extends FastenDisplayModel {
     this.subject = _.get(fhirResource, 'subject');
     this.reference_range = new ReferenceRangeModel(_.get(this.fhirResource, 'referenceRange.0'))
 
-    // TODO: there are more value types that can be set: valueRange, valueRatio, valueSampledData, valueTime, valueDateTime, valuePeriod
-    // TODO: It is possible for values to be set in the Component element instead of any value component from above. Figure out what to do for that
-    if (_.get(fhirResource, 'valueQuantity')) { this.value_model = new QuantityModel(fhirResource['valueQuantity']) }
-    if (_.get(fhirResource, 'valueString')) { this.value_model = new StringModel(fhirResource['valueString']) }
-    if (_.get(fhirResource, 'valueInteger')) { this.value_model = new IntegerModel(fhirResource['valueInteger']) }
-    if (_.get(fhirResource, 'valueBoolean')) { this.value_model = new BooleanModel(fhirResource['valueBoolean']) }
-    if (_.get(fhirResource, 'valueCodeableConcept')) { this.value_model = new ObservationValueCodeableConceptModel(fhirResource['valueCodeableConcept']) }
-    if (_.get(fhirResource, 'dataAbsentReason')) { this.value_model = new DataAbsentReasonModel(fhirResource['dataAbsentReason']) }
+    this.meta_profiles = _.get(fhirResource, 'meta.profile', []) || [];
+    this.us_core_profile = classifyObservationProfile(fhirResource);
+
+    const value = ObservationModel.buildValue(fhirResource)
+    if (value) { this.value_model = value }
+
+    // Multi-component observations (e.g. Blood Pressure: systolic + diastolic). Each component carries
+    // its own code + value[x] — US Core Must-Support for the component-bearing vital-signs profiles.
+    this.components = _.get(fhirResource, 'component', []).map((component: any): ObservationComponent => ({
+      label: _.get(component, 'code.coding.0.display') || _.get(component, 'code.text') || _.get(component, 'code.coding.0.code') || 'Component',
+      code: new CodableConceptModel(_.get(component, 'code')),
+      value_model: ObservationModel.buildValue(component),
+    }))
+  }
+
+  // Builds the ObservationValue for a value[x] carrier (the Observation itself or a component).
+  // Returns the first value[x] present; undefined if none.
+  static buildValue(source: any): ObservationValue | undefined {
+    if (_.get(source, 'valueQuantity')) { return new QuantityModel(source['valueQuantity']) }
+    if (_.get(source, 'valueString')) { return new StringModel(source['valueString']) }
+    if (_.get(source, 'valueInteger')) { return new IntegerModel(source['valueInteger']) }
+    if (_.get(source, 'valueBoolean')) { return new BooleanModel(source['valueBoolean']) }
+    if (_.get(source, 'valueCodeableConcept')) { return new ObservationValueCodeableConceptModel(source['valueCodeableConcept']) }
+    // value[x] types without a dedicated model render as their string form (#146).
+    if (_.get(source, 'valueDateTime')) { return new StringModel(source['valueDateTime']) }
+    if (_.get(source, 'valuePeriod')) {
+      return new StringModel([_.get(source, 'valuePeriod.start'), _.get(source, 'valuePeriod.end')].filter(Boolean).join(' – '))
+    }
+    if (_.get(source, 'valueTime')) { return new StringModel(source['valueTime']) }
+    if (_.get(source, 'dataAbsentReason')) { return new DataAbsentReasonModel(source['dataAbsentReason']) }
+    // TODO (#146 follow-up): valueRange, valueRatio, valueSampledData need dedicated value models.
+    return undefined
   }
 }
