@@ -1062,7 +1062,7 @@ func (suite *RepositoryTestSuite) TestGetSourceSummary() {
 	err = dbRepo.CreateSource(authContext, &testSourceCredential)
 	require.NoError(suite.T(), err)
 
-	testPatientData, err := os.ReadFile("./testdata/Abraham100_Heller342_262b819a-5193-404a-9787-b7f599358035.json")
+	testPatientData, err := os.ReadFile("./testdata/Abraham100_Heller342_small.json")
 	require.NoError(suite.T(), err)
 
 	var testPatientBundle fhir401.Bundle
@@ -1094,22 +1094,19 @@ func (suite *RepositoryTestSuite) TestGetSourceSummary() {
 	sourceSummary, err := dbRepo.GetSourceSummary(authContext, testSourceCredential.ID.String())
 	require.NoError(suite.T(), err)
 	require.NotNil(suite.T(), sourceSummary)
-	//validated using https://www.maxmddirect.com/direct/FHIR/ResponseViewer
+	// Counts come from the small curated fixture (Abraham100_Heller342_small.json, #150) —
+	// a single source, so source_id is the test credential.
 	require.Equal(suite.T(), []map[string]interface{}{
-		{"count": int64(1), "resource_type": "CarePlan", "source_id": testSourceCredential.ID.String()},
-		{"count": int64(1), "resource_type": "CareTeam", "source_id": testSourceCredential.ID.String()},
-		{"count": int64(22), "resource_type": "Claim", "source_id": testSourceCredential.ID.String()},
-		{"count": int64(8), "resource_type": "Condition", "source_id": testSourceCredential.ID.String()},
-		{"count": int64(2), "resource_type": "DiagnosticReport", "source_id": testSourceCredential.ID.String()},
-		{"count": int64(18), "resource_type": "Encounter", "source_id": testSourceCredential.ID.String()},
-		{"count": int64(18), "resource_type": "ExplanationOfBenefit", "source_id": testSourceCredential.ID.String()},
-		{"count": int64(16), "resource_type": "Immunization", "source_id": testSourceCredential.ID.String()},
-		{"count": int64(4), "resource_type": "MedicationRequest", "source_id": testSourceCredential.ID.String()},
-		{"count": int64(93), "resource_type": "Observation", "source_id": testSourceCredential.ID.String()},
-		{"count": int64(3), "resource_type": "Organization", "source_id": testSourceCredential.ID.String()},
+		{"count": int64(2), "resource_type": "Condition", "source_id": testSourceCredential.ID.String()},
+		{"count": int64(1), "resource_type": "DiagnosticReport", "source_id": testSourceCredential.ID.String()},
+		{"count": int64(2), "resource_type": "Encounter", "source_id": testSourceCredential.ID.String()},
+		{"count": int64(1), "resource_type": "Immunization", "source_id": testSourceCredential.ID.String()},
+		{"count": int64(1), "resource_type": "MedicationRequest", "source_id": testSourceCredential.ID.String()},
+		{"count": int64(3), "resource_type": "Observation", "source_id": testSourceCredential.ID.String()},
+		{"count": int64(1), "resource_type": "Organization", "source_id": testSourceCredential.ID.String()},
 		{"count": int64(1), "resource_type": "Patient", "source_id": testSourceCredential.ID.String()},
-		{"count": int64(3), "resource_type": "Practitioner", "source_id": testSourceCredential.ID.String()},
-		{"count": int64(8), "resource_type": "Procedure", "source_id": testSourceCredential.ID.String()},
+		{"count": int64(1), "resource_type": "Practitioner", "source_id": testSourceCredential.ID.String()},
+		{"count": int64(1), "resource_type": "Procedure", "source_id": testSourceCredential.ID.String()},
 	}, sourceSummary.ResourceTypeCounts)
 	require.Equal(suite.T(), "b426b062-8273-4b93-a907-de3176c0567d", sourceSummary.Patient.SourceResourceID)
 	require.Equal(suite.T(), "Patient", sourceSummary.Patient.SourceResourceType)
@@ -1157,7 +1154,7 @@ func (suite *RepositoryTestSuite) TestGetSummary() {
 	err = dbRepo.CreateSource(authContext, &testSourceCredential2)
 	require.NoError(suite.T(), err)
 
-	testPatientData, err := os.ReadFile("./testdata/Abraham100_Heller342_262b819a-5193-404a-9787-b7f599358035.json")
+	testPatientData, err := os.ReadFile("./testdata/Abraham100_Heller342_small.json")
 	require.NoError(suite.T(), err)
 
 	var testPatientBundle fhir401.Bundle
@@ -1201,22 +1198,19 @@ func (suite *RepositoryTestSuite) TestGetSummary() {
 	sourceSummary, err := dbRepo.GetSummary(authContext)
 	require.NoError(suite.T(), err)
 	require.NotNil(suite.T(), sourceSummary)
-	//validated using https://www.maxmddirect.com/direct/FHIR/ResponseViewer
+	// Counts come from the small curated fixture (Abraham100_Heller342_small.json, #150),
+	// imported into two sources — so each per-type count is doubled.
 	require.Equal(suite.T(), []map[string]interface{}{
-		{"count": int64(2), "resource_type": "CarePlan"},
-		{"count": int64(2), "resource_type": "CareTeam"},
-		{"count": int64(44), "resource_type": "Claim"},
-		{"count": int64(16), "resource_type": "Condition"},
-		{"count": int64(4), "resource_type": "DiagnosticReport"},
-		{"count": int64(36), "resource_type": "Encounter"},
-		{"count": int64(36), "resource_type": "ExplanationOfBenefit"},
-		{"count": int64(32), "resource_type": "Immunization"},
-		{"count": int64(8), "resource_type": "MedicationRequest"},
-		{"count": int64(93 * 2), "resource_type": "Observation"},
-		{"count": int64(6), "resource_type": "Organization"},
-		{"count": int64(2), "resource_type": "Patient"},
-		{"count": int64(6), "resource_type": "Practitioner"},
-		{"count": int64(16), "resource_type": "Procedure"},
+		{"count": int64(2 * 2), "resource_type": "Condition"},
+		{"count": int64(1 * 2), "resource_type": "DiagnosticReport"},
+		{"count": int64(2 * 2), "resource_type": "Encounter"},
+		{"count": int64(1 * 2), "resource_type": "Immunization"},
+		{"count": int64(1 * 2), "resource_type": "MedicationRequest"},
+		{"count": int64(3 * 2), "resource_type": "Observation"},
+		{"count": int64(1 * 2), "resource_type": "Organization"},
+		{"count": int64(1 * 2), "resource_type": "Patient"},
+		{"count": int64(1 * 2), "resource_type": "Practitioner"},
+		{"count": int64(1 * 2), "resource_type": "Procedure"},
 	}, sourceSummary.ResourceTypeCounts)
 
 	require.Equal(suite.T(), 3, len(sourceSummary.Sources))
