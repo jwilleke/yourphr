@@ -1,6 +1,6 @@
 # US Core support
 
-> **Status (2026-06-07):** YourPHR **displays essentially all US Core resource types** as generic FHIR R4, and handles the Patient US Core extensions — but it is **not yet verified-conformant** to any US Core version's Must-Support requirements. Closing that gap is tracked in the epic [#136](https://github.com/jwilleke/yourphr/issues/136).
+> **Status (2026-06-08):** The six Cures-Act USCDI **core** profiles are now audited for **Must-Support _display_** vs US Core 9.0.0 — Patient ([#142](https://github.com/jwilleke/yourphr/issues/142)), AllergyIntolerance ([#145](https://github.com/jwilleke/yourphr/issues/145)), Condition ([#143](https://github.com/jwilleke/yourphr/issues/143)), MedicationRequest ([#144](https://github.com/jwilleke/yourphr/issues/144)), DocumentReference ([#147](https://github.com/jwilleke/yourphr/issues/147)), and Observation (labs + vital signs incl. multi-component blood pressure, [#146](https://github.com/jwilleke/yourphr/issues/146)). **All other resource types still render as generic FHIR R4**; Provenance and QuestionnaireResponse have no display model yet, and ~24 Observation sub-profiles classify but render generically. This is **display progress, not a conformance claim**: nothing has been verified against the ONC **Inferno** US Core test kit, so YourPHR is **not yet verified-conformant** to any US Core version. The rest is tracked in epic [#136](https://github.com/jwilleke/yourphr/issues/136).
 >
 > Path note: this lives at `docs/us-core/` (no space) for link/tooling friendliness.
 
