@@ -26,6 +26,9 @@ export class PatientModel extends FastenDisplayModel {
   marital_status: string|undefined
   race: string|undefined
   ethnicity: string|undefined
+  tribal_affiliation: string|undefined
+  tribal_enrolled: boolean|undefined
+  interpreter_needed: string|undefined
   mothers_maiden_name: string|undefined
   birth_place: string|undefined
   multiple_birth: boolean|undefined
@@ -59,6 +62,9 @@ export class PatientModel extends FastenDisplayModel {
     this.marital_status = _.get(fhirResource, 'maritalStatus.text');
     this.race = this.getRace(fhirResource);
     this.ethnicity = this.getEthnicity(fhirResource);
+    this.tribal_affiliation = this.getTribalAffiliation(fhirResource);
+    this.tribal_enrolled = this.getTribalEnrolled(fhirResource);
+    this.interpreter_needed = this.getInterpreterNeeded(fhirResource);
     this.mothers_maiden_name = this.getMothersMaidenName(fhirResource);
     this.birth_place = this.getBirthPlace(fhirResource);
     this.multiple_birth = _.get(fhirResource, 'multipleBirthBoolean', false);
@@ -112,6 +118,32 @@ export class PatientModel extends FastenDisplayModel {
       ext.url === "http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity"
     );
     return extension?.extension?.find((ext: any) => ext.url === "text")?.valueString;
+  }
+
+  // US Core 9.0.0 Tribal Affiliation — complex extension: tribalAffiliation (CodeableConcept, 1..1)
+  // + isEnrolled (boolean, 0..1). Returns the affiliated tribe's display text. (#142)
+  getTribalAffiliation(fhirResource: any) {
+    const extension = fhirResource.extension?.find((ext: any) =>
+      ext.url === "http://hl7.org/fhir/us/core/StructureDefinition/us-core-tribal-affiliation"
+    );
+    const affiliation = extension?.extension?.find((ext: any) => ext.url === "tribalAffiliation")?.valueCodeableConcept;
+    return affiliation?.text || affiliation?.coding?.[0]?.display || affiliation?.coding?.[0]?.code;
+  }
+
+  // Companion to getTribalAffiliation: whether the individual is enrolled in the tribe (0..1). (#142)
+  getTribalEnrolled(fhirResource: any) {
+    const extension = fhirResource.extension?.find((ext: any) =>
+      ext.url === "http://hl7.org/fhir/us/core/StructureDefinition/us-core-tribal-affiliation"
+    );
+    return extension?.extension?.find((ext: any) => ext.url === "isEnrolled")?.valueBoolean;
+  }
+
+  // US Core 9.0.0 Interpreter Needed — simple extension, value[x] is a Coding (Yes/No/Unknown). (#142)
+  getInterpreterNeeded(fhirResource: any) {
+    const extension = fhirResource.extension?.find((ext: any) =>
+      ext.url === "http://hl7.org/fhir/us/core/StructureDefinition/us-core-interpreter-needed"
+    );
+    return extension?.valueCoding?.display || extension?.valueCoding?.code;
   }
 
   getMothersMaidenName(fhirResource: any) {

@@ -32,6 +32,21 @@ describe('PatientModel', () => {
           extension: [{ url: 'text', valueString: 'Not Hispanic or Latino' }]
         },
         {
+          url: 'http://hl7.org/fhir/us/core/StructureDefinition/us-core-individual-sex',
+          valueCoding: { system: 'http://snomed.info/sct', code: '248153007', display: 'Male' }
+        },
+        {
+          url: 'http://hl7.org/fhir/us/core/StructureDefinition/us-core-tribal-affiliation',
+          extension: [
+            { url: 'tribalAffiliation', valueCodeableConcept: { coding: [{ system: 'http://terminology.hl7.org/CodeSystem/v3-TribalEntityUS', code: 'CHICKASAW', display: 'Chickasaw' }] } },
+            { url: 'isEnrolled', valueBoolean: true }
+          ]
+        },
+        {
+          url: 'http://hl7.org/fhir/us/core/StructureDefinition/us-core-interpreter-needed',
+          valueCoding: { system: 'http://terminology.hl7.org/CodeSystem/v2-0136', code: 'Y', display: 'Yes' }
+        },
+        {
           url: 'http://hl7.org/fhir/StructureDefinition/patient-mothersMaidenName',
           valueString: 'Smith'
         },
@@ -109,6 +124,27 @@ describe('PatientModel', () => {
 
   it('should return the correct ethnicity', () => {
     expect(patientModel.ethnicity).toBe('Not Hispanic or Latino');
+  });
+
+  it('should return the US Core 9.0.0 individual sex (Coding display)', () => {
+    expect(patientModel.individual_sex).toBe('Male');
+  });
+
+  it('should return the tribal affiliation and enrollment', () => {
+    expect(patientModel.tribal_affiliation).toBe('Chickasaw');
+    expect(patientModel.tribal_enrolled).toBe(true);
+  });
+
+  it('should return whether an interpreter is needed', () => {
+    expect(patientModel.interpreter_needed).toBe('Yes');
+  });
+
+  it('should leave US Core extension fields undefined when the extensions are absent', () => {
+    const bare = new PatientModel({ id: 'x', name: [{ given: ['A'], family: 'B' }] });
+    expect(bare.individual_sex).toBeUndefined();
+    expect(bare.tribal_affiliation).toBeUndefined();
+    expect(bare.tribal_enrolled).toBeUndefined();
+    expect(bare.interpreter_needed).toBeUndefined();
   });
 
   it('should return the correct mother\'s maiden name', () => {

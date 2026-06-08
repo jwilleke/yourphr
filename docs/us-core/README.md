@@ -20,7 +20,7 @@ How YourPHR relates to the [FHIR **US Core** Implementation Guide](https://hl7.o
 
 | USCDI data class | US Core profile(s) | Resource(s) | Display model | US Core handling |
 |---|---|---|---|---|
-| Patient demographics | US Core Patient | Patient | ✅ | ✅ race / ethnicity / birthsex extensions |
+| Patient demographics | US Core Patient | Patient | ✅ | ✅ audited vs 9.0.0 (#142): core MS + all extension slices — race / ethnicity / birthsex / **sex (individual-sex)** / **tribal-affiliation** / **interpreter-needed** (no gender-identity slice in 9.0.0) |
 | Problems / health concerns | Condition (Problems), Condition (Encounter Dx) | Condition | ✅ | generic (Must-Support not audited) |
 | Allergies | AllergyIntolerance | AllergyIntolerance | ✅ | generic |
 | Medications | MedicationRequest, Medication, MedicationDispense | MedicationRequest, Medication, MedicationDispense | ✅ | generic |

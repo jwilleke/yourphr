@@ -16,6 +16,8 @@
           <li><strong>Marital Status:</strong> {{ displayModel.marital_status }}</li>
           <li><strong>Race:</strong> {{ displayModel.race }}</li>
           <li><strong>Ethnicity:</strong> {{ displayModel.ethnicity }}</li>
+          <li *ngIf="displayModel.tribal_affiliation"><strong>Tribal Affiliation:</strong> {{ displayModel.tribal_affiliation }}<span *ngIf="displayModel.tribal_enrolled !== undefined"> ({{ displayModel.tribal_enrolled ? 'enrolled' : 'not enrolled' }})</span></li>
+          <li *ngIf="displayModel.interpreter_needed"><strong>Interpreter Needed:</strong> {{ displayModel.interpreter_needed }}</li>
         </ul>
       </div>
 
