@@ -41,6 +41,36 @@ export class MedicationRequestComponent implements OnInit, FhirCardComponentInte
         enabled: !!this.displayModel?.medication_codeable_concept,
       },
       {
+        // medication[x] as a Reference to a (US Core) Medication resource
+        label: 'Medication',
+        data: this.displayModel?.medication_reference,
+        data_type: TableRowItemDataType.Reference,
+        enabled: !this.displayModel?.medication_codeable_concept && !!this.displayModel?.medication_reference,
+      },
+      {
+        label: 'Status',
+        data: this.displayModel?.status,
+        enabled: !!this.displayModel?.status,
+      },
+      {
+        label: 'Patient',
+        data: this.displayModel?.subject,
+        data_type: TableRowItemDataType.Reference,
+        enabled: !!this.displayModel?.subject,
+      },
+      {
+        label: 'Encounter',
+        data: this.displayModel?.encounter,
+        data_type: TableRowItemDataType.Reference,
+        enabled: !!this.displayModel?.encounter,
+      },
+      {
+        label: 'Reported by',
+        data: this.displayModel?.reported_reference,
+        data_type: TableRowItemDataType.Reference,
+        enabled: !!this.displayModel?.reported_reference,
+      },
+      {
         label: 'Requester',
         data: this.displayModel?.requester,
         data_type: TableRowItemDataType.Reference,
@@ -62,16 +92,16 @@ export class MedicationRequestComponent implements OnInit, FhirCardComponentInte
         data_type: TableRowItemDataType.Coding,
         enabled: !!this.displayModel?.reason_code,
       },
-      // {
-      //   label: 'Dosage',
-      //     testId: 'hasDosageInstruction',
-      //   data:
-      //   hasDosageInstruction &&
-      //   dosageInstruction.map((item, i) => (
-      //     <p key={`dosage-instruction-item-${i}`}>{item.text}</p>
-      // )),
-      //   status: hasDosageInstruction,
-      // },
+      {
+        label: 'Dosage',
+        data: this.displayModel?.dosage_instruction_text,
+        enabled: !!this.displayModel?.dosage_instruction_text,
+      },
+      {
+        label: 'Category',
+        data: (this.displayModel?.categories || []).join(', '),
+        enabled: !!this.displayModel?.categories?.length,
+      },
     ];
   }
   markForCheck(){
