@@ -5,8 +5,6 @@ package database
 
 import (
 	"encoding/json"
-	"fmt"
-	goja "github.com/dop251/goja"
 	models "github.com/fastenhealth/fasten-onprem/backend/pkg/models"
 	datatypes "gorm.io/datatypes"
 	"time"
@@ -131,31 +129,7 @@ func (s *FhirClinicalImpression) PopulateAndExtractSearchParameters(resourceRaw 
 	if err != nil {
 		return err
 	}
-	if len(fhirPathJs) == 0 {
-		return fmt.Errorf("fhirPathJs script is empty")
-	}
-	vm := goja.New()
-	// setup the global window object
-	vm.Set("window", vm.NewObject())
-	// set the global FHIR Resource object
-	vm.Set("fhirResource", resourceRawMap)
-	// compile the fhirpath library
-	fhirPathJsProgram, err := goja.Compile("fhirpath.min.js", fhirPathJs, true)
-	if err != nil {
-		return err
-	}
-	// compile the searchParametersExtractor library
-	searchParametersExtractorJsProgram, err := goja.Compile("searchParameterExtractor.js", searchParameterExtractorJs, true)
-	if err != nil {
-		return err
-	}
-	// add the fhirpath library in the goja vm
-	_, err = vm.RunProgram(fhirPathJsProgram)
-	if err != nil {
-		return err
-	}
-	// add the searchParametersExtractor library in the goja vm
-	_, err = vm.RunProgram(searchParametersExtractorJsProgram)
+	vm, err := newSearchParameterExtractorVM(resourceRawMap)
 	if err != nil {
 		return err
 	}

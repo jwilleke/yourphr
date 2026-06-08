@@ -279,39 +279,10 @@ func main() {
 				g.Return(jen.Err())
 			})
 
-			//check length of fhirPathJs script (may not have been embedded correctly)
-			g.If(jen.Len(jen.Id("fhirPathJs")).Op("==").Lit(0)).BlockFunc(func(f *jen.Group) {
-				f.Return(jen.Qual("fmt", "Errorf").Call(jen.Lit("fhirPathJs script is empty")))
-			})
-
-			//initialize goja vm
-			g.Id("vm").Op(":=").Qual("github.com/dop251/goja", "New").Call()
-			g.Comment("setup the global window object")
-			g.Id("vm").Dot("Set").Call(jen.Lit("window"), jen.Id("vm").Dot("NewObject").Call())
-
-			g.Comment("set the global FHIR Resource object")
-			g.Id("vm").Dot("Set").Call(jen.Lit("fhirResource"), jen.Id("resourceRawMap"))
-
-			g.Comment("compile the fhirpath library")
-			g.List(jen.Id("fhirPathJsProgram"), jen.Id("err")).Op(":=").Qual("github.com/dop251/goja", "Compile").Call(jen.Lit("fhirpath.min.js"), jen.Id("fhirPathJs"), jen.True())
-			g.If(jen.Err().Op("!=").Nil()).BlockFunc(func(e *jen.Group) {
-				e.Return(jen.Err())
-			})
-
-			g.Comment("compile the searchParametersExtractor library")
-			g.List(jen.Id("searchParametersExtractorJsProgram"), jen.Id("err")).Op(":=").Qual("github.com/dop251/goja", "Compile").Call(jen.Lit("searchParameterExtractor.js"), jen.Id("searchParameterExtractorJs"), jen.True())
-			g.If(jen.Err().Op("!=").Nil()).BlockFunc(func(e *jen.Group) {
-				e.Return(jen.Err())
-			})
-
-			g.Comment("add the fhirpath library in the goja vm")
-			g.List(jen.Id("_"), jen.Id("err")).Op("=").Id("vm").Dot("RunProgram").Call(jen.Id("fhirPathJsProgram"))
-			g.If(jen.Err().Op("!=").Nil()).BlockFunc(func(e *jen.Group) {
-				e.Return(jen.Err())
-			})
-
-			g.Comment("add the searchParametersExtractor library in the goja vm")
-			g.List(jen.Id("_"), jen.Id("err")).Op("=").Id("vm").Dot("RunProgram").Call(jen.Id("searchParametersExtractorJsProgram"))
+			//initialize a goja vm with the (compile-once, cached) fhirpath + searchParameterExtractor
+			//libraries loaded and the resource bound as `fhirResource`. See goja_extractor.go (#151):
+			//the 602KB fhirpath.min.js is compiled once package-wide instead of per resource.
+			g.List(jen.Id("vm"), jen.Id("err")).Op(":=").Id("newSearchParameterExtractorVM").Call(jen.Id("resourceRawMap"))
 			g.If(jen.Err().Op("!=").Nil()).BlockFunc(func(e *jen.Group) {
 				e.Return(jen.Err())
 			})
