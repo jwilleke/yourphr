@@ -32,6 +32,25 @@ export class AllergyIntoleranceComponent implements OnInit, FhirCardComponentInt
         enabled: !!this.displayModel?.code,
       },
       {
+        label: 'Clinical Status',
+        data: this.displayModel?.clinical_status,
+        enabled: !!this.displayModel?.clinical_status,
+      },
+      {
+        label: 'Criticality',
+        data: this.displayModel?.criticality,
+        enabled: !!this.displayModel?.criticality,
+      },
+      {
+        label: 'Reactions',
+        // manifestation(s) + optional severity per reaction, e.g. "Anaphylactic reaction (severe); Urticaria"
+        data: (this.displayModel?.reactions || [])
+          .map(r => r.manifestation.join(', ') + (r.severity ? ` (${r.severity})` : ''))
+          .filter(s => s.length > 0)
+          .join('; '),
+        enabled: !!this.displayModel?.reactions?.length,
+      },
+      {
         label: 'Type',
         data: this.displayModel?.type,
         enabled: !!this.displayModel?.type,

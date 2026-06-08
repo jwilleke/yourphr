@@ -11,9 +11,15 @@ export class AllergyIntoleranceModel extends FastenDisplayModel {
 
   title: string | undefined
   status: string | undefined
+  // initialized (not just declared) so they're consistent own-properties across all FHIR versions,
+  // since they're only populated in r4DTO (US Core is R4).
+  clinical_status: string | undefined = undefined
+  criticality: string | undefined = undefined
   recorded_date: string | undefined
   substance_coding: CodingModel[] | undefined
-  // reaction: string | undefined
+  // US Core 9.0.0 Must-Support: reaction (BackboneElement) with manifestation (CodeableConcept, 1..*);
+  // severity (mild|moderate|severe) and description are additional, not MS. (#145)
+  reactions: { manifestation: string[]; severity?: string; description?: string }[] = []
   asserter: ReferenceModel | undefined
   note: { text: string }[] | undefined
   type: string | undefined
@@ -67,11 +73,25 @@ export class AllergyIntoleranceModel extends FastenDisplayModel {
   r4DTO(fhirResource: any) {
     this.title = _.get(fhirResource, 'code.coding.0.display') || _.get(fhirResource, 'code.text')
     this.status = _.get(fhirResource, 'verificationStatus.coding[0].display');
+    // US Core 9.0.0 Must-Support: clinicalStatus (active|inactive|resolved). (#145)
+    this.clinical_status = _.get(fhirResource, 'clinicalStatus.coding[0].display')
+      || _.get(fhirResource, 'clinicalStatus.coding[0].code')
+      || _.get(fhirResource, 'clinicalStatus.text');
+    this.criticality = _.get(fhirResource, 'criticality');
     this.recorded_date = _.get(fhirResource, 'recordedDate');
     const substanceCoding = _.get(fhirResource, 'reaction', []).filter((item: any) =>
       _.get(item, 'substance.coding'),
     );
     this.substance_coding = _.get(substanceCoding, '0.substance.coding', []);
+
+    // US Core 9.0.0 Must-Support: reaction.manifestation (CodeableConcept, 1..*); plus severity/description.
+    this.reactions = _.get(fhirResource, 'reaction', []).map((reaction: any) => ({
+      manifestation: _.get(reaction, 'manifestation', [])
+        .map((m: any) => _.get(m, 'coding[0].display') || _.get(m, 'text'))
+        .filter(Boolean),
+      severity: _.get(reaction, 'severity'),
+      description: _.get(reaction, 'description'),
+    }));
 
     this.note = _.get(fhirResource, 'note');
   };

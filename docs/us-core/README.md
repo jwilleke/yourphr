@@ -22,7 +22,7 @@ How YourPHR relates to the [FHIR **US Core** Implementation Guide](https://hl7.o
 |---|---|---|---|---|
 | Patient demographics | US Core Patient | Patient | ✅ | ✅ audited vs 9.0.0 (#142): core MS + all extension slices — race / ethnicity / birthsex / **sex (individual-sex)** / **tribal-affiliation** / **interpreter-needed** (no gender-identity slice in 9.0.0) |
 | Problems / health concerns | Condition (Problems), Condition (Encounter Dx) | Condition | ✅ | generic (Must-Support not audited) |
-| Allergies | AllergyIntolerance | AllergyIntolerance | ✅ | generic |
+| Allergies | AllergyIntolerance | AllergyIntolerance | ✅ | ✅ audited vs 9.0.0 (#145): MS code / clinicalStatus / verificationStatus / patient + reaction.manifestation; plus criticality & reaction.severity |
 | Medications | MedicationRequest, Medication, MedicationDispense | MedicationRequest, Medication, MedicationDispense | ✅ | generic |
 | Lab results | Observation (Lab Result), DiagnosticReport (Lab) | Observation, DiagnosticReport | ✅ | ⚠️ generic — Observation **not split** by sub-profile |
 | Vital signs | Vital Signs + the per-vital profiles (BP, height, weight, temp, HR, RR, SpO₂, …) | Observation | ✅ | ⚠️ generic — no per-vital handling; `component` TODO |
