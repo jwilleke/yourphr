@@ -5,6 +5,7 @@ import {Observable, of} from 'rxjs';
 import { Router } from '@angular/router';
 import {map} from 'rxjs/operators';
 import {ResponseWrapper} from '../models/response-wrapper';
+import {ReconciledMedication} from '../models/fasten/reconciled-medication';
 import {Source} from '../models/fasten/source';
 import {User} from '../models/fasten/user';
 import {ResourceFhir} from '../models/fasten/resource_fhir';
@@ -131,6 +132,15 @@ export class FastenApiService {
       .pipe(
         map((response: ResponseWrapper) => {
           return response.data as Summary
+        })
+      );
+  }
+
+  getReconciledMedications(): Observable<ReconciledMedication[]> {
+    return this._httpClient.get<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/medications/reconciled`)
+      .pipe(
+        map((response: ResponseWrapper) => {
+          return (response.data || []) as ReconciledMedication[]
         })
       );
   }

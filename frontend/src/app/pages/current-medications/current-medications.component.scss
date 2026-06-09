@@ -1,0 +1,13 @@
+.sortable {
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.med-row {
+  cursor: pointer;
+}
+
+.med-detail > td {
+  background-color: rgba(0, 0, 0, 0.02);
+}

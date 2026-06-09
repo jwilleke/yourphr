@@ -1,0 +1,81 @@
+<div class="az-content-body">
+  <div class="d-flex justify-content-between align-items-center mg-b-20">
+    <div>
+      <h4 class="mg-b-5">Current Medications</h4>
+      <p class="tx-gray-500 mg-b-0">From your records, as of your last import. A reconciled view across prescriptions, dispenses, and self-reported medications.</p>
+    </div>
+    <div class="btn-group" role="group" aria-label="Filter">
+      <button type="button" class="btn btn-sm" [class.btn-primary]="showActiveOnly" [class.btn-outline-primary]="!showActiveOnly" (click)="showActiveOnly || toggleActiveOnly()">Active only</button>
+      <button type="button" class="btn btn-sm" [class.btn-primary]="!showActiveOnly" [class.btn-outline-primary]="showActiveOnly" (click)="!showActiveOnly || toggleActiveOnly()">All</button>
+    </div>
+  </div>
+
+  <app-loading-spinner *ngIf="loading" loadingTitle="Loading your medications..."></app-loading-spinner>
+
+  <div *ngIf="!loading && errored" class="alert alert-danger">Could not load your medications. Please try again.</div>
+
+  <div *ngIf="!loading && !errored && filtered.length === 0" class="alert alert-info">
+    No medications found in your records{{ showActiveOnly ? ' that are currently active' : '' }}.
+  </div>
+
+  <div class="table-responsive" *ngIf="!loading && !errored && filtered.length > 0">
+    <table class="table table-hover">
+      <thead>
+        <tr>
+          <th style="width:1%"></th>
+          <th class="sortable" (click)="sortBy('title')">Medication <i class="fas" [ngClass]="sortColumn==='title' ? (sortDirection==='asc' ? 'fa-caret-up' : 'fa-caret-down') : ''"></i></th>
+          <th>Dose</th>
+          <th>Frequency</th>
+          <th>Purpose</th>
+          <th class="sortable" (click)="sortBy('state')">Status <i class="fas" [ngClass]="sortColumn==='state' ? (sortDirection==='asc' ? 'fa-caret-up' : 'fa-caret-down') : ''"></i></th>
+          <th class="sortable" (click)="sortBy('lastActivity')">Last activity <i class="fas" [ngClass]="sortColumn==='lastActivity' ? (sortDirection==='asc' ? 'fa-caret-up' : 'fa-caret-down') : ''"></i></th>
+        </tr>
+      </thead>
+      <tbody>
+        <ng-container *ngFor="let med of filtered">
+          <tr class="med-row" (click)="toggleExpanded(med.key)">
+            <td><i class="fas" [ngClass]="expanded[med.key] ? 'fa-chevron-down' : 'fa-chevron-right'"></i></td>
+            <td>
+              <strong>{{ med.title }}</strong>
+              <span *ngIf="med.stateConflict" class="tx-warning" title="The records disagree on this medication's status — see details."> &#9888;</span>
+            </td>
+            <td><span *ngIf="med.dose; else noDose">{{ med.dose }}</span><ng-template #noDose><app-missing-data field="Dose"></app-missing-data></ng-template></td>
+            <td><span *ngIf="med.frequency; else noFreq">{{ med.frequency }}</span><ng-template #noFreq><app-missing-data field="Frequency"></app-missing-data></ng-template></td>
+            <td><span *ngIf="med.purpose; else noPurpose">{{ med.purpose }}</span><ng-template #noPurpose><app-missing-data field="Purpose"></app-missing-data></ng-template></td>
+            <td><span class="badge" [ngClass]="stateBadgeClass(med.state)">{{ med.state }}</span></td>
+            <td><span *ngIf="med.lastActivity; else noDate">{{ med.lastActivity | date }}</span><ng-template #noDate><span class="tx-gray-400">—</span></ng-template></td>
+          </tr>
+          <tr *ngIf="expanded[med.key]" class="med-detail">
+            <td></td>
+            <td colspan="6">
+              <div class="mg-b-15">
+                <strong class="tx-12 tx-uppercase tx-gray-500">More information</strong>
+                <div class="mg-t-5">
+                  <a *ngIf="medlinePlusUrl(med) as mp" [href]="mp" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-info mg-r-5">MedlinePlus (consumer info)</a>
+                  <a [href]="dailyMedUrl(med)" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-info">DailyMed (FDA label)</a>
+                </div>
+              </div>
+
+              <div *ngIf="med.sig" class="mg-b-15"><strong class="tx-12 tx-uppercase tx-gray-500">Instructions</strong><div class="mg-t-5">{{ med.sig }}</div></div>
+              <div *ngIf="med.prescriber" class="mg-b-15"><strong class="tx-12 tx-uppercase tx-gray-500">Prescriber</strong><div class="mg-t-5">{{ med.prescriber }}</div></div>
+
+              <strong class="tx-12 tx-uppercase tx-gray-500">Source records</strong>
+              <table class="table table-sm mg-t-5 mg-b-0">
+                <thead><tr><th>Resource</th><th>Status</th><th>Date</th><th>Dose</th><th>Frequency</th></tr></thead>
+                <tbody>
+                  <tr *ngFor="let c of med.contributors">
+                    <td>{{ c.resourceType }}</td>
+                    <td>{{ c.status || '—' }}<span *ngIf="c.state"> ({{ c.state }})</span></td>
+                    <td>{{ c.date ? (c.date | date) : '—' }}</td>
+                    <td>{{ c.dose || '—' }}</td>
+                    <td>{{ c.frequency || '—' }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </td>
+          </tr>
+        </ng-container>
+      </tbody>
+    </table>
+  </div>
+</div>
