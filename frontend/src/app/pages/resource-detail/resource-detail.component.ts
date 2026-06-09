@@ -5,6 +5,7 @@ import {ResourceFhir} from '../../models/fasten/resource_fhir';
 import {fhirModelFactory} from '../../../lib/models/factory';
 import {ResourceType} from '../../../lib/models/constants';
 import {FastenDisplayModel} from '../../../lib/models/fasten/fasten-display-model';
+import {Clipboard} from '@angular/cdk/clipboard';
 
 @Component({
     selector: 'app-resource-detail',
@@ -15,6 +16,7 @@ import {FastenDisplayModel} from '../../../lib/models/fasten/fasten-display-mode
 export class ResourceDetailComponent implements OnInit {
   loading = false
   debugMode = false;
+  copied = false;
 
 
   sourceId = ""
@@ -22,7 +24,18 @@ export class ResourceDetailComponent implements OnInit {
   resource: ResourceFhir = null
   displayModel: FastenDisplayModel = null
 
-  constructor(private fastenApi: FastenApiService, private router: Router, private route: ActivatedRoute) {
+  constructor(private fastenApi: FastenApiService, private router: Router, private route: ActivatedRoute, private clipboard: Clipboard) {
+  }
+
+  // #167: copy the raw FHIR resource JSON (shown in debug mode) to the clipboard.
+  copyResourceRaw(): void {
+    if (!this.resource?.resource_raw) { return }
+    const raw = this.resource.resource_raw as any
+    const text = typeof raw === 'string' ? raw : JSON.stringify(raw, null, 2)
+    if (this.clipboard.copy(text)) {
+      this.copied = true
+      setTimeout(() => { this.copied = false }, 2000)
+    }
   }
 
   ngOnInit(): void {
