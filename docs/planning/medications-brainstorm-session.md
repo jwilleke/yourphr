@@ -154,9 +154,13 @@ request from the stored resources; never materialized. See Confirmed decisions f
   most-recently-dated authoritative status drives the badge, but the row shows a **"conflicting
   records — see details"** affordance and the expander lists each contributor's status. Expose the
   conflict; never fabricate a clean winner.
-- **List sort order** (decided): **newest on top** — sort by last-activity date, descending. Rows
-  with no usable date (Unknown / undated) sort to the bottom; we do not invent a date to place them
-  (no guessing). Works alongside the "Active only / All" toggle, which filters before sorting.
+- **List sort order** (decided): **default newest on top** — last-activity date, descending — but
+  the table is **user-sortable on the frontend**: clickable column headers re-sort client-side
+  (Medication name, Status, date; others as useful). This is pure presentation (Output-end) and
+  needs no backend change — the endpoint just returns the default order plus the date fields to sort
+  on. Rows with no usable date (Unknown / undated) sort to the bottom regardless of direction; we do
+  not invent a date to place them (no guessing). The "Active only / All" toggle filters before
+  sorting.
 - **Classify state from explicit signals only** (no guessing — see below), with the **evidence**
   attached (status, explicit end dates, last activity) so the frontend can show _why_.
 - Resolve `medicationReference` → Medication; key/group on RxNorm; **pass through original `coding` +
