@@ -21,6 +21,7 @@ export enum ResourceType {
   Medication = "Medication",
   MedicationDispense = "MedicationDispense",
   MedicationRequest = "MedicationRequest",
+  MedicationStatement = "MedicationStatement",
   Observation = "Observation",
   Organization = "Organization",
   Patient = "Patient",

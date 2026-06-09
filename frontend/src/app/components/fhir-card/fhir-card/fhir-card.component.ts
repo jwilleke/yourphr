@@ -20,7 +20,9 @@ import {FhirCardComponentInterface, FhirCardEditableComponentInterface} from './
 import {ImmunizationComponent} from '../resources/immunization/immunization.component';
 import {AllergyIntoleranceComponent} from '../resources/allergy-intolerance/allergy-intolerance.component';
 import {MedicationComponent} from '../resources/medication/medication.component';
+import {MedicationDispenseComponent} from '../resources/medication-dispense/medication-dispense.component';
 import {MedicationRequestComponent} from '../resources/medication-request/medication-request.component';
+import {MedicationStatementComponent} from '../resources/medication-statement/medication-statement.component';
 import {FastenDisplayModel} from '../../../../lib/models/fasten/fasten-display-model';
 import {ProcedureComponent} from '../resources/procedure/procedure.component';
 import {ProvenanceComponent} from '../resources/provenance/provenance.component';
@@ -156,11 +158,14 @@ export class FhirCardComponent implements OnInit, OnChanges {
       // case "MedicationAdministration": {
       //   return ListMedicationAdministrationComponent;
       // }
-      // case "MedicationDispense": {
-      //   return ListMedicationDispenseComponent;
-      // }
+      case "MedicationDispense": {
+        return MedicationDispenseComponent;
+      }
       case "MedicationRequest": {
         return MedicationRequestComponent;
+      }
+      case "MedicationStatement": {
+        return MedicationStatementComponent;
       }
       // case "NutritionOrder": {
       //   return ListNutritionOrderComponent;

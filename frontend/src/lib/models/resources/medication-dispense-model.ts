@@ -15,6 +15,10 @@ export class MedicationDispenseModel extends FastenDisplayModel {
   dosage_instruction: any[] | undefined
   dosage_instruction_data: any[]|undefined
   when_prepared: string|undefined
+  when_handed_over: string|undefined
+  status: string|undefined
+  subject: ReferenceModel|undefined
+  quantity: string|undefined
 
   constructor(fhirResource: any, fhirVersion?: fhirVersions, fastenOptions?: FastenOptions) {
     super(fastenOptions)
@@ -27,6 +31,13 @@ export class MedicationDispenseModel extends FastenDisplayModel {
     this.code = _.get(fhirResource, 'medicationCodeableConcept');
     this.type_coding = _.get(fhirResource, 'type.coding.0');
     this.when_prepared = _.get(fhirResource, 'whenPrepared');
+    this.when_handed_over = _.get(fhirResource, 'whenHandedOver');
+    this.status = _.get(fhirResource, 'status');
+    this.subject = _.get(fhirResource, 'subject');
+    const qtyValue = _.get(fhirResource, 'quantity.value');
+    if (qtyValue !== undefined) {
+      this.quantity = `${qtyValue} ${_.get(fhirResource, 'quantity.unit', '')}`.trim();
+    }
   };
 
   dstu2DTO(fhirResource:any){
@@ -112,10 +123,16 @@ export class MedicationDispenseModel extends FastenDisplayModel {
         return data;
       });
     };
+    // Prefer medicationCodeableConcept (US Core + the FollowMyHealth non-US-Core shape, where the
+    // name is only in coding[0].display under a local system), then a reference/contained Medication.
     this.medication_title =
+      _.get(fhirResource, 'medicationCodeableConcept.text') ||
+      _.get(fhirResource, 'medicationCodeableConcept.coding[0].display') ||
       _.get(fhirResource, 'medicationReference.display') ||
       _.get(fhirResource, 'contained[0].code.coding[0].display');
-    this.medication_coding = _.get(fhirResource, 'contained[0].code.coding[0]');
+    this.medication_coding =
+      _.get(fhirResource, 'medicationCodeableConcept.coding[0]') ||
+      _.get(fhirResource, 'contained[0].code.coding[0]');
     this.dosage_instruction = _.get(fhirResource, 'dosageInstruction', []);
     this.has_dosage_instruction =
       Array.isArray(this.dosage_instruction) && this.dosage_instruction.length > 0;

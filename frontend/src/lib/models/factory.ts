@@ -27,6 +27,7 @@ import {ResearchStudyModel} from './resources/research-study-model';
 import {FastenOptions} from './fasten/fasten-options';
 import {FastenDisplayModel} from './fasten/fasten-display-model';
 import {MedicationRequestModel} from './resources/medication-request-model';
+import {MedicationStatementModel} from './resources/medication-statement-model';
 import {BinaryModel} from './resources/binary-model';
 import {MediaModel} from './resources/media-model';
 import {ExplanationOfBenefitModel} from './resources/explanation-of-benefit-model';
@@ -144,9 +145,9 @@ export function fhirModelFactory(
     case ResourceType.MedicationRequest:
       resourceModel = new MedicationRequestModel(fhirResourceWrapper.resource_raw, fhirVersion, fastenOptions)
     break
-    // case ResourceType.MedicationStatement:
-    //   resourceModel = new MedicationStatementModel(fhirResourceWrapper.resource_raw, fhirVersion, fastenOptions)
-    // break
+    case ResourceType.MedicationStatement:
+      resourceModel = new MedicationStatementModel(fhirResourceWrapper.resource_raw, fhirVersion, fastenOptions)
+    break
     case ResourceType.Observation:
       resourceModel = new ObservationModel(fhirResourceWrapper.resource_raw, fhirVersion, fastenOptions)
       break

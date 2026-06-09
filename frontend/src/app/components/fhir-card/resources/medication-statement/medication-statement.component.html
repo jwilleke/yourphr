@@ -1,0 +1,20 @@
+<div class="card card-fhir-resource">
+  <div class="card-header" (click)="isCollapsed = ! isCollapsed">
+    <div>
+      <h6 class="card-title">{{displayModel?.display}}</h6>
+      <p class="card-text tx-gray-400" *ngIf="displayModel?.effective_date"><strong>Effective</strong> {{displayModel?.effective_date | date}}</p>
+    </div>
+    <fhir-ui-badge class="float-right" [status]="displayModel?.status">{{displayModel?.status}}</fhir-ui-badge>
+  </div>
+  <div #collapse="ngbCollapse" [(ngbCollapse)]="isCollapsed" class="card-body">
+    <p class="az-content-text mg-b-20" *ngIf="!(resourceCode && resourceCodeSystem); else lookupCode">A record of a medication the patient is taking, has taken, or will take — including self-reported and over-the-counter medications.</p>
+    <fhir-ui-table [displayModel]="displayModel" [tableData]="tableData"></fhir-ui-table>
+  </div>
+  <div *ngIf="showDetails" class="card-footer">
+    <a class="float-right" [routerLink]="['/explore', displayModel?.source_id, 'resource', displayModel?.source_resource_id]">details</a>
+  </div>
+</div>
+
+<ng-template #lookupCode>
+  <app-glossary-lookup class="az-content-text mg-b-20" [code]="resourceCode" [codeSystem]="resourceCodeSystem"></app-glossary-lookup>
+</ng-template>
