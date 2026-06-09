@@ -170,4 +170,44 @@ describe('AllergyIntoleranceModel', () => {
 
   })
 
+  // Non-US-Core hardening (#54): status (verificationStatus) + clinical_status should display whether
+  // they arrive as a US Core CodeableConcept, a text-only concept, or a loose plain-string code.
+  describe('non-US-Core status shapes (#54)', () => {
+    it('resolves a US Core CodeableConcept (display-first)', () => {
+      const m = new AllergyIntoleranceModel({
+        code: { text: 'Penicillin' },
+        verificationStatus: { coding: [{ code: 'confirmed', display: 'Confirmed' }] },
+        clinicalStatus: { coding: [{ code: 'active', display: 'Active' }] },
+      });
+      expect(m.status).toBe('Confirmed');
+      expect(m.clinical_status).toBe('Active');
+    });
+
+    it('resolves a text-only concept (no coding)', () => {
+      const m = new AllergyIntoleranceModel({
+        code: { text: 'Penicillin' },
+        verificationStatus: { text: 'Confirmed' },
+        clinicalStatus: { text: 'Active' },
+      });
+      expect(m.status).toBe('Confirmed');
+      expect(m.clinical_status).toBe('Active');
+    });
+
+    it('resolves a loose plain-string code (Veradigm/FollowMyHealth-style)', () => {
+      const m = new AllergyIntoleranceModel({
+        code: { text: 'Penicillin' },
+        verificationStatus: 'confirmed',
+        clinicalStatus: 'active',
+      });
+      expect(m.status).toBe('confirmed');
+      expect(m.clinical_status).toBe('active');
+    });
+
+    it('leaves status undefined when absent (no crash)', () => {
+      const m = new AllergyIntoleranceModel({ code: { text: 'Penicillin' } });
+      expect(m.status).toBeUndefined();
+      expect(m.clinical_status).toBeUndefined();
+    });
+  });
+
 });
