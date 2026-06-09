@@ -214,6 +214,15 @@
         "Reason": "reason",
         "Provider": "provider"
       }
+    },
+    {
+      "title_text": "Medications",
+      "description_text": "Your current medications, reconciled from your records.",
+      "x": 0,
+      "y": 15,
+      "width": 12,
+      "height": 4,
+      "item_type": "medications-widget"
     }
   ]
 }

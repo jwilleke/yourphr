@@ -1,0 +1,28 @@
+<ng-container [ngTemplateOutlet]="loading ? showLoading : (isEmpty ? showEmpty : showContent)"></ng-container>
+
+<ng-template #showLoading>
+  <loading-widget></loading-widget>
+</ng-template>
+
+<ng-template #showEmpty>
+  <empty-widget></empty-widget>
+</ng-template>
+
+<ng-template #showContent>
+  <div class="card card-table-one">
+    <div class="d-flex justify-content-between align-items-center">
+      <h6 class="card-title mg-b-0">{{ widgetConfig?.title_text || 'Medications' }}</h6>
+      <a routerLink="/medications" class="tx-12">View all</a>
+    </div>
+    <p class="az-content-text mg-b-10" *ngIf="widgetConfig?.description_text">{{ widgetConfig?.description_text }}</p>
+    <ul class="list-unstyled mg-b-0">
+      <li *ngFor="let med of activeMeds" class="d-flex justify-content-between align-items-center mg-b-5">
+        <span class="text-truncate mg-r-10">
+          <strong>{{ med.title }}</strong>
+          <span *ngIf="med.dose" class="tx-gray-500"> &middot; {{ med.dose }}</span>
+        </span>
+        <span class="badge badge-success">{{ med.state }}</span>
+      </li>
+    </ul>
+  </div>
+</ng-template>

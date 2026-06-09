@@ -11,6 +11,7 @@ import { EmptyWidgetComponent } from './empty-widget/empty-widget.component';
 import {DashboardWidgetComponent} from './dashboard-widget/dashboard-widget.component';
 import { RecordsSummaryWidgetComponent } from './records-summary-widget/records-summary-widget.component';
 import { ImageListGroupWidgetComponent } from './image-list-group-widget/image-list-group-widget.component';
+import { MedicationsWidgetComponent } from './medications-widget/medications-widget.component';
 @NgModule({
   imports: [
 
@@ -25,7 +26,8 @@ import { ImageListGroupWidgetComponent } from './image-list-group-widget/image-l
     SimpleLineChartWidgetComponent,
     TableWidgetComponent,
     LoadingWidgetComponent,
-    EmptyWidgetComponent
+    EmptyWidgetComponent,
+    MedicationsWidgetComponent
 
   ],
   declarations: [],
@@ -41,7 +43,8 @@ import { ImageListGroupWidgetComponent } from './image-list-group-widget/image-l
     SimpleLineChartWidgetComponent,
     TableWidgetComponent,
     LoadingWidgetComponent,
-    EmptyWidgetComponent
+    EmptyWidgetComponent,
+    MedicationsWidgetComponent
 
   ]
 })
@@ -62,6 +65,7 @@ export function WidgetComponents():  Type<object>[] {
     SimpleLineChartWidgetComponent,
     TableWidgetComponent,
     LoadingWidgetComponent,
-    EmptyWidgetComponent
+    EmptyWidgetComponent,
+    MedicationsWidgetComponent
   ]
 }
