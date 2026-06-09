@@ -1,0 +1,40 @@
+{
+  "resourceType": "Appointment",
+  "id": "example-followmyhealth",
+  "meta": {
+    "extension": [
+      {
+        "url": "https://fhir.followmyhealth.com/api/FirstCreatedExtension?_format=application/json",
+        "valueInstant": "2025-08-22T13:31:34.775+00:00"
+      }
+    ],
+    "lastUpdated": "2026-02-24T14:34:58.26+00:00"
+  },
+  "identifier": [
+    {
+      "use": "official",
+      "system": "https://fhir.followmyhealth.com/id/global",
+      "value": "example-followmyhealth",
+      "assigner": {
+        "display": "FollowMyHealth"
+      }
+    }
+  ],
+  "status": "cancelled",
+  "created": "2025-08-22",
+  "participant": [
+    {
+      "actor": {
+        "reference": "Patient/example"
+      },
+      "status": "declined"
+    },
+    {
+      "actor": {
+        "reference": "Practitioner/example",
+        "display": "Dr. Jane Smith"
+      },
+      "status": "declined"
+    }
+  ]
+}
