@@ -32,6 +32,21 @@ authoritative drug references. Interpretation and UX live here.
 > end (a backend computed endpoint vs frontend compute) — see Open Questions. The rule stays: the
 > backend stays facts-only; any inference is clearly **derived** and **transparent** to the user.
 
+## Code systems — the target vocabulary (USCDI / US Core)
+
+This is an **Input-end** concern: "conform to what ends we can." For a SMART-on-FHIR application the target vocabulary is the one established by the **United States Core Data for Interoperability (USCDI)** and the **US Core Implementation Guide** — using these standard code systems is what lets substitutable apps interoperate with any EHR. The per-data-type targets (from research notes, "Which Data Set?"):
+
+| Clinical data type | Target code system |
+| --- | --- |
+| Problems & Diagnoses | SNOMED CT (exact clinical terminology) |
+| Billing & Public-health reporting | ICD (International Classification of Diseases) |
+| Lab tests & Observations | LOINC (Logical Observation Identifiers Names and Codes) |
+| **Medications** | **RxNorm** (clinical drugs & medication names) |
+
+For this doc the binding row is **Medications → RxNorm** — which is exactly why RxNorm is our join/lookup key below. The other rows govern sibling resources (Condition, Observation, etc.) and belong to the wider per-profile work, noted here only for cross-reference.
+
+**Input-end reality (detect-don't-require):** the standard is the _target_, not a guarantee. Non-US-Core sources (e.g. FollowMyHealth) frequently emit a **local/proprietary code system** instead of RxNorm (seen: `https://fhir.followmyhealth.com/id/translation` with UUID codes and only a display string). So the Input-end **maps to RxNorm where it can** (via the glossary), preserves the original local code + display, and **falls back to display text** otherwise — it never drops or rejects the medication for failing to use RxNorm.
+
 ## Confirmed decisions
 
 - **Display the patient's data regardless of conformance.** A viewer displays, it does not validate;
@@ -48,8 +63,9 @@ authoritative drug references. Interpretation and UX live here.
 - Those links are **user-clicked (explicit), not auto-fetched** — an outbound request carries the
   drug name to NLM, so it should be the patient's deliberate action (consistent with the privacy
   stance). NLM is a trusted public source; a drug name alone is not identifying.
-- **RxNorm is the join/lookup key** (already resolved by the glossary); fall back to normalized
-  display text when a source uses a local/proprietary code system.
+- **RxNorm is the join/lookup key** — it is the USCDI / US Core target vocabulary for medications
+  (see "Code systems" above); already resolved by the glossary. Fall back to normalized display
+  text when a source uses a local/proprietary code system.
 
 ## Design sketch (mapped to the two ends)
 
