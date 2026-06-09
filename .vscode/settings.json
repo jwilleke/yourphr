@@ -2,5 +2,12 @@
   "karmaTestExplorer.karmaConfFilePath": "frontend/karma.conf.js",
   "karmaTestExplorer.projectWorkspaces": [
     "frontend"
-  ]
+  ],
+  "markdownlint.config": {
+    "extends": ".markdownlint.json"
+  },
+  "[markdown]": {
+    "editor.wordWrap": "on",
+    "rewrap.wrappingColumn": 0
+  }
 }
