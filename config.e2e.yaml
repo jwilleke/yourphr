@@ -11,6 +11,8 @@ web:
       enabled: false
   src:
     frontend:
+      # repo-root ./dist = the Angular build output. `yarn run build` (and the Dockerfile/CI) all
+      # emit here via `--output-path=../dist`; angular.json's default outputPath matches (../dist).
       path: ./dist
 database:
   type: sqlite
