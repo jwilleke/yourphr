@@ -5,6 +5,7 @@ import {ReferenceModel} from '../datatypes/reference-model';
 import {FastenDisplayModel} from '../fasten/fasten-display-model';
 import {FastenOptions} from '../fasten/fasten-options';
 import {CodableConceptModel} from '../datatypes/codable-concept-model';
+import {resolveStatus} from '../datatypes/resolve-status';
 
 export class AllergyIntoleranceModel extends FastenDisplayModel {
   code: CodableConceptModel | undefined
@@ -72,11 +73,12 @@ export class AllergyIntoleranceModel extends FastenDisplayModel {
 
   r4DTO(fhirResource: any) {
     this.title = _.get(fhirResource, 'code.coding.0.display') || _.get(fhirResource, 'code.text')
-    this.status = _.get(fhirResource, 'verificationStatus.coding[0].display');
+    // Non-US-Core hardening (#54): verificationStatus / clinicalStatus may be a US Core
+    // CodeableConcept, a text-only concept, or a loose plain-string code — resolve all (display-first
+    // for human-readable labels) so the status always displays.
+    this.status = resolveStatus(_.get(fhirResource, 'verificationStatus'), true);
     // US Core 9.0.0 Must-Support: clinicalStatus (active|inactive|resolved). (#145)
-    this.clinical_status = _.get(fhirResource, 'clinicalStatus.coding[0].display')
-      || _.get(fhirResource, 'clinicalStatus.coding[0].code')
-      || _.get(fhirResource, 'clinicalStatus.text');
+    this.clinical_status = resolveStatus(_.get(fhirResource, 'clinicalStatus'), true);
     this.criticality = _.get(fhirResource, 'criticality');
     this.recorded_date = _.get(fhirResource, 'recordedDate');
     const substanceCoding = _.get(fhirResource, 'reaction', []).filter((item: any) =>
