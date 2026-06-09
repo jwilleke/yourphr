@@ -594,6 +594,23 @@ type resourceSortConfigEntry struct {
 	SortDateJS  string // JS expression returning an ISO date string or undefined
 }
 
+// medicationSortTitleJS resolves a human-readable medication name for the resources whose
+// medication is given as `medication[x]` (MedicationDispense, MedicationStatement). It tries, in
+// order: medicationCodeableConcept (text → coding display → coding code), medicationReference.display,
+// then a contained Medication referenced by "#id" (its code text → coding display → coding code).
+// Returns undefined when none is present (no guessing).
+const medicationSortTitleJS = `(function(){` +
+	`var r=fhirResource;` +
+	`function cc(x){if(!x)return undefined;if(x.text)return x.text;if(x.coding&&x.coding[0]){return x.coding[0].display||x.coding[0].code;}return undefined;}` +
+	`var t=cc(r.medicationCodeableConcept);if(t)return t;` +
+	`if(r.medicationReference){` +
+	`if(r.medicationReference.display)return r.medicationReference.display;` +
+	`var ref=r.medicationReference.reference;` +
+	`if(ref&&ref.charAt(0)==='#'&&r.contained){var id=ref.substring(1);for(var i=0;i<r.contained.length;i++){var co=r.contained[i];if(co.id===id&&co.code){var n=cc(co.code);if(n)return n;}}}` +
+	`}` +
+	`return undefined;` +
+	`})()`
+
 var resourceSortConfig = map[string]resourceSortConfigEntry{
 	"Encounter": {
 		// Standard FHIR: type[0].text or type[0].coding[0].display.
@@ -633,6 +650,22 @@ var resourceSortConfig = map[string]resourceSortConfigEntry{
 	"MedicationRequest": {
 		SortTitleJS: `(function(){var m=fhirResource.medicationCodeableConcept;if(m){if(m.text)return m.text;if(m.coding&&m.coding[0]&&m.coding[0].display)return m.coding[0].display;}return undefined;})()`,
 		SortDateJS:  `(function(){var r=fhirResource;if(r.authoredOn)return r.authoredOn;return undefined;})()`,
+	},
+	"MedicationDispense": {
+		// medicationCodeableConcept is standard; FollowMyHealth supplies only coding[0].display
+		// (with a local/proprietary system) and no .text. The medication may instead be a reference
+		// to a contained Medication (no .display on the reference) — resolve that too (#176).
+		SortTitleJS: medicationSortTitleJS,
+		// whenHandedOver is the dispense event date; fall back to whenPrepared.
+		SortDateJS: `(function(){var r=fhirResource;if(r.whenHandedOver)return r.whenHandedOver;if(r.whenPrepared)return r.whenPrepared;return undefined;})()`,
+	},
+	"MedicationStatement": {
+		// Same medication-name resolution as dispense (CodeableConcept / reference / contained).
+		// MedicationStatement is not a US Core profile but FollowMyHealth emits it for self-reported
+		// meds (OTC, supplements) — so it must still get a sort_title/sort_date, not render blank (#176).
+		SortTitleJS: medicationSortTitleJS,
+		// effective[x] is the period the med is/was taken; fall back to dateAsserted.
+		SortDateJS: `(function(){var r=fhirResource;if(r.effectiveDateTime)return r.effectiveDateTime;if(r.effectivePeriod&&r.effectivePeriod.start)return r.effectivePeriod.start;if(r.dateAsserted)return r.dateAsserted;return undefined;})()`,
 	},
 	"Immunization": {
 		SortTitleJS: `(function(){var c=fhirResource.vaccineCode;if(!c)return undefined;if(c.text)return c.text;if(c.coding&&c.coding[0]&&c.coding[0].display)return c.coding[0].display;return undefined;})()`,

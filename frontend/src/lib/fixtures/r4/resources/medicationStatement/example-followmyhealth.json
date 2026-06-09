@@ -1,0 +1,42 @@
+{
+  "resourceType": "MedicationStatement",
+  "id": "example-followmyhealth",
+  "meta": {
+    "lastUpdated": "2026-02-24T14:34:58.26+00:00"
+  },
+  "identifier": [
+    {
+      "use": "official",
+      "system": "https://fhir.followmyhealth.com/id/global",
+      "value": "example-followmyhealth",
+      "assigner": {
+        "display": "FollowMyHealth"
+      }
+    }
+  ],
+  "status": "active",
+  "medicationCodeableConcept": {
+    "coding": [
+      {
+        "system": "https://fhir.followmyhealth.com/id/translation",
+        "code": "7c2e9d40-0000-4000-8000-000000000176",
+        "display": "Omeprazole 20 MG Oral Tablet Delayed Release"
+      }
+    ]
+  },
+  "subject": {
+    "reference": "Patient/example"
+  },
+  "effectivePeriod": {
+    "start": "2025-11-01"
+  },
+  "dateAsserted": "2026-02-20",
+  "informationSource": {
+    "reference": "Patient/example",
+    "display": "Self-reported"
+  },
+  "note": [
+    { "text": "Comments -" },
+    { "text": "ProviderName -" }
+  ]
+}

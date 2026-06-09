@@ -1,0 +1,35 @@
+{
+  "resourceType": "MedicationDispense",
+  "id": "example-followmyhealth",
+  "meta": {
+    "lastUpdated": "2026-02-24T14:34:58.26+00:00"
+  },
+  "identifier": [
+    {
+      "use": "official",
+      "system": "https://fhir.followmyhealth.com/id/global",
+      "value": "example-followmyhealth",
+      "assigner": {
+        "display": "FollowMyHealth"
+      }
+    }
+  ],
+  "status": "completed",
+  "medicationCodeableConcept": {
+    "coding": [
+      {
+        "system": "https://fhir.followmyhealth.com/id/translation",
+        "code": "b7e3c1a0-0000-4000-8000-000000000176",
+        "display": "Lisinopril 40 MG Oral Tablet"
+      }
+    ]
+  },
+  "subject": {
+    "reference": "Patient/example"
+  },
+  "whenHandedOver": "2026-01-15",
+  "quantity": {
+    "value": 90,
+    "unit": "tablet"
+  }
+}

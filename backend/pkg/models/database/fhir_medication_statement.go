@@ -280,6 +280,21 @@ func (s *FhirMedicationStatement) PopulateAndExtractSearchParameters(resourceRaw
 	if err == nil && textResult.String() != "undefined" {
 		s.Text = []byte(textResult.String())
 	}
+	// set sort_title from best available human-readable display text (Fasten-specific, not a FHIR search parameter)
+	sortTitleResult, err := vm.RunString("(function(){var r=fhirResource;function cc(x){if(!x)return undefined;if(x.text)return x.text;if(x.coding&&x.coding[0]){return x.coding[0].display||x.coding[0].code;}return undefined;}var t=cc(r.medicationCodeableConcept);if(t)return t;if(r.medicationReference){if(r.medicationReference.display)return r.medicationReference.display;var ref=r.medicationReference.reference;if(ref&&ref.charAt(0)==='#'&&r.contained){var id=ref.substring(1);for(var i=0;i<r.contained.length;i++){var co=r.contained[i];if(co.id===id&&co.code){var n=cc(co.code);if(n)return n;}}}}return undefined;})()")
+	if err == nil && sortTitleResult.String() != "undefined" && sortTitleResult.String() != "null" {
+		sortTitle := sortTitleResult.String()
+		s.SetSortTitle(&sortTitle)
+	}
+	// set sort_date from best available date field (Fasten-specific, not a FHIR search parameter)
+	sortDateResult, err := vm.RunString("(function(){var r=fhirResource;if(r.effectiveDateTime)return r.effectiveDateTime;if(r.effectivePeriod&&r.effectivePeriod.start)return r.effectivePeriod.start;if(r.dateAsserted)return r.dateAsserted;return undefined;})()")
+	if err == nil && sortDateResult.String() != "undefined" && sortDateResult.String() != "null" {
+		if t, err := time.Parse(time.RFC3339, sortDateResult.String()); err == nil {
+			s.SetSortDate(&t)
+		} else if t, err = time.Parse("2006-01-02", sortDateResult.String()); err == nil {
+			s.SetSortDate(&t)
+		}
+	}
 	return nil
 }
 
