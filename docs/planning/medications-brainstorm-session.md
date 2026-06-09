@@ -89,8 +89,36 @@ For this doc the binding row is **Medications → RxNorm** — which is exactly 
 - Row content: drug name, dose / route / frequency (from the best source's dosageInstruction),
   status, last-activity date, source badge.
 - **Expand** to the contributing resources with provenance (which portal, when).
-- **Drug-info links** (DailyMed + MedlinePlus, keyed by RxCUI; name-search fallback for non-coded).
+- **Drug-info links** (DailyMed + MedlinePlus, keyed by RxCUI; name-search fallback for non-coded)
+  — see "Outbound information links" below for the concrete endpoints and URL templates.
 - Likely a **"Medications" dashboard widget** (fits the per-profile dashboards roadmap, #136).
+
+## Outbound information links (Output-end)
+
+The richest and safest way to give a patient "more information" about a medication — indications, contraindications, side effects, dosing guidance — is to **link out to authoritative public sources**, not to store or synthesize that content ourselves. RxNorm gives us drug _identity_ only; the clinical content lives in these NLM / FDA resources. Plan for two links per medication — both free, ad-free, no auth, and trustworthy:
+
+| Link | Source | What the patient gets | URL template |
+| --- | --- | --- | --- |
+| **Consumer drug info** | MedlinePlus (NLM) | Plain-language: what it treats, how to take, side effects, precautions; English + Spanish | `https://connect.medlineplus.gov/application?mainSearchCriteria.v.cs=2.16.840.1.113883.6.88&mainSearchCriteria.v.c=<RxCUI>&mainSearchCriteria.v.dn=<name>&informationRecipient.languageCode.c=en` |
+| **FDA label** | DailyMed (NLM / FDA) | Full structured labeling: indications, contraindications, dosage & administration, adverse reactions | `https://dailymed.nlm.nih.gov/dailymed/search.cfm?query=<name>` |
+
+Confirmed details (verified against NLM docs, 2026-06-09):
+
+- The RxNorm code-system OID for the MedlinePlus `mainSearchCriteria.v.cs` parameter is `2.16.840.1.113883.6.88`. Swap `informationRecipient.languageCode.c=es` for Spanish. `mainSearchCriteria.v.dn` (display name) is optional but improves the match.
+- We use the MedlinePlus Connect **Web Application** endpoint (`/application`), which returns a rendered human page — not the **Web Service** endpoint (`/service`), which returns XML/JSON for machine use.
+- These are **pure hrefs built on the client** — nothing is fetched until the patient clicks, and the request then carries only a drug name / RxCUI, never patient identity. This reaffirms the "user-clicked, not auto-fetched" decision.
+- Render as normal links opening in a new tab with `rel="noopener noreferrer"`.
+
+Construction strategy (detect-don't-require):
+
+- **Have an RxCUI** → MedlinePlus Connect by code (best match), passing the display name as `v.dn` too.
+- **No RxCUI** (non-US-Core / local code system) → fall back to **name-based** links: DailyMed `search.cfm?query=<name>` and a MedlinePlus name search; both accept a free-text drug name. Never a dead end.
+
+Open questions for the links:
+
+- MedlinePlus Connect returns a "no information available" page when an RxCUI isn't covered — decide the fallback (drop to name search vs hide the link).
+- A DailyMed deep link to the _exact_ label (`drugInfo.cfm?setid=<setid>`) needs an API hop (`services/v2/spls.json?rxcui=<RxCUI>` → `setid`). Name search is fine for v1; the deep link is a later enhancement (and would be a server-side or on-click lookup, not a static href).
+- Stick to **NLM / FDA sources only** — no ad-supported consumer sites (Drugs.com, WebMD). Keeps it authoritative, ad-free, and consistent with "no clinical advice we can't stand behind." Confirm.
 
 ## Open questions (to decide)
 
