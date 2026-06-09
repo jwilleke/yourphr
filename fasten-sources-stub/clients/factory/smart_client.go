@@ -101,6 +101,35 @@ func (c *smartClient) SyncAll(db models.DatabaseRepository) (models.UpsertSummar
 }
 
 // ensureValidToken refreshes the access token if it is missing or within the skew window of expiry.
+// RefreshAccessToken ensures the SMART source's access token is valid, refreshing it in place when
+// it is missing or within the skew window of expiry. It reuses the exact discovery + ensureValidToken
+// path that SyncAll uses, so there is a single source of truth for SMART token refresh. Returns
+// whether a refresh actually occurred; the caller persists the (mutated) credential. Used by the
+// scheduled token-refresh worker (#51).
+func RefreshAccessToken(ctx context.Context, logger *logrus.Entry, cred models.SourceCredential) (bool, error) {
+	const skewSeconds = 60
+	// Network-free guards: nothing to do for non-OAuth sources or still-valid tokens.
+	if cred.GetAccessToken() == "" {
+		return false, nil
+	}
+	if cred.GetExpiresAt() > time.Now().Add(skewSeconds*time.Second).Unix() {
+		return false, nil
+	}
+	c := newSmartClient(ctx, logger, cred)
+	if c.cfg.FHIRBaseURL == "" {
+		return false, fmt.Errorf("source has no FHIR base URL (api_endpoint_base_url); reconnect the source")
+	}
+	ep, err := c.cfg.Discover(ctx)
+	if err != nil {
+		return false, fmt.Errorf("SMART discovery failed: %w", err)
+	}
+	before := cred.GetExpiresAt()
+	if err := c.ensureValidToken(ep); err != nil {
+		return false, err
+	}
+	return cred.GetExpiresAt() != before, nil
+}
+
 func (c *smartClient) ensureValidToken(ep smart.Endpoints) error {
 	const skewSeconds = 60
 	if c.cred.GetAccessToken() != "" && c.cred.GetExpiresAt() > time.Now().Add(skewSeconds*time.Second).Unix() {

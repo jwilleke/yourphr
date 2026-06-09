@@ -448,6 +448,12 @@ func (ae *AppEngine) Start() error {
 
 	ae.startServer(r)
 
+	// Scheduled SMART OAuth token-refresh worker (#51). Skipped in StandbyMode (no DB-backed
+	// sources to refresh there).
+	if !ae.StandbyMode {
+		go ae.startTokenRefreshWorker()
+	}
+
 	// Block indefinitely to keep the server running until process termination
 	select {}
 }
