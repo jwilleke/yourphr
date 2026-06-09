@@ -40,6 +40,7 @@ func TestProcessSearchParameter(t *testing.T) {
 
 		{"display", map[string]string{"display": "token"}, SearchParameter{Type: "token", Name: "display", Modifier: ""}, false},
 		{"display:not", map[string]string{"display": "token"}, SearchParameter{Type: "token", Name: "display", Modifier: "not"}, false},
+		{"display:text", map[string]string{"display": "token"}, SearchParameter{Type: "token", Name: "display", Modifier: "text"}, false},
 		{"display:unsupported", map[string]string{"display": "token"}, SearchParameter{}, true},
 	}
 
@@ -166,6 +167,8 @@ func TestSearchCodeToWhereClause(t *testing.T) {
 		{SearchParameter{Type: "token", Name: "identifier", Modifier: ""}, SearchParameterValue{Value: "MR|446053", Prefix: "", SecondaryValues: map[string]interface{}{"identifierSystem": "http://terminology.hl7.org/CodeSystem/v2-0203"}}, "0_0", "(identifierJson.value ->> '$.code' = @identifier_0_0 AND identifierJson.value ->> '$.system' = @identifierSystem_0_0)", map[string]interface{}{"identifier_0_0": "MR|446053", "identifierSystem_0_0": "http://terminology.hl7.org/CodeSystem/v2-0203"}, false},
 		{SearchParameter{Type: "token", Name: "gender", Modifier: ""}, SearchParameterValue{Value: "male", Prefix: "", SecondaryValues: map[string]interface{}{"genderSystem": "http://terminology.hl7.org/CodeSystem/v2-0203"}}, "0_0", "(genderJson.value ->> '$.code' = @gender_0_0 AND genderJson.value ->> '$.system' = @genderSystem_0_0)", map[string]interface{}{"gender_0_0": "male", "genderSystem_0_0": "http://terminology.hl7.org/CodeSystem/v2-0203"}, false},
 		{SearchParameter{Type: "token", Name: "gender", Modifier: "not"}, SearchParameterValue{Value: "male", Prefix: "", SecondaryValues: map[string]interface{}{"genderSystem": "http://terminology.hl7.org/CodeSystem/v2-0203"}}, "0_0", "(genderJson.value ->> '$.code' <> @gender_not_0_0 AND genderJson.value ->> '$.system' = @genderSystem_not_0_0)", map[string]interface{}{"gender_not_0_0": "male", "genderSystem_not_0_0": "http://terminology.hl7.org/CodeSystem/v2-0203"}, false},
+		//#171: the `:text` modifier matches the token's text/display (CodeableConcept.text / coding.display) — the key to finding non-US-Core records whose code system is local/proprietary.
+		{SearchParameter{Type: "token", Name: "code", Modifier: "text"}, SearchParameterValue{Value: "headache", Prefix: "", SecondaryValues: map[string]interface{}{}}, "0_0", "(codeJson.value ->> '$.text' LIKE '%' || @code_text_0_0 || '%')", map[string]interface{}{"code_text_0_0": "headache"}, false},
 
 		{SearchParameter{Type: "keyword", Name: "id", Modifier: ""}, SearchParameterValue{Value: "1234", Prefix: "", SecondaryValues: map[string]interface{}{}}, "0_0", "(id = @id_0_0)", map[string]interface{}{"id_0_0": "1234"}, false},
 	}
@@ -309,4 +312,41 @@ func (suite *RepositoryTestSuite) TestQueryResources_SQL() {
 	require.Equal(suite.T(), sqlParams, []interface{}{
 		"test_code", "00000000-0000-0000-0000-000000000000",
 	})
+}
+
+// #171: the token `:text` modifier flows through the full query builder, matching the indexed
+// text/display with a case-insensitive partial LIKE — the key to finding non-US-Core records whose
+// code system is local/proprietary but whose display text is present.
+func (suite *RepositoryTestSuite) TestQueryResources_SQL_TextModifier() {
+	fakeConfig := mock_config.NewMockInterface(suite.MockCtrl)
+	fakeConfig.EXPECT().GetString("database.location").Return(suite.TestDatabase.Name()).AnyTimes()
+	fakeConfig.EXPECT().GetString("database.type").Return("sqlite").AnyTimes()
+	fakeConfig.EXPECT().IsSet("database.encryption.key").Return(false).AnyTimes()
+	fakeConfig.EXPECT().GetString("log.level").Return("INFO").AnyTimes()
+	fakeConfig.EXPECT().GetBool("database.validation_mode").Return(false).AnyTimes()
+	fakeConfig.EXPECT().GetBool("database.encryption.enabled").Return(false).AnyTimes()
+	dbRepo, err := NewRepository(fakeConfig, logrus.WithField("test", suite.T().Name()), event_bus.NewNoopEventBusServer())
+	require.NoError(suite.T(), err)
+	require.NoError(suite.T(), dbRepo.CreateUser(context.Background(), &models.User{Username: "test_username", Password: "testpassword", Email: "test@test.com"}))
+
+	sqliteRepo := dbRepo.(*GormRepository)
+	sqliteRepo.GormClient = sqliteRepo.GormClient.Session(&gorm.Session{DryRun: true})
+
+	authContext := context.WithValue(context.Background(), pkg.ContextKeyTypeAuthUsername, "test_username")
+	sqlQuery, err := sqliteRepo.sqlQueryResources(authContext, models.QueryResource{
+		Select: []string{},
+		Where:  map[string]interface{}{"code:text": "omeprazole"},
+		From:   "Observation",
+	})
+	require.NoError(suite.T(), err)
+	statement := sqlQuery.Find(&[]map[string]interface{}{}).Statement
+
+	require.Equal(suite.T(),
+		strings.Join([]string{
+			"SELECT fhir.*",
+			"FROM fhir_observation as fhir, json_each(fhir.code) as codeJson",
+			"WHERE ((codeJson.value ->> '$.text' LIKE '%' || ? || '%')) AND (user_id = ?) GROUP BY `fhir`.`id`",
+			"ORDER BY fhir.sort_date DESC"}, " "),
+		statement.SQL.String())
+	require.Equal(suite.T(), []interface{}{"omeprazole", "00000000-0000-0000-0000-000000000000"}, statement.Vars)
 }

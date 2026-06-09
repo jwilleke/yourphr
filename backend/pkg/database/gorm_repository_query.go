@@ -330,7 +330,7 @@ func ProcessSearchParameter(searchCodeWithModifier string, searchParamTypeLookup
 	}
 
 	//only a limited set of token modifiers are allowed. Otherwise we need to throw an error
-	allowedTokenModifiers := []string{"not"}
+	allowedTokenModifiers := []string{"not", "text"}
 	if searchParameter.Type == SearchParameterTypeToken && len(searchParameter.Modifier) > 0 && !lo.Contains(allowedTokenModifiers, searchParameter.Modifier) {
 		return searchParameter, fmt.Errorf("token search parameter %s does not support this modifier: %s", searchParameter.Name, searchParameter.Modifier)
 	}
@@ -595,8 +595,6 @@ func SearchCodeToWhereClause(searchParam SearchParameter, searchParamValue Searc
 		// - uri - https://hl7.org/fhir/r4/datatypes.html#uri
 		// - string - https://hl7.org/fhir/r4/datatypes.html#string
 
-		//TODO: support ":text" modifier
-
 		//setup the clause
 		clause := []string{}
 		if searchParamValue.Value.(string) != "" {
@@ -604,6 +602,12 @@ func SearchCodeToWhereClause(searchParam SearchParameter, searchParamValue Searc
 				clause = append(clause, fmt.Sprintf("%sJson.value ->> '$.code' = @%s", searchParam.Name, NamedParameterWithSuffix(searchParam.Name, searchParam.Modifier, namedParameterSuffix)))
 			} else if searchParam.Modifier == "not" {
 				clause = append(clause, fmt.Sprintf("%sJson.value ->> '$.code' <> @%s", searchParam.Name, NamedParameterWithSuffix(searchParam.Name, searchParam.Modifier, namedParameterSuffix)))
+			} else if searchParam.Modifier == "text" {
+				// FHIR `:text` modifier — case-insensitive partial match against the token's text/display
+				// ($.text = CodeableConcept.text / coding.display, populated by searchParameterExtractor.js).
+				// Critical for non-US-Core data (#171): when the code system is local/proprietary, the
+				// display text is often the only reliable way to find the record.
+				clause = append(clause, fmt.Sprintf("%sJson.value ->> '$.text' LIKE '%%' || @%s || '%%'", searchParam.Name, NamedParameterWithSuffix(searchParam.Name, searchParam.Modifier, namedParameterSuffix)))
 			}
 		}
 
@@ -716,4 +720,3 @@ func ProcessAggregationParameter(aggregationFieldWithFn models.QueryResourceAggr
 	}
 	return aggregationParameter, nil
 }
-
