@@ -1,0 +1,7 @@
+.missing-data {
+  cursor: help;
+  // dotted underline signals there's an explanation on hover/focus
+  text-decoration: underline dotted;
+  text-underline-offset: 2px;
+  font-size: 0.875em;
+}
