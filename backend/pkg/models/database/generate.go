@@ -646,6 +646,23 @@ var resourceSortConfig = map[string]resourceSortConfigEntry{
 		SortTitleJS: `(function(){var r=fhirResource;if(r.description)return r.description;var c=r.type;if(c){if(c.text)return c.text;if(c.coding&&c.coding[0]&&c.coding[0].display)return c.coding[0].display;}return undefined;})()`,
 		SortDateJS:  `(function(){var r=fhirResource;if(r.date)return r.date;return undefined;})()`,
 	},
+	"Appointment": {
+		// appointmentType/serviceType/reasonCode are standard; Veradigm/FollowMyHealth often omit all of
+		// them (the appointment is identified only by its participants), so fall back to a non-patient
+		// participant's display, then a generic label — so it never renders blank/untitled (#171).
+		SortTitleJS: `(function(){` +
+			`var r=fhirResource;` +
+			`function cc(x){if(!x)return undefined;if(x.text)return x.text;if(x.coding&&x.coding[0]){return x.coding[0].display||x.coding[0].code;}return undefined;}` +
+			`var t=cc(r.appointmentType);if(t)return t;` +
+			`if(r.serviceType&&r.serviceType[0]){var s=cc(r.serviceType[0]);if(s)return s;}` +
+			`if(r.description)return r.description;` +
+			`if(r.reasonCode&&r.reasonCode[0]){var rc=cc(r.reasonCode[0]);if(rc)return rc;}` +
+			`if(r.participant){for(var i=0;i<r.participant.length;i++){var p=r.participant[i];if(p.actor&&p.actor.display&&p.actor.reference&&p.actor.reference.indexOf('Practitioner')===0)return 'Appointment with '+p.actor.display;}}` +
+			`return 'Appointment';` +
+			`})()`,
+		// start is standard; FollowMyHealth omits it on cancelled appointments — fall back to created.
+		SortDateJS: `(function(){var r=fhirResource;if(r.start)return r.start;if(r.created)return r.created;return undefined;})()`,
+	},
 }
 
 // TODO: should we do this, or allow all resources instead of just USCore?

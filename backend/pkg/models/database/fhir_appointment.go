@@ -261,6 +261,21 @@ func (s *FhirAppointment) PopulateAndExtractSearchParameters(resourceRaw json.Ra
 	if err == nil && textResult.String() != "undefined" {
 		s.Text = []byte(textResult.String())
 	}
+	// set sort_title from best available human-readable display text (Fasten-specific, not a FHIR search parameter)
+	sortTitleResult, err := vm.RunString("(function(){var r=fhirResource;function cc(x){if(!x)return undefined;if(x.text)return x.text;if(x.coding&&x.coding[0]){return x.coding[0].display||x.coding[0].code;}return undefined;}var t=cc(r.appointmentType);if(t)return t;if(r.serviceType&&r.serviceType[0]){var s=cc(r.serviceType[0]);if(s)return s;}if(r.description)return r.description;if(r.reasonCode&&r.reasonCode[0]){var rc=cc(r.reasonCode[0]);if(rc)return rc;}if(r.participant){for(var i=0;i<r.participant.length;i++){var p=r.participant[i];if(p.actor&&p.actor.display&&p.actor.reference&&p.actor.reference.indexOf('Practitioner')===0)return 'Appointment with '+p.actor.display;}}return 'Appointment';})()")
+	if err == nil && sortTitleResult.String() != "undefined" && sortTitleResult.String() != "null" {
+		sortTitle := sortTitleResult.String()
+		s.SetSortTitle(&sortTitle)
+	}
+	// set sort_date from best available date field (Fasten-specific, not a FHIR search parameter)
+	sortDateResult, err := vm.RunString("(function(){var r=fhirResource;if(r.start)return r.start;if(r.created)return r.created;return undefined;})()")
+	if err == nil && sortDateResult.String() != "undefined" && sortDateResult.String() != "null" {
+		if t, err := time.Parse(time.RFC3339, sortDateResult.String()); err == nil {
+			s.SetSortDate(&t)
+		} else if t, err = time.Parse("2006-01-02", sortDateResult.String()); err == nil {
+			s.SetSortDate(&t)
+		}
+	}
 	return nil
 }
 
