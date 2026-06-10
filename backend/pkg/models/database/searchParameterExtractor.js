@@ -72,7 +72,7 @@ function extractTokenSearchParameters(fhirResource, expression){
     let result = fhirpathEvaluate(fhirResource, expression)
 
     let processed = result.reduce((accumulator, currentValue) => {
-        if (currentValue.coding) {
+        if (currentValue.coding && currentValue.coding.length) {
             //CodeableConcept
             currentValue.coding.map((coding) => {
                 accumulator.push({
@@ -94,6 +94,13 @@ function extractTokenSearchParameters(fhirResource, expression){
                 "code": currentValue.code,
                 "system": currentValue.system,
                 "text": currentValue.display
+            })
+        } else if (currentValue.text) {
+            //text-only CodeableConcept (no usable coding[]) — common in non-US-Core exports (#171).
+            //Index the display text (no code/system) so the record is still findable, e.g. via the
+            //token `:text` modifier. Without this it matched no branch above and was dropped.
+            accumulator.push({
+                "text": currentValue.text
             })
         } else if ((typeof currentValue === 'string') || (typeof currentValue === 'boolean')) {
             //string, boolean
