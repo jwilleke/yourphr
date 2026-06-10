@@ -39,6 +39,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0 # full history + tags so `git describe --tags` yields a semver version (#166)
 
       - name: Populate frontend version information
         run: cd frontend && ./git.version.sh
