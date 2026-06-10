@@ -10,6 +10,7 @@ export class ProcedureModel extends FastenDisplayModel {
   code: CodableConceptModel| undefined
   display: string|undefined;
   status: string|undefined;
+  subject: ReferenceModel|undefined;  // US Core MS: subject (Patient)
   has_performed_datetime: boolean|undefined;
   performed_datetime: string|undefined;
   performed_period_start: string|undefined;
@@ -22,7 +23,7 @@ export class ProcedureModel extends FastenDisplayModel {
   has_performer_data: boolean|undefined;
   performer: string|any[]|undefined;
   has_reason_code: boolean|undefined;
-  reason_code: string|undefined;
+  reason_code: CodableConceptModel[]|undefined;  // reasonCode is an array of CodeableConcept
   has_note: boolean|undefined;
   note: string|any[]|undefined;
   outcome: string|undefined;
@@ -35,6 +36,7 @@ export class ProcedureModel extends FastenDisplayModel {
       _.get(fhirResource, 'code.coding[0].display') ||
       _.get(fhirResource, 'code.text');
     this.status = _.get(fhirResource, 'status', '');
+    this.subject = _.get(fhirResource, 'subject');
     this.has_performed_datetime = _.has(fhirResource, 'performedDateTime');
     this.performed_datetime = _.get(fhirResource, 'performedDateTime');
     this.performed_period_start = _.get(fhirResource, 'performedPeriod.start');

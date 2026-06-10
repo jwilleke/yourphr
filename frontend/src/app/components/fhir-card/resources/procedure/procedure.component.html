@@ -2,7 +2,7 @@
   <div class="card-header" (click)="isCollapsed = ! isCollapsed">
     <div>
       <h6 class="card-title">{{displayModel?.display}}</h6>
-      <p class="card-text tx-gray-400" *ngIf="displayModel?.performed_datetime"><strong>Start date</strong> {{displayModel?.performed_datetime | date}}</p>
+      <p class="card-text tx-gray-400" *ngIf="displayModel?.performed_datetime || displayModel?.performed_period_start"><strong>Date performed</strong> {{(displayModel?.performed_datetime || displayModel?.performed_period_start) | date}}</p>
     </div>
     <fhir-ui-badge class="float-right" [status]="displayModel?.status">{{displayModel?.status}}</fhir-ui-badge>
     <!--    <div class="btn-group">-->

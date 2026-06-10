@@ -58,15 +58,25 @@ export class ProcedureComponent implements OnInit, FhirCardEditableComponentInte
       enabled: !!this.displayModel?.category,
     },
     {
+      // US Core MS: subject (Patient)
+      label: 'Patient',
+      data: this.displayModel?.subject,
+      data_type: TableRowItemDataType.Reference,
+      enabled: !!this.displayModel?.subject,
+    },
+    {
       label: 'Performed by',
       data: this.displayModel?.performer,
       enabled: this.displayModel?.has_performer_data,
     },
-    // {
-    //   label: 'Reason procedure performed',
-    //   data: reasonCode && <Annotation fhirData={reasonCode} />,
-    //   status: hasReasonCode,
-    // },
+    {
+      // US Core MS: reasonCode (why the procedure was performed). reason_code is an array of
+      // CodeableConcept; show the first.
+      label: 'Reason procedure performed',
+      data: this.displayModel?.reason_code?.[0],
+      data_type: TableRowItemDataType.CodableConcept,
+      enabled: this.displayModel?.has_reason_code,
+    },
     {
       label: 'Location',
       data: this.displayModel?.location_reference,
