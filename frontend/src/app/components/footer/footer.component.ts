@@ -9,6 +9,7 @@ import {versionInfo} from '../../../environments/versions';
 })
 export class FooterComponent implements OnInit {
   appVersion: string;
+  currentYear: number = new Date().getFullYear();
 
   constructor() {
     this.appVersion = versionInfo.version

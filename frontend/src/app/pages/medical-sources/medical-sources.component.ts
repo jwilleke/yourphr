@@ -44,6 +44,9 @@ export class MedicalSourcesComponent implements OnInit {
 
   uploadedFile: File[] = []
   uploadErrorMsg = ""
+  // true from the moment the bundle is sent until the server has accepted it and queued the import
+  // (the import itself then runs in the background — progress shows on the Connected Sources list).
+  uploadInProgress = false
   dragActive = false
 
   searchTermUpdate = new BehaviorSubject<string>("");
@@ -230,14 +233,17 @@ export class MedicalSourcesComponent implements OnInit {
     }
 
     //TODO: handle manual bundles.
+    this.uploadInProgress = true
     this.fastenApi.createManualSource(processingFile).subscribe(
       (respData) => {
       },
       (err) => {
         console.log(err)
+        this.uploadInProgress = false
         this.uploadErrorMsg = "Error uploading file: " + (extractErrorFromResponse(err)|| "Unknown Error")
       },
       () => {
+        this.uploadInProgress = false
         this.uploadedFile = []
       }
     )
