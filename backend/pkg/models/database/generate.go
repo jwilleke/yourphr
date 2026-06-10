@@ -676,7 +676,10 @@ var resourceSortConfig = map[string]resourceSortConfigEntry{
 		SortDateJS:  `(function(){var r=fhirResource;if(r.recordedDate)return r.recordedDate;if(r.onsetDateTime)return r.onsetDateTime;return undefined;})()`,
 	},
 	"DocumentReference": {
-		SortTitleJS: `(function(){var r=fhirResource;if(r.description)return r.description;var c=r.type;if(c){if(c.text)return c.text;if(c.coding&&c.coding[0]&&c.coding[0].display)return c.coding[0].display;}return undefined;})()`,
+		// Mirror the frontend DocumentReferenceModel.title order: prefer instance-meaningful
+		// labels and demote the generic `type.text` (e.g. "HIPAA" on FollowMyHealth docs, which
+		// would otherwise label thousands of distinct documents identically) to a last resort.
+		SortTitleJS: `(function(){var r=fhirResource;if(r.description)return r.description;var cat=r.category&&r.category[0];if(cat){if(cat.text)return cat.text;if(cat.coding&&cat.coding[0]&&cat.coding[0].display)return cat.coding[0].display;}var t=r.type;if(t&&t.coding&&t.coding[0]&&t.coding[0].display)return t.coding[0].display;if(r.content&&r.content[0]&&r.content[0].attachment&&r.content[0].attachment.title)return r.content[0].attachment.title;if(t&&t.text)return t.text;return undefined;})()`,
 		SortDateJS:  `(function(){var r=fhirResource;if(r.date)return r.date;return undefined;})()`,
 	},
 	"Appointment": {
