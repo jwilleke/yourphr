@@ -2,7 +2,11 @@
 
 Standalone, community-maintained continuation of [Fasten OnPrem](https://github.com/fastenhealth/fasten-onprem) (GPL v3, attribution retained). Project home: [yourphr.org](https://yourphr.org).
 
-**Mission: Your medical records, immediately and in your hands — for free.** Fulfilling the [21st Century Cures Act](https://www.healthit.gov/topic/oncs-cures-act-final-rule) (2016).
+## Mission and branding
+
+- Baranding Tagline: "Your medical records, immediately and in your hands — for free."
+- Branding text: "YourPHR"
+
 
 **Goal:** a complete self-hosted PHR with working display for non-US-Core FHIR data and live provider sync via a personal OAuth relay.
 
