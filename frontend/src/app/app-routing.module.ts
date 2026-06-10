@@ -15,6 +15,7 @@ import { DesktopCallbackComponent } from './pages/desktop-callback/desktop-callb
 import { ExploreComponent } from './pages/explore/explore.component';
 import { MedicalHistoryComponent } from './pages/medical-history/medical-history.component';
 import { CurrentMedicationsComponent } from './pages/current-medications/current-medications.component';
+import { AdminDashboardComponent } from './pages/admin-dashboard/admin-dashboard.component';
 import { MedicalSourcesComponent } from './pages/medical-sources/medical-sources.component';
 import { PatientProfileComponent } from './pages/patient-profile/patient-profile.component';
 import { ReportLabsComponent } from './pages/report-labs/report-labs.component';
@@ -62,6 +63,7 @@ const routes: Routes = [
   { path: 'patient-profile', component: PatientProfileComponent, canActivate: [ IsAuthenticatedAuthGuard ] },
   { path: 'medical-history', component: MedicalHistoryComponent, canActivate: [ IsAuthenticatedAuthGuard ] },
   { path: 'medications', component: CurrentMedicationsComponent, canActivate: [ IsAuthenticatedAuthGuard ] },
+  { path: 'admin', component: AdminDashboardComponent, canActivate: [ IsAuthenticatedAuthGuard, IsAdminAuthGuard ] },
   { path: 'labs', component: ReportLabsComponent, canActivate: [ IsAuthenticatedAuthGuard ] },
   { path: 'labs/report/:source_id/:resource_type/:resource_id', component: ReportLabsComponent, canActivate: [ IsAuthenticatedAuthGuard ] },
 

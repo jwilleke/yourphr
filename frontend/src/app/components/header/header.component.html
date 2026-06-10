@@ -85,6 +85,7 @@
 
           <a (click)="openSupportForm(content)" class="dropdown-item  cursor-pointer"><i style="font-size: medium;" class="fas fa-question-circle"></i> Get Support</a>
           <a *ngIf="!is_environment_desktop" class="dropdown-item cursor-pointer" href="https://yourphr.org" externalLink><i style="font-size: medium;" class="fas fa-hand-holding-medical"></i> Donate</a>
+          <a *ngIf="isAdmin" routerLink="/admin" class="dropdown-item cursor-pointer"><i style="font-size: medium;" class="fas fa-cogs"></i> Admin Dashboard</a>
           <a routerLink="/settings" class="dropdown-item cursor-pointer"><i style="font-size: medium;" class="fas fa-cog"></i> Settings</a>
           <a (click)="signOut($event)" class="dropdown-item  cursor-pointer"><i style="font-size: medium;" class="fas fa-power-off"></i> Sign Out</a>
         </div><!-- dropdown-menu -->

@@ -1,0 +1,33 @@
+<div class="az-content-body">
+  <div class="mg-b-20">
+    <h4 class="mg-b-5"><i class="fas fa-cogs"></i>&nbsp; Admin Dashboard</h4>
+    <p class="tx-gray-500 mg-b-0">Administration tools. Available to admin users only; more cards will be added over time.</p>
+  </div>
+
+  <div class="row">
+    <!-- Server Logs card -->
+    <div class="col-lg-8 mg-b-20">
+      <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h6 class="card-title mg-b-0"><i class="fas fa-file-alt"></i>&nbsp; Server Logs</h6>
+          <button class="btn btn-sm btn-outline-secondary" (click)="loadLogs()" [disabled]="logsLoading">Refresh</button>
+        </div>
+        <div class="card-body">
+          <app-loading-spinner *ngIf="logsLoading" loadingTitle="Loading logs..."></app-loading-spinner>
+
+          <div *ngIf="!logsLoading && logsErrored" class="alert alert-danger mg-b-0">Could not load server logs.</div>
+
+          <div *ngIf="!logsLoading && !logsErrored && logs && !logs.configured" class="alert alert-info mg-b-0">
+            Logs are written to STDOUT only. To view them here, set <code>log.file</code> in the server config (or the <code>--log-file</code> flag) and restart.
+          </div>
+
+          <ng-container *ngIf="!logsLoading && !logsErrored && logs?.configured">
+            <p class="tx-gray-500 tx-12 mg-b-5" *ngIf="logs?.path">{{ logs?.path }} · last {{ logs?.lines?.length || 0 }} lines</p>
+            <pre *ngIf="logs?.lines?.length" class="admin-logs">{{ logs?.lines?.join('\n') }}</pre>
+            <p *ngIf="!logs?.lines?.length" class="tx-gray-500 mg-b-0">Log file is empty.</p>
+          </ng-container>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

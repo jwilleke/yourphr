@@ -6,6 +6,7 @@ import { Router } from '@angular/router';
 import {map} from 'rxjs/operators';
 import {ResponseWrapper} from '../models/response-wrapper';
 import {ReconciledMedication} from '../models/fasten/reconciled-medication';
+import {ServerLogs} from '../models/fasten/server-logs';
 import {Source} from '../models/fasten/source';
 import {User} from '../models/fasten/user';
 import {ResourceFhir} from '../models/fasten/resource_fhir';
@@ -141,6 +142,16 @@ export class FastenApiService {
       .pipe(
         map((response: ResponseWrapper) => {
           return (response.data || []) as ReconciledMedication[]
+        })
+      );
+  }
+
+  //admin-only (#170): server logs for the Admin Dashboard
+  getServerLogs(): Observable<ServerLogs> {
+    return this._httpClient.get<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/admin/logs`)
+      .pipe(
+        map((response: ResponseWrapper) => {
+          return response.data as ServerLogs
         })
       );
   }
