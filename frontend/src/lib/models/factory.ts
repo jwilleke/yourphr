@@ -32,6 +32,8 @@ import {MedicationStatementModel} from './resources/medication-statement-model';
 import {BinaryModel} from './resources/binary-model';
 import {MediaModel} from './resources/media-model';
 import {ExplanationOfBenefitModel} from './resources/explanation-of-benefit-model';
+import {ServiceRequestModel} from './resources/service-request-model';
+import {SpecimenModel} from './resources/specimen-model';
 
 // import {BinaryModel} from './resources/binary-model';
 
@@ -184,6 +186,12 @@ export function fhirModelFactory(
       break
     case ResourceType.ResearchStudy:
       resourceModel = new ResearchStudyModel(fhirResourceWrapper.resource_raw, fhirVersion, fastenOptions)
+      break
+    case ResourceType.ServiceRequest:
+      resourceModel = new ServiceRequestModel(fhirResourceWrapper.resource_raw, fhirVersion, fastenOptions)
+      break
+    case ResourceType.Specimen:
+      resourceModel = new SpecimenModel(fhirResourceWrapper.resource_raw, fhirVersion, fastenOptions)
       break
     // case ResourceType.ResourceCategory:
     //   resourceModel = new ResourceCategoryModel(fhirResourceWrapper.resource_raw, fhirVersion, fastenOptions)

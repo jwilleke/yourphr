@@ -41,6 +41,8 @@ import {CareTeamComponent} from '../resources/care-team/care-team.component';
 import {GoalComponent} from '../resources/goal/goal.component';
 import {DeviceComponent} from '../resources/device/device.component';
 import {CoverageComponent} from '../resources/coverage/coverage.component';
+import {ServiceRequestComponent} from '../resources/service-request/service-request.component';
+import {SpecimenComponent} from '../resources/specimen/specimen.component';
 
 
 @Component({
@@ -199,9 +201,12 @@ export class FhirCardComponent implements OnInit, OnChanges {
       // case "PractitionerRole": {
       //   return PractitionerRoleComponent;
       // }
-      // case "ServiceRequest": {
-      //   return ListServiceRequestComponent;
-      // }
+      case "ServiceRequest": {
+        return ServiceRequestComponent;
+      }
+      case "Specimen": {
+        return SpecimenComponent;
+      }
       default: {
         console.warn("Unknown component type, using fallback", resourceType)
         return FallbackComponent;
