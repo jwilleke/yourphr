@@ -148,9 +148,12 @@ jobs:
         uses: DavidAnson/markdownlint-cli2-action@v23
         with:
           # Uses .markdownlint.json at the repo root. Skip vendored/3rd-party
-          # and legal text.
+          # and legal text, and the machine-generated CHANGELOG (release-please
+          # regenerates it each release; its format trips MD012 and we don't
+          # hand-edit it).
           globs: |
             **/*.md
             !vendor/**
             !**/node_modules/**
             !LICENSE.md
+            !CHANGELOG.md
