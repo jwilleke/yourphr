@@ -41,11 +41,30 @@ export class DiagnosticReportComponent implements OnInit, FhirCardEditableCompon
     this.resourceCode = this.displayModel?.code_coding?.[0]?.code
     this.resourceCodeSystem = this.displayModel?.code_coding?.[0]?.system
 
+    // US Core MS (Lab): result references → the linked Observations carry the actual values
+    // (resolved via the related-resources graph); here we surface their labels/links.
+    const results = (this.displayModel?.result || [])
+      .map((r) => r?.display || r?.reference)
+      .filter(Boolean)
+      .join(', ')
+
     this.tableData = [
+      {
+        // US Core MS: subject (Patient)
+        label: 'Patient',
+        data: this.displayModel?.subject,
+        data_type: TableRowItemDataType.Reference,
+        enabled: !!this.displayModel?.subject,
+      },
       {
         label: 'Issued',
         data: this.displayModel?.issued,
         enabled: !!this.displayModel?.issued,
+      },
+      {
+        label: 'Results',
+        data: results,
+        enabled: (this.displayModel?.result?.length || 0) > 0,
       },
       // {
       //   label: 'Category',

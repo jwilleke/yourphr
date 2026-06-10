@@ -12,7 +12,11 @@ export class DiagnosticReportModel extends FastenDisplayModel {
 
   title: string | undefined
   status: string | undefined
+  subject: ReferenceModel | undefined            // US Core MS: subject (Patient)
   effective_datetime: string | undefined
+  effective_period_start: string | undefined     // US Core MS: effective[x] can be a Period
+  effective_period_end: string | undefined
+  result: ReferenceModel[] | undefined           // US Core MS (Lab): result → Observation references
   category_coding: CodableConceptModel[] | undefined
   code_coding: CodingModel[] | undefined
   has_category_coding: boolean | undefined
@@ -37,7 +41,11 @@ export class DiagnosticReportModel extends FastenDisplayModel {
       _.get(fhirResource, 'code.display') ||
       _.get(fhirResource, 'code.coding.0.display', null);
     this.status = _.get(fhirResource, 'status', '');
+    this.subject = _.get(fhirResource, 'subject');
     this.effective_datetime = _.get(fhirResource, 'effectiveDateTime');
+    this.effective_period_start = _.get(fhirResource, 'effectivePeriod.start');
+    this.effective_period_end = _.get(fhirResource, 'effectivePeriod.end');
+    this.result = _.get(fhirResource, 'result');
     this.category_coding = _.get(fhirResource, 'category');
     this.code_coding = _.get(fhirResource, 'code.coding');
     this.has_category_coding = Array.isArray(this.category_coding);

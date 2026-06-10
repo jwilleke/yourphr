@@ -16,6 +16,15 @@ describe('DiagnosticReportModel', () => {
 
       expected.title = 'Complete blood count (hemogram) panel - Blood by Automated count'
       expected.status = 'final'
+      // US Core MS: subject (Patient) + result (lab-result Observation references)
+      expected.subject = { reference: 'Patient/f001', display: 'P. van den Heuvel' }
+      expected.result = [
+        { reference: 'Observation/f001' },
+        { reference: 'Observation/f002' },
+        { reference: 'Observation/f003' },
+        { reference: 'Observation/f004' },
+        { reference: 'Observation/f005' },
+      ]
       // expected.effectiveDateTime: string | undefined
       expected.category_coding = [
         {
@@ -43,6 +52,20 @@ describe('DiagnosticReportModel', () => {
       expected.code = { coding: [{ system: 'http://loinc.org', code: '58410-2', display: 'Complete blood count (hemogram) panel - Blood by Automated count' } ] }
 
       expect(new DiagnosticReportModel(example1Fixture)).toEqual(expected);
+    });
+
+    // US Core MS: effective[x] can be a Period (not just effectiveDateTime).
+    it('should capture effectivePeriod', () => {
+      const model = new DiagnosticReportModel({
+        resourceType: 'DiagnosticReport',
+        status: 'final',
+        code: { text: 'Sleep study' },
+        subject: { reference: 'Patient/example' },
+        effectivePeriod: { start: '2023-02-13', end: '2023-02-14' },
+      })
+      expect(model.title).toEqual('Sleep study')
+      expect(model.effective_period_start).toEqual('2023-02-13')
+      expect(model.effective_period_end).toEqual('2023-02-14')
     });
 
     // it('should parse example2.json', () => {
