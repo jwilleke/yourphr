@@ -318,8 +318,6 @@ func (gr *GormRepository) UpsertRawResource(ctx context.Context, sourceCredentia
 	if rawResource.ReferencedResources != nil && len(rawResource.ReferencedResources) > 0 {
 		for _, referencedResource := range rawResource.ReferencedResources {
 
-			var relatedResource *models.ResourceBase
-
 			if strings.HasPrefix(referencedResource, sourcePkg.FASTENHEALTH_URN_PREFIX) {
 				gr.Logger.Infof("parsing external urn:fastenhealth-fhir reference: %v", referencedResource)
 
@@ -345,25 +343,35 @@ func (gr *GormRepository) UpsertRawResource(ctx context.Context, sourceCredentia
 				if len(parts) != 2 {
 					continue
 				}
-				relatedResource = &models.ResourceBase{
-					OriginBase: models.OriginBase{
-						SourceID:           source.ID,
-						SourceResourceType: parts[0],
-						SourceResourceID:   parts[1],
-					},
-					RelatedResource: nil,
+
+				// Build the set of target resource ids this reference associates to.
+				// Normally that is just the literal id. FollowMyHealth/Veradigm exports,
+				// however, reference resources as "Type/{patientId}_{resourceId}" while
+				// storing each resource under the bare "{resourceId}" — so an association
+				// built from the literal compound id dangles and the link is lost. When the
+				// id is exactly two underscore-joined UUIDs we therefore ALSO associate to
+				// the stripped suffix. The extra edge is added alongside (never replacing)
+				// the literal id; associations are allowed to point at not-yet/never-existing
+				// resources, so the additional edge is harmless when it doesn't resolve and
+				// standard FHIR bundles (bare ids / OIDs) never match the pattern.
+				targetResourceIDs := []string{parts[1]}
+				if suffix, ok := followMyHealthCompoundIDSuffix(parts[1]); ok {
+					targetResourceIDs = append(targetResourceIDs, suffix)
 				}
-				err := gr.AddResourceAssociation(
-					ctx,
-					source,
-					wrappedResourceModel.SourceResourceType,
-					wrappedResourceModel.SourceResourceID,
-					source,
-					relatedResource.SourceResourceType,
-					relatedResource.SourceResourceID,
-				)
-				if err != nil {
-					return false, err
+
+				for _, targetResourceID := range targetResourceIDs {
+					err := gr.AddResourceAssociation(
+						ctx,
+						source,
+						wrappedResourceModel.SourceResourceType,
+						wrappedResourceModel.SourceResourceID,
+						source,
+						parts[0],
+						targetResourceID,
+					)
+					if err != nil {
+						return false, err
+					}
 				}
 			}
 		}
@@ -371,6 +379,28 @@ func (gr *GormRepository) UpsertRawResource(ctx context.Context, sourceCredentia
 
 	return gr.UpsertResource(ctx, wrappedResourceModel)
 
+}
+
+// followMyHealthCompoundIDSuffix returns the bare resource id embedded in a
+// FollowMyHealth/Veradigm-style compound reference id of the form
+// "{patientId}_{resourceId}", where both halves are UUIDs. Those exports store
+// each resource under the bare "{resourceId}" but reference it as
+// "Type/{patientId}_{resourceId}", so an association built from the literal id
+// never resolves. The check is deliberately strict — exactly two underscore-joined
+// UUIDs — so standard FHIR ids (bare UUIDs, OIDs, anything else) return ok=false
+// and are left completely untouched.
+func followMyHealthCompoundIDSuffix(resourceID string) (string, bool) {
+	segments := strings.Split(resourceID, "_")
+	if len(segments) != 2 {
+		return "", false
+	}
+	if _, err := uuid.Parse(segments[0]); err != nil {
+		return "", false
+	}
+	if _, err := uuid.Parse(segments[1]); err != nil {
+		return "", false
+	}
+	return segments[1], true
 }
 
 func (gr *GormRepository) UpsertRawResourceAssociation(

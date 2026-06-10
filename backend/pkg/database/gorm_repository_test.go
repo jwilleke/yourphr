@@ -2085,3 +2085,96 @@ func (suite *RepositoryTestSuite) TestRemoveBulkResourceAssociations_Success() {
 	require.Equal(suite.T(), "obs101", proc101Associations[0].ResourceBaseSourceResourceID)
 	require.Equal(suite.T(), sc1.ID, proc101Associations[0].ResourceBaseSourceID) // Check the base source ID
 }
+
+func TestFollowMyHealthCompoundIDSuffix(t *testing.T) {
+	tests := []struct {
+		name       string
+		in         string
+		wantSuffix string
+		wantOK     bool
+	}{
+		{"fmh compound {patientId}_{resourceId}", "11111111-1111-1111-1111-111111111111_22222222-2222-2222-2222-222222222222", "22222222-2222-2222-2222-222222222222", true},
+		{"bare uuid (standard FHIR id)", "22222222-2222-2222-2222-222222222222", "", false},
+		{"plain string id", "obs1", "", false},
+		{"epic-style alphanumeric id", "eXYZ123abc", "", false},
+		{"underscore but not uuids", "foo_bar", "", false},
+		{"uuid_nonuuid", "11111111-1111-1111-1111-111111111111_notauuid", "", false},
+		{"three underscore segments", "a_b_c", "", false},
+		{"empty", "", "", false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotSuffix, gotOK := followMyHealthCompoundIDSuffix(tt.in)
+			require.Equal(t, tt.wantOK, gotOK)
+			require.Equal(t, tt.wantSuffix, gotSuffix)
+		})
+	}
+}
+
+// FollowMyHealth/Veradigm exports reference resources as "Type/{patientId}_{resourceId}"
+// but store each resource under the bare "{resourceId}". An association built from the
+// literal compound id never resolves, so the link is lost. UpsertRawResource must ALSO
+// create an association to the stripped suffix — alongside the literal id, and without
+// disturbing ordinary references.
+func (suite *RepositoryTestSuite) TestUpsertRawResource_NormalizesFollowMyHealthCompoundReference() {
+	//setup
+	fakeConfig := mock_config.NewMockInterface(suite.MockCtrl)
+	fakeConfig.EXPECT().GetString("database.location").Return(suite.TestDatabase.Name()).AnyTimes()
+	fakeConfig.EXPECT().GetString("database.type").Return("sqlite").AnyTimes()
+	fakeConfig.EXPECT().IsSet("database.encryption.key").Return(false).AnyTimes()
+	fakeConfig.EXPECT().GetString("log.level").Return("INFO").AnyTimes()
+	fakeConfig.EXPECT().GetBool("database.validation_mode").Return(false).AnyTimes()
+	fakeConfig.EXPECT().GetBool("database.encryption.enabled").Return(false).AnyTimes()
+	dbRepo, err := NewRepository(fakeConfig, logrus.WithField("test", suite.T().Name()), event_bus.NewNoopEventBusServer())
+	require.NoError(suite.T(), err)
+
+	userModel := &models.User{
+		Username: "test_username",
+		Password: "testpassword",
+		Email:    "test@test.com",
+	}
+	err = dbRepo.CreateUser(context.Background(), userModel)
+	require.NoError(suite.T(), err)
+	authContext := context.WithValue(context.Background(), pkg.ContextKeyTypeAuthUsername, "test_username")
+
+	testSourceCredential := models.SourceCredential{
+		ModelBase: models.ModelBase{
+			ID: uuid.New(),
+		},
+		UserID: userModel.ID,
+	}
+	patientData, err := os.ReadFile("./testdata/Abraham100_Heller342_Patient.json")
+	require.NoError(suite.T(), err)
+
+	patientUUID := "11111111-1111-1111-1111-111111111111"
+	encounterUUID := "22222222-2222-2222-2222-222222222222"
+	compoundEncounterRef := "Encounter/" + patientUUID + "_" + encounterUUID
+
+	//test: a Procedure referencing the encounter via the FMH compound id, plus a normal reference
+	wasCreated, err := dbRepo.UpsertRawResource(
+		authContext,
+		&testSourceCredential,
+		sourceModels.RawResourceFhir{
+			SourceResourceType:  "Patient",
+			SourceResourceID:    "b426b062-8273-4b93-a907-de3176c0567d",
+			ResourceRaw:         patientData,
+			ReferencedResources: []string{compoundEncounterRef, "Observation/obs1"},
+		},
+	)
+	require.NoError(suite.T(), err)
+	require.True(suite.T(), wasCreated)
+
+	associations, err := dbRepo.FindResourceAssociationsByTypeAndId(authContext, &testSourceCredential, "Patient", "b426b062-8273-4b93-a907-de3176c0567d")
+	require.NoError(suite.T(), err)
+
+	// expect 3 edges: the literal compound encounter id, the stripped bare encounter id, and the untouched Observation
+	require.Len(suite.T(), associations, 3)
+
+	relatedIDs := map[string]string{} // resourceID -> resourceType
+	for _, a := range associations {
+		relatedIDs[a.RelatedResourceSourceResourceID] = a.RelatedResourceSourceResourceType
+	}
+	require.Equal(suite.T(), "Encounter", relatedIDs[patientUUID+"_"+encounterUUID], "literal compound reference is preserved")
+	require.Equal(suite.T(), "Encounter", relatedIDs[encounterUUID], "stripped bare-id association is added so the link resolves")
+	require.Equal(suite.T(), "Observation", relatedIDs["obs1"], "ordinary reference is untouched (not duplicated)")
+}
