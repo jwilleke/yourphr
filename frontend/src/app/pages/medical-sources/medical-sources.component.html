@@ -49,6 +49,11 @@
             </ng-template>
           </div>
 
+          <div *ngIf="uploadInProgress" class="alert alert-info mt-3" role="alert">
+            <i class="fas fa-spinner fa-spin mr-2"></i>
+            <strong>Starting import…</strong> Uploading your bundle and queuing the import. Large exports can take several minutes — progress then appears on your Connected Sources above, and you don't need to wait on this page.
+          </div>
+
           <div *ngIf="uploadErrorMsg" class="alert alert-danger mt-3" role="alert">
             <strong>Error:</strong> {{uploadErrorMsg}}
           </div>
