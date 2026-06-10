@@ -33,6 +33,13 @@ export class MedicationDispenseComponent implements OnInit, FhirCardComponentInt
     this.resourceCode = _.get(this.displayModel?.medication_coding, 'code')
     this.resourceCodeSystem = _.get(this.displayModel?.medication_coding, 'system')
 
+    // US Core MS: dosageInstruction — parsed into {doseQuantity, route, timing} per instruction;
+    // summarise into a readable line per instruction.
+    const dosage = (this.displayModel?.dosage_instruction_data || [])
+      .map((d: any) => [d.doseQuantity, d.route, d.timing].filter(Boolean).join(', '))
+      .filter((s: string) => s.length > 0)
+      .join('; ')
+
     this.tableData = [
       {
         label: 'Medication',
@@ -67,6 +74,19 @@ export class MedicationDispenseComponent implements OnInit, FhirCardComponentInt
         label: 'Quantity',
         data: this.displayModel?.quantity,
         enabled: !!this.displayModel?.quantity,
+      },
+      {
+        // US Core MS: dosageInstruction
+        label: 'Dosage instruction',
+        data: dosage,
+        enabled: dosage.length > 0,
+      },
+      {
+        // US Core MS: performer.actor (who dispensed)
+        label: 'Performer',
+        data: this.displayModel?.performer,
+        data_type: TableRowItemDataType.Reference,
+        enabled: !!this.displayModel?.performer,
       },
       {
         label: 'Handed over',

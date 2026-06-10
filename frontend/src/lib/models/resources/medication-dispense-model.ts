@@ -19,6 +19,7 @@ export class MedicationDispenseModel extends FastenDisplayModel {
   status: string|undefined
   subject: ReferenceModel|undefined
   quantity: string|undefined
+  performer: ReferenceModel|undefined  // US Core MS: performer.actor (who dispensed)
 
   constructor(fhirResource: any, fhirVersion?: fhirVersions, fastenOptions?: FastenOptions) {
     super(fastenOptions)
@@ -34,6 +35,7 @@ export class MedicationDispenseModel extends FastenDisplayModel {
     this.when_handed_over = _.get(fhirResource, 'whenHandedOver');
     this.status = _.get(fhirResource, 'status');
     this.subject = _.get(fhirResource, 'subject');
+    this.performer = _.get(fhirResource, 'performer[0].actor') || _.get(fhirResource, 'performer[0]');
     const qtyValue = _.get(fhirResource, 'quantity.value');
     if (qtyValue !== undefined) {
       this.quantity = `${qtyValue} ${_.get(fhirResource, 'quantity.unit', '')}`.trim();
