@@ -170,7 +170,7 @@ across multiple valid orgs (A02Test, 10028917), which proves it's **app-level**,
 **Cause:** the registered Test app (`1C6F1F13-…`) isn't authorized to run the patient
 `authorization_code` flow — a Veradigm provisioning gate. Possibly also a public-vs-confidential
 client requirement (their discovery advertises only `client_secret_*` token auth).
-**Status:** support request sent to Veradigm with Request Ids
+**Status:** Veradigm support ticket **#17849** (channel: `VeradigmConnect@veradigm.com`). Error-page Request Ids:
 `400039ba-0001-cf00-b63f-84710c7967bb` (A02Test) and `40001cf7-0001-7100-b63f-84710c7967bb` (10028917).
 **Not a YourPHR bug** — the authorize request is well-formed and reaches Veradigm.
 
