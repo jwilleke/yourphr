@@ -42,7 +42,20 @@ export class DocumentReferenceModel extends FastenDisplayModel {
 
   commonDTO(fhirResource:any){
     this.code = _.get(fhirResource, 'type');
-    this.title = _.get(fhirResource, 'category.0.text') || _.get(fhirResource, 'category.0.coding.0.display') || _.get(fhirResource, 'type.text') || _.get(fhirResource, 'type.coding.0.display');
+    // Card title. Prefer the instance's human-meaningful labels and demote the generic
+    // `type.text` to a last resort: FollowMyHealth/Veradigm exports carry the real document
+    // name in `description` / `type.coding[0].display` / `content[0].attachment.title` but
+    // a generic `type.text` (e.g. "HIPAA"), so titling off `type.text` first labelled
+    // thousands of distinct documents identically. `description` leads so the card matches
+    // the backend sort_title. Falls back to a generic 'Document' so the header is never blank.
+    this.title =
+      _.get(fhirResource, 'description') ||
+      _.get(fhirResource, 'category.0.text') ||
+      _.get(fhirResource, 'category.0.coding.0.display') ||
+      _.get(fhirResource, 'type.coding.0.display') ||
+      _.get(fhirResource, 'content.0.attachment.title') ||
+      _.get(fhirResource, 'type.text') ||
+      'Document';
     this.description = _.get(fhirResource, 'description');
     this.status = _.get(fhirResource, 'status');
     this.subject = _.get(fhirResource, 'subject');

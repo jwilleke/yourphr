@@ -2,6 +2,7 @@ import { DocumentReferenceModel } from './document-reference-model';
 import {AdverseEventModel} from './adverse-event-model';
 import {CodableConceptModel} from '../datatypes/codable-concept-model';
 import * as example1Fixture from "../../fixtures/r4/resources/documentReference/example1.json"
+import * as exampleFmhFixture from "../../fixtures/r4/resources/documentReference/example-followmyhealth.json"
 import {AttachmentModel} from '../datatypes/attachment-model';
 
 
@@ -50,13 +51,32 @@ describe('DocumentReferenceModel', () => {
       }
       // expected.context: any | undefined
       expected.code = { coding: [{ system: 'http://loinc.org', code: '34108-1', display: 'Outpatient Note' }] }
-      expected.title = 'History and Physical'
+      // title now leads with `description` (matches the backend sort_title), so it is 'Physical'
+      // rather than the category display 'History and Physical'.
+      expected.title = 'Physical'
       // US Core Must-Support (#147)
       expected.subject = { reference: 'Patient/xcda' }
       expected.authors = [{ reference: 'Practitioner/xcda1' }, { reference: '#a2' }]
       expected.content_formats = [{ system: 'urn:oid:1.3.6.1.4.1.19376.1.2.3', code: 'urn:ihe:pcc:handp:2008', display: 'History and Physical Specification' }]
 
       expect(new DocumentReferenceModel(example1Fixture)).toEqual(expected);
+    });
+
+    // Non-US-Core (FollowMyHealth): no description/category, a `type` whose coding carries a
+    // meaningful display but no code/system, and a generic `type.text` ("HIPAA"). The title must
+    // fall back to the meaningful `type.coding[0].display` (or the attachment title) — never the
+    // generic "HIPAA", and never blank.
+    it('should title a FollowMyHealth document from its meaningful type display, not the generic text', () => {
+      const model = new DocumentReferenceModel(exampleFmhFixture);
+      expect(model.title).toEqual('Release of Information Authorization, Example Hospital');
+      expect(model.title).not.toEqual('HIPAA');
+      expect(model.status).toEqual('current');
+      expect(model.created_at).toEqual('2026-03-05T20:21:12.744+00:00');
+    });
+
+    it('should never render a blank title (falls back to a generic label)', () => {
+      const model = new DocumentReferenceModel({ resourceType: 'DocumentReference' });
+      expect(model.title).toEqual('Document');
     });
   })
 

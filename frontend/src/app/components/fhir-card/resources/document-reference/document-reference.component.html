@@ -1,7 +1,7 @@
 <div class="card card-fhir-resource" >
   <div class="card-header" (click)="isCollapsed = ! isCollapsed">
     <div>
-      <h6 class="card-title">{{displayModel?.category?.text}}</h6>
+      <h6 class="card-title">{{displayModel?.title}}</h6>
       <p class="card-text tx-gray-400" *ngIf="displayModel?.created_at"><strong>Created at</strong> {{displayModel?.created_at | date}}</p>
     </div>
     <fhir-ui-badge class="float-right" [status]="displayModel?.status">{{displayModel?.status}}</fhir-ui-badge>
@@ -12,7 +12,6 @@
     <!--    </div>-->
   </div>
   <div #collapse="ngbCollapse" [(ngbCollapse)]="isCollapsed" class="card-body">
-    <p class="az-content-text mg-b-20">An action that is or was performed on or for a patient, practitioner, device, organization, or location. For example, this can be a physical intervention on a patient like an operation, or less invasive like long term services, counseling, or hypnotherapy.</p>
     <fhir-ui-table [displayModel]="displayModel" [tableData]="tableData"></fhir-ui-table>
 
     <div *ngIf="!showDetails">

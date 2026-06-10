@@ -1,0 +1,37 @@
+{
+  "resourceType": "DocumentReference",
+  "id": "example-followmyhealth",
+  "meta": {
+    "lastUpdated": "2026-03-05T20:21:12.744+00:00"
+  },
+  "identifier": [
+    {
+      "use": "official",
+      "system": "https://fhir.followmyhealth.com/id/global",
+      "value": "example-followmyhealth"
+    }
+  ],
+  "status": "current",
+  "type": {
+    "coding": [
+      {
+        "display": "Release of Information Authorization, Example Hospital"
+      }
+    ],
+    "text": "HIPAA"
+  },
+  "subject": {
+    "reference": "Patient/example"
+  },
+  "date": "2026-03-05T20:21:12.744+00:00",
+  "content": [
+    {
+      "attachment": {
+        "contentType": "text/plain",
+        "url": "./Release%20of%20Information%20Authorization_aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee.txt",
+        "title": "Release of Information Authorization, Example Hospital",
+        "creation": "2026-03-05T20:21:12.744+00:00"
+      }
+    }
+  ]
+}
