@@ -43,6 +43,8 @@ import {DeviceComponent} from '../resources/device/device.component';
 import {CoverageComponent} from '../resources/coverage/coverage.component';
 import {ServiceRequestComponent} from '../resources/service-request/service-request.component';
 import {SpecimenComponent} from '../resources/specimen/specimen.component';
+import {RelatedPersonComponent} from '../resources/related-person/related-person.component';
+import {FamilyMemberHistoryComponent} from '../resources/family-member-history/family-member-history.component';
 
 
 @Component({
@@ -206,6 +208,12 @@ export class FhirCardComponent implements OnInit, OnChanges {
       }
       case "Specimen": {
         return SpecimenComponent;
+      }
+      case "RelatedPerson": {
+        return RelatedPersonComponent;
+      }
+      case "FamilyMemberHistory": {
+        return FamilyMemberHistoryComponent;
       }
       default: {
         console.warn("Unknown component type, using fallback", resourceType)

@@ -8,8 +8,10 @@ import {FastenOptions} from '../fasten/fasten-options';
 
 export class RelatedPersonModel extends FastenDisplayModel {
 
-  patient: string|undefined
-  name: string|undefined
+  patient: ReferenceModel|undefined                    // the Patient this person is related to
+  name: any|undefined                                  // HumanName
+  display_name: string|undefined                       // formatted name for display
+  relationship: CodableConceptModel[]|undefined        // US Core MS: relationship
   birthdate: string|undefined
   gender: string|undefined
   address: string|undefined
@@ -25,6 +27,7 @@ export class RelatedPersonModel extends FastenDisplayModel {
 
   commonDTO(fhirResource:any){
     this.patient = _.get(fhirResource, 'patient');
+    this.relationship = _.get(fhirResource, 'relationship');  // US Core MS (array of CodeableConcept)
     this.birthdate = _.get(fhirResource, 'birthDate');
     this.gender = _.get(fhirResource, 'gender');
     this.address = _.get(fhirResource, 'address[0]');
@@ -33,12 +36,23 @@ export class RelatedPersonModel extends FastenDisplayModel {
     );
   };
 
+  // Format a HumanName for display: prefer `.text`, else join prefix/given/family.
+  private static formatName(n: any): string|undefined {
+    if (!n) { return undefined }
+    if (n.text) { return n.text }
+    const parts = [...(n.prefix || []), ...(n.given || []), n.family].filter(Boolean)
+    return parts.length ? parts.join(' ') : undefined
+  }
+
   dstu2DTO(fhirResource:any){
     this.name = _.get(fhirResource, 'name');
+    this.display_name = RelatedPersonModel.formatName(this.name);
   };
 
   stu3r4DTO(fhirResource:any){
-    this.name = _.get(fhirResource, 'name')[0];
+    // R4 RelatedPerson.name is 0..* — use a safe path (the old `_.get(...)[0]` threw when absent).
+    this.name = _.get(fhirResource, 'name[0]');
+    this.display_name = RelatedPersonModel.formatName(this.name);
   };
 
   resourceDTO(fhirResource:any, fhirVersion:fhirVersions){

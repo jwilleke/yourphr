@@ -34,6 +34,7 @@ import {MediaModel} from './resources/media-model';
 import {ExplanationOfBenefitModel} from './resources/explanation-of-benefit-model';
 import {ServiceRequestModel} from './resources/service-request-model';
 import {SpecimenModel} from './resources/specimen-model';
+import {FamilyMemberHistoryModel} from './resources/family-member-history-model';
 
 // import {BinaryModel} from './resources/binary-model';
 
@@ -115,9 +116,9 @@ export function fhirModelFactory(
     case ResourceType.ExplanationOfBenefit:
       resourceModel = new ExplanationOfBenefitModel(fhirResourceWrapper.resource_raw, fhirVersion, fastenOptions)
     break
-    // case ResourceType.FamilyMemberHistory:
-    //   resourceModel = new FamilyMemberHistoryModel(fhirResourceWrapper.resource_raw, fhirVersion, fastenOptions)
-    //break
+    case ResourceType.FamilyMemberHistory:
+      resourceModel = new FamilyMemberHistoryModel(fhirResourceWrapper.resource_raw, fhirVersion, fastenOptions)
+      break
     case ResourceType.Goal:
       resourceModel = new GoalModel(fhirResourceWrapper.resource_raw, fhirVersion, fastenOptions)
       break

@@ -14,6 +14,7 @@ export enum ResourceType {
   DocumentReference = "DocumentReference",
   Encounter = "Encounter",
   ExplanationOfBenefit = "ExplanationOfBenefit",
+  FamilyMemberHistory = "FamilyMemberHistory",
   Goal = "Goal",
   Immunization = "Immunization",
   Location = "Location",
