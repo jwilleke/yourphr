@@ -174,6 +174,20 @@ client requirement (their discovery advertises only `client_secret_*` token auth
 `400039ba-0001-cf00-b63f-84710c7967bb` (A02Test) and `40001cf7-0001-7100-b63f-84710c7967bb` (10028917).
 **Not a YourPHR bug** — the authorize request is well-formed and reaches Veradigm.
 
+#### Steps to reproduce (for the Veradigm support ticket)
+
+Registered app (developer.veradigm.com → My Dashboard): Client ID `1C6F1F13-…` (full GUID), App Type **Patient**, Client Type **Public Client (PKCE, no secret)**, platform **Web App**, Redirect URI `https://relay.nerdsbythehour.com/callback`, Scopes `launch/patient openid fhirUser offline_access patient/*.read` (SMART v1), **Test** access. Test orgs: `A02Test` and `10028917` (reproduces on both).
+
+1. **Discover** — `GET https://fhir.fhirpoint.open.allscripts.com/fhirroute/open/{OrgID}/.well-known/smart-configuration` → HTTP 200; `authorization_endpoint = https://open.allscripts.com/fhirroute/fmhpatientauth/fmhorgid/{guid}/connect/authorize`, `token_endpoint = https://muauthentication.followmyhealth.com/api/access`, `code_challenge_methods_supported` includes `S256`.
+2. **Authorize** — open the `authorization_endpoint` with `response_type=code`, `client_id={our GUID}`, `redirect_uri=https://relay.nerdsbythehour.com/callback`, `scope=launch/patient openid fhirUser offline_access patient/*.read`, `state={random}`, `aud={FHIR base}`, `code_challenge={S256}`, `code_challenge_method=S256`. → **302 to the FollowMyHealth login** (Client ID recognized, redirect URI accepted).
+3. **Log in** as the Veradigm-provided **test patient** for the org and complete consent → login **succeeds**.
+4. **Observe** — immediately after login, the auth server renders its own **`unauthorized_client`** error page (with a Request Id); the browser is **never** redirected back to `redirect_uri`, so no `code` is issued.
+
+**Expected:** after login/consent → redirect to `redirect_uri` with `?code=…&state=…`.
+**Actual:** `unauthorized_client` error page; no redirect, no code.
+
+Questions for Veradigm: (a) does this app need authorization in the **License Management Portal** (or a **Partner Request**) for the patient `authorization_code` flow? (b) the org's discovery advertises `token_endpoint_auth_methods_supported = ["client_secret_post","client_secret_basic"]` (no `none`) — does a public PKCE client need converting to a **confidential client (client_secret)** for this flow?
+
 ### 3. Connect poll window vs slow logins — WATCH
 
 The frontend calls `connectSource` (backend polls the relay ~30s) up to 3× (~90s total). If a
