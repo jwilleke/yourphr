@@ -8,6 +8,7 @@ import {FastenOptions} from '../fasten/fasten-options';
 
 export class EncounterModel extends FastenDisplayModel {
   code: CodableConceptModel | undefined
+  display: string | undefined
   period_end: string | undefined
   period_start: string | undefined
   has_participant: boolean | undefined
@@ -15,6 +16,7 @@ export class EncounterModel extends FastenDisplayModel {
   encounter_type: CodableConceptModel[] | undefined
   resource_class: string | undefined
   resource_status: string | undefined
+  discharge_disposition: CodableConceptModel | undefined
   participant: {
     display?: string,
     role?: string,
@@ -34,18 +36,25 @@ export class EncounterModel extends FastenDisplayModel {
   commonDTO(fhirResource:any){
     this.code = _.get(fhirResource, 'serviceType') || _.get(fhirResource, 'type.0');
     this.resource_status = _.get(fhirResource, 'status');
-    this.location_display = _.get(
-      fhirResource,
-      'location[0].location.display',
-      'Encounter',
-    );
+    this.location_display = _.get(fhirResource, 'location[0].location.display');
     this.encounter_type = _.get(fhirResource, 'type');
-    // Veradigm/FollowMyHealth omits type entirely; synthesise a display-only entry from location
-    if (!this.encounter_type?.length && this.location_display && this.location_display !== 'Encounter') {
-      this.encounter_type = [{ text: this.location_display, coding: [] }] as any;
-    }
     this.has_participant = _.has(fhirResource, 'participant');
     this.reasonCode = _.get(fhirResource, 'reasonCode');
+    this.discharge_disposition = _.get(fhirResource, 'hospitalization.dischargeDisposition');
+
+    // Card title fallback. US Core titles off type/serviceType; Veradigm/FollowMyHealth often omits
+    // both and ships only a location + a class with a system but no code — so without this the title
+    // renders blank (#54 follow-up). Fall back: type → serviceType → class → location → generic.
+    // (Note: the backend sort_title isn't in resource_raw, so the card can't rely on it.)
+    this.display =
+      _.get(fhirResource, 'type.0.text') ||
+      _.get(fhirResource, 'type.0.coding.0.display') ||
+      _.get(fhirResource, 'serviceType.text') ||
+      _.get(fhirResource, 'serviceType.coding.0.display') ||
+      _.get(fhirResource, 'class.display') ||
+      _.get(fhirResource, 'class.code') ||
+      this.location_display ||
+      'Encounter';
   };
 
   dstu2DTO(fhirResource:any){

@@ -1,0 +1,41 @@
+{
+  "resourceType": "Encounter",
+  "id": "example-followmyhealth",
+  "meta": {
+    "extension": [
+      {
+        "url": "https://fhir.followmyhealth.com/api/FirstCreatedExtension?_format=application/json",
+        "valueInstant": "2026-03-05T20:21:12.744+00:00"
+      }
+    ],
+    "lastUpdated": "2026-03-05T20:21:12.744+00:00"
+  },
+  "identifier": [
+    {
+      "use": "official",
+      "system": "https://fhir.followmyhealth.com/id/global",
+      "value": "example-followmyhealth",
+      "assigner": {
+        "display": "FollowMyHealth"
+      }
+    }
+  ],
+  "status": "unknown",
+  "class": {
+    "system": "http://terminology.hl7.org/CodeSystem/v3-ActCode"
+  },
+  "subject": {
+    "reference": "Patient/example"
+  },
+  "period": {
+    "start": "2026-03-05",
+    "end": "2026-03-05"
+  },
+  "location": [
+    {
+      "location": {
+        "display": "Department of Primary Care - Family Medicine, Example"
+      }
+    }
+  ]
+}

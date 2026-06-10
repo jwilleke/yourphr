@@ -34,6 +34,18 @@ export class EncounterComponent implements OnInit, FhirCardEditableComponentInte
   constructor(public changeRef: ChangeDetectorRef, public router: Router) { }
 
   ngOnInit(): void {
+    // US Core Encounter Must-Support: type, class, status, period, participant, reasonCode,
+    // hospitalization.dischargeDisposition, location. Each row is gated on presence (detect-don't-
+    // require), so a conformant Encounter shows the full set and a sparse non-US-Core one shows only
+    // what it has — the title fallback (model.display) keeps it from rendering blank.
+    const participants = (this.displayModel?.participant || [])
+      .map((p) => {
+        const name = p.display || p.text || p.reference?.reference;
+        if (!name) { return null; }
+        return p.role ? `${p.role}: ${name}` : name;
+      })
+      .filter(Boolean) as string[];
+
     this.tableData = [
       {
         label: 'Type',
@@ -42,9 +54,41 @@ export class EncounterComponent implements OnInit, FhirCardEditableComponentInte
         enabled: !!this.displayModel?.encounter_type?.[0],
       },
       {
+        label: 'Class',
+        data: this.displayModel?.resource_class,
+        enabled: !!this.displayModel?.resource_class,
+      },
+      {
+        label: 'Status',
+        data: this.displayModel?.resource_status,
+        enabled: !!this.displayModel?.resource_status,
+      },
+      {
+        label: 'Reason',
+        data: this.displayModel?.reasonCode?.[0],
+        data_type: TableRowItemDataType.CodableConcept,
+        enabled: !!this.displayModel?.reasonCode?.[0],
+      },
+      {
+        label: 'Participants',
+        data: participants.join(', '),
+        enabled: participants.length > 0,
+      },
+      {
+        label: 'Discharge disposition',
+        data: this.displayModel?.discharge_disposition,
+        data_type: TableRowItemDataType.CodableConcept,
+        enabled: !!this.displayModel?.discharge_disposition,
+      },
+      {
         label: 'Location',
         data: this.displayModel?.location_display,
         enabled: !!this.displayModel?.location_display,
+      },
+      {
+        label: 'End date',
+        data: this.displayModel?.period_end,
+        enabled: !!this.displayModel?.period_end,
       },
     ];
   }
