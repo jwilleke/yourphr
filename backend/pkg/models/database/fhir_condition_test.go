@@ -171,3 +171,28 @@ func TestFhirCondition2_ExtractSearchParameters(t *testing.T) {
 	require.Equal(t, SearchParameterStringType{"approximately November 2012"}, testOnsetInfo)
 
 }
+
+// #171: a non-US-Core Condition whose clinicalStatus / category / code are text-only
+// CodeableConcepts (no coding[]) must still index their display text — previously these matched no
+// branch in the token extractor and were dropped, leaving the record unfindable (even by :text).
+func TestFhirCondition_TextOnlyCodeableConcept_ExtractSearchParameters(t *testing.T) {
+	t.Parallel()
+	conditionBytes, err := os.ReadFile("../../../../frontend/src/lib/fixtures/r4/resources/condition/example-text-only.json")
+	require.NoError(t, err)
+
+	conditionModel := FhirCondition{}
+	err = conditionModel.PopulateAndExtractSearchParameters(conditionBytes)
+	require.NoError(t, err)
+
+	var code SearchParameterTokenType
+	require.NoError(t, json.Unmarshal(json.RawMessage(conditionModel.Code), &code))
+	require.Equal(t, SearchParameterTokenType{{Text: "Chronic sinusitis"}}, code)
+
+	var clinicalStatus SearchParameterTokenType
+	require.NoError(t, json.Unmarshal(json.RawMessage(conditionModel.ClinicalStatus), &clinicalStatus))
+	require.Equal(t, SearchParameterTokenType{{Text: "Active"}}, clinicalStatus)
+
+	var category SearchParameterTokenType
+	require.NoError(t, json.Unmarshal(json.RawMessage(conditionModel.Category), &category))
+	require.Equal(t, SearchParameterTokenType{{Text: "Problem List Item"}}, category)
+}
