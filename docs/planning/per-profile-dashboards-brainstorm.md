@@ -48,9 +48,10 @@ US Core 9.0.0 has **~17 profile groups** (ToC 1.5.1–1.5.17) **+ ~24 Observatio
 3. **v1 scope — DECIDED: the Cures-Act core** — Problems, Medications✓, Allergies, Labs, Vitals (partly covered), Clinical Notes (#136's first slice). New widgets needed (Phase 1, [#245](https://github.com/jwilleke/yourphr/issues/245)): Problems, Allergies, Immunizations, Procedures, Clinical Notes. Long tail → later phases / "All categories" view.
 
 ## Open questions / decisions still to confirm
-4. **Query path:** reuse the client `DashboardWidgetQuery` engine, or add compute-on-request endpoints (like medications #175) for the categories needing cross-resource logic (active problems, current meds)? (Recommend: query engine for simple lists; endpoint only where logic is real.)
-5. **Counts:** show a total count per category (needs a count query / `count_by`) — confirm the query engine supports an efficient count.
-6. **Editability/layout:** the dashboard grid is user-arrangeable (x/y/width/height). Do per-profile widgets ship in the default layout, or as an opt-in widget palette? (Decision needed.)
+
+1. **Query path:** reuse the client `DashboardWidgetQuery` engine, or add compute-on-request endpoints (like medications #175) for the categories needing cross-resource logic (active problems, current meds)? (Recommend: query engine for simple lists; endpoint only where logic is real.)
+2. **Counts:** show a total count per category (needs a count query / `count_by`) — confirm the query engine supports an efficient count.
+3. **Editability/layout:** the dashboard grid is user-arrangeable (x/y/width/height). Do per-profile widgets ship in the default layout, or as an opt-in widget palette? (Decision needed.)
 
 ## Suggested phasing (turn into EPIC + sub-issues once decisions land)
 
