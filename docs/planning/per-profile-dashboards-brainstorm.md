@@ -41,10 +41,13 @@ US Core 9.0.0 has **~17 profile groups** (ToC 1.5.1–1.5.17) **+ ~24 Observatio
 - **No-guessing baked in:** empty category → the `<app-missing-data>` marker, not a hidden/empty card.
 - This single widget + ~12 config rows replaces "12 bespoke widgets."
 
-## Open questions / decisions to confirm (before building)
+## Decisions (2026-06-11, confirmed with Jim)
 
-1. **Generic-config widget vs bespoke-per-profile?** (Recommend: generic Profile widget + bespoke only for vitals-trend, BP, and status. Confirm.)
-2. **One dashboard vs per-category dashboards/tabs?** US Core ToC implies ~17 categories — a single dashboard of 17+ widgets is dense. Option: a compact default dashboard (Cures-Act core) + a "All categories" view, or tabs. (Decision needed.)
+1. **Architecture — DECIDED: generic config-driven "Profile summary" widget + a few bespoke** (vitals-trend, blood pressure, status values). Not ~17+ bespoke widgets.
+2. **Layout — DECIDED: a compact default dashboard (Cures-Act core) + a separate "All categories" view** for the rest. Not a single dense grid, not tabs.
+
+## Open questions / decisions still to confirm
+
 3. **v1 scope — which profiles ship widgets first?** Recommend the **Cures-Act core**: Problems, Medications✓, Allergies, Labs, Vitals (have some), Clinical Notes — matching #136's first slice.
 4. **Query path:** reuse the client `DashboardWidgetQuery` engine, or add compute-on-request endpoints (like medications #175) for the categories needing cross-resource logic (active problems, current meds)? (Recommend: query engine for simple lists; endpoint only where logic is real.)
 5. **Counts:** show a total count per category (needs a count query / `count_by`) — confirm the query engine supports an efficient count.
