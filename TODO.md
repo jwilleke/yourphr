@@ -16,12 +16,36 @@
 
 ## 🔴 P0 — Security & Critical
 
-_none yet — run `/status`_
+- #258 [SECURITY] go/sql-injection — fix shipped (21c961b6); open pending CodeQL re-scan / alert dismissal
 
 ## 🟠 P1
 
+- #259 [SECURITY] Missing explicit permissions blocks in GitHub Actions workflows
+- #254 [FEATURE] Support C-CDA / CCD document import and parsing
+- #255 [FEATURE] Support for PDFs (upload + display)
+- #250 [FEATURE] Add CMS Blue Button 2.0 as a SMART-on-FHIR sync source
+- #249 [FEATURE] Surface the 6 remaining US Core 9.0.0 Must-Support display gaps
+- #136 [EPIC] Support US Core 9.0.0 (profiles + Must-Support)
+
 ## 🟡 P2
+
+- #256 [FEATURE] Sharing PHR data
+- #253 [EPIC] Support manual data entry and user-created records
+- #257 [FEATURE] Epic sandboxes (SMART dev enablement)
+- #251 [FEATURE] Explore Apple Health's supported-institution list as a provider-catalog source
+- #244 [EPIC] Per-profile dashboard widgets (US Core display end-state)
+- #209 [EPIC] Migrate to Bootstrap 5
+- #14 [FEATURE] User Profile Update (PII)
+- #252 [FEATURE] Harden re-import dedup against stale overwrites
+- #241 [chore] release-please: authenticate with a PAT / GitHub App token
+- #20 [EPIC] SMART on FHIR — live provider sync
+- #53 [SMART] Veradigm/FollowMyHealth integration — blocked on vendor app approval
 
 ## ⏸ Deferred
 
+- #239 [chore] Revisit gofhir-models 0.1.x once encoding/json/v2 is default in Go
+- #131 [FEATURE] E2E testing — lforms questionnaire render + interact
+
 ## ❓ Needs triage
+
+_none — all open issues carry a priority band._
