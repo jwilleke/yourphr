@@ -29,7 +29,7 @@ jobs:
         with:
           path: coverage-artifacts
       - name: Upload coverage reports
-        uses: codecov/codecov-action@v6
+        uses: codecov/codecov-action@v7
         with:
           files: coverage-artifacts/backend-coverage/backend-coverage.txt,coverage-artifacts/frontend-coverage/lcov.info
           flags: unittests
