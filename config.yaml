@@ -32,6 +32,13 @@ database:
 log:
   file: '' # absolute or relative paths allowed, eg. web.log
   level: INFO
+# C-CDA / CCD document import (#254). Opt-in: requires the external fhir-converter
+# sidecar (Metriport). Leave disabled for a stock install — FHIR/NDJSON upload is
+# unaffected. When enabled, raw .xml/.ccd uploads are converted to FHIR R4 before import.
+cda_converter:
+  enabled: false
+  url: '' # e.g. http://localhost:8777 (dev) or http://yourphr-cda-converter:8777 (k8s). Internal-only — raw CCD is PHI.
+  timeout_seconds: 60
 jwt:
   issuer:
     # This is a KNOWN PUBLIC default and is treated as "unset" (see #102): the

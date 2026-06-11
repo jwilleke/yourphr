@@ -104,6 +104,12 @@ func (c *configuration) Init() error {
 	c.SetDefault("log.level", "INFO")
 	c.SetDefault("log.file", "")
 
+	// C-CDA / CCD import is opt-in: it requires the external fhir-converter sidecar (#254).
+	// Disabled by default so a stock single-binary install is unaffected.
+	c.SetDefault("cda_converter.enabled", false)
+	c.SetDefault("cda_converter.url", "")
+	c.SetDefault("cda_converter.timeout_seconds", 60)
+
 	//set the default system config file search path.
 	//if you want to load a non-standard location system config file (~/capsule.yml), use ReadConfig
 	//if you want to load a repo specific config file, use ReadConfig

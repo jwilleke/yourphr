@@ -364,6 +364,15 @@ func CreateManualSource(c *gin.Context) {
 		return
 	}
 
+	// If the upload is a C-CDA / CCD document, convert it to a FHIR R4 bundle first (#254).
+	// FHIR JSON/NDJSON uploads pass through unchanged. A conversion failure (sidecar disabled or
+	// unreachable) is surfaced to the client and leaves the rest of the import untouched.
+	bundleFile, err = maybeConvertCDA(c, logger, bundleFile)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": err.Error()})
+		return
+	}
+
 	// We cannot save the "SourceCredential" object yet, as we do not know the patientID
 
 	// create a "manual" client, which we can use to parse the
