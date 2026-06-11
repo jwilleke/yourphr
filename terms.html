@@ -15,7 +15,7 @@
     .home { font-weight:800; font-size:1.2rem; } .home span { color:var(--accent); }
     h1 { font-size:1.7rem; margin:24px 0 4px; } h2 { font-size:1.15rem; margin:28px 0 8px; }
     .muted { color:var(--muted); } .small { font-size:.9rem; }
-    .draft { background:var(--panel); border:1px solid var(--border); border-left:3px solid var(--accent); border-radius:8px; padding:14px 16px; margin:16px 0; }
+    .lead { background:var(--panel); border:1px solid var(--border); border-left:3px solid var(--accent); border-radius:8px; padding:14px 16px; margin:16px 0; }
     footer { border-top:1px solid var(--border); margin-top:40px; padding-top:16px; color:var(--muted); font-size:.9rem; }
   </style>
 </head>
@@ -23,26 +23,35 @@
   <div class="wrap">
     <p><a class="home" href="/">Your<span>PHR</span></a></p>
     <h1>Terms of Service</h1>
-    <p class="muted small">Last updated: placeholder — not yet finalized.</p>
+    <p class="muted small">Last updated: 11 June 2026</p>
 
-    <div class="draft">
-      ⚠️ <strong>Placeholder.</strong> This is a draft and not legal advice. It will be replaced with finalized terms.
+    <div class="lead">
+      <strong>YourPHR is free, open-source, self-hosted software.</strong> You run it on infrastructure you control, and your health records stay on your own instance. These terms govern your use of the software and of this website (<a href="https://yourphr.org">yourphr.org</a>).
     </div>
 
     <h2>The software</h2>
-    <p>YourPHR is free, open-source software distributed under the <a href="https://github.com/jwilleke/yourphr/blob/main/LICENSE.md">GNU GPL v3</a>. It is a community-maintained continuation of <a href="https://github.com/fastenhealth/fasten-onprem">Fasten OnPrem</a>.</p>
+    <p>YourPHR is a personal/family health-record viewer distributed under the <a href="https://github.com/jwilleke/yourphr/blob/main/LICENSE.md">GNU General Public License v3</a>. It is a community-maintained continuation of <a href="https://github.com/fastenhealth/fasten-onprem">Fasten OnPrem</a>. Your rights to use, modify, and redistribute the software are defined by the GPL v3; nothing in these terms restricts those rights.</p>
 
-    <h2>No warranty</h2>
-    <p>The software is provided <strong>“AS IS”, without warranty of any kind</strong>, express or implied, as set out in the GPL v3. You use and self-host it at your own risk.</p>
+    <h2>Your records, your responsibility</h2>
+    <p>YourPHR is designed for you to view and organize <strong>your own</strong> (or your family's) health records on a server <strong>you</strong> operate. If you self-host YourPHR, you are solely responsible for securing your deployment, controlling access, performing backups, and complying with any laws or regulations that apply to you (for example HIPAA or GDPR, where applicable). The project operates no server that receives your health data.</p>
+
+    <h2>Connecting to healthcare providers</h2>
+    <p>YourPHR can connect to healthcare providers and patient-access APIs (for example via SMART on FHIR) to import <strong>your own</strong> records with your authorization. When you connect a provider, that connection is also governed by <strong>that provider's own terms, policies, and API agreements</strong>. You are responsible for using each provider's API in accordance with its terms and for ensuring you are authorized to access the records you import. YourPHR requests read access to your own records only and does not modify data held by your providers.</p>
 
     <h2>Not medical advice</h2>
-    <p>YourPHR is a tool for viewing and organizing your own health records. It does <strong>not</strong> provide medical advice, diagnosis, or treatment. Always consult a qualified healthcare professional.</p>
+    <p>YourPHR is a tool for viewing and organizing health records. It does <strong>not</strong> provide medical advice, diagnosis, or treatment, and it is not a substitute for professional medical judgment. Always consult a qualified healthcare professional regarding any medical questions or decisions. Records displayed may be incomplete, delayed, or contain errors originating from the source systems.</p>
 
-    <h2>Your responsibility</h2>
-    <p>If you self-host YourPHR, you are responsible for securing your deployment, your data, backups, and compliance with any laws that apply to you.</p>
+    <h2>No warranty</h2>
+    <p>The software is provided <strong>“AS IS”, without warranty of any kind</strong>, express or implied, including but not limited to the warranties of merchantability, fitness for a particular purpose, and non-infringement, as set out in the GPL v3. You use and self-host it at your own risk.</p>
+
+    <h2>Limitation of liability</h2>
+    <p>To the maximum extent permitted by law, the YourPHR project, its contributors, and maintainers shall not be liable for any damages arising from the use of, or inability to use, the software — including any loss of, or inaccuracy in, health data — as further described in the GPL v3.</p>
+
+    <h2>Changes to these terms</h2>
+    <p>We may update these terms from time to time. Material changes will be reflected by the “Last updated” date above and published at this URL.</p>
 
     <h2>Contact</h2>
-    <p>Questions: <a href="https://github.com/jwilleke/yourphr/issues">open an issue</a>.</p>
+    <p>Questions about the project or these terms: <a href="https://github.com/jwilleke/yourphr/issues">open an issue on GitHub</a>.</p>
 
     <footer>
       <a href="/">YourPHR</a> · <a href="/privacy.html">Privacy</a> · <a href="https://github.com/jwilleke/yourphr">GitHub</a>

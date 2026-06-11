@@ -15,7 +15,8 @@
     .home { font-weight:800; font-size:1.2rem; } .home span { color:var(--accent); }
     h1 { font-size:1.7rem; margin:24px 0 4px; } h2 { font-size:1.15rem; margin:28px 0 8px; }
     .muted { color:var(--muted); } .small { font-size:.9rem; }
-    .draft { background:var(--panel); border:1px solid var(--border); border-left:3px solid var(--accent); border-radius:8px; padding:14px 16px; margin:16px 0; }
+    .lead { background:var(--panel); border:1px solid var(--border); border-left:3px solid var(--accent); border-radius:8px; padding:14px 16px; margin:16px 0; }
+    ul { padding-left:20px; } li { margin:4px 0; }
     footer { border-top:1px solid var(--border); margin-top:40px; padding-top:16px; color:var(--muted); font-size:.9rem; }
   </style>
 </head>
@@ -23,23 +24,43 @@
   <div class="wrap">
     <p><a class="home" href="/">Your<span>PHR</span></a></p>
     <h1>Privacy Policy</h1>
-    <p class="muted small">Last updated: placeholder — not yet finalized.</p>
+    <p class="muted small">Last updated: 11 June 2026</p>
 
-    <div class="draft">
-      ⚠️ <strong>Placeholder.</strong> This is a draft and not legal advice. It will be replaced with a finalized policy. If you operate a YourPHR instance, you are responsible for your own users' privacy and any applicable regulations (HIPAA, GDPR, etc.).
+    <div class="lead">
+      <strong>YourPHR is self-hosted. Your health records live on the server <em>you</em> run.</strong> The YourPHR project, its maintainers, and this website (<a href="https://yourphr.org">yourphr.org</a>) do <strong>not</strong> receive, store, transmit, sell, or have any access to your medical data. There is no YourPHR cloud, account, or back-end that holds your records.
     </div>
 
-    <h2>The short version</h2>
-    <p><strong>YourPHR is self-hosted.</strong> Your health records live on the server <em>you</em> run. The YourPHR project and this website (<a href="https://yourphr.org">yourphr.org</a>) do <strong>not</strong> receive, store, or have any access to your medical data.</p>
+    <h2>What data YourPHR handles, and where it lives</h2>
+    <p>When you self-host YourPHR, everything it processes — imported FHIR records, uploaded documents, your account, and any provider credentials or tokens — stays entirely within <strong>your own deployment</strong>. By default the database is encrypted at rest. The application does not “phone home,” send telemetry, or transmit your data to the project or any third party. As the operator, you control storage, backups, encryption, retention, and access.</p>
+
+    <h2>Connecting a healthcare provider (SMART on FHIR)</h2>
+    <p>You may choose to connect a provider or patient-access API to import your records. When you do:</p>
+    <ul>
+      <li>You authenticate <strong>directly with your provider</strong> and authorize YourPHR to read <strong>your own</strong> records. YourPHR requests read-only access and never writes to your provider.</li>
+      <li>The records retrieved are delivered to <strong>your instance</strong>, where they are displayed to you and stored locally. They are not routed through, copied to, or visible to the YourPHR project.</li>
+      <li>Access and refresh tokens are stored <strong>encrypted on your own instance</strong> and used only to fetch your records. You can disconnect a provider, which removes its stored credentials, at any time.</li>
+    </ul>
+
+    <h2>The sign-in relay</h2>
+    <p>Because a self-hosted instance is often not reachable from the public internet, completing a provider sign-in uses a small public <strong>relay</strong>. The relay receives only the short-lived authorization <em>code</em> returned by your provider, keyed by an opaque one-time value, holds it in memory for roughly 60 seconds, and deletes it once your instance retrieves it. The relay <strong>never receives access or refresh tokens and never sees any health data</strong>; your instance exchanges the code for tokens directly with the provider.</p>
+
+    <h2>How your data is used</h2>
+    <p>Within your instance, your records are used for one purpose: to display and organize <strong>your own</strong> health information for you. YourPHR does <strong>not</strong> use your data for advertising, profiling, analytics, model training, or sale, and it shares your data with no one.</p>
+
+    <h2>Your control and deletion</h2>
+    <p>You are in control of your data at all times. You can delete individual records, disconnect a provider, or remove your YourPHR instance entirely — doing so deletes the associated data from the only place it lives. Because the project holds no copy of your data, there is nothing for us to delete on your behalf.</p>
 
     <h2>This website (yourphr.org)</h2>
-    <p>This is a static informational site hosted on GitHub Pages. It sets no cookies and runs no analytics or third-party trackers. GitHub may log standard request metadata (such as IP address) to serve the page; see GitHub's privacy documentation.</p>
+    <p>This is a static informational site hosted on GitHub Pages. It sets no cookies and runs no analytics or third-party trackers. GitHub may log standard request metadata (such as IP address) to serve the page; see GitHub's privacy documentation. This website never collects health information.</p>
 
-    <h2>The YourPHR application</h2>
-    <p>When you self-host YourPHR, all data — imported FHIR records, accounts, and credentials — stays within your own deployment. The project does not phone home. As the operator, you control storage, backups, encryption, and access.</p>
+    <h2>If you operate an instance for others</h2>
+    <p>If you run a YourPHR instance that other people use, you act as the operator/controller of that deployment and are responsible for those users' privacy and for any applicable regulations (for example HIPAA or GDPR). This policy describes the software's behaviour, not a service operated by the project.</p>
+
+    <h2>Changes to this policy</h2>
+    <p>We may update this policy from time to time. Material changes will be reflected by the “Last updated” date above and published at this URL.</p>
 
     <h2>Contact</h2>
-    <p>Questions about the project: <a href="https://github.com/jwilleke/yourphr/issues">open an issue</a>.</p>
+    <p>Questions about privacy or the project: <a href="https://github.com/jwilleke/yourphr/issues">open an issue on GitHub</a>.</p>
 
     <footer>
       <a href="/">YourPHR</a> · <a href="/terms.html">Terms</a> · <a href="https://github.com/jwilleke/yourphr">GitHub</a>
