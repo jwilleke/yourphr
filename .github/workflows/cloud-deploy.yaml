@@ -30,7 +30,7 @@ jobs:
           yarn run build -- --configuration cloud_sandbox --output-path=../dist
 
       - name: Configure AWS credentials using delegated access
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: arn:aws:iam::410145376638:role/fasten-sandbox-app-gh-frontend-deploy-role
           aws-region: us-east-1
