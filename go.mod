@@ -34,10 +34,10 @@ require (
 	github.com/spf13/viper v1.12.0
 	github.com/stretchr/testify v1.11.1
 	github.com/urfave/cli/v2 v2.11.2
-	golang.org/x/crypto v0.51.0
+	golang.org/x/crypto v0.53.0
 	golang.org/x/exp v0.0.0-20220303212507-bbda1eaf7a17
-	golang.org/x/mod v0.35.0
-	golang.org/x/net v0.55.0
+	golang.org/x/mod v0.36.0
+	golang.org/x/net v0.56.0
 	gorm.io/datatypes v1.2.7
 	gorm.io/driver/sqlite v1.5.4
 	gorm.io/gorm v1.30.0
@@ -77,7 +77,7 @@ require (
 	github.com/shopspring/decimal v1.2.0 // indirect
 	go.mongodb.org/mongo-driver/v2 v2.5.0 // indirect
 	golang.org/x/image v0.38.0 // indirect
-	golang.org/x/sync v0.20.0 // indirect
+	golang.org/x/sync v0.21.0 // indirect
 )
 
 require (
@@ -133,9 +133,9 @@ require (
 	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
 	golang.org/x/arch v0.22.0 // indirect
 	golang.org/x/oauth2 v0.27.0 // indirect
-	golang.org/x/sys v0.45.0 // indirect
-	golang.org/x/term v0.43.0 // indirect
-	golang.org/x/text v0.37.0 // indirect
+	golang.org/x/sys v0.46.0 // indirect
+	golang.org/x/term v0.44.0 // indirect
+	golang.org/x/text v0.38.0 // indirect
 	google.golang.org/protobuf v1.36.10 // indirect
 	gopkg.in/ini.v1 v1.66.4 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
