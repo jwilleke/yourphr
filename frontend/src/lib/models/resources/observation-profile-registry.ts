@@ -114,9 +114,13 @@ export function observationProfileLabel(c: ObservationClassification | undefined
 export function classifyObservationProfile(fhirResource: any): ObservationClassification {
   const metaProfiles: string[] = _.get(fhirResource, 'meta.profile', []) || [];
   for (const url of metaProfiles) {
-    const matched = US_CORE_OBSERVATION_PROFILES[url];
+    // Conformant exports (and the US Core IG's own examples) version-pin meta.profile, e.g.
+    // ".../us-core-observation-lab|9.0.0". Match on the version-less canonical so a declared
+    // profile is still recognised as declared rather than silently falling back to inference.
+    const canonical = url.split('|')[0];
+    const matched = US_CORE_OBSERVATION_PROFILES[canonical];
     if (matched) {
-      return { profile: matched, kind: matched.kind, canonical: url, inferred: false };
+      return { profile: matched, kind: matched.kind, canonical, inferred: false };
     }
   }
 

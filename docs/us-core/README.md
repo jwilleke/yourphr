@@ -1,10 +1,10 @@
 # US Core support
 
-> **Status (2026-06-08):** The six Cures-Act USCDI **core** profiles are now audited for **Must-Support _display_** vs US Core 9.0.0 — Patient ([#142](https://github.com/jwilleke/yourphr/issues/142)), AllergyIntolerance ([#145](https://github.com/jwilleke/yourphr/issues/145)), Condition ([#143](https://github.com/jwilleke/yourphr/issues/143)), MedicationRequest ([#144](https://github.com/jwilleke/yourphr/issues/144)), DocumentReference ([#147](https://github.com/jwilleke/yourphr/issues/147)), and Observation (labs + vital signs incl. multi-component blood pressure, [#146](https://github.com/jwilleke/yourphr/issues/146)).
+> **Status (2026-06-11):** The six Cures-Act USCDI **core** profiles are audited for **Must-Support _display_** vs US Core 9.0.0 — Patient ([#142](https://github.com/jwilleke/yourphr/issues/142)), AllergyIntolerance ([#145](https://github.com/jwilleke/yourphr/issues/145)), Condition ([#143](https://github.com/jwilleke/yourphr/issues/143)), MedicationRequest ([#144](https://github.com/jwilleke/yourphr/issues/144)), DocumentReference ([#147](https://github.com/jwilleke/yourphr/issues/147)), and Observation (labs + vital signs incl. multi-component blood pressure, [#146](https://github.com/jwilleke/yourphr/issues/146)) — and that audit is now **verified against the official US Core 9.0.0 example resources** by a CI-enforced display-conformance gate ([#248](https://github.com/jwilleke/yourphr/issues/248)): **38 of 44** exercised Must-Support elements display, with **6 tracked gaps**. See **[conformance-coverage.md](conformance-coverage.md)**.
 >
 > **Most other resource types still render as generic FHIR R4** and ~24 Observation sub-profiles classify but render generically. (The previously-missing required resources Provenance [#162](https://github.com/jwilleke/yourphr/issues/162) and QuestionnaireResponse [#160](https://github.com/jwilleke/yourphr/issues/160) now have display models.)
 >
-> This is **display progress, not a conformance claim**: nothing has been verified against the ONC **Inferno** US Core test kit, so YourPHR is **not yet verified-conformant** to any US Core version. The rest is tracked in epic [#136](https://github.com/jwilleke/yourphr/issues/136).
+> This is a **display-conformance claim for the six audited profiles, not a server/API conformance claim**: YourPHR is a display-only Requestor/Client, so the ONC **Inferno** US Core _server_ suites are N/A (see closed [#161](https://github.com/jwilleke/yourphr/issues/161)). The client-appropriate gate is whether we surface Must-Support elements of conformant input — which the [#248](https://github.com/jwilleke/yourphr/issues/248) harness now checks against the IG's own examples. The rest is tracked in epic [#136](https://github.com/jwilleke/yourphr/issues/136).
 >
 > Path note: this lives at `docs/us-core/` (no space) for link/tooling friendliness.
 
@@ -51,7 +51,7 @@ Backend coverage is broad — ~56 generated FHIR R4 resource models with search-
 2. **Observation isn't split** into US Core's ~15 sub-profiles (vitals, labs, smoking, sexual orientation, occupation, screening, …).
 3. **Missing resources:** none outstanding — Provenance ([#162](https://github.com/jwilleke/yourphr/issues/162)) and QuestionnaireResponse ([#160](https://github.com/jwilleke/yourphr/issues/160)) display models are done.
 4. **Extensions beyond Patient** aren't handled.
-5. **No conformance verification** — nothing checked against US Core 9.0.0 examples or the ONC **Inferno** test kit.
+5. **Conformance verification — done for the six audited profiles** ([#248](https://github.com/jwilleke/yourphr/issues/248)): their Must-Support display is checked against the official US Core 9.0.0 example resources by a CI-enforced gate (see [conformance-coverage.md](conformance-coverage.md)). Not yet extended to the generically-rendered resource types. (Inferno's _server_ suites remain N/A — closed [#161](https://github.com/jwilleke/yourphr/issues/161).)
 
 ## Roadmap
 

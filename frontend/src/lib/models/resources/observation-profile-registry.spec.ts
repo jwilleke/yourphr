@@ -11,6 +11,17 @@ describe('observation profile classification', () => {
     expect(observationProfileLabel(c)).toEqual('Blood Pressure'); // named, no "(inferred)"
   });
 
+  it('classifies a version-pinned meta.profile canonical as declared (#248)', () => {
+    // Conformant exports / the US Core IG examples version-pin the profile, e.g. "...|9.0.0".
+    const c = classifyObservationProfile({
+      resourceType: 'Observation',
+      meta: { profile: ['http://hl7.org/fhir/us/core/StructureDefinition/us-core-observation-lab|9.0.0'] },
+    });
+    expect(c.inferred).toBe(false);
+    expect(c.kind).toEqual('laboratory');
+    expect(c.canonical).toEqual('http://hl7.org/fhir/us/core/StructureDefinition/us-core-observation-lab');
+  });
+
   it('infers vital-signs from category when meta.profile is absent', () => {
     const c = classifyObservationProfile({
       resourceType: 'Observation',
