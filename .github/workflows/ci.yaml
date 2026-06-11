@@ -11,6 +11,12 @@ on:
     # Publish semver tags as releases.
   release:
     types: [published]
+
+# Least-privilege default: this workflow only tests + uploads coverage (artifact
+# upload and codecov use their own tokens), so it needs no write scopes.
+permissions:
+  contents: read
+
 jobs:
   test:
     uses: ./.github/workflows/development.yaml

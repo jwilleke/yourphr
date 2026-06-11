@@ -14,6 +14,12 @@ on:
       - 'LICENSE'
   workflow_call:
 
+# Least-privilege default for every job: checkout + test + artifact upload only
+# (artifact upload uses its own token), so no write scopes are required. Also
+# caps the permissions when called as a reusable workflow from ci.yaml.
+permissions:
+  contents: read
+
 jobs:
   test-frontend:
     name: Test Frontend

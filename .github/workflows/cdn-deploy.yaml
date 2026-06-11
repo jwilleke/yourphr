@@ -16,6 +16,13 @@ on:
           - info
           - warning
           - debug
+
+# Least-privilege default: the sync job only checks out and pushes to another repo
+# via an SSH deploy key (not GITHUB_TOKEN), so it needs no write scopes. (Job is also
+# gated to the upstream repo and never runs on this fork.)
+permissions:
+  contents: read
+
 env:
   SSH_DEPLOY_KEY: ${{ secrets.FASTENHEALTH_CDN_SSH_DEPLOY_KEY }}
 jobs:
