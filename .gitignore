@@ -137,3 +137,4 @@ secrets.*
 /frontend/e2e/.e2e-pass
 private/
 .claude/settings.local.json
+.claude/worktrees/

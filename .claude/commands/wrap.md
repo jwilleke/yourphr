@@ -1,75 +1,57 @@
-# /wrap — close the session safely
+# Warp — session parking-lot wrap-up
 
-End-of-session ritual. Run it **last**, before shutting down VS Code. It makes sure every change is
-committed, refreshes the "Resume here" pointer at the top of the log, and reports whether it is safe
-to close.
+End-of-session handoff: leave clean breadcrumbs so the next session can pick up immediately with full context. Lighter than `/session-commit` — no code work, just state capture and push.
 
-## Steps
+## When to use
 
-### Step 1: Survey everything outstanding
+Run `/warp` when wrapping a session that has open threads that were **discussed but not completed**, or where context needs to be parked so the next session doesn't have to re-derive it. For sessions where all work is committed and closed, `/session-commit` is sufficient; `/warp` is the follow-on when there's still a parking lot.
 
-Git state:
+## Phase 1 — Inventory open threads
 
-- `git status -sb` — uncommitted changes, untracked files, branch + ahead/behind
-- `git stash list` — forgotten stashes
-- `git log --oneline @{u}..HEAD` — unpushed commits
+For each repo with active work this session, gather:
 
-In-flight work that a shutdown would orphan (note status of each, anything of significance):
+- `gh issue list --repo <owner>/<repo> --state open --limit 50` for any repo touched this session (not just the standard three)
+- `git -C ~/thishost status --porcelain`
+- Read `~/thishost/TODO.md`
 
-- **Workflows / background agents** still running this session (e.g. `/workflows`, background tasks) — capture what each is doing and whether it finished.
-- **Running processes** started this session — dev servers, watchers, background shells, tunnels.
-- **CI in progress** — `gh run list --limit 5` (anything `in_progress`/`queued`).
-- **Open PRs awaiting action** — `gh pr list` (review/merge state).
-- **Scheduled tasks / routines** that will fire (`/schedule` list, cron).
+Identify:
 
-### Step 2: Commit outstanding work
+- **In-flight:** issues where work started but isn't merged/closed
+- **Blocked:** issues waiting on a dependency (name it explicitly)
+- **Expiring:** anything with a stated deadline or soak window that closes soon
+- **Next-session starters:** the most logical first issue to pick up next time
 
-- If the working tree has changes other than intentionally-local files
-  (`.claude/settings.local.json`, anything under `private/`), run the `/session-commit` flow to
-  commit them (code + `TODO.md` + a journal entry). Otherwise note "nothing to commit".
+## Phase 2 — Post GitHub status comments
 
-### Step 3: Refresh the "Resume here" pointer
+For every **in-flight** or **blocked** issue touched this session, post a comment with:
 
-Overwrite the marker-delimited block at the **top** of `TODO.md` (above the generated priority
-bands) so the next session — on any machine, since `TODO.md` is committed — knows exactly where to
-pick up:
+- What was done / what state it's in
+- What the specific next action is
+- What it's blocked on (if anything)
+- Any commands or file paths the next session will need
 
-```text
-<!-- RESUME:START -->
-## ▶ Resume here — yyyy-MM-dd
+Keep comments terse — they're for the operator, not a public audience.
 
-- Last worked on: one-line summary
-- Branch / state: BRANCH, clean | N unpushed | N stashes
-- Running / in-flight: workflows, background agents, dev servers, in-progress CI — or "none"
-- Parked / half-done: uncommitted experiments, partial work — or "none"
-- Next steps:
-  - the next concrete action
-- Blockers / significant notes: or "none"
-<!-- RESUME:END -->
-```
+## Phase 3 — Session log entry
 
-Insert the block right after the `# TODO` title (the markers will usually be absent, since `/status`
-regenerated a bands-only `TODO.md` during the session; replace the block if it is present). This
-reflects only the latest handoff — `/context` reads it next session, then the first `/status` clears
-it again.
+Append a session entry to `~/thishost/docs/project_log.md` using the standard format. Mark it clearly as a warp/handoff entry in the Subject line. Include a "Parked threads" sub-list under Work Done for anything left open.
 
-### Step 4: Commit the refreshed pointer & push (ask)
+Run `npx --yes markdownlint-cli docs/project_log.md` before committing.
 
-- Stage and commit `TODO.md` if the Resume block changed (`docs: refresh resume pointer`).
-- If there are unpushed commits, ask the operator whether to push before shutdown.
+## Phase 4 — Update TODO.md
 
-### Step 5: Shutdown-readiness verdict
+Reconcile `TODO.md` against the live trackers (same as `/check-todos` Phase 1–5). Pay special attention to:
 
-Report one clear verdict:
+- Any new issues filed this session
+- Any repos not currently in the standard three that now have tracked work
+- Any items with imminent deadlines that need a flag in the summary line
 
-- ✅ **Safe to close** — working tree clean (or only intentional local files), commits pushed
-  (or explicitly held), nothing running, resume pointer written.
-- ⚠️ **Attention** — list anything a shutdown would interrupt or that would be forgotten:
-  still-running workflows / background agents / dev servers, in-progress CI, untracked files
-  not committed, stashes, unpushed commits held locally by choice.
+## Phase 5 — Commit and push
+
+Stage `docs/project_log.md`, `TODO.md`, and any updated command files. Commit with `log: warp yyyy-MM-dd-## — <one-line subject>`. Ask before pushing to any remote.
 
 ## Notes
 
-- `/wrap` is the close bookend to `/context` (open) and complements `/session-commit` (per-chunk).
-- `/context` and `/status` read the `▶ Resume here` block at the top of `TODO.md` first to restore
-  continuity. The dated session history stays in `private/project_log.md`.
+- Never commit code changes here — that belongs in `/session-commit`. This command only touches docs and `TODO.md`.
+- If a new repo came into scope this session (e.g. `yourphr`), decide whether it belongs in the standard `/check-todos` coverage and update `check-todos.md` if so.
+- Time-sensitive items (soak windows, freeze dates, deployment windows) should be called out explicitly in the session log entry, not just listed in TODO.
