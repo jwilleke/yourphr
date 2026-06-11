@@ -1,6 +1,6 @@
 # ClientID Friction
 
-By far the biggest issue in the project has been the otaining of ClientID to be able to make requests.
+By far the biggest issue in the project has been the obtaining of ClientID to be able to make requests.
 
 Most systems require you to register your app separately with each EHR vendor, and some make you register per health system. Here's how to get around a lot of that:
 
@@ -12,8 +12,6 @@ Most systems require you to register your app separately with each EHR vendor, a
 Target systems that support standalone patient launch (where the patient logs into their portal and authorizes your app).
 
 Focus on patient-facing SMART on FHIR apps — that's the cleanest way for your open source PHR to pull data from major EHRs like Epic, Cerner/Oracle Health, Athenahealth, and others without needing direct vendor partnerships everywhere.
-
-Most systems require you to register your app separately with each EHR vendor, and some make you register per health system. Here's how to get around a lot of that:
 
 ## App registration values (paste these)
 
