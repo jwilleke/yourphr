@@ -16,11 +16,10 @@
 
 ## 🔴 P0 — Security & Critical
 
-_none — #258 resolved & closed (alerts dismissed)._
+_none — security board clean (0 open code-scanning / Dependabot alerts; #258 + #259 resolved)._
 
 ## 🟠 P1
 
-- #259 [SECURITY] Missing explicit permissions blocks in GitHub Actions workflows
 - #254 [FEATURE] Support C-CDA / CCD document import and parsing
 - #255 [FEATURE] Support for PDFs (upload + display)
 - #250 [FEATURE] Add CMS Blue Button 2.0 as a SMART-on-FHIR sync source
