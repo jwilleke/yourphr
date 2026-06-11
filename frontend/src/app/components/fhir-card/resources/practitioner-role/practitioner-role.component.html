@@ -1,0 +1,14 @@
+<div class="card card-fhir-resource">
+  <div class="card-header" (click)="isCollapsed = ! isCollapsed">
+    <div>
+      <h6 class="card-title">{{displayModel?.title}}</h6>
+    </div>
+    <fhir-ui-badge class="float-right" *ngIf="displayModel?.status" [status]="displayModel?.status">{{displayModel?.status}}</fhir-ui-badge>
+  </div>
+  <div #collapse="ngbCollapse" [(ngbCollapse)]="isCollapsed" class="card-body">
+    <fhir-ui-table [displayModel]="displayModel" [tableData]="tableData"></fhir-ui-table>
+  </div>
+  <div *ngIf="showDetails" class="card-footer">
+    <a class="float-right" [routerLink]="['/explore', displayModel?.source_id, 'resource', displayModel?.source_resource_id]">details</a>
+  </div>
+</div>

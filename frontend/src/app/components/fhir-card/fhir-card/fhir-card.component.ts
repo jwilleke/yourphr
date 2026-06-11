@@ -46,6 +46,7 @@ import {SpecimenComponent} from '../resources/specimen/specimen.component';
 import {RelatedPersonComponent} from '../resources/related-person/related-person.component';
 import {FamilyMemberHistoryComponent} from '../resources/family-member-history/family-member-history.component';
 import {ConditionComponent} from '../resources/condition/condition.component';
+import {PractitionerRoleComponent} from '../resources/practitioner-role/practitioner-role.component';
 
 
 @Component({
@@ -201,9 +202,9 @@ export class FhirCardComponent implements OnInit, OnChanges {
       case "Practitioner": {
         return PractitionerComponent;
       }
-      // case "PractitionerRole": {
-      //   return PractitionerRoleComponent;
-      // }
+      case "PractitionerRole": {
+        return PractitionerRoleComponent;
+      }
       case "ServiceRequest": {
         return ServiceRequestComponent;
       }
