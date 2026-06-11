@@ -47,7 +47,7 @@ jobs:
 
       - name: Extract Docker metadata
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           tags: |
             type=raw,value=main,enable=${{ github.ref_name == 'main' }}

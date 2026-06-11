@@ -58,7 +58,7 @@ jobs:
 
       - name: Extract Docker metadata
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           # The semver + :latest tags only fire on v*.*.* tag pushes (cut by release-please);
           # the two main/main-<N> tags only fire on pushes to the main branch.
