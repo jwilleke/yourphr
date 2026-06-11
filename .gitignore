@@ -136,3 +136,5 @@ secrets.*
 /frontend/blob-report/
 /frontend/playwright/.cache/
 /frontend/e2e/.e2e-pass
+private/
+.claude/settings.local.json

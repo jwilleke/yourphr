@@ -1,0 +1,21 @@
+// Canonical markdown rules for all repos.
+// Identical to the global VSCode `markdownlint.config`, so the editor, CLI
+// (markdownlint-cli2), CI, husky hooks and AI agents ALL read the same rulebook.
+// This file is the single source of truth — shipped by the kit, never per-repo edited.
+{
+  "default": true,
+  "MD003": { "style": "atx" },           // headings use # / ## (atx) style
+  "MD004": { "style": "dash" },          // bullet lists use "-"
+  "MD007": { "indent": 2 },              // nested lists indent 2 spaces
+  "MD013": false,                         // no line-length limit (long prose is fine)
+  "MD024": { "siblings_only": true },    // repeated sub-headings under different sections OK
+  "MD025": { "front_matter_title": "" }, // a frontmatter title does not count as the H1
+  "MD033": true,                          // inline HTML NOT allowed (flagged)
+  "MD036": true,                          // bold-used-as-a-heading is flagged
+  "MD040": false,                         // code fences need not declare a language
+  "MD041": false,                         // first line need not be a heading (frontmatter)
+  "MD055": false,                         // table pipe-style / column nitpicks off
+  "MD056": false,
+  "MD058": false,
+  "MD060": false
+}
