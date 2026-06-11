@@ -16,7 +16,7 @@
 
 ## 🔴 P0 — Security & Critical
 
-- #258 [SECURITY] go/sql-injection — fix shipped (21c961b6); open pending CodeQL re-scan / alert dismissal
+_none — #258 resolved & closed (alerts dismissed)._
 
 ## 🟠 P1
 
