@@ -21,11 +21,15 @@ The dashboard is **config-driven**:
 - `frontend/src/app/models/widget/dashboard-config.ts` + `dashboard-widget-config.ts` — the config model: which widgets render, in what order, with what query/config.
 - `frontend/src/app/widgets/` — the widget components (one per visualization), each implementing `dashboard-widget-component-interface.ts`.
 
-### Default layout (decided in #244)
+### The Patient Dashboard (current default)
 
-- **A compact default dashboard scoped to the Cures-Act core** — Problems, Medications, Allergies, Labs, Vitals, Clinical Notes — the categories a person most needs.
-- **A separate "All categories" view** for the long tail.
-- A **generic `profile-summary-widget`** (config row per profile group, #245) covers list-style profiles, reusing the #136 `fhir-card`s for detail — plus a few **bespoke** widgets only where a summary line isn't enough (vitals trends, blood pressure, status values). Not ~17 bespoke widgets.
+`backend/pkg/web/handler/dashboard/default.json` is the single dominant **Patient Dashboard**. It leads with the Cures-Act core in the order a person cares about, and carries **no demo/placeholder data**:
+
+1. Medications · 2. Problems · 3. Allergies · 4. Immunizations · 5. Procedures · 6. Clinical Notes · 7. Patient Vitals · 8. Blood Pressure · 9. Weight · 10. Height · 11. Recent Encounters · 12. Care Team
+
+The earlier upstream "Example Dashboard" (which led with fake "Records Summary"/"Compliance" demo widgets) and the demo-only "Secondary Dashboard" were removed — see #262/#244. The handler embeds and lists `dashboard/*.json`, so a config file *is* a dashboard.
+
+A **generic `profile-summary-widget`** (config row per profile group, #245) covers list-style profiles, reusing the #136 `fhir-card`s for detail — plus a few **bespoke** widgets where a summary line isn't enough (vitals trends, blood pressure). Future long-tail categories can go in a separate "All categories" dashboard (just add another `dashboard/*.json`), per #244.
 
 Full rationale and decisions: [`docs/planning/per-profile-dashboards-brainstorm.md`](../planning/per-profile-dashboards-brainstorm.md) and epic #244.
 
