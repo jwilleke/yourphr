@@ -3,12 +3,13 @@
 <!-- RESUME:START -->
 ## ▶ Resume here — 2026-06-12
 
-- Last worked on: **BS5 base migration LANDED on main** (#265 closed; commits 6d3eb3aa + 51f92708) — bootstrap@5.3.8, compat shims, breakpoint shift, full template sweep. Verified before push: prod+sandbox+storybook builds, 450 unit tests, 11 e2e — all green. (Note: an earlier resume pointer called this "Jim's WIP — do not commit"; it was this Claude session's work, finished and verified.) UI direction settled with Jim and recorded on #209: full-width fluid shell + left-rail master-detail (modeled on source-detail `/explore/<id>`), plain-language categories, big readable content; widget-grid dashboard is dead; the BS5 migration lands the NEW look (no Azia fidelity).
+- Last worked on: **BS5 base migration (#265, image `main-242`) + patient-first tile dashboard (slice 1, commit 4b4b439a, image `main-243`) LANDED on main.** Tile dashboard: full-width, "Current Medical Concerns" (explicitly-active conditions) on top, large-icon category tiles (plain label + clinical term + counts) routing to detail pages, drag-to-reorder w/ localStorage persistence + reset-to-default. Verified: 460 unit tests, 11 e2e, desktop+mobile screenshots. Jim's refinements applied from design review: tiles lead to category detail pages; concerns first; plain/clinical label mix.
 - Branch / state: main, in sync with origin, working tree clean except Jim's untracked `docs/your-phr-dashboard/# Patient Dashboard.md`. 2 unrelated pre-existing stashes on other branches.
 - Running / in-flight: CI/Docker building the BS5 commits → Flux will deploy. Interim visual roughness on live is expected and accepted (per #265).
 - Parked / half-done: BS4 compat shims (`assets/scss/bootstrap/_mixins.scss` top block + `assets/scss/_bs4-shims.scss`) are transitional — delete as Azia partials retire (#209).
 - Next steps:
-  - **Slice 1 of #209: full-width fluid shell + left-rail record navigation as the default view** (per the #209 direction comment 2026-06-12). Drop `.container` caps, promote source-detail's master-detail pattern app-wide, plain-language category rail with counts (#262), mobile = collapsed rail/bottom nav.
+  - **Slice 2 of #209: left-rail record browser** — give every tile category a true detail page (source-detail's master-detail pattern app-wide, counts in the rail); drop remaining `.container` caps on other pages.
+  - Move dashboard tile-order persistence from localStorage into backend `user_settings` (cross-device).
   - Then: retire Azia partials chunk-by-chunk (layout → template → bootstrap overrides), deleting shims as they go; theme via native BS5 CSS variables (open-source requirement, supersedes the old Tabler/CoreUI shortlist unless Jim prefers a theme base).
   - Optional: set `CODECOV_TOKEN` repo secret to light up the badge (codecov.yml already non-blocking & ready).
 - Blockers / significant notes: Visual direction is now DECIDED (see #209 comment + ui-direction memory) — stop re-litigating aesthetics; build the left-rail shell. #264 raw-card title "unknown" remains (blocked, low-pri). #254 Phase 4 real-world CCD validation is still Jim's to run on the live instance.
