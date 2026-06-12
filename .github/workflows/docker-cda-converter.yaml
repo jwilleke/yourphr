@@ -1,0 +1,77 @@
+name: Docker (YourPHR CDA converter)
+# Builds Metriport's open-source fhir-converter (C-CDA -> FHIR R4) from a PINNED ref and pushes
+# ghcr.io/<owner>/yourphr-cda-converter. This is the sidecar for manual C-CDA/CCD import (#254).
+#
+# MANUAL trigger only: this repackages a THIRD-PARTY AGPL-3.0 image, so publishing is a deliberate
+# operator action. The corresponding source is Metriport's public repo at the pinned ref (recorded
+# in the image's org.opencontainers.image.source / .revision labels), satisfying AGPL source
+# correspondence. linux/amd64 only (sufficient for the x86_64 k3s node). Deployed via
+# jwilleke/mj-infra-flux; the converter is INTERNAL-ONLY (raw CCD is PHI) — never expose it publicly.
+
+on:
+  workflow_dispatch:
+    inputs:
+      metriport_ref:
+        description: "Metriport git ref (commit SHA or tag) to build from"
+        required: true
+        default: "c6751a33ac5dc7aae18a041dca42e14a5a482111"
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository_owner }}/yourphr-cda-converter
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: docker-cda-converter
+  cancel-in-progress: true
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone Metriport fhir-converter at the pinned ref
+        run: |
+          git clone --filter=blob:none --no-checkout https://github.com/metriport/metriport.git metriport
+          cd metriport
+          git checkout "${{ inputs.metriport_ref }}"
+          echo "Building fhir-converter at $(git rev-parse HEAD)"
+
+      - name: Log into registry ${{ env.REGISTRY }}
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=main
+            type=raw,value=${{ inputs.metriport_ref }}
+          labels: |
+            org.opencontainers.image.title=YourPHR C-CDA converter
+            org.opencontainers.image.description=Metriport fhir-converter (C-CDA -> FHIR R4) repackaged for YourPHR C-CDA import (#254).
+            org.opencontainers.image.source=https://github.com/metriport/metriport
+            org.opencontainers.image.revision=${{ inputs.metriport_ref }}
+            org.opencontainers.image.licenses=AGPL-3.0-only
+
+      - name: Build and push image
+        uses: docker/build-push-action@v7
+        with:
+          context: metriport/packages/fhir-converter
+          file: metriport/packages/fhir-converter/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

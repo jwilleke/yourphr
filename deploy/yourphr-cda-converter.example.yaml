@@ -1,0 +1,61 @@
+# Example manifests for the YourPHR C-CDA converter sidecar (#254).
+# Copy into mj-infra-flux (apps/.../yourphr-cda-converter/) and adjust.
+#
+# INTERNAL-ONLY: this service receives raw C-CDA documents (full PHI). It must have NO Ingress and
+# must never be reachable from outside the cluster. The YourPHR app reaches it in-cluster at
+# http://yourphr-cda-converter:8080 — set that as `cda_converter.url` in the app config and set
+# `cda_converter.enabled: true`.
+#
+# The image is built/pushed by .github/workflows/docker-cda-converter.yaml (manual trigger). It
+# repackages Metriport's AGPL-3.0 fhir-converter; the corresponding source/ref is recorded in the
+# image labels.
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: yourphr-cda-converter
+  namespace: fasten
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: yourphr-cda-converter
+  template:
+    metadata:
+      labels:
+        app: yourphr-cda-converter
+    spec:
+      containers:
+        - name: cda-converter
+          image: ghcr.io/jwilleke/yourphr-cda-converter:main
+          ports:
+            - containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 20
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              memory: 512Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: yourphr-cda-converter
+  namespace: fasten
+spec:
+  selector:
+    app: yourphr-cda-converter
+  ports:
+    - port: 8080
+      targetPort: 8080
+# NOTE: intentionally NO Ingress — this service is internal-only (raw CCD is PHI).

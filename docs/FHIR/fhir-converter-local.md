@@ -81,6 +81,12 @@ cda_converter:
 
 With it enabled, a `.xml` / `.ccd` upload (manual upload or the UI) is detected, converted by this sidecar, and imported — the raw CCD never leaves the instance. With it disabled, a CCD upload returns a clear "C-CDA import is not enabled" error.
 
-## Production (Phase 2)
+## Packaged image + deploy (Phase 2)
 
-The sidecar is intended to be packaged and deployed like the relay (`yourphr-relay`): build/push `ghcr.io/jwilleke/yourphr-cda-converter` via a workflow mirroring `docker-relay.yaml`, deploy a Deployment + Service via `jwilleke/mj-infra-flux`, and reach it at the in-cluster DNS name. It must be **internal-only (no Ingress)** — the raw CCD is full PHI and must never leave the cluster. Tracked in [#254](https://github.com/jwilleke/yourphr/issues/254) Phase 2.
+The sidecar is packaged like the relay (`yourphr-relay`).
+
+- **Image build:** `.github/workflows/docker-cda-converter.yaml` — a **manual** (`workflow_dispatch`) job that clones Metriport at a **pinned ref** and pushes `ghcr.io/jwilleke/yourphr-cda-converter` (tags `:main` and `:<ref>`). It is manual because it repackages a third-party **AGPL-3.0** image; the corresponding source/ref is recorded in the image's `org.opencontainers.image.source` / `.revision` / `.licenses` labels (AGPL source correspondence). Run it from the Actions tab, optionally overriding the `metriport_ref` input, to publish/refresh the image.
+- **Dev (docker-compose):** a `cda-converter` service is defined under the `cda` profile in `docker-compose.yml`. Start the app with the converter via `docker compose --profile cda up`; the app reaches it on the compose network at `http://cda-converter:8080` (set `cda_converter.url` accordingly). It is not published to a host port.
+- **Prod (k8s/Flux):** copy `deploy/yourphr-cda-converter.example.yaml` into `jwilleke/mj-infra-flux` (`apps/.../yourphr-cda-converter/`). It is a Deployment + Service in the `fasten` namespace with **no Ingress** — the converter is **internal-only** (raw CCD is full PHI and must never leave the cluster). The app reaches it at `http://yourphr-cda-converter:8080`.
+
+Tracked in [#254](https://github.com/jwilleke/yourphr/issues/254).

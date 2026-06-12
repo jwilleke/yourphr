@@ -20,3 +20,15 @@ services:
       - ./db:/opt/fasten/db
       - ./certs:/opt/fasten/certs/shared
 #      - ./config.example.yaml:/opt/fasten/config/config.yaml
+
+  # Optional C-CDA/CCD converter sidecar (#254). Only started with `--profile cda`, so the
+  # default `docker compose up` is unaffected. Uses the image built by
+  # .github/workflows/docker-cda-converter.yaml. INTERNAL ONLY — not published to a host port;
+  # `fasten` reaches it on the compose network at http://cda-converter:8080. Point the app at it
+  # with cda_converter.enabled: true and cda_converter.url: http://cda-converter:8080.
+  cda-converter:
+    image: ghcr.io/jwilleke/yourphr-cda-converter:main
+    profiles: ["cda"]
+    restart: unless-stopped
+    expose:
+      - "8080"
