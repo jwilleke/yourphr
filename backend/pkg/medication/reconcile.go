@@ -92,6 +92,23 @@ func Reconcile(resources []InputResource, now time.Time) []ReconciledMedication 
 	groups := map[string]*group{}
 	var order []string // preserve first-seen order before final sort
 
+	// Index standalone Medication resources by their reference ("Medication/{id}") so a
+	// non-contained medicationReference on a Statement/Request can resolve to the drug name.
+	// (CCD/Metriport imports emit the Medication separately with no inline display — #254/#262.)
+	medByRef := map[string]*fhirCodeableConcept{}
+	for _, in := range resources {
+		if in.SourceResourceType != "Medication" {
+			continue
+		}
+		var m rawMedicationResource
+		if json.Unmarshal(in.Raw, &m) != nil {
+			continue
+		}
+		if m.Code != nil {
+			medByRef["Medication/"+in.SourceResourceID] = m.Code
+		}
+	}
+
 	for _, in := range resources {
 		var r rawMedicationResource
 		if err := json.Unmarshal(in.Raw, &r); err != nil {
@@ -106,7 +123,7 @@ func Reconcile(resources []InputResource, now time.Time) []ReconciledMedication 
 			continue
 		}
 
-		name, codings, rxCode := r.medication()
+		name, codings, rxCode := r.medication(medByRef)
 		key := dedupKey(name, rxCode)
 
 		g, ok := groups[key]

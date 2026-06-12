@@ -186,3 +186,24 @@ func TestReconcile_PRNFrequency(t *testing.T) {
 	require.Equal(t, "As needed (PRN)", meds[0].Frequency)
 	require.Equal(t, "1 g", meds[0].Dose)
 }
+
+// CCD/Metriport shape: the medication name lives in a SEPARATE Medication resource referenced by
+// "Medication/{id}" with no inline display. Without separate-reference resolution the title falls
+// through to empty/"unknown" (#254/#262). The Medication resource is in the same input set.
+func TestReconcile_ResolvesSeparateMedicationReference(t *testing.T) {
+	stmt := `{"resourceType":"MedicationStatement","status":"active",
+		"medicationReference":{"reference":"Medication/med1"},
+		"effectivePeriod":{"end":"2013-08-15T00:00:00.000Z"},
+		"dosage":[{"route":{"coding":[{"code":"C38288","display":"ORAL"}]},"doseAndRate":[{"doseQuantity":{"value":1}}]}]}`
+	med := `{"resourceType":"Medication","id":"med1",
+		"code":{"coding":[{"system":"http://www.nlm.nih.gov/research/umls/rxnorm","code":"314076","display":"Lisinopril 10 MG Oral Tablet"}]}}`
+
+	meds := Reconcile([]InputResource{
+		res("MedicationStatement", "s1", stmt),
+		res("Medication", "med1", med),
+	}, now)
+
+	require.Len(t, meds, 1)
+	require.Equal(t, "Lisinopril 10 MG Oral Tablet", meds[0].Title, "name should resolve from the separate Medication resource, not be 'unknown'")
+	require.Equal(t, "314076", meds[0].RxNormCode)
+}

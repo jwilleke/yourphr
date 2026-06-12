@@ -73,6 +73,7 @@ type rawMedicationResource struct {
 	MedicationCodeableConcept *fhirCodeableConcept `json:"medicationCodeableConcept"`
 	MedicationReference       *fhirReference       `json:"medicationReference"`
 	Contained                 []fhirContained      `json:"contained"`
+	Code                      *fhirCodeableConcept `json:"code"` // Medication.code, when the resource itself is a standalone Medication
 
 	AuthoredOn        string      `json:"authoredOn"`
 	WhenHandedOver    string      `json:"whenHandedOver"`
@@ -104,7 +105,7 @@ func (r *rawMedicationResource) resolvedType() string {
 // medication resolves the display name, the original codings (for passthrough), and the RxNorm code
 // if present. Resolution order mirrors the sort_title generator: medicationCodeableConcept →
 // medicationReference.display → a contained Medication referenced by "#id".
-func (r *rawMedicationResource) medication() (name string, codings []fhirCoding, rxCode string) {
+func (r *rawMedicationResource) medication(medByRef map[string]*fhirCodeableConcept) (name string, codings []fhirCoding, rxCode string) {
 	cc := r.MedicationCodeableConcept
 	if cc == nil && r.MedicationReference != nil {
 		if ref := r.MedicationReference.Reference; strings.HasPrefix(ref, "#") {
@@ -114,6 +115,14 @@ func (r *rawMedicationResource) medication() (name string, codings []fhirCoding,
 					cc = r.Contained[i].Code
 					break
 				}
+			}
+		} else if ref != "" {
+			// non-contained "Medication/{id}" reference — resolve against the standalone Medication
+			// resources in the same data set. CCD/Metriport imports emit the Medication as a separate
+			// resource with no inline display, so without this the name falls through to "unknown"
+			// (#254/#262).
+			if resolved := medByRef[ref]; resolved != nil {
+				cc = resolved
 			}
 		}
 	}
