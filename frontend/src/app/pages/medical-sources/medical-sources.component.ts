@@ -17,7 +17,6 @@ import {MedicalSourcesFilter, MedicalSourcesFilterService} from '../../services/
 import {FormControl, FormGroup} from '@angular/forms';
 import * as _ from 'lodash';
 import {PatientAccessBrand} from '../../models/patient-access-brands';
-import {PlatformService} from '../../services/platform.service';
 import {FormRequestHealthSystemComponent} from '../../components/form-request-health-system/form-request-health-system.component';
 import {extractErrorFromResponse} from '../../../lib/utils/error_extract';
 import {SmartAuthorizeResponse} from '../../models/fasten/smart-authorize';
@@ -93,7 +92,6 @@ export class MedicalSourcesComponent implements OnInit {
   constructor(
     private connectGatewayApi: ConnectGatewayService,
     private fastenApi: FastenApiService,
-    private platformApi: PlatformService,
     private activatedRoute: ActivatedRoute,
     private filterService: MedicalSourcesFilterService,
     private modalService: NgbModal,
@@ -211,25 +209,15 @@ export class MedicalSourcesComponent implements OnInit {
     let processingFile = files[0] as File
     this.uploadedFile = [processingFile]
 
-    if(processingFile.type == "text/xml"){
-
+    // C-CDA / CCD documents are converted to FHIR on the server (#254) by the self-hosted
+    // fhir-converter — the raw document is uploaded as-is and never leaves this instance.
+    // (Previously the browser shipped the CCDA to a third-party cloud; that path is gone.)
+    if(this.isCcdaFile(processingFile)){
       const shouldConvert = await this.showCcdaWarningModal()
-      if(shouldConvert){
-        try {
-          const convertedFile = await this.platformApi.convertCcdaToFhir(processingFile).toPromise()
-          processingFile = convertedFile
-        } catch(err){
-          console.error(err)
-          this.uploadErrorMsg = "Error converting file: " + (extractErrorFromResponse(err) || "Unknown Error")
-          this.uploadedFile = []
-          return
-        }
-
-      } else {
+      if(!shouldConvert){
         this.uploadedFile = []
         return
       }
-
     }
 
     //TODO: handle manual bundles.
@@ -247,6 +235,14 @@ export class MedicalSourcesComponent implements OnInit {
         this.uploadedFile = []
       }
     )
+  }
+
+  // Detects a C-CDA / CCD document upload by MIME type or file extension. The browser does not
+  // always set a reliable `type` for .ccd/.cda, so extension is the primary signal.
+  private isCcdaFile(file: File): boolean {
+    const name = (file.name || "").toLowerCase()
+    return file.type === "text/xml" || file.type === "application/xml" ||
+      name.endsWith(".xml") || name.endsWith(".ccd") || name.endsWith(".ccda") || name.endsWith(".cda")
   }
 
   showCcdaWarningModal(): Promise<boolean> {

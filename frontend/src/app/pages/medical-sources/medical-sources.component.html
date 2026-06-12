@@ -38,7 +38,7 @@
                (dragleave)="dragActive = false"
                (drop)="onBundleDrop($event)">
             <input #bundleInput type="file" class="d-none"
-                   accept=".json,.phr,.ndjson,.jsonl,.xml,.ccda,.cda"
+                   accept=".json,.phr,.ndjson,.jsonl,.xml,.ccd,.ccda,.cda"
                    (change)="onBundleInput(bundleInput)">
             <ng-container *ngIf="!uploadedFile.length; else selectedFiles">
               <i class="fas fa-cloud-upload-alt"></i>
