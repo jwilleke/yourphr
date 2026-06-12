@@ -4,9 +4,9 @@
 ## ▶ Resume here — 2026-06-12
 
 - Last worked on: Shipped C-CDA import end-to-end (#254 — converter sidecar built/published/deployed, backend+frontend, dosage/route card fix); patient-legible display north star (#262) + med name-resolution + dosage/route (#264); a clean **Patient Dashboard** (deployed, `:main-240`). Then pivoted: Jim flagged the dashboard's **visual design** is cramped/clinical/ugly — moving to a UI re-skin.
-- Branch / state: main, in sync with origin, **clean except 2 WIP files** (Jim's BS5 migration — see Parked)
+- Branch / state: main, in sync with origin (only the resume pointer is committed). **~90 uncommitted files** = Jim's large in-progress BS5 migration (see Parked).
 - Running / in-flight: none. CI/Docker green (`:main-240` Patient Dashboard live; `:main-241` codecov build done). No servers/containers running.
-- Parked / half-done: **Jim's in-progress Bootstrap 5 migration (#209)** — uncommitted `frontend/package.json` (bootstrap 4.4.1→5.3.8) + `badge.component.html` (float-right→float-end). Incomplete — do NOT commit/deploy (BS5 CSS vs BS4 markup app-wide will break the UI until fully migrated). 2 unrelated pre-existing stashes on other branches (not this session).
+- Parked / half-done: **Jim's extensive in-progress Bootstrap 5 migration (#209)** — ~90 uncommitted files: `package.json`/`yarn.lock` (bootstrap 4.4.1→5.3.8), ~80 component `.html` (BS4→BS5 class renames: float-right→float-end, etc.), and SCSS layout/template files (`_content/_header/_sidebar/...`). **Incomplete — do NOT commit/deploy or disturb** (a half-migrated app breaks the UI). Also untracked `docs/your-phr-dashboard/# Patient Dashboard.md` (Jim's notes). 2 unrelated pre-existing stashes on other branches.
 - Next steps:
   - **Decide the UI re-skin direction.** Shortlisted open-source BS5 themes: Tabler (best look, fully MIT), CoreUI Angular (best framework fit, some Pro), Mazer, AdminLTE — Jim to pick → re-skin against #209.
   - Quick objective wins regardless of theme: make the app **full-width** (it's boxed in a narrow Bootstrap `.container`); shift the primary view toward the **Explore-style layout** (left nav + wide readable content + patient header banner).
