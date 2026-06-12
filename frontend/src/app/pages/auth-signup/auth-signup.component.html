@@ -20,7 +20,7 @@
 
       <form (ngSubmit)="signupSubmit()" #userForm="ngForm">
 
-        <div class="form-group">
+        <div class="mb-3">
           <label>Your name</label>
           <input [(ngModel)]="newUser.full_name" name="full_name" #full_name="ngModel" required minlength="2" type="text" class="form-control" placeholder="Enter your firstname and lastname">
 
@@ -32,9 +32,9 @@
               Name must be at least 2 characters long.
             </div>
           </div>
-        </div><!-- form-group -->
+        </div><!-- mb-3 -->
 
-        <div class="form-group">
+        <div class="mb-3">
           <label>Username</label>
           <input [(ngModel)]="newUser.username" name="username" #username="ngModel" required minlength="4" type="text" class="form-control" autocapitalize="none" placeholder="Enter your username">
 
@@ -47,8 +47,8 @@
             </div>
           </div>
 
-        </div><!-- form-group -->
-        <div class="form-group">
+        </div><!-- mb-3 -->
+        <div class="mb-3">
           <label>Password</label>
           <input [(ngModel)]="newUser.password" name="password" #password="ngModel" required minlength="8" type="password" class="form-control" placeholder="Enter your password">
 
@@ -60,8 +60,8 @@
               Password must be at least 8 characters long.
             </div>
           </div>
-        </div><!-- form-group -->
-        <button [disabled]="!userForm.form.valid || loading" type="submit" class="btn btn-az-primary btn-block">Create Account</button>
+        </div><!-- mb-3 -->
+        <button [disabled]="!userForm.form.valid || loading" type="submit" class="btn btn-az-primary w-100">Create Account</button>
 
         <div *ngIf="errorMsg" class="alert alert-danger mt-3" role="alert">
           <strong>Error</strong> {{errorMsg}}

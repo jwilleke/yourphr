@@ -34,11 +34,11 @@
                         </td>
                         <td>{{backgroundJob.job_type}}</td>
                         <td container="body" [ngbTooltip]="backgroundJob.created_at | date:'yyyy-MM-dd HH:mm'">{{backgroundJob.created_at | date:'longDate'}}</td>
-                        <td><label class="badge badge-pill" [ngClass]="{
-                                      'badge-secondary': backgroundJob.job_status == 'STATUS_READY',
-                                     'badge-success': backgroundJob.job_status == 'STATUS_DONE',
-                                     'badge-warning': backgroundJob.job_status == 'STATUS_LOCKED',
-                                     'badge-danger': backgroundJob.job_status == 'STATUS_FAILED'
+                        <td><label class="badge rounded-pill" [ngClass]="{
+                                      'bg-secondary': backgroundJob.job_status == 'STATUS_READY',
+                                     'bg-success': backgroundJob.job_status == 'STATUS_DONE',
+                                     'bg-warning': backgroundJob.job_status == 'STATUS_LOCKED',
+                                     'bg-danger': backgroundJob.job_status == 'STATUS_FAILED'
                         }">{{backgroundJob.job_status}}</label></td>
                         <td container="body" [ngbTooltip]="backgroundJob.locked_time | date:'yyyy-MM-dd HH:mm'">{{backgroundJob.locked_time | timeAgo}}</td>
                         <td container="body">
@@ -66,16 +66,16 @@
 <ng-template #content let-modal>
   <div class="modal-header">
     <h4 class="modal-title">[{{selectedBackgroundJob.job_type}}] {{selectedBackgroundJob.created_at | date:'yyyy-MM-dd HH:mm'}}</h4>
-    <button type="button" class="btn close" aria-label="Close" (click)="modal.dismiss('Cross click')"><span aria-hidden="true">×</span></button>
+    <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss('Cross click')"></button>
   </div>
   <div class="modal-body">
     <div class="row">
       <div class="col-6"><strong>Status</strong></div>
-      <div class="col-6"><label class="badge badge-pill" [ngClass]="{
-                                      'badge-secondary': selectedBackgroundJob.job_status == 'STATUS_READY',
-                                     'badge-success': selectedBackgroundJob.job_status == 'STATUS_DONE',
-                                     'badge-warning': selectedBackgroundJob.job_status == 'STATUS_LOCKED',
-                                     'badge-danger': selectedBackgroundJob.job_status == 'STATUS_FAILED'
+      <div class="col-6"><label class="badge rounded-pill" [ngClass]="{
+                                      'bg-secondary': selectedBackgroundJob.job_status == 'STATUS_READY',
+                                     'bg-success': selectedBackgroundJob.job_status == 'STATUS_DONE',
+                                     'bg-warning': selectedBackgroundJob.job_status == 'STATUS_LOCKED',
+                                     'bg-danger': selectedBackgroundJob.job_status == 'STATUS_FAILED'
                         }">{{selectedBackgroundJob.job_status}}</label></div>
 
       <div class="col-6"><strong>Last Updated</strong></div>

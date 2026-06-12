@@ -6,9 +6,7 @@
       </div>
 
       <div class="alert alert-info" role="alert">
-        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-          <span aria-hidden="true">×</span>
-        </button>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         <strong>Work-in-Progress!</strong> Some sources may not be implemented correctly.
         Some sources may require frequent re-connection, as background refresh has not been implemented yet.
         <br/>
@@ -50,7 +48,7 @@
           </div>
 
           <div *ngIf="uploadInProgress" class="alert alert-info mt-3" role="alert">
-            <i class="fas fa-spinner fa-spin mr-2"></i>
+            <i class="fas fa-spinner fa-spin me-2"></i>
             <strong>Starting import…</strong> Uploading your bundle and queuing the import. Large exports can take several minutes — progress then appears on your Connected Sources above, and you don't need to wait on this page.
           </div>
 
@@ -95,9 +93,7 @@
            class="mg-b-0" externalLink>{{modalSelectedBrandListItem?.brand_website | shortDomain}}</a>
       </div><!-- media-body -->
     </div><!-- media -->
-    <button type="button" class="btn close" aria-label="Close" (click)="modal.dismiss('Cross click')">
-      <span aria-hidden="true">×</span>
-    </button>
+    <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss('Cross click')"></button>
   </div>
 
   <div class="modal-body">
@@ -121,7 +117,7 @@
               <span *ngIf="status[endpoint.id] == 'authorize'" class="spinner-border spinner-border-sm text-primary" role="status" aria-hidden="true"></span>
               {{portal.name}}
             </h5>
-            <span class="badge badge-primary badge-pill">{{endpoint.platform_type}}</span>
+            <span class="badge bg-primary rounded-pill">{{endpoint.platform_type}}</span>
           </div>
           <p class="mb-1">{{portal.description}}</p>
           <small>{{portal.portal_website | shortDomain}}</small>
@@ -136,9 +132,7 @@
 
   <div class="modal-header">
     <h6 class="modal-title">Convert your records?</h6>
-    <button type="button" class="btn close" aria-label="Close" (click)="modal.dismiss('cancel')">
-      <span aria-hidden="true">×</span>
-    </button>
+    <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss('cancel')"></button>
   </div>
 
   <div class="modal-body">
@@ -168,34 +162,32 @@
 <ng-template #smartConnectModal let-modal>
   <div class="modal-header">
     <h6 class="modal-title" id="smart-connect-title">Connect a SMART source (beta)</h6>
-    <button type="button" class="btn close" aria-label="Close" (click)="modal.dismiss('Cross click')">
-      <span aria-hidden="true">×</span>
-    </button>
+    <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss('Cross click')"></button>
   </div>
 
   <div class="modal-body">
     <form (ngSubmit)="connectSmartSource()" #smartConnectForm="ngForm">
-      <div class="form-group">
+      <div class="mb-3">
         <label class="form-label" for="smart-api-endpoint">FHIR base URL</label>
         <input id="smart-api-endpoint" name="api_endpoint_base_url" type="url" class="form-control"
                placeholder="https://fhir.example.com/r4"
                [(ngModel)]="smartForm.api_endpoint_base_url" [disabled]="smartConnecting" required>
       </div>
 
-      <div class="form-group">
+      <div class="mb-3">
         <label class="form-label" for="smart-client-id">Client ID</label>
         <input id="smart-client-id" name="client_id" type="text" class="form-control"
                placeholder="your-registered-client-id"
                [(ngModel)]="smartForm.client_id" [disabled]="smartConnecting" required>
       </div>
 
-      <div class="form-group">
+      <div class="mb-3">
         <label class="form-label" for="smart-scopes">Scopes</label>
         <input id="smart-scopes" name="scopes" type="text" class="form-control"
                [(ngModel)]="smartForm.scopes" [disabled]="smartConnecting" required>
       </div>
 
-      <div class="form-group">
+      <div class="mb-3">
         <label class="form-label" for="smart-display">Display name <small class="tx-gray-500">(optional)</small></label>
         <input id="smart-display" name="display" type="text" class="form-control"
                placeholder="My Clinic"

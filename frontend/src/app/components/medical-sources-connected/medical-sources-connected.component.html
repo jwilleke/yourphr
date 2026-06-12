@@ -13,9 +13,7 @@
 <ng-template #contentModalRef let-modal>
   <div class="modal-header">
     <h4 class="modal-title" id="modal-basic-title">{{modalSelectedSourceListItem?.source?.display || modalSelectedSourceListItem?.brand?.name}}</h4>
-    <button type="button" class="btn close" aria-label="Close" (click)="modal.dismiss('Cross click')">
-      <span aria-hidden="true">×</span>
-    </button>
+    <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss('Cross click')"></button>
   </div>
 
   <div *ngIf="modalSelectedSourceListItem?.source?.platform_type != 'fasten'; else fastenSourceDescription" class="modal-body">
@@ -40,7 +38,7 @@
 
   <div class="modal-footer">
 
-    <a [routerLink]="['/explore', modalSelectedSourceListItem?.source?.id]" (click)="modal.close()" class="btn btn-indigo mr-auto">Explore</a>
+    <a [routerLink]="['/explore', modalSelectedSourceListItem?.source?.id]" (click)="modal.close()" class="btn btn-indigo me-auto">Explore</a>
 
 
     <div *ngIf="modalSelectedSourceListItem?.source?.platform_type != 'fasten'" class="d-inline-block" ngbDropdown>

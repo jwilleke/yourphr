@@ -27,7 +27,7 @@
           <strong>{{ row.title }}</strong>
           <span *ngIf="row.date" class="tx-gray-500 tx-12"> &middot; {{ row.date | date:'mediumDate' }}</span>
         </a>
-        <span *ngIf="row.status" class="badge badge-light text-capitalize">{{ row.status }}</span>
+        <span *ngIf="row.status" class="badge bg-light text-capitalize">{{ row.status }}</span>
       </li>
     </ul>
     <a *ngIf="viewAllRoute" [routerLink]="viewAllRoute" class="tx-12 d-inline-block mg-t-5">View all &rarr;</a>

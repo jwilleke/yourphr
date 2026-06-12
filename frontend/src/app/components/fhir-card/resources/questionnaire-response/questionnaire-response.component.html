@@ -3,7 +3,7 @@
     <div>
       <h6 class="card-title">{{displayModel?.sort_title || 'Questionnaire Response'}}</h6>
     </div>
-    <fhir-ui-badge class="float-right" [status]="displayModel?.status">{{displayModel?.status}}</fhir-ui-badge>
+    <fhir-ui-badge class="float-end" [status]="displayModel?.status">{{displayModel?.status}}</fhir-ui-badge>
   </div>
   <div #collapse="ngbCollapse" [(ngbCollapse)]="isCollapsed" class="card-body">
     <p class="az-content-text mg-b-20">A completed questionnaire — the recorded answers to a form (survey, screening, intake, etc.).</p>
@@ -17,7 +17,7 @@
     <ng-template #itemTree let-items>
       <li *ngFor="let item of items" class="mg-b-5">
         <span *ngIf="item.text" class="tx-medium">{{ item.text }}</span>
-        <span *ngFor="let answer of item.answers" class="badge badge-light mg-l-10">{{ answer }}</span>
+        <span *ngFor="let answer of item.answers" class="badge bg-light mg-l-10">{{ answer }}</span>
         <ul class="list-unstyled mg-l-20 mg-t-5" *ngIf="item.items?.length">
           <ng-container *ngTemplateOutlet="itemTree; context: { $implicit: item.items }"></ng-container>
         </ul>
@@ -25,6 +25,6 @@
     </ng-template>
   </div>
   <div *ngIf="showDetails" class="card-footer">
-    <a class="float-right" [routerLink]="['/explore', displayModel?.source_id, 'resource', displayModel?.source_resource_id]">details</a>
+    <a class="float-end" [routerLink]="['/explore', displayModel?.source_id, 'resource', displayModel?.source_resource_id]">details</a>
   </div>
 </div>

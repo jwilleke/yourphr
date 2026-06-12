@@ -1,9 +1,7 @@
 <form (ngSubmit)="onSubmit()" [formGroup]="form">
   <div class="modal-header">
     <h4 class="modal-title"> Medical Record Wizard</h4>
-    <button type="button" class="close" aria-label="Close" (click)="activeModal.dismiss('Cross click')">
-      <span aria-hidden="true">×</span>
-    </button>
+    <button type="button" class="btn-close" aria-label="Close" (click)="activeModal.dismiss('Cross click')"></button>
   </div>
   <div class="modal-body">
     <div class="row">
@@ -40,7 +38,7 @@
             <ng-template #addEncounter>
               <div class="row pt-2">
                 <div class="col-lg-4 col-md-4">
-                  <button type="button" (click)="openEncounterModal()" class="btn btn-outline-indigo btn-block">Find/Create Encounter</button>
+                  <button type="button" (click)="openEncounterModal()" class="btn btn-outline-indigo w-100">Find/Create Encounter</button>
                 </div>
               </div>
             </ng-template>
@@ -49,7 +47,7 @@
         </ng-container>
         <ng-container ngbNavItem="medications" [disabled]="!existingEncounter">
           <a class="nav-link" ngbNavLink>
-            Medications <span class="badge badge-pill badge-warning align-middle" *ngIf="medications.controls.length">{{medications.controls.length}}</span>
+            Medications <span class="badge rounded-pill bg-warning align-middle" *ngIf="medications.controls.length">{{medications.controls.length}}</span>
           </a>
           <ng-template ngbNavContent>
             <div>
@@ -145,7 +143,7 @@
             </ng-container>
             <div class="row pt-2">
               <div class="col-lg-4 col-md-3">
-                <button type="button" (click)="addMedication()" class="btn btn-outline-indigo btn-block">Add Medication</button>
+                <button type="button" (click)="addMedication()" class="btn btn-outline-indigo w-100">Add Medication</button>
               </div>
             </div>
 
@@ -153,7 +151,7 @@
         </ng-container>
         <ng-container ngbNavItem="procedures" [disabled]="!existingEncounter">
           <a class="nav-link" ngbNavLink>
-            Procedures <span class="badge badge-pill badge-warning align-middle" *ngIf="procedures.controls.length">{{procedures.controls.length}}</span>
+            Procedures <span class="badge rounded-pill bg-warning align-middle" *ngIf="procedures.controls.length">{{procedures.controls.length}}</span>
           </a>
           <ng-template ngbNavContent>
             <div>
@@ -249,7 +247,7 @@
 
             <div class="row pt-2">
               <div class="col-lg-4 col-md-3">
-                <button type="button" (click)="addProcedure()" class="btn btn-outline-indigo btn-block">Add Surgery or Implant</button>
+                <button type="button" (click)="addProcedure()" class="btn btn-outline-indigo w-100">Add Surgery or Implant</button>
               </div>
             </div>
 
@@ -258,7 +256,7 @@
         </ng-container>
         <ng-container ngbNavItem="practitioners" [disabled]="!existingEncounter">
           <a class="nav-link" ngbNavLink>
-            Practitioners <span class="badge badge-pill badge-warning align-middle" *ngIf="practitioners.controls.length">{{practitioners.controls.length}}</span>
+            Practitioners <span class="badge rounded-pill bg-warning align-middle" *ngIf="practitioners.controls.length">{{practitioners.controls.length}}</span>
           </a>
           <ng-template ngbNavContent>
             <div>
@@ -279,7 +277,7 @@
                 </div>
                 <fhir-practitioner class="fhir-card-callout-warning" [formGroup]="practitionerGroup"  [showDetails]="false" [displayModel]="practitionerGroup.controls.data.value" [isCollapsed]="true">
                   <div header>
-                    <span class="cursor-pointer float-right" (click)="deletePractitioner(i)" aria-hidden="true"><i class="fas fa-trash"></i></span>
+                    <span class="cursor-pointer float-end" (click)="deletePractitioner(i)" aria-hidden="true"><i class="fas fa-trash"></i></span>
                   </div>
                 </fhir-practitioner>
               </ng-container>
@@ -290,7 +288,7 @@
 
             <div class="row pt-2">
               <div class="col-lg-4 col-md-4">
-                <button type="button" (click)="openPractitionerModal()" class="btn btn-outline-indigo btn-block">Add Practitioner</button>
+                <button type="button" (click)="openPractitionerModal()" class="btn btn-outline-indigo w-100">Add Practitioner</button>
               </div>
             </div>
 
@@ -298,7 +296,7 @@
         </ng-container>
         <ng-container ngbNavItem="organizations" [disabled]="!existingEncounter">
           <a class="nav-link" ngbNavLink>
-            Organizations <span class="badge badge-pill badge-warning align-middle" *ngIf="organizations.controls.length">{{organizations.controls.length}}</span>
+            Organizations <span class="badge rounded-pill bg-warning align-middle" *ngIf="organizations.controls.length">{{organizations.controls.length}}</span>
           </a>
           <ng-template ngbNavContent>
             <div>
@@ -320,7 +318,7 @@
                 </div>
                 <fhir-organization class="fhir-card-callout-warning" [formGroup]="organizationGroup"  [showDetails]="false" [displayModel]="organizationGroup.controls.data.value" [isCollapsed]="true">
                   <div header>
-                    <span class="cursor-pointer float-right" (click)="deleteOrganization(i)" aria-hidden="true"><i class="fas fa-trash"></i></span>
+                    <span class="cursor-pointer float-end" (click)="deleteOrganization(i)" aria-hidden="true"><i class="fas fa-trash"></i></span>
                   </div>
                 </fhir-organization>
               </ng-container>
@@ -328,7 +326,7 @@
 
             <div class="row pt-2">
               <div class="col-lg-4 col-md-4">
-                <button type="button" (click)="openOrganizationModal()" class="btn btn-outline-indigo btn-block">Add Organization</button>
+                <button type="button" (click)="openOrganizationModal()" class="btn btn-outline-indigo w-100">Add Organization</button>
               </div>
             </div>
           </ng-template>
@@ -359,7 +357,7 @@
                 </div>
                 <fhir-diagnostic-report class="fhir-card-callout-warning" [formGroup]="labresultsGroup"  [showDetails]="false" [displayModel]="labresultsGroup.controls.data.value?.entry?.[0]?.resource | fastenDisplayModel" [isCollapsed]="true">
                   <div header>
-                    <span class="cursor-pointer float-right" (click)="deleteLabResults(i)" aria-hidden="true"><i class="fas fa-trash"></i></span>
+                    <span class="cursor-pointer float-end" (click)="deleteLabResults(i)" aria-hidden="true"><i class="fas fa-trash"></i></span>
                   </div>
                 </fhir-diagnostic-report>
               </ng-container>
@@ -368,7 +366,7 @@
 
             <div class="row pt-2">
               <div class="col-lg-4 col-md-3">
-                <button type="button" (click)="openLabResultsModal()" class="btn btn-outline-indigo btn-block">Create Lab Result</button>
+                <button type="button" (click)="openLabResultsModal()" class="btn btn-outline-indigo w-100">Create Lab Result</button>
               </div>
             </div>
 
@@ -377,7 +375,7 @@
         </ng-container>
         <ng-container ngbNavItem="attachments" [disabled]="!existingEncounter">
           <a class="nav-link" ngbNavLink>
-            Attachments <span class="badge badge-pill badge-warning align-middle" *ngIf="attachments.controls.length">{{attachments.controls.length}}</span>
+            Attachments <span class="badge rounded-pill bg-warning align-middle" *ngIf="attachments.controls.length">{{attachments.controls.length}}</span>
           </a>
           <ng-template ngbNavContent>
             <div>
@@ -418,7 +416,7 @@
 
             <div class="row pt-2">
               <div class="col-lg-4 col-md-3">
-                <button type="button" (click)="openAttachmentModal()" class="btn btn-outline-indigo btn-block">Create Attachment/Document</button>
+                <button type="button" (click)="openAttachmentModal()" class="btn btn-outline-indigo w-100">Create Attachment/Document</button>
               </div>
             </div>
 
@@ -455,7 +453,7 @@
     'text-dark': !debugMode,
     'btn-dark':debugMode,
     'text-white':debugMode
-     }" type="button" class="btn float-left" (click)="debugMode = !debugMode">
+     }" type="button" class="btn float-start" (click)="debugMode = !debugMode">
       <i class="fas fa-bug"></i>
     </button>
     <button type="submit" class="btn btn-indigo" [disabled]="submitWizardLoading">

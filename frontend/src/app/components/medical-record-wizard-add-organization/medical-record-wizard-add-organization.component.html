@@ -10,7 +10,7 @@
     </button>
   </div>
 
-  <button type="button" class="close" aria-label="Close" (click)="activeModal.dismiss()"><span aria-hidden="true">×</span></button>
+  <button type="button" class="btn-close" aria-label="Close" (click)="activeModal.dismiss()"></button>
 </div>
 <div class="modal-body">
 
@@ -42,7 +42,7 @@
             <form [formGroup]="newOrganizationTypeaheadForm">
               <app-nlm-typeahead formControlName="data" searchType="MedicalContactOrganization" [debugMode]="debugMode"></app-nlm-typeahead>
             </form>
-            <span *ngFor="let extId of newOrganizationForm.get('identifier').getRawValue()" class="badge badge-pill badge-primary">{{extId.type?.coding[0].code}}: {{extId.value}}</span>
+            <span *ngFor="let extId of newOrganizationForm.get('identifier').getRawValue()" class="badge rounded-pill bg-primary">{{extId.type?.coding[0].code}}: {{extId.value}}</span>
           </div><!-- col -->
 
           <ng-container [formGroup]="newOrganizationForm">
@@ -101,7 +101,7 @@
     'text-dark': !debugMode,
     'btn-dark':debugMode,
     'text-white':debugMode
-     }" type="button" class="btn float-left" (click)="debugMode = !debugMode">
+     }" type="button" class="btn float-start" (click)="debugMode = !debugMode">
     <i class="fas fa-bug"></i>
   </button>
   <button type="button" [class.disabled]="!submitEnabled" class="btn btn-az-primary" (click)="submit()">Add Location</button>

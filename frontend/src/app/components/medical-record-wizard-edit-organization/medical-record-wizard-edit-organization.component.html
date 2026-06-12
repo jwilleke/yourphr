@@ -1,8 +1,7 @@
 <div class="modal-header">
   <h4 class="modal-title" id="modal-location">Edit Organization</h4>
 
-  <button type="button" class="close" aria-label="Close" (click)="activeModal.dismiss()"><span
-      aria-hidden="true">×</span></button>
+  <button type="button" class="btn-close" aria-label="Close" (click)="activeModal.dismiss()"></button>
 </div>
 <div class="modal-body">
 
@@ -19,7 +18,7 @@
           [debugMode]="debugMode"></app-nlm-typeahead>
       </form>
       <span *ngFor="let extId of organizationForm.get('identifier').getRawValue()"
-        class="badge badge-pill badge-primary">{{extId.type?.coding[0].code}}: {{extId.value}}</span>
+        class="badge rounded-pill bg-primary">{{extId.type?.coding[0].code}}: {{extId.value}}</span>
     </div>
 
     <ng-container [formGroup]="organizationForm">
@@ -75,7 +74,7 @@
     'text-dark': !debugMode,
     'btn-dark':debugMode,
     'text-white':debugMode
-     }" type="button" class="btn float-left" (click)="debugMode = !debugMode">
+     }" type="button" class="btn float-start" (click)="debugMode = !debugMode">
     <i class="fas fa-bug"></i>
   </button>
   <button *ngIf="!loading; else spinnerButton" type="button" [class.disabled]="!submitEnabled"
@@ -83,7 +82,7 @@
   <ng-template #spinnerButton>
     <button class="btn btn-primary" type="button" disabled>
       <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-      <span class="sr-only">Loading...</span>
+      <span class="visually-hidden">Loading...</span>
     </button>
   </ng-template>
 </div>

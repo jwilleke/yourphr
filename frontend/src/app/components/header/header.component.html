@@ -7,7 +7,7 @@
     <div class="az-header-menu">
       <div class="az-header-menu-header">
         <a routerLink="/" class="az-logo"><span></span> YourPHR</a>
-        <a href="#" (click)="toggleHeaderMenu($event)" class="close">&times;</a>
+        <a href="#" (click)="toggleHeaderMenu($event)" class="btn-close" aria-label="Close"></a>
       </div><!-- az-header-menu-header -->
       <ul class="nav">
 
@@ -98,7 +98,7 @@
 <ng-template #content let-modal>
   <div class="modal-header">
     <h4 class="modal-title">Get Support</h4>
-    <button type="button" class="btn close" aria-label="Close" (click)="modal.dismiss('Cross click')"><span aria-hidden="true">×</span></button>
+    <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss('Cross click')"></button>
   </div>
   <div class="modal-body">
     <ngb-accordion #acc="ngbAccordion" activeIds="ngb-panel-0">
@@ -113,7 +113,7 @@
 
           <form *ngIf="!submitSuccess; else supportRequestSuccess" (ngSubmit)="submitSupportForm()" #supportRequestForm="ngForm">
 
-            <div class="form-group">
+            <div class="mb-3">
               <div class="row">
                 <div class="col-6">
                   <label class="az-content-label tx-11 tx-medium tx-gray-600">Name</label>
@@ -146,9 +146,9 @@
                 </div>
               </div>
 
-            </div><!-- form-group -->
+            </div><!-- mb-3 -->
 
-            <div class="form-group">
+            <div class="mb-3">
               <label class="az-content-label tx-11 tx-medium tx-gray-600">Issue Description</label>
               <textarea [(ngModel)]="newSupportRequest.request_content" name="requestContent" #requestContent="ngModel" rows="3" class="form-control" placeholder="Please provide a detailed description of the issue that you're encountering" required minlength="4"></textarea>
 
@@ -160,9 +160,9 @@
                   Issue Description must be at least 4 characters long.
                 </div>
               </div>
-            </div><!-- form-group -->
+            </div><!-- mb-3 -->
 
-            <button [disabled]="!supportRequestForm.form.valid || loading" type="submit" class="btn btn-az-primary btn-block">Submit Issue</button>
+            <button [disabled]="!supportRequestForm.form.valid || loading" type="submit" class="btn btn-az-primary w-100">Submit Issue</button>
             <div *ngIf="errorMsg" class="alert alert-danger mt-3" role="alert">
               <strong>Error</strong> {{errorMsg}}
             </div>

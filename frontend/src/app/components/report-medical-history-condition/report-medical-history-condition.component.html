@@ -18,15 +18,15 @@
       <div class="col-6 mb-2">
 
         <!-- US Core 9.0.0 Must-Support: category (problem-list-item vs health-concern), clinical & verification status (#143) -->
-        <div *ngIf="conditionDisplayModel?.categories?.length || conditionDisplayModel?.clinical_status || conditionDisplayModel?.verification_status" class="row pl-3 mb-2">
+        <div *ngIf="conditionDisplayModel?.categories?.length || conditionDisplayModel?.clinical_status || conditionDisplayModel?.verification_status" class="row ps-3 mb-2">
           <div class="col-12">
-            <span class="badge badge-light mg-r-5" *ngFor="let category of conditionDisplayModel?.categories">{{ category }}</span>
-            <span class="badge badge-secondary mg-r-5" *ngIf="conditionDisplayModel?.clinical_status">{{ conditionDisplayModel.clinical_status | titlecase }}</span>
-            <span class="badge badge-info" *ngIf="conditionDisplayModel?.verification_status">{{ conditionDisplayModel.verification_status | titlecase }}</span>
+            <span class="badge bg-light mg-r-5" *ngFor="let category of conditionDisplayModel?.categories">{{ category }}</span>
+            <span class="badge bg-secondary mg-r-5" *ngIf="conditionDisplayModel?.clinical_status">{{ conditionDisplayModel.clinical_status | titlecase }}</span>
+            <span class="badge bg-info" *ngIf="conditionDisplayModel?.verification_status">{{ conditionDisplayModel.verification_status | titlecase }}</span>
           </div>
         </div>
 
-        <div *ngIf="involvedInCare.length > 0" class="row  pl-3">
+        <div *ngIf="involvedInCare.length > 0" class="row  ps-3">
           <div class="col-12 mt-3 mb-2 tx-indigo">
             <p>Involved in Care</p>
           </div>

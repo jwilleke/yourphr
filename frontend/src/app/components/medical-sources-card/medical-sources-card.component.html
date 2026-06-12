@@ -4,7 +4,7 @@
     <div class="h-100 d-flex align-items-center">
       <img imageFallback [src]="'assets/sources/'+((sourceInfo?.brand?.id || sourceInfo?.source?.brand_id )+'.png')" [alt]="sourceInfo?.brand?.name" class="img-fluid">
       <div *ngIf="status == 'failed'"  class="card-img-overlay">
-        <span class="badge badge-danger">failed</span>
+        <span class="badge bg-danger">failed</span>
       </div>
     </div>
     <div *ngIf="status == 'authorize' || status  == 'token'" class="progress">

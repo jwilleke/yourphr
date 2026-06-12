@@ -17,14 +17,14 @@
           <div class="text-center">
             <p class="pb-3">Please wait, connecting account...</p>
             <div class="spinner-border" role="status">
-              <span class="sr-only">Loading...</span>
+              <span class="visually-hidden">Loading...</span>
             </div>
           </div>
         </ng-template>
       </form>
 
       <form  *ngIf="!showExternalIdP" (ngSubmit)="signinSubmit()" #userForm="ngForm">
-        <div class="form-group">
+        <div class="mb-3">
           <label>Username</label>
           <input [(ngModel)]="existingUser.username" name="username" #username="ngModel" required autocapitalize="none" minlength="2" type="text" class="form-control" placeholder="Enter your username">
 
@@ -36,8 +36,8 @@
               Username must be at least 4 characters long.
             </div>
           </div>
-        </div><!-- form-group -->
-        <div class="form-group">
+        </div><!-- mb-3 -->
+        <div class="mb-3">
           <label>Password</label>
           <input [(ngModel)]="existingUser.password" name="password" #password="ngModel" required minlength="8" type="password" class="form-control" placeholder="Enter your password">
 
@@ -49,8 +49,8 @@
               Password must be at least 8 characters long.
             </div>
           </div>
-        </div><!-- form-group -->
-        <button [disabled]="!userForm.form.valid || loading" type="submit" class="btn btn-az-primary btn-block">Sign In</button>
+        </div><!-- mb-3 -->
+        <button [disabled]="!userForm.form.valid || loading" type="submit" class="btn btn-az-primary w-100">Sign In</button>
 
         <div *ngIf="errorMsg" class="alert alert-danger mt-3" role="alert">
           <strong>Error</strong> {{errorMsg}}

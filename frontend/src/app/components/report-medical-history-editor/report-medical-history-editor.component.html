@@ -1,6 +1,6 @@
 <div class="modal-header">
   <h4 class="modal-title"> Condition Editor </h4>
-  <button type="button" class="close" aria-label="Close" (click)="activeModal.dismiss('Cross click')"><span aria-hidden="true">×</span></button>
+  <button type="button" class="btn-close" aria-label="Close" (click)="activeModal.dismiss('Cross click')"></button>
 </div>
 <div class="modal-body">
   <div class="row">
@@ -15,9 +15,7 @@
   <div class="row">
     <div class="col-12">
       <div class="input-group mb-3">
-        <div class="input-group-prepend">
-          <span class="input-group-text">Group Title</span>
-        </div>
+        <span class="input-group-text">Group Title</span>
         <input type="text" class="form-control" placeholder="provide a name for your new group" [(ngModel)]="compositionTitle" [disabled]="(selectedResources | keyvalue)?.length == 0" >
       </div>
     </div>

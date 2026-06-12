@@ -1,6 +1,6 @@
 <div class="modal-header">
   <h4 class="modal-title" id="modal-attachment">New Attachment</h4>
-  <button type="button" class="close" aria-label="Close" (click)="activeModal.dismiss()"><span aria-hidden="true">×</span></button>
+  <button type="button" class="btn-close" aria-label="Close" (click)="activeModal.dismiss()"></button>
 </div>
 <div class="modal-body">
 
@@ -29,8 +29,7 @@
         <p class="mg-b-10">File<span ngbTooltip="required" class="text-danger">*</span></p>
       </div><!-- col -->
       <div class="col-6 mg-t-10 mg-lg-t-0 mg-l-10">
-        <label for="customFile" class="custom-file-label">{{newAttachmentForm.get('file_name').value || 'Choose file'}}</label>
-        <input id="customFile" (change)="onAttachmentFileChange($event)" class="custom-file-input" type="file">
+        <input id="customFile" (change)="onAttachmentFileChange($event)" class="form-control" type="file" aria-label="Choose file">
       </div><!-- col -->
     </ng-container>
   </div>

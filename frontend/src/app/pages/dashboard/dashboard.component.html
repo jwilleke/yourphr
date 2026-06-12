@@ -65,9 +65,7 @@
 <ng-template #addDashboard let-modal>
   <div class="modal-header">
     <h4 class="modal-title" id="modal-basic-title">Add Dashboard</h4>
-    <button type="button" class="close" aria-label="Close" (click)="modal.dismiss('Cross click')">
-      <span aria-hidden="true">×</span>
-    </button>
+    <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss('Cross click')"></button>
   </div>
   <div class="modal-body">
     <p>
@@ -123,9 +121,7 @@
 <ng-template #dashboardSettings let-modal>
   <div class="modal-header">
     <h4 class="modal-title">{{dashboardConfigs?.[selectedDashboardConfigNdx]?.title}} Settings</h4>
-    <button type="button" class="close" aria-label="Close" (click)="modal.dismiss('Cross click')">
-      <span aria-hidden="true">×</span>
-    </button>
+    <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss('Cross click')"></button>
   </div>
   <div class="modal-body">
     <div class="row">
@@ -153,7 +149,7 @@
     </div>
   </div>
   <div class="modal-footer">
-    <button type="button" class="btn btn-outline-danger mr-auto" ngbTooltip="not yet implemented">Delete</button>
+    <button type="button" class="btn btn-outline-danger me-auto" ngbTooltip="not yet implemented">Delete</button>
     <button type="button" class="btn btn-outline-dark" (click)="modal.close('Save click')">Close</button>
   </div>
 </ng-template>
