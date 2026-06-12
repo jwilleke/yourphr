@@ -1,112 +1,123 @@
 {
   "id": "default",
   "schema_version": "1.0",
-  "title": "Example Dashboard",
-  "description": "An example dashboard to show-off the power of Fasten widgets",
+  "title": "Patient Dashboard",
+  "description": "Your health at a glance, drawn from your records \u2014 medications, problems, allergies, immunizations, procedures, clinical notes, vitals, recent visits, and your care team.",
   "widgets": [
     {
-      "title_text": "Records Summary",
-      "description_text": "Track key metrics for your chronic disease (eg. Diabetes). The data within this widget is not reflective of your health record, and is only present for demonstrational purposes.",
+      "title_text": "Medications",
+      "description_text": "Your current medications, reconciled from your records.",
       "x": 0,
       "y": 0,
-      "width": 8,
-      "height": 6,
-      "item_type": "records-summary-widget"
+      "width": 12,
+      "height": 4,
+      "item_type": "medications-widget"
+    },
+    {
+      "title_text": "Problems",
+      "description_text": "Your most recent health problems and conditions.",
+      "x": 0,
+      "y": 4,
+      "width": 4,
+      "height": 4,
+      "item_type": "profile-summary-widget",
+      "queries": [
+        {
+          "q": {
+            "select": [],
+            "from": "Condition",
+            "where": {}
+          }
+        }
+      ]
+    },
+    {
+      "title_text": "Allergies",
+      "description_text": "Substances you have a recorded allergy or intolerance to.",
+      "x": 4,
+      "y": 4,
+      "width": 4,
+      "height": 4,
+      "item_type": "profile-summary-widget",
+      "queries": [
+        {
+          "q": {
+            "select": [],
+            "from": "AllergyIntolerance",
+            "where": {}
+          }
+        }
+      ]
+    },
+    {
+      "title_text": "Immunizations",
+      "description_text": "Vaccines recorded in your health record.",
+      "x": 8,
+      "y": 4,
+      "width": 4,
+      "height": 4,
+      "item_type": "profile-summary-widget",
+      "queries": [
+        {
+          "q": {
+            "select": [],
+            "from": "Immunization",
+            "where": {}
+          }
+        }
+      ]
+    },
+    {
+      "title_text": "Procedures",
+      "description_text": "Procedures performed as part of your care.",
+      "x": 0,
+      "y": 8,
+      "width": 4,
+      "height": 4,
+      "item_type": "profile-summary-widget",
+      "queries": [
+        {
+          "q": {
+            "select": [],
+            "from": "Procedure",
+            "where": {}
+          }
+        }
+      ]
+    },
+    {
+      "title_text": "Clinical Notes",
+      "description_text": "Documents and notes from your providers.",
+      "x": 4,
+      "y": 8,
+      "width": 4,
+      "height": 4,
+      "item_type": "profile-summary-widget",
+      "queries": [
+        {
+          "q": {
+            "select": [],
+            "from": "DocumentReference",
+            "where": {}
+          }
+        }
+      ]
     },
     {
       "title_text": "Patient Vitals",
       "description_text": "",
       "x": 8,
-      "y": 0,
+      "y": 8,
       "width": 4,
-      "height": 6,
+      "height": 4,
       "item_type": "patient-vitals-widget"
-    },
-
-    {
-      "title_text": "Observations by Type",
-      "description_text": "",
-      "x": 0,
-      "y": 6,
-      "width": 8,
-      "height": 5,
-      "item_type": "donut-chart-widget",
-      "queries": [{
-        "q": {
-          "select": [],
-          "from": "Observation",
-          "where": {},
-          "aggregations":{
-            "count_by": {"field": "code:code" }
-          }
-        }
-      }],
-      "parsing": {
-        "label": "label",
-        "key": "value"
-      }
-    },
-
-    {
-      "title_text": "Weight",
-      "description_text": "",
-      "x": 8,
-      "y": 6,
-      "width": 2,
-      "height": 2,
-      "item_type": "simple-line-chart-widget",
-      "queries": [{
-        "q": {
-          "select": [
-            "valueQuantity.value as data",
-            "valueQuantity.unit as unit",
-            "(effectiveDateTime | issued).first() as label"
-          ],
-          "from": "Observation",
-          "where": {
-           "code": "http://loinc.org|29463-7,http://loinc.org|3141-9,http://snomed.info/sct|27113001"
-          },
-          "limit": 50
-        }
-      }],
-      "parsing": {
-        "xAxisKey": "label",
-        "yAxisKey": "data"
-      }
-    },
-    {
-      "title_text": "Height",
-      "description_text": "",
-      "x": 10,
-      "y": 6,
-      "width": 2,
-      "height": 2,
-      "item_type": "simple-line-chart-widget",
-      "queries": [{
-        "q": {
-          "select": [
-            "valueQuantity.value as data",
-            "valueQuantity.unit as unit",
-            "(effectiveDateTime | issued).first() as label"
-          ],
-          "from": "Observation",
-          "where": {
-            "code": "http://loinc.org|8302-2"
-          },
-          "limit": 50
-        }
-      }],
-      "parsing": {
-        "xAxisKey": "label",
-        "yAxisKey": "data"
-      }
     },
     {
       "title_text": "Blood Pressure",
       "description_text": "How much pressure your blood is exerting against your artery walls when the heart beats",
-      "x": 8,
-      "y": 8,
-      "width": 4,
+      "x": 0,
+      "y": 12,
+      "width": 6,
       "height": 3,
       "item_type": "grouped-bar-chart-widget",
       "queries": [
@@ -141,73 +152,94 @@
           "dataset_options": {
             "label": "Systolic"
           }
-        }],
+        }
+      ],
       "parsing": {
         "xAxisKey": "id",
         "yAxisKey": "data"
       }
     },
-
     {
-      "title_text": "Compliance",
-      "description_text": "Use to track important healthcare and medical tasks.",
-      "x": 0,
-      "y": 11,
-      "width": 4,
-      "height": 2,
-      "item_type": "dual-gauges-widget",
-      "queries": [{
-        "dataset_options": {
-          "label": "Vaccines"
-        },
-        "q": {
-          "select": [],
-          "from": "Immunization",
-          "where": {},
-          "aggregations":{
-            "count_by": {"field": "*" }
+      "title_text": "Weight",
+      "description_text": "",
+      "x": 6,
+      "y": 12,
+      "width": 3,
+      "height": 3,
+      "item_type": "simple-line-chart-widget",
+      "queries": [
+        {
+          "q": {
+            "select": [
+              "valueQuantity.value as data",
+              "valueQuantity.unit as unit",
+              "(effectiveDateTime | issued).first() as label"
+            ],
+            "from": "Observation",
+            "where": {
+              "code": "http://loinc.org|29463-7,http://loinc.org|3141-9,http://snomed.info/sct|27113001"
+            },
+            "limit": 50
           }
         }
-      },
-        {
-          "dataset_options": {
-            "label": "Claims"
-          },
-          "q": {
-            "select": [],
-            "from": "Claim",
-            "where": {},
-            "aggregations":{
-              "count_by": {"field": "*" }
-            }
-          }
-        }],
+      ],
       "parsing": {
-        "label": "key",
-        "key": "value"
+        "xAxisKey": "label",
+        "yAxisKey": "data"
+      }
+    },
+    {
+      "title_text": "Height",
+      "description_text": "",
+      "x": 9,
+      "y": 12,
+      "width": 3,
+      "height": 3,
+      "item_type": "simple-line-chart-widget",
+      "queries": [
+        {
+          "q": {
+            "select": [
+              "valueQuantity.value as data",
+              "valueQuantity.unit as unit",
+              "(effectiveDateTime | issued).first() as label"
+            ],
+            "from": "Observation",
+            "where": {
+              "code": "http://loinc.org|8302-2"
+            },
+            "limit": 50
+          }
+        }
+      ],
+      "parsing": {
+        "xAxisKey": "label",
+        "yAxisKey": "data"
       }
     },
     {
       "title_text": "Recent Encounters",
       "description_text": "Recent interactions with healthcare providers",
-      "x": 4,
-      "y": 11,
-      "width": 8,
+      "x": 0,
+      "y": 15,
+      "width": 12,
       "height": 4,
       "item_type": "table-widget",
-      "queries": [{
-        "q": {
-          "select": [
-            "serviceProvider.display as institution",
-            "period.start as date",
-            "reasonCode.coding.display.first() as reason",
-            "participant.individual.display as provider"
-          ],
-          "from": "Encounter",
-          "where": {},
-          "limit": 50
+      "queries": [
+        {
+          "q": {
+            "select": [
+              "serviceProvider.display as institution",
+              "period.start as date",
+              "reasonCode.coding.display.first() as reason",
+              "participant.individual.display as provider"
+            ],
+            "from": "Encounter",
+            "where": {},
+            "limit": 50
+          }
         }
-      }],
+      ],
       "parsing": {
         "Id": "id",
         "Institution": "institution",
@@ -216,63 +248,13 @@
       }
     },
     {
-      "title_text": "Medications",
-      "description_text": "Your current medications, reconciled from your records.",
+      "title_text": "Care Team",
+      "description_text": "Track key metrics for your chronic disease (eg. Diabetes). The data within this widget is not reflective of your health record, and is only present for demonstrational purposes.",
       "x": 0,
-      "y": 15,
+      "y": 19,
       "width": 12,
       "height": 4,
-      "item_type": "medications-widget"
-    },
-    {
-      "title_text": "Problems",
-      "description_text": "Your most recent health problems and conditions.",
-      "x": 0,
-      "y": 19,
-      "width": 4,
-      "height": 4,
-      "item_type": "profile-summary-widget",
-      "queries": [{ "q": { "select": [], "from": "Condition", "where": {} } }]
-    },
-    {
-      "title_text": "Allergies",
-      "description_text": "Substances you have a recorded allergy or intolerance to.",
-      "x": 4,
-      "y": 19,
-      "width": 4,
-      "height": 4,
-      "item_type": "profile-summary-widget",
-      "queries": [{ "q": { "select": [], "from": "AllergyIntolerance", "where": {} } }]
-    },
-    {
-      "title_text": "Immunizations",
-      "description_text": "Vaccines recorded in your health record.",
-      "x": 8,
-      "y": 19,
-      "width": 4,
-      "height": 4,
-      "item_type": "profile-summary-widget",
-      "queries": [{ "q": { "select": [], "from": "Immunization", "where": {} } }]
-    },
-    {
-      "title_text": "Procedures",
-      "description_text": "Procedures performed as part of your care.",
-      "x": 0,
-      "y": 23,
-      "width": 4,
-      "height": 4,
-      "item_type": "profile-summary-widget",
-      "queries": [{ "q": { "select": [], "from": "Procedure", "where": {} } }]
-    },
-    {
-      "title_text": "Clinical Notes",
-      "description_text": "Documents and notes from your providers.",
-      "x": 4,
-      "y": 23,
-      "width": 4,
-      "height": 4,
-      "item_type": "profile-summary-widget",
-      "queries": [{ "q": { "select": [], "from": "DocumentReference", "where": {} } }]
+      "item_type": "image-list-group-widget"
     }
   ]
 }
