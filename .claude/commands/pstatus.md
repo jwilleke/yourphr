@@ -1,4 +1,4 @@
-# /status — ranked briefing & next step
+# /pstatus — ranked briefing & next step
 
 A read-and-reconcile command. Run it **often** — ideally right before `/session-commit`.
 It surfaces security first, ranks open work by priority, regenerates `TODO.md`, and
@@ -6,8 +6,8 @@ recommends what to do next. It does not start work.
 
 ## Scope
 
-- `/status` — the current repo (default).
-- `/status --all` — portfolio sweep across every active repo (P0 / security everywhere).
+- `/pstatus` — the current repo (default).
+- `/pstatus --all` — portfolio sweep across every active repo (P0 / security everywhere).
 
 ## Steps (single repo)
 
@@ -41,7 +41,7 @@ For each open Dependabot / code-scanning / GitGuardian alert:
 ### Step 4: Rank and regenerate `TODO.md`
 
 Overwrite `TODO.md` with the open issues grouped into bands. The `▶ Resume here` pointer is owned by
-`/wrap` (written at session end) — `/status` does not write or preserve it; once you've resumed it
+`/wrap` (written at session end) — `/pstatus` does not write or preserve it; once you've resumed it
 has served its purpose, so regenerating a bands-only `TODO.md` here is expected:
 
 - `🔴 P0 — Security & Critical` (list `security` / vulnerability issues first)
@@ -57,7 +57,7 @@ Each line: `- #<num> <title>`.
 Print the ranked bands, then a single **"Do this next"** recommendation — the highest-value
 P0 (else the top P1, and so on) with one line of why. Stop. Do not begin the work.
 
-## `/status --all` (portfolio sweep — read-only, no writes)
+## `/pstatus --all` (portfolio sweep — read-only, no writes)
 
 - Resolve the active repo list: `gh repo list <owner> --no-archived --source --limit 200 --json nameWithOwner`.
 - For each repo, gather open Dependabot alerts + open issues labeled `P0`.
