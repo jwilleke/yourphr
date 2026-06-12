@@ -24,6 +24,15 @@ import {SmartConnectRequest} from '../../models/fasten/smart-connect-request';
 
 export const sourceConnectWindowTimeout = 24*5000 //wait 2 minutes (5 * 24 = 120)
 
+// Epic's public SMART on FHIR sandbox (synthetic patients, no PHI). FHIR base + scopes are
+// stable, public, and non-secret; the client_id is bring-your-own — each user registers their
+// own patient-facing app at https://fhir.epic.com. See docs/vendors/epic-sandbox.md.
+export const EPIC_SANDBOX = {
+  api_endpoint_base_url: 'https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/R4',
+  scopes: 'launch/patient patient/*.read openid fhirUser offline_access',
+  display: 'Epic Sandbox',
+}
+
 export class SourceListItem {
   source?: Source
   brand: ConnectGatewayBrandListDisplayItem | PatientAccessBrand
@@ -267,6 +276,19 @@ export class MedicalSourcesComponent implements OnInit {
     this.smartSuccessMsg = ''
     this.smartConnecting = false
     this.modalService.open(this.smartConnectModalRef, {ariaLabelledBy: 'smart-connect-title'})
+  }
+
+  // Pre-fills the BYO SMART modal with Epic's public sandbox endpoint + scopes, then opens it.
+  // client_id stays empty on purpose: each user registers their own patient-facing app at
+  // fhir.epic.com (bring-your-own client_id). See docs/vendors/epic-sandbox.md.
+  public openEpicSandboxModal(): void {
+    this.smartForm = {
+      api_endpoint_base_url: EPIC_SANDBOX.api_endpoint_base_url,
+      client_id: '',
+      scopes: EPIC_SANDBOX.scopes,
+      display: EPIC_SANDBOX.display,
+    }
+    this.openSmartConnectModal()
   }
 
   // Forces <app-medical-sources-connected> to be destroyed and recreated so it re-runs its

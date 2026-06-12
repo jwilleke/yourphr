@@ -39,6 +39,19 @@ describe('MedicalSourcesComponent', () => {
     expect(component).toBeTruthy();
   });
 
+  // The "Use Epic Sandbox" button pre-fills the BYO SMART form with Epic's public sandbox
+  // endpoint + scopes, but leaves client_id empty (each user supplies their own).
+  it('openEpicSandboxModal: pre-fills the Epic sandbox endpoint + scopes and opens the modal', () => {
+    const openSpy = spyOn(component['modalService'], 'open').and.returnValue({ result: Promise.resolve() } as any);
+
+    component.openEpicSandboxModal();
+
+    expect(component.smartForm.api_endpoint_base_url).toContain('fhir.epic.com');
+    expect(component.smartForm.scopes).toContain('launch/patient');
+    expect(component.smartForm.client_id).toBe('');   // bring-your-own — user supplies it
+    expect(openSpy).toHaveBeenCalled();
+  });
+
   function fillSmartForm() {
     component.smartForm.api_endpoint_base_url = 'https://launch.smarthealthit.org/v/r4/fhir';
     component.smartForm.client_id = 'test-client';
