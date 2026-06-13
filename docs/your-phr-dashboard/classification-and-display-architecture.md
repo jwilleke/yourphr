@@ -2,7 +2,7 @@
 
 How YourPHR turns messy, vendor-specific FHIR into a patient-legible display — *regardless of source*. This is the design that underpins the dashboard's "Current Medical Concerns", the new "Patient Profile" section, and the per-resource detail cards.
 
-> Driving north star: the [patient-legible display principle](../patient-legible-display.md) (#262) — show what each thing *is* and *why it matters*, in plain words. This doc is the structural plan for delivering that across data from any source.
+> Driving north star: the [patient-legible display principle](./patient-legible-display.md) (#262) — show what each thing *is* and *why it matters*, in plain words. This doc is the structural plan for delivering that across data from any source.
 
 ## The problem (what real data exposed)
 
@@ -21,13 +21,13 @@ The work splits cleanly into **two independent layers that meet at a single cont
 ```
   Source data            Layer 1: SOURCE ADAPTER          Standard FHIR        Layer 2: DISPLAY MAPPER      Patient UI
   (per vendor)           vendor quirks -> standard FHIR    (uniform contract)   FHIR -> patient sections
- ┌────────────┐         ┌───────────────────────────┐    ┌──────────────┐     ┌────────────────────────┐   ┌──────────────┐
+ ┌────────────┐         ┌─────────────────────-──────┐    ┌──────────────┐     ┌────────────────────────┐   ┌──────────────┐
  │ FMH EHI    │────────▶│ HealthCondition ->         │───▶│ Condition    │────▶│ category=problem-list  │──▶│ Health       │
  │ (messy)    │         │   category=problem-list    │    │  +category   │     │   -> Health Problems   │   │ Problems     │
  │            │         │ PersonalHealthConsid. ->   │    │              │     │ category=sdoh/social   │   │ Patient      │
- │ Epic/Cerner│────────▶│   category=sdoh/social     │───▶│ (already     │────▶│   -> Patient Profile   │──▶│ Profile      │
- │ (conformant)│        │ (no-op — already conformant)│   │  conformant) │     │ Observation=labs -> …  │   │ Labs, Meds…  │
- └────────────┘         └───────────────────────────┘    └──────────────┘     └────────────────────────┘   └──────────────┘
+ │Epic/Cerner │────────▶│   category=sdoh/social     │───▶│ (all ready   │────▶│   -> Patient Profile   │──▶│ Profile      │
+ │(conformant)│         │(no-op — already conformant)│    │  conformant) │     │ Observation=labs -> …  │   │ Labs, Meds…  │
+ └────────────┘         └-───────────────────────────┘    └──────────────┘     └────────────────────────┘   └──────────────┘
                          per-vendor; the ONLY place        the contract           source-agnostic; ONE table
                          vendor-specific logic lives        everyone keys off
 ```

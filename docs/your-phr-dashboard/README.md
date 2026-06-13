@@ -1,12 +1,12 @@
 # The YourPHR dashboard
 
-The dashboard is the patient's **home view of their own health** — the first screen that should answer "what's going on with me?" in plain language. It is the primary surface where the [patient-legible display north star](../patient-legible-display.md) (#262) is proven or fails.
+The dashboard is the patient's **home view of their own health** — the first screen that should answer "what's going on with me?" in plain language. It is the primary surface where the [patient-legible display north star](./patient-legible-display.md) (#262) is proven or fails.
 
 > Mission: **Your medical records, immediately and in your hands — for free.** The dashboard is where "in your hands" has to mean *understandable*, not just *present*.
 
 ## Design principles
 
-The dashboard inherits the [patient-legible north star](../patient-legible-display.md) (#262):
+The dashboard inherits the [patient-legible north star](./patient-legible-display.md) (#262):
 
 - **Meaning first** — show what each thing *is* and *why it matters*, in plain words; demote FHIR resource types, statuses, IDs, and references.
 - **Organize by the patient's mental model** — "My medications / conditions / recent results", not FHIR resource types.
@@ -31,7 +31,7 @@ The earlier upstream "Example Dashboard" (which led with fake "Records Summary"/
 
 A **generic `profile-summary-widget`** (config row per profile group, #245) covers list-style profiles, reusing the #136 `fhir-card`s for detail — plus a few **bespoke** widgets where a summary line isn't enough (vitals trends, blood pressure). Future long-tail categories can go in a separate "All categories" dashboard (just add another `dashboard/*.json`), per #244.
 
-Full rationale and decisions: [`docs/planning/per-profile-dashboards-brainstorm.md`](../planning/per-profile-dashboards-brainstorm.md) and epic #244.
+Full rationale and decisions: [`docs/your-phr-dashboard/per-profile-dashboards-brainstorm.md`](./per-profile-dashboards-brainstorm.md) and epic #244.
 
 ## Widget catalog (current)
 
@@ -58,7 +58,7 @@ This is the difference between "MedicationStatement / unknown / active" and "Lis
 
 ## Canonical sources
 
-- North star: [`docs/patient-legible-display.md`](../patient-legible-display.md) (#262)
-- Dashboard design + decisions: [`docs/planning/per-profile-dashboards-brainstorm.md`](../planning/per-profile-dashboards-brainstorm.md) (#244)
+- North star: [`docs/your-phr-dashboard/patient-legible-display.md`](./patient-legible-display.md) (#262)
+- Dashboard design + decisions: [`docs/your-phr-dashboard/per-profile-dashboards-brainstorm.md`](./per-profile-dashboards-brainstorm.md) (#244)
 - Profile-summary widget: #245
 - US Core display: #136 / #249
