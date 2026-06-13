@@ -1,0 +1,66 @@
+[
+  {
+    "resourceType": "Observation",
+    "id": "heart-rate",
+    "status": "final",
+    "category": [{"coding": [{"system": "http://terminology.hl7.org/CodeSystem/observation-category", "code": "vital-signs"}]}],
+    "code": {"coding": [{"system": "http://loinc.org", "code": "8867-4"}]},
+    "effectiveDateTime": "2019-03-14",
+    "valueQuantity": {"value": 72, "unit": "/min", "system": "http://unitsofmeasure.org", "code": "/min"}
+  },
+  {
+    "resourceType": "Observation",
+    "id": "body-weight",
+    "status": "final",
+    "category": [{"coding": [{"system": "http://terminology.hl7.org/CodeSystem/observation-category", "code": "vital-signs"}]}],
+    "code": {"coding": [{"system": "http://loinc.org", "code": "29463-7"}]},
+    "effectiveDateTime": "2019-03-14",
+    "valueQuantity": {"value": 81.6, "unit": "kg", "system": "http://unitsofmeasure.org", "code": "kg"}
+  },
+  {
+    "resourceType": "Observation",
+    "id": "blood-pressure",
+    "status": "final",
+    "category": [{"coding": [{"system": "http://terminology.hl7.org/CodeSystem/observation-category", "code": "vital-signs"}]}],
+    "code": {"coding": [{"system": "http://loinc.org", "code": "85354-9"}]},
+    "effectiveDateTime": "2019-03-14",
+    "component": [
+      {"code": {"coding": [{"system": "http://loinc.org", "code": "8480-6"}]}, "valueQuantity": {"value": 120, "unit": "mmHg", "system": "http://unitsofmeasure.org", "code": "mm[Hg]"}},
+      {"code": {"coding": [{"system": "http://loinc.org", "code": "8462-4"}]}, "valueQuantity": {"value": 80, "unit": "mmHg", "system": "http://unitsofmeasure.org", "code": "mm[Hg]"}}
+    ]
+  },
+  {
+    "resourceType": "Observation",
+    "id": "weight-wrong-unit",
+    "status": "final",
+    "category": [{"coding": [{"system": "http://terminology.hl7.org/CodeSystem/observation-category", "code": "vital-signs"}]}],
+    "code": {"coding": [{"system": "http://loinc.org", "code": "29463-7"}]},
+    "valueQuantity": {"value": 180, "unit": "lbs", "code": "[stone_av]"}
+  },
+  {
+    "resourceType": "Observation",
+    "id": "height-missing-unit",
+    "status": "final",
+    "category": [{"coding": [{"system": "http://terminology.hl7.org/CodeSystem/observation-category", "code": "vital-signs"}]}],
+    "code": {"coding": [{"system": "http://loinc.org", "code": "8302-2"}]},
+    "valueQuantity": {"value": 175}
+  },
+  {
+    "resourceType": "Observation",
+    "id": "bp-missing-diastolic",
+    "status": "final",
+    "code": {"coding": [{"system": "http://loinc.org", "code": "85354-9"}]},
+    "component": [
+      {"code": {"coding": [{"system": "http://loinc.org", "code": "8480-6"}]}, "valueQuantity": {"value": 118, "code": "mm[Hg]"}}
+    ]
+  },
+  {
+    "resourceType": "Observation",
+    "id": "steps-not-a-vital",
+    "status": "final",
+    "category": [{"coding": [{"system": "http://terminology.hl7.org/CodeSystem/observation-category", "code": "activity"}]}],
+    "code": {"coding": [{"system": "http://loinc.org", "code": "41950-7"}]},
+    "effectiveDateTime": "2018-09-24",
+    "valueInteger": 2786
+  }
+]
