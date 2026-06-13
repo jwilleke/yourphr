@@ -38,7 +38,7 @@ func loadFixture(t *testing.T) []InputResource {
 }
 
 func TestClassify(t *testing.T) {
-	results := Classify(loadFixture(t), time.Now().UTC())
+	results := Classify(loadFixture(t), time.Now().UTC(), nil, nil)
 
 	byID := make(map[string]ClassifiedCondition, len(results))
 	for _, r := range results {
@@ -96,7 +96,7 @@ func TestClassify(t *testing.T) {
 }
 
 func TestClassify_DisplayFields(t *testing.T) {
-	results := Classify(loadFixture(t), time.Now().UTC())
+	results := Classify(loadFixture(t), time.Now().UTC(), nil, nil)
 	byID := make(map[string]ClassifiedCondition, len(results))
 	for _, r := range results {
 		byID[r.SourceResourceID] = r

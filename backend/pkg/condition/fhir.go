@@ -45,6 +45,7 @@ type rawCondition struct {
 	Code               *fhirCodeableConcept  `json:"code"`
 	Recorder           *fhirReference        `json:"recorder"`
 	Asserter           *fhirReference        `json:"asserter"`
+	Encounter          *fhirReference        `json:"encounter"`
 	OnsetDateTime      string                `json:"onsetDateTime"`
 	OnsetPeriod        *fhirPeriod           `json:"onsetPeriod"`
 	RecordedDate       string                `json:"recordedDate"`

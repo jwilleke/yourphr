@@ -16,6 +16,8 @@ package condition
 import (
 	"encoding/json"
 	"time"
+
+	"github.com/fastenhealth/fasten-onprem/backend/pkg/provenance"
 )
 
 // Synthesized FHIR Condition.category values.
@@ -76,12 +78,21 @@ type ClassifiedCondition struct {
 	Abated             string   `json:"abated,omitempty"`
 	Note               string   `json:"note,omitempty"`
 	StandardCodings    []Coding `json:"standardCodings,omitempty"`
+
+	// Provenance ("who said this") — the named author/self-reported/source, resolved against the
+	// other stored resources. nil when no resolver is supplied. SelfReported above is the quick flag;
+	// this is the fuller answer.
+	Provenance *provenance.Provenance `json:"provenance,omitempty"`
 }
 
 // Classify returns one ClassifiedCondition per input (in input order), except resources the record
 // marks entered-in-error, which are omitted. `now` is reserved for future date-based rules and kept
 // for signature symmetry with medication.Reconcile.
-func Classify(resources []InputResource, now time.Time) []ClassifiedCondition {
+//
+// resolver and sourceLabel are optional (pass nil for both to skip provenance — e.g. in pure unit
+// tests): when a resolver is supplied, each condition's "who said this" is resolved against the other
+// stored resources, and sourceLabel maps a resource's SourceID to a human source name for the floor.
+func Classify(resources []InputResource, now time.Time, resolver *provenance.ResourceSet, sourceLabel func(sourceID string) string) []ClassifiedCondition {
 	out := make([]ClassifiedCondition, 0, len(resources))
 	for _, res := range resources {
 		var raw rawCondition
@@ -97,7 +108,7 @@ func Classify(resources []InputResource, now time.Time) []ClassifiedCondition {
 		tier, category, selfReported := classify(&raw)
 		state := resolveState(&raw, verif)
 
-		out = append(out, ClassifiedCondition{
+		cc := ClassifiedCondition{
 			SourceResourceType: res.SourceResourceType,
 			SourceResourceID:   res.SourceResourceID,
 			SourceID:           res.SourceID,
@@ -113,9 +124,34 @@ func Classify(resources []InputResource, now time.Time) []ClassifiedCondition {
 			Abated:             raw.abated(),
 			Note:               raw.noteText(),
 			StandardCodings:    standardCodings(raw.Code),
-		})
+		}
+
+		if resolver != nil {
+			label := ""
+			if sourceLabel != nil {
+				label = sourceLabel(res.SourceID)
+			}
+			prov := resolver.ResolveProvenance(provenance.Request{
+				Authors:     []provenance.Reference{provRef(raw.Asserter), provRef(raw.Recorder)},
+				Encounter:   provRef(raw.Encounter),
+				TargetType:  res.SourceResourceType,
+				TargetID:    res.SourceResourceID,
+				SourceLabel: label,
+			})
+			cc.Provenance = &prov
+		}
+
+		out = append(out, cc)
 	}
 	return out
+}
+
+// provRef converts a parsed FHIR reference to a provenance.Reference (zero value when absent).
+func provRef(ref *fhirReference) provenance.Reference {
+	if ref == nil {
+		return provenance.Reference{}
+	}
+	return provenance.Reference{Reference: ref.Reference, Display: ref.Display}
 }
 
 // classify assigns the tier + category. It first HONORS a category the source already declared —
