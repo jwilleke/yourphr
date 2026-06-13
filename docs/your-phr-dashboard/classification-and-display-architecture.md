@@ -129,6 +129,26 @@ A single explicit table maps standard FHIR (resource type + clinical category) t
 
 The home for the `PersonalHealthConsideration` / social / SDOH items pulled out of "Current Medical Concerns". Named for the patient's mental model — "stuff about me", not "stuff wrong with me". Fed by FHIR category `sdoh` / `social-history`, so conformant sources' social-history data lands here automatically too.
 
+### Surfacing gate for low-value series (activity / tracker data)
+
+Some sources relay **consumer wearable/tracker data** (step counts, exercise logs) that is technically valid FHIR but often stale, sparse, or abandoned. Shown raw it misleads — a years-old, mostly-zero step series read as a daily chart implies "inactive patient" when it really means "device not worn." A **usability gate** decides *at what resolution* such a series is shown. It never alters or drops data — **no-discard holds**: every point stays stored and queryable; the gate only chooses how to present it.
+
+The gate is a **Layer 2 (display) policy, not Layer 1.** Layer 1 classifies every resource faithfully (every day carried, zeros included). Layer 2 evaluates the already-classified series:
+
+- **A — Structured & coded (hard floor):** an `Observation` with `category = activity`, a recognized code (e.g. LOINC), and a numeric `value[x]`. Fail A → not a usable series at all — there is nothing to plot or summarize (e.g. FollowMyHealth's `text/plain` "Exercise" `DocumentReference`s carry no numeric value).
+- **B — Real signal:** at least **N non-zero** data points (default **N = 14**). A `0` typically means *device not worn / not synced*, not a measured zero.
+- **C — Recent enough:** at least one non-zero point within the last **M months** (default **M = 18**) of `now` / latest import. Disqualifies frozen, years-old snapshots.
+
+**Passing B *and* C → live daily view. Failing B or C does NOT hide the series — it collapses to an honest per-year rollup** (a compact historical archive instead of a misleading daily chart). Thresholds **N / M are config** (the dashboard is config-driven), not hardcoded — they are policy, not derivable from the record. The gate is **source-agnostic** — a current, populated feed from *any* source passes B/C and gets the daily view; the collapse reflects **data quality, not vendor** (it does not depend on FollowMyHealth detection).
+
+#### The per-year rollup — never a bare calendar average
+
+A single "average steps per 24h by year" is a **forbidden, misleading statistic**: averaging over *all* calendar days drags the no-wear zeros into the mean, turning "stopped wearing the tracker" into a false story of "became sedentary" (observed: a year where the device was barely worn shows an all-days average an *order of magnitude below* its average on worn days — the tracker was idle, not the patient). Instead, each year reports **three faithful, explicitly-labeled stats over the `value > 0` subset**:
+
+> **On days with recorded steps:** *N* active days · avg *X* · peak *Y*
+
+This respects no-guessing: it does **not** treat `0` as missing data; it reports statistics over an explicitly-defined subset **and discloses the active-day count**, so sparsity is visible rather than hidden (the active-day count *is* the honesty — "85 active days, avg X" tells the whole truth; "avg X" alone does not). Same posture as the daily view: Layer 1 stays faithful; Layer 2 chooses the resolution.
+
 ## Conformance vs. display (deliberately scoped)
 
 There are two distinct goals; they need different amounts of work, and they are **sequential, not either/or**:
@@ -154,6 +174,7 @@ For the conformance goal, **do not blanket-remodel** the Patient Profile bucket.
 6. **Provenance floor = "Source: FollowMyHealth"**; "Self-reported" for Patient-asserted; never invent a clinician.
 7. **Codes for clinicians, plain language for patients**: standard codes only, displayed as supporting detail; surface `note[]`.
 8. **Conformance remodeling is opt-in per item**, gated by the three-part test; smoking status first.
+9. **Usability gate for tracker/activity series** (Layer 2 display policy): structured + numeric value (floor A) is required to be a usable series at all. Passing recency/signal (B/C, configurable) → live daily view; **failing → collapse to an honest per-year rollup `{active days, avg-on-active, peak}` — never a bare calendar average, and never hidden** (no-discard holds). Faithful to no-guessing (`0` ≠ missing; active-day count disclosed); source-agnostic — keys off data quality, not vendor.
 
 ## Phasing
 
