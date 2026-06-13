@@ -18,6 +18,10 @@ type ListResourceQueryOptions struct {
 	SourceResourceType string
 	SourceResourceID   string
 
+	// SortTitleContains, when set, filters to resources whose sort_title contains the substring
+	// (case-insensitive LIKE) — used for the dashboard "search your record" feature.
+	SortTitleContains string
+
 	//pagination
 	Limit  int
 	Offset int

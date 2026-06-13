@@ -536,6 +536,9 @@ func (gr *GormRepository) ListResources(ctx context.Context, queryOptions models
 
 	var wrappedResourceModels []models.ResourceBase
 	queryBuilder := gr.GormClient.WithContext(ctx)
+	if len(queryOptions.SortTitleContains) > 0 {
+		queryBuilder = queryBuilder.Where("sort_title LIKE ?", "%"+queryOptions.SortTitleContains+"%")
+	}
 	if len(queryOptions.SourceResourceType) > 0 {
 		tableName, err := databaseModel.GetTableNameByResourceType(queryOptions.SourceResourceType)
 		if err != nil {
