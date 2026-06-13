@@ -51,23 +51,23 @@ YourPHR handles **Personal Health Information**. **Never** attach real patient d
 
 ---
 
-# Development environment
+## Development environment
 
 > The authoritative pinned versions live in `frontend/.nvmrc`, `frontend/package.json`, `go.mod`, and `Dockerfile` — keep this section in sync with those. In the meantime, the [Fasten Docs Repository](https://github.com/fastenhealth/docs/tree/main/technical) has extensive background.
 
 ## Tech stack
 
-**Frontend**
+### Frontend
 
 - Node.js `v24` — pinned in `frontend/.nvmrc` (run `nvm use` in `frontend/`)
 - Yarn `1.22.22` (classic) — pinned via `package.json` `packageManager`; enable with `corepack enable`
 - Angular `v20` — use the project-local CLI via `npx ng …` (don't install a global CLI)
 
-**Backend**
+### Backend
 
 - Go `v1.24` — built with `golang:1.24`; `go.mod` requires `go 1.23+`
 
-**Misc**
+### Misc
 
 - Docker `v24+`
 
@@ -150,7 +150,7 @@ make serve-backend
 
 Open `http://localhost:4200`. The frontend dev server proxies API requests to the backend.
 
-_Modes:_ YourPHR runs in **sandbox** (talks only to synthetic-data test servers — the default for dev) or **prod** (real servers).
+*Modes:* YourPHR runs in **sandbox** (talks only to synthetic-data test servers — the default for dev) or **prod** (real servers).
 
 ## Credentials
 
