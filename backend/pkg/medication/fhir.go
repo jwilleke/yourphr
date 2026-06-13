@@ -310,3 +310,15 @@ func (r *rawMedicationResource) authorRef() *fhirReference {
 	}
 	return nil
 }
+
+// authoredTime returns the record's author timestamp (USCDI Author Time Stamp): authoredOn for a
+// MedicationRequest, dateAsserted for a MedicationStatement. "" when absent.
+func (r *rawMedicationResource) authoredTime() string {
+	switch r.resolvedType() {
+	case "MedicationRequest":
+		return r.AuthoredOn
+	case "MedicationStatement":
+		return r.DateAsserted
+	}
+	return ""
+}

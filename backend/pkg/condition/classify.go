@@ -132,11 +132,12 @@ func Classify(resources []InputResource, now time.Time, resolver *provenance.Res
 				label = sourceLabel(res.SourceID)
 			}
 			prov := resolver.ResolveProvenance(provenance.Request{
-				Authors:     []provenance.Reference{provRef(raw.Asserter), provRef(raw.Recorder)},
-				Encounter:   provRef(raw.Encounter),
-				TargetType:  res.SourceResourceType,
-				TargetID:    res.SourceResourceID,
-				SourceLabel: label,
+				Authors:      []provenance.Reference{provRef(raw.Asserter), provRef(raw.Recorder)},
+				Encounter:    provRef(raw.Encounter),
+				TargetType:   res.SourceResourceType,
+				TargetID:     res.SourceResourceID,
+				SourceLabel:  label,
+				AuthoredTime: raw.RecordedDate, // Condition.recordedDate = USCDI Author Time Stamp
 			})
 			cc.Provenance = &prov
 		}

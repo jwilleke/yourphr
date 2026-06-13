@@ -15,11 +15,14 @@ const (
 )
 
 // Provenance is the resolved "who said this" for a resource: the best level found, labeled, never
-// fabricated. Level is the ladder rung (1 strongest), useful for badges/sorting.
+// fabricated. Level is the ladder rung (1 strongest), useful for badges/sorting. Recorded is the
+// USCDI "Author Time Stamp" — when the record states it was authored/asserted — passed through from
+// the record as a raw FHIR date string ("" when the record gives none; never fabricated).
 type Provenance struct {
-	Kind    string `json:"kind"`
-	Display string `json:"display"`
-	Level   int    `json:"level"`
+	Kind     string `json:"kind"`
+	Display  string `json:"display"`
+	Level    int    `json:"level"`
+	Recorded string `json:"recorded,omitempty"`
 }
 
 // Request is a generic provenance query: author references in priority order (e.g. asserter then
@@ -31,6 +34,10 @@ type Request struct {
 	TargetType  string
 	TargetID    string
 	SourceLabel string
+	// AuthoredTime is the record's own author timestamp (e.g. Condition.recordedDate,
+	// MedicationRequest.authoredOn) — the USCDI "Author Time Stamp". Passed straight through onto the
+	// result's Recorded field; "" when the record gives none.
+	AuthoredTime string
 }
 
 // ResolveProvenance walks the provenance ladder and returns the best-labeled author, never inventing one:
@@ -39,6 +46,12 @@ type Request struct {
 //  3. a Provenance resource targeting the record
 //  4. floor: "Source: <import source>"
 func (s *ResourceSet) ResolveProvenance(req Request) Provenance {
+	p := s.resolveLadder(req)
+	p.Recorded = req.AuthoredTime // USCDI Author Time Stamp — the record's own, never fabricated
+	return p
+}
+
+func (s *ResourceSet) resolveLadder(req Request) Provenance {
 	// 1. authors, in priority order
 	for _, a := range req.Authors {
 		if p, ok := s.resolveAuthor(a); ok {

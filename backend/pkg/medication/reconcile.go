@@ -259,10 +259,11 @@ func finalize(med *ReconciledMedication, parsed []*rawMedicationResource, resolv
 			label = sourceLabel(rep.sourceID)
 		}
 		prov := resolver.ResolveProvenance(provenance.Request{
-			Authors:     authors,
-			TargetType:  rep.resolvedType(),
-			TargetID:    rep.sourceResourceID,
-			SourceLabel: label,
+			Authors:      authors,
+			TargetType:   rep.resolvedType(),
+			TargetID:     rep.sourceResourceID,
+			SourceLabel:  label,
+			AuthoredTime: rep.authoredTime(), // authoredOn / dateAsserted = USCDI Author Time Stamp
 		})
 		med.Provenance = &prov
 	}

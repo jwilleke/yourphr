@@ -56,3 +56,34 @@ func TestResolveProvenance_Ladder(t *testing.T) {
 		}
 	}
 }
+
+// The USCDI Author Time Stamp passes through onto the result, regardless of which rung answered, and
+// is never fabricated when absent.
+func TestResolveProvenance_AuthorTimeStamp(t *testing.T) {
+	s := NewResourceSet(testResources())
+
+	withTime := s.ResolveProvenance(Request{
+		Authors:      []Reference{{Reference: "Practitioner/dr-1"}},
+		AuthoredTime: "2019-03-14",
+		SourceLabel:  "FollowMyHealth",
+	})
+	if withTime.Recorded != "2019-03-14" {
+		t.Errorf("recorded = %q, want %q", withTime.Recorded, "2019-03-14")
+	}
+
+	// Floor rung still carries the timestamp.
+	floorWithTime := s.ResolveProvenance(Request{
+		Authors:      []Reference{{Reference: "Practitioner/ghost"}},
+		AuthoredTime: "2020-01-02",
+		SourceLabel:  "FollowMyHealth",
+	})
+	if floorWithTime.Kind != KindSource || floorWithTime.Recorded != "2020-01-02" {
+		t.Errorf("floor: got kind=%q recorded=%q, want source / 2020-01-02", floorWithTime.Kind, floorWithTime.Recorded)
+	}
+
+	// Absent author time is left empty, never fabricated.
+	noTime := s.ResolveProvenance(Request{Authors: []Reference{{Reference: "Patient/pat-1"}}})
+	if noTime.Recorded != "" {
+		t.Errorf("recorded = %q, want empty when the record gives no author time", noTime.Recorded)
+	}
+}
