@@ -37,6 +37,7 @@
             <td><i class="fas" [ngClass]="expanded[med.key] ? 'fa-chevron-down' : 'fa-chevron-right'"></i></td>
             <td>
               <strong>{{ med.title }}</strong>
+              <span *ngIf="med.provenance?.kind === 'self-reported'" class="badge badge-info mg-l-5" title="You reported this medication; it was not stated by a clinician in your records.">Self-reported</span>
               <span *ngIf="med.stateConflict" class="tx-warning" title="The records disagree on this medication's status — see details."> &#9888;</span>
             </td>
             <td><span *ngIf="med.dose; else noDose">{{ med.dose }}</span><ng-template #noDose><app-missing-data field="Dose"></app-missing-data></ng-template></td>
@@ -58,6 +59,7 @@
 
               <div *ngIf="med.sig" class="mg-b-15"><strong class="tx-12 tx-uppercase tx-gray-500">Instructions</strong><div class="mg-t-5">{{ med.sig }}</div></div>
               <div *ngIf="med.prescriber" class="mg-b-15"><strong class="tx-12 tx-uppercase tx-gray-500">Prescriber</strong><div class="mg-t-5">{{ med.prescriber }}</div></div>
+              <div *ngIf="med.provenance" class="mg-b-15"><strong class="tx-12 tx-uppercase tx-gray-500">Reported by</strong><div class="mg-t-5">{{ med.provenance.display }}</div></div>
 
               <strong class="tx-12 tx-uppercase tx-gray-500">Source records</strong>
               <table class="table table-sm mg-t-5 mg-b-0">

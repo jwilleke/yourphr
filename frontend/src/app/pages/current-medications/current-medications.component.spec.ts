@@ -73,4 +73,30 @@ describe('CurrentMedicationsComponent', () => {
       'https://dailymed.nlm.nih.gov/dailymed/search.cfm?query=Omeprazole%2020%20MG'
     );
   });
+
+  it('flags self-reported provenance with a badge and a "Reported by" line', () => {
+    component.medications = [
+      med({key: 'a', title: 'Zyrtec', state: 'Active', provenance: {kind: 'self-reported', display: 'Self-reported', level: 1}}),
+    ];
+    (component as any).applyView();
+    component.toggleExpanded('a');
+    fixture.detectChanges();
+
+    const el: HTMLElement = fixture.nativeElement;
+    expect(el.querySelector('.med-row .badge-info')?.textContent).toContain('Self-reported');
+    expect(el.textContent).toContain('Reported by');
+  });
+
+  it('renders the resolved attribution for a clinician-sourced row (no self-reported badge)', () => {
+    component.medications = [
+      med({key: 'b', title: 'Lisinopril', state: 'Active', provenance: {kind: 'practitioner', display: 'Dr. McKinley', level: 1}}),
+    ];
+    (component as any).applyView();
+    component.toggleExpanded('b');
+    fixture.detectChanges();
+
+    const el: HTMLElement = fixture.nativeElement;
+    expect(el.querySelector('.med-row .badge-info')).toBeNull();
+    expect(el.textContent).toContain('Dr. McKinley');
+  });
 });

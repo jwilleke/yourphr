@@ -18,6 +18,15 @@ export interface MedicationContributor {
   sig?: string;
 }
 
+// "Who said this" — the resolved provenance for the row (backend pkg/provenance.Provenance).
+// `display` is always a complete human label: a clinician/organization name, "Self-reported"
+// (Patient-asserted), or the honest floor "Source: <name>". Never a fabricated author.
+export interface MedicationProvenance {
+  kind: string;     // practitioner | self-reported | organization | provenance | source
+  display: string;
+  level: number;    // ladder rung the answer came from (1 strongest)
+}
+
 export interface ReconciledMedication {
   key: string;
   title: string;
@@ -32,4 +41,5 @@ export interface ReconciledMedication {
   lastActivity?: string;
   originalCodings?: MedicationCoding[];
   contributors?: MedicationContributor[];
+  provenance?: MedicationProvenance;   // "who said this" — nil when no resolver ran
 }
