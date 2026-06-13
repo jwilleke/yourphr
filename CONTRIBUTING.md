@@ -7,7 +7,7 @@
 ## Why contribute
 
 - **It matters.** People can't act on records they can't read. YourPHR exists to put your health *in your hands* in plain language — see the [patient-legible display north star](docs/your-phr-dashboard/patient-legible-display.md). Your work goes straight to that.
-- **It stays yours.** YourPHR is **community-owned and stays free** — GPL v3, self-hosted, your data never leaves your control and is never sold. This is a continuation that exists *because* the original stalled; the whole point is that effort here compounds and won't be locked away.
+- **It stays yours.** YourPHR is **community-owned and stays free** — GPL v3, self-hosted, your data never leaves your control and is never sold. This is a continuation that exists to keep a fully open-source build alive after upstream's sync moved into a commercial product; the whole point is that effort here compounds and won't be locked away.
 - **The problems are genuinely interesting** (see below).
 
 ## The interesting problems (if you want something meaty)

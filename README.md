@@ -9,7 +9,7 @@
 **Mission: Your medical records, immediately and in your hands — for free.** Fulfilling the [21st Century Cures Act](https://www.healthit.gov/topic/oncs-cures-act-final-rule) (2016).
 
 > [!NOTE]
-> **YourPHR is a standalone, community-maintained continuation of [Fasten OnPrem](https://github.com/fastenhealth/fasten-onprem)**, carried forward by [@jwilleke](https://github.com/jwilleke) after upstream development stalled.
+> **YourPHR is a standalone, community-maintained continuation of [Fasten OnPrem](https://github.com/fastenhealth/fasten-onprem)**, carried forward by [@jwilleke](https://github.com/jwilleke) to keep a fully open-source, self-hostable PHR going after upstream's hosted sync relay (Lighthouse) moved into the commercial *Fasten Connect* product — which broke provider sync in the open-source build.
 >
 > The original work is by **Jason Kulatunga ([@AnalogJ](https://github.com/AnalogJ))** and **Alex Szilagyi ([@alexszilagyi](https://github.com/alexszilagyi))** under the [GNU GPL v3 license](LICENSE.md). YourPHR remains GPL v3 and retains full attribution.
 >
