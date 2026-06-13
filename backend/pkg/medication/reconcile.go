@@ -15,6 +15,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/fastenhealth/fasten-onprem/backend/pkg/provenance"
 )
 
 const rxNormSystem = "http://www.nlm.nih.gov/research/umls/rxnorm"
@@ -33,6 +35,7 @@ const (
 type InputResource struct {
 	SourceResourceType string
 	SourceResourceID   string
+	SourceID           string // the import source/connection id (for the provenance floor label)
 	Raw                json.RawMessage
 }
 
@@ -71,6 +74,11 @@ type ReconciledMedication struct {
 	LastActivity    *time.Time    `json:"lastActivity,omitempty"`
 	OriginalCodings []Coding      `json:"originalCodings,omitempty"`
 	Contributors    []Contributor `json:"contributors"`
+
+	// Provenance ("who said this") — the prescriber (MedicationRequest.requester), the information
+	// source (MedicationStatement.informationSource: Patient ⇒ "Self-reported"), or the floor. nil
+	// when no resolver is supplied. Prescriber above is the raw display; this is the resolved answer.
+	Provenance *provenance.Provenance `json:"provenance,omitempty"`
 }
 
 // precedence: a lower number wins for field selection (prescribed > self-reported > dispense).
@@ -83,7 +91,11 @@ var typePrecedence = map[string]int{
 
 // Reconcile groups the resources into one row per clinical drug (dose-specific) and derives each
 // row's display fields, state, and evidence. `now` is used only to resolve explicit past end dates.
-func Reconcile(resources []InputResource, now time.Time) []ReconciledMedication {
+//
+// resolver and sourceLabel are optional (pass nil for both to skip provenance, as in pure unit
+// tests): when supplied, each row's "who said this" is resolved against the other stored resources,
+// and sourceLabel maps a resource's SourceID to a human source name for the floor.
+func Reconcile(resources []InputResource, now time.Time, resolver *provenance.ResourceSet, sourceLabel func(sourceID string) string) []ReconciledMedication {
 	type group struct {
 		med        *ReconciledMedication
 		parsed     []*rawMedicationResource // aligned with med.Contributors
@@ -116,6 +128,7 @@ func Reconcile(resources []InputResource, now time.Time) []ReconciledMedication 
 		}
 		r.sourceResourceType = in.SourceResourceType
 		r.sourceResourceID = in.SourceResourceID
+		r.sourceID = in.SourceID
 
 		// Medication resources are referenced by the others (contained or by-reference); they carry
 		// no status/dosage of their own to reconcile, so skip them as standalone rows.
@@ -172,7 +185,7 @@ func Reconcile(resources []InputResource, now time.Time) []ReconciledMedication 
 		if len(g.med.Contributors) == 0 {
 			continue // every contributor was entered-in-error
 		}
-		finalize(g.med, g.parsed)
+		finalize(g.med, g.parsed, resolver, sourceLabel)
 		result = append(result, *g.med)
 	}
 
@@ -194,8 +207,8 @@ func Reconcile(resources []InputResource, now time.Time) []ReconciledMedication 
 }
 
 // finalize derives the row-level fields from its contributors: field precedence, state +
-// conflict, prescriber, and last-activity.
-func finalize(med *ReconciledMedication, parsed []*rawMedicationResource) {
+// conflict, prescriber, last-activity, and resolved provenance.
+func finalize(med *ReconciledMedication, parsed []*rawMedicationResource, resolver *provenance.ResourceSet, sourceLabel func(string) string) {
 	// sort contributor indices by type precedence for field selection
 	idx := make([]int, len(parsed))
 	for i := range idx {
@@ -205,6 +218,9 @@ func finalize(med *ReconciledMedication, parsed []*rawMedicationResource) {
 		return typePrecedence[parsed[idx[a]].resolvedType()] < typePrecedence[parsed[idx[b]].resolvedType()]
 	})
 
+	// authors in precedence order: a prescriber (MedicationRequest.requester) outranks a statement's
+	// informationSource, which is why we walk idx (already precedence-sorted).
+	var authors []provenance.Reference
 	for _, i := range idx {
 		c := med.Contributors[i]
 		if med.Dose == "" {
@@ -222,6 +238,9 @@ func finalize(med *ReconciledMedication, parsed []*rawMedicationResource) {
 		if med.Prescriber == "" && parsed[i].resolvedType() == "MedicationRequest" {
 			med.Prescriber = parsed[i].prescriber()
 		}
+		if a := parsed[i].authorRef(); a != nil {
+			authors = append(authors, provenance.Reference{Reference: a.Reference, Display: a.Display})
+		}
 	}
 
 	// last activity = max contributor date
@@ -232,6 +251,21 @@ func finalize(med *ReconciledMedication, parsed []*rawMedicationResource) {
 	}
 
 	med.State, med.StateConflict = resolveState(med.Contributors)
+
+	if resolver != nil && len(parsed) > 0 {
+		rep := parsed[idx[0]] // representative contributor (highest precedence) for the floor + target
+		label := ""
+		if sourceLabel != nil {
+			label = sourceLabel(rep.sourceID)
+		}
+		prov := resolver.ResolveProvenance(provenance.Request{
+			Authors:     authors,
+			TargetType:  rep.resolvedType(),
+			TargetID:    rep.sourceResourceID,
+			SourceLabel: label,
+		})
+		med.Provenance = &prov
+	}
 }
 
 // resolveState reduces the contributors' classified states to one badge. Only contributors that

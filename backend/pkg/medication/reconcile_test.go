@@ -37,7 +37,7 @@ func TestReconcile_DedupRequestPlusDispense(t *testing.T) {
 		"whenHandedOver":"2026-01-15",
 		"dosageInstruction":[{"doseAndRate":[{"doseQuantity":{"value":40,"unit":"mg"}}]}]}`
 
-	meds := Reconcile([]InputResource{res("MedicationRequest", "mr1", req), res("MedicationDispense", "md1", disp)}, now)
+	meds := Reconcile([]InputResource{res("MedicationRequest", "mr1", req), res("MedicationDispense", "md1", disp)}, now, nil, nil)
 
 	require.Len(t, meds, 1)
 	m := meds[0]
@@ -62,7 +62,7 @@ func TestReconcile_DoseSpecific_TwoRows(t *testing.T) {
 	r10 := `{"resourceType":"MedicationRequest","status":"completed","authoredOn":"2025-12-01",
 		"medicationCodeableConcept":{"coding":[{"system":"http://www.nlm.nih.gov/research/umls/rxnorm","code":"197361","display":"Lisinopril 10 MG Oral Tablet"}]}}`
 
-	meds := Reconcile([]InputResource{res("MedicationRequest", "a", r40), res("MedicationRequest", "b", r10)}, now)
+	meds := Reconcile([]InputResource{res("MedicationRequest", "a", r40), res("MedicationRequest", "b", r10)}, now, nil, nil)
 
 	require.Len(t, meds, 2)
 	require.Equal(t, StateActive, find(meds, "rxnorm:314076").State)
@@ -76,7 +76,7 @@ func TestReconcile_NonUSCore_TextKeyAndPassthrough(t *testing.T) {
 		"medicationCodeableConcept":{"coding":[{"system":"https://fhir.followmyhealth.com/id/translation","code":"7c2e9d40-uuid","display":"Omeprazole 20 MG Oral Tablet Delayed Release"}]},
 		"effectivePeriod":{"start":"2025-11-01"},"dateAsserted":"2026-02-20"}`
 
-	meds := Reconcile([]InputResource{res("MedicationStatement", "s1", stmt)}, now)
+	meds := Reconcile([]InputResource{res("MedicationStatement", "s1", stmt)}, now, nil, nil)
 
 	require.Len(t, meds, 1)
 	m := meds[0]
@@ -104,7 +104,7 @@ func TestReconcile_StateClassification(t *testing.T) {
 	for _, tc := range cases {
 		body := `{"resourceType":"MedicationRequest","status":"` + tc.status + `",
 			"medicationCodeableConcept":{"text":"Drug ` + tc.status + `"}}`
-		meds := Reconcile([]InputResource{res("MedicationRequest", "x", body)}, now)
+		meds := Reconcile([]InputResource{res("MedicationRequest", "x", body)}, now, nil, nil)
 		require.Len(t, meds, 1, "status=%q", tc.status)
 		require.Equal(t, tc.want, meds[0].State, "status=%q", tc.status)
 	}
@@ -112,7 +112,7 @@ func TestReconcile_StateClassification(t *testing.T) {
 
 func TestReconcile_EnteredInError_Dropped(t *testing.T) {
 	body := `{"resourceType":"MedicationRequest","status":"entered-in-error","medicationCodeableConcept":{"text":"Bogus"}}`
-	meds := Reconcile([]InputResource{res("MedicationRequest", "x", body)}, now)
+	meds := Reconcile([]InputResource{res("MedicationRequest", "x", body)}, now, nil, nil)
 	require.Empty(t, meds, "entered-in-error contributor should be dropped, leaving no row")
 }
 
@@ -120,7 +120,7 @@ func TestReconcile_EnteredInError_Dropped(t *testing.T) {
 func TestReconcile_ExplicitPastEndDate(t *testing.T) {
 	body := `{"resourceType":"MedicationStatement","status":"active","medicationCodeableConcept":{"text":"Old Drug"},
 		"effectivePeriod":{"start":"2024-01-01","end":"2024-06-01"}}`
-	meds := Reconcile([]InputResource{res("MedicationStatement", "x", body)}, now)
+	meds := Reconcile([]InputResource{res("MedicationStatement", "x", body)}, now, nil, nil)
 	require.Len(t, meds, 1)
 	require.Equal(t, StatePast, meds[0].State)
 }
@@ -132,7 +132,7 @@ func TestReconcile_StatusConflict(t *testing.T) {
 		"medicationCodeableConcept":{"coding":[{"system":"http://www.nlm.nih.gov/research/umls/rxnorm","code":"999","display":"Drug X"}]}}`
 	stmt := `{"resourceType":"MedicationStatement","status":"completed","effectiveDateTime":"2026-01-01",
 		"medicationCodeableConcept":{"coding":[{"system":"http://www.nlm.nih.gov/research/umls/rxnorm","code":"999","display":"Drug X"}]}}`
-	meds := Reconcile([]InputResource{res("MedicationRequest", "r", req), res("MedicationStatement", "s", stmt)}, now)
+	meds := Reconcile([]InputResource{res("MedicationRequest", "r", req), res("MedicationStatement", "s", stmt)}, now, nil, nil)
 	require.Len(t, meds, 1)
 	require.True(t, meds[0].StateConflict)
 	require.Equal(t, StatePast, meds[0].State, "most recent (2026 statement, completed) wins the badge")
@@ -146,7 +146,7 @@ func TestReconcile_FieldPrecedence(t *testing.T) {
 	req := `{"resourceType":"MedicationRequest","status":"active","authoredOn":"2026-01-02",
 		"medicationCodeableConcept":{"coding":[{"system":"http://www.nlm.nih.gov/research/umls/rxnorm","code":"555","display":"Drug Y"}]},
 		"dosageInstruction":[{"doseAndRate":[{"doseQuantity":{"value":10,"unit":"mg"}}]}]}`
-	meds := Reconcile([]InputResource{res("MedicationStatement", "s", stmt), res("MedicationRequest", "r", req)}, now)
+	meds := Reconcile([]InputResource{res("MedicationStatement", "s", stmt), res("MedicationRequest", "r", req)}, now, nil, nil)
 	require.Len(t, meds, 1)
 	require.Equal(t, "10 mg", meds[0].Dose, "MedicationRequest dose should win over MedicationStatement")
 }
@@ -156,7 +156,7 @@ func TestReconcile_SortNewestOnTopUndatedLast(t *testing.T) {
 	older := `{"resourceType":"MedicationRequest","status":"active","authoredOn":"2025-01-01","medicationCodeableConcept":{"text":"Older"}}`
 	newer := `{"resourceType":"MedicationRequest","status":"active","authoredOn":"2026-05-01","medicationCodeableConcept":{"text":"Newer"}}`
 	undated := `{"resourceType":"MedicationRequest","status":"active","medicationCodeableConcept":{"text":"Undated"}}`
-	meds := Reconcile([]InputResource{res("MedicationRequest", "a", older), res("MedicationRequest", "b", undated), res("MedicationRequest", "c", newer)}, now)
+	meds := Reconcile([]InputResource{res("MedicationRequest", "a", older), res("MedicationRequest", "b", undated), res("MedicationRequest", "c", newer)}, now, nil, nil)
 	require.Len(t, meds, 3)
 	require.Equal(t, "Newer", meds[0].Title)
 	require.Equal(t, "Older", meds[1].Title)
@@ -168,7 +168,7 @@ func TestReconcile_ContainedReference(t *testing.T) {
 	body := `{"resourceType":"MedicationDispense","status":"completed","whenHandedOver":"2026-03-01",
 		"medicationReference":{"reference":"#m1"},
 		"contained":[{"resourceType":"Medication","id":"m1","code":{"coding":[{"system":"http://www.nlm.nih.gov/research/umls/rxnorm","code":"213293","display":"Capecitabine 500mg oral tablet (Xeloda)"}]}}]}`
-	meds := Reconcile([]InputResource{res("MedicationDispense", "d", body)}, now)
+	meds := Reconcile([]InputResource{res("MedicationDispense", "d", body)}, now, nil, nil)
 	require.Len(t, meds, 1)
 	require.Equal(t, "rxnorm:213293", meds[0].Key)
 	require.Equal(t, "Capecitabine 500mg oral tablet (Xeloda)", meds[0].Title)
@@ -181,7 +181,7 @@ func TestReconcile_PRNFrequency(t *testing.T) {
 	body := `{"resourceType":"MedicationStatement","status":"active","effectiveDateTime":"2026-01-01",
 		"medicationCodeableConcept":{"text":"Valacyclovir"},
 		"dosage":[{"asNeededBoolean":true,"doseAndRate":[{"doseQuantity":{"value":1,"unit":"g"}}]}]}`
-	meds := Reconcile([]InputResource{res("MedicationStatement", "s", body)}, now)
+	meds := Reconcile([]InputResource{res("MedicationStatement", "s", body)}, now, nil, nil)
 	require.Len(t, meds, 1)
 	require.Equal(t, "As needed (PRN)", meds[0].Frequency)
 	require.Equal(t, "1 g", meds[0].Dose)
@@ -201,7 +201,7 @@ func TestReconcile_ResolvesSeparateMedicationReference(t *testing.T) {
 	meds := Reconcile([]InputResource{
 		res("MedicationStatement", "s1", stmt),
 		res("Medication", "med1", med),
-	}, now)
+	}, now, nil, nil)
 
 	require.Len(t, meds, 1)
 	require.Equal(t, "Lisinopril 10 MG Oral Tablet", meds[0].Title, "name should resolve from the separate Medication resource, not be 'unknown'")

@@ -93,6 +93,7 @@ type rawMedicationResource struct {
 	// set from the DB row (authoritative), not the JSON
 	sourceResourceType string
 	sourceResourceID   string
+	sourceID           string
 }
 
 func (r *rawMedicationResource) resolvedType() string {
@@ -295,4 +296,17 @@ func (r *rawMedicationResource) prescriber() string {
 		return r.Requester.Display
 	}
 	return ""
+}
+
+// authorRef returns the resource's "who said this" reference for provenance: the requester for a
+// MedicationRequest (the prescriber), the informationSource for a MedicationStatement. Other types
+// carry no author. Returns nil when absent.
+func (r *rawMedicationResource) authorRef() *fhirReference {
+	switch r.resolvedType() {
+	case "MedicationRequest":
+		return r.Requester
+	case "MedicationStatement":
+		return r.InformationSource
+	}
+	return nil
 }
