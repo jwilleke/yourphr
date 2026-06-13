@@ -120,6 +120,7 @@ flowchart LR
 Governing principles: **patient-legible** ([#262](https://github.com/jwilleke/yourphr/issues/262) — meaning first, translate codes, plain language), **no-guessing** (display only from explicit record signals; absent → "unknown", never inferred), and **no dedup** (report facts as the source gave them).
 
 **Deep dives:**
+
 - [Classification & display architecture](./your-phr-dashboard/classification-and-display-architecture.md) — the two-layer model in full, condition-classifier decision table, provenance resolver, FollowMyHealth reference quirks.
 - [Patient-legible display principle](./your-phr-dashboard/patient-legible-display.md) — the north star (#262).
 - [The dashboard](./your-phr-dashboard/README.md) — config-driven home view; `backend/pkg/web/handler/dashboard/default.json` *is* a dashboard.
