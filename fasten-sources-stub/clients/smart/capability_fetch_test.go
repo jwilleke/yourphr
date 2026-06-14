@@ -123,3 +123,49 @@ func TestFetchByCapability_FollowsPagination(t *testing.T) {
 		t.Errorf("expected 2 paginated pages, got %d", len(pages))
 	}
 }
+
+// DiscoverPatientID resolves the patient id from GET /Patient when the token had no `patient`
+// context (CMS Blue Button 2.0 omits it from the initial token). Handles both a search Bundle and a
+// bare Patient resource.
+func TestDiscoverPatientID(t *testing.T) {
+	cases := []struct{ name, body, want string }{
+		{"search bundle", `{"resourceType":"Bundle","entry":[{"resource":{"resourceType":"Patient","id":"-20140000008325"}}]}`, "-20140000008325"},
+		{"bare patient", `{"resourceType":"Patient","id":"bene-7"}`, "bene-7"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.URL.Path != "/Patient" {
+					t.Errorf("unexpected path: %s", r.URL.Path)
+					w.WriteHeader(http.StatusNotFound)
+					return
+				}
+				w.Header().Set("Content-Type", "application/fhir+json")
+				fmt.Fprint(w, tc.body)
+			}))
+			defer srv.Close()
+
+			cfg := Config{FHIRBaseURL: srv.URL, ClientID: "c", HTTPClient: srv.Client()}
+			got, err := cfg.DiscoverPatientID(context.Background(), Endpoints{Token: srv.URL + "/token"}, freshToken())
+			if err != nil {
+				t.Fatalf("DiscoverPatientID: %v", err)
+			}
+			if got != tc.want {
+				t.Fatalf("got %q want %q", got, tc.want)
+			}
+		})
+	}
+}
+
+// An empty Bundle (no Patient) is an error, never a silent empty id.
+func TestDiscoverPatientID_NoPatient(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/fhir+json")
+		fmt.Fprint(w, `{"resourceType":"Bundle","entry":[]}`)
+	}))
+	defer srv.Close()
+	cfg := Config{FHIRBaseURL: srv.URL, ClientID: "c", HTTPClient: srv.Client()}
+	if _, err := cfg.DiscoverPatientID(context.Background(), Endpoints{Token: srv.URL + "/token"}, freshToken()); err == nil {
+		t.Fatal("expected an error when no Patient is returned")
+	}
+}

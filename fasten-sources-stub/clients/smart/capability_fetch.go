@@ -56,6 +56,54 @@ func (c Config) FetchPatientData(ctx context.Context, ep Endpoints, tok *oauth2.
 	return c.fetchByCapability(ctx, ep, tok, patientID, cap)
 }
 
+// patientIDResponse parses GET /Patient as either a search Bundle or a bare Patient resource,
+// to extract the beneficiary's Patient.id.
+type patientIDResponse struct {
+	ResourceType string `json:"resourceType"`
+	ID           string `json:"id"`
+	Entry        []struct {
+		Resource struct {
+			ResourceType string `json:"resourceType"`
+			ID           string `json:"id"`
+		} `json:"resource"`
+	} `json:"entry"`
+}
+
+// DiscoverPatientID resolves the patient FHIR id from the FHIR API when the token response did not
+// carry a `patient` launch context. CMS Blue Button 2.0, for example, omits `patient` from the
+// initial token (it only appears on refresh) and documents reading the id from the API instead. This
+// GETs {FHIRBaseURL}/Patient with the patient-scoped token and returns the single beneficiary's id.
+func (c Config) DiscoverPatientID(ctx context.Context, ep Endpoints, tok *oauth2.Token) (string, error) {
+	ctx = context.WithValue(ctx, oauth2.HTTPClient, c.httpClient())
+	client := oauth2.NewClient(ctx, c.oauth2Config(ep).TokenSource(ctx, tok))
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, strings.TrimRight(c.FHIRBaseURL, "/")+"/Patient", nil)
+	if err != nil {
+		return "", err
+	}
+	req.Header.Set("Accept", "application/fhir+json")
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer func() { _ = resp.Body.Close() }()
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("GET /Patient HTTP %d", resp.StatusCode)
+	}
+	var pr patientIDResponse
+	if err := json.NewDecoder(resp.Body).Decode(&pr); err != nil {
+		return "", fmt.Errorf("decoding /Patient response: %w", err)
+	}
+	if pr.ResourceType == "Patient" && pr.ID != "" {
+		return pr.ID, nil // server returned a bare Patient
+	}
+	for _, e := range pr.Entry {
+		if e.Resource.ResourceType == "Patient" && e.Resource.ID != "" {
+			return e.Resource.ID, nil // first Patient in the search Bundle
+		}
+	}
+	return "", fmt.Errorf("no Patient resource found at GET /Patient")
+}
+
 // fetchCapability fetches and parses GET {FHIRBaseURL}/metadata.
 func (c Config) fetchCapability(ctx context.Context, ep Endpoints, tok *oauth2.Token) (capabilityStatement, error) {
 	var cap capabilityStatement
