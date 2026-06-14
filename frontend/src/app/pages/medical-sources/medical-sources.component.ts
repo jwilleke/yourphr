@@ -22,7 +22,11 @@ import {extractErrorFromResponse} from '../../../lib/utils/error_extract';
 import {SmartAuthorizeResponse} from '../../models/fasten/smart-authorize';
 import {SmartConnectRequest} from '../../models/fasten/smart-connect-request';
 
-export const sourceConnectWindowTimeout = 24*5000 //wait 2 minutes (5 * 24 = 120)
+// Max time to wait for the user to finish logging in at the provider (the relay-poll phase, across
+// retries) before giving up. A first provider login (read consent, pick account, authorize) can be
+// slow — e.g. CMS Blue Button — so allow several minutes. This does NOT bound the data download,
+// which runs inline after login completes (see source.go).
+export const sourceConnectWindowTimeout = 4*60*1000 // 4 minutes
 
 // Epic's public SMART on FHIR sandbox (synthetic patients, no PHI). FHIR base + scopes are
 // stable, public, and non-secret; the client_id is bring-your-own — each user registers their
@@ -355,8 +359,7 @@ export class MedicalSourcesComponent implements OnInit {
       popup.location.href = authorize.authorize_url
 
       // Step 5: complete the connection. The backend polls the relay for the code, exchanges it,
-      // stores the source and runs the initial sync. Retry up to 3 total attempts because login
-      // may take longer than a single ~30s poll window.
+      // stores the source and runs the initial sync.
       const connectReq: SmartConnectRequest = {
         api_endpoint_base_url: apiEndpoint,
         client_id: clientId,
@@ -368,14 +371,25 @@ export class MedicalSourcesComponent implements OnInit {
         display: display || undefined,
       }
 
+      // Each backend /source/connect call polls the relay ~30s for the auth code, then (once it
+      // arrives) completes the token exchange + initial sync inline. A slow first login at the
+      // provider can outlast one poll, so retry across the full sourceConnectWindowTimeout. Only the
+      // relay-poll timeout is retried — at that point nothing has been created, so it is safe; any
+      // other error (discovery, token exchange, sync) is terminal and stops immediately.
+      const backendPollMs = 30 * 1000
+      const maxAttempts = Math.ceil(sourceConnectWindowTimeout / backendPollMs)
       let lastErr: any = null
-      for (let attempt = 1; attempt <= 3; attempt++) {
+      for (let attempt = 1; attempt <= maxAttempts; attempt++) {
         try {
           await this.fastenApi.connectSource(connectReq).toPromise()
           lastErr = null
           break
         } catch (err) {
           lastErr = err
+          const msg = extractErrorFromResponse(err) || ''
+          if (!/authorization code from relay|timed out/i.test(msg)) {
+            break // terminal error — not a login-still-in-progress timeout
+          }
         }
       }
 
