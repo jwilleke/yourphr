@@ -26,6 +26,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 )
 
 // Go through this page to understand how this file is structured.
@@ -413,25 +414,25 @@ func (suite *SourceHandlerTestSuite) TestConnectSourceHandler() {
 	var resp struct {
 		Success bool                    `json:"success"`
 		Source  models.SourceCredential `json:"source"`
-		Data    struct {
-			TotalResources   int      `json:"TotalResources"`
-			UpdatedResources []string `json:"UpdatedResources"`
-		} `json:"data"`
 	}
 	require.NoError(suite.T(), json.Unmarshal(w.Body.Bytes(), &resp))
 	require.True(suite.T(), resp.Success)
 	require.Equal(suite.T(), "ehr", string(resp.Source.PlatformType))
 	require.Equal(suite.T(), patientID, resp.Source.Patient)
-	require.Equal(suite.T(), 3, resp.Data.TotalResources)
 
-	// Confirm the resources were extracted + persisted (not just upserted raw).
-	summary, err := suite.AppRepository.GetSourceSummary(ctx, resp.Source.ID.String())
-	require.NoError(suite.T(), err)
-	stored := 0
-	for _, rc := range summary.ResourceTypeCounts {
-		if cnt, ok := rc["count"].(int64); ok {
-			stored += int(cnt)
+	// The initial sync now runs in the background (connect returns immediately), so wait for the
+	// resources to be extracted + persisted (not just upserted raw).
+	require.Eventually(suite.T(), func() bool {
+		summary, err := suite.AppRepository.GetSourceSummary(ctx, resp.Source.ID.String())
+		if err != nil {
+			return false
 		}
-	}
-	require.Equal(suite.T(), 3, stored, "expected 3 stored resources across types")
+		stored := 0
+		for _, rc := range summary.ResourceTypeCounts {
+			if cnt, ok := rc["count"].(int64); ok {
+				stored += int(cnt)
+			}
+		}
+		return stored == 3
+	}, 10*time.Second, 25*time.Millisecond, "expected 3 stored resources across types")
 }
