@@ -88,4 +88,4 @@ jobs:
           cache-to: type=gha,mode=max
           no-cache: ${{ inputs.no_cache || false }}
           build-args: |
-            FASTEN_ENV=prod
+            YOURPHR_ENV=prod

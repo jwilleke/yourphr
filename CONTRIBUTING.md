@@ -216,7 +216,7 @@ curl -X POST http://localhost:9090/api/auth/signup -H 'Content-Type: application
 curl -X POST http://localhost:9090/api/auth/signin -H 'Content-Type: application/json' -d '{"username":"user1","password":"user1"}'
 ```
 
-The default encryption key and admin credentials can be overridden via `FASTEN_ISSUER_JWT_KEY`.
+The default encryption key and admin credentials can be overridden via `YOURPHR_JWT_ISSUER_KEY`.
 
 ### Access the encrypted SQLite DB with IntelliJ
 

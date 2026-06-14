@@ -104,6 +104,7 @@ certs/
 .env
 .env.*
 *.env
+.env_custom
 # ...but the committed template IS tracked (negation must follow the patterns above) (#96)
 !.env.example
 

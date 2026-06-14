@@ -10,14 +10,14 @@
 # instead, we use https://depot.dev/ to do our multi-arch builds on native ARM and AMD nodes.
 
 FROM node:24 as frontend-build
-ARG FASTEN_ENV=sandbox
+ARG YOURPHR_ENV=sandbox
 WORKDIR /usr/src/fastenhealth/frontend
 COPY frontend/package.json frontend/yarn.lock ./
 
 RUN yarn install --frozen-lockfile
 COPY frontend/ ./
 RUN --mount=type=cache,target=/tmp/lock,sharing=locked \
-    yarn run build -- --configuration ${FASTEN_ENV} --output-path=../dist
+    yarn run build -- --configuration ${YOURPHR_ENV} --output-path=../dist
 
 #########################################################################################################
 # Backend Build

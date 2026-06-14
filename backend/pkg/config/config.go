@@ -7,18 +7,55 @@ import (
 	"github.com/analogj/go-util/utils"
 	"github.com/fastenhealth/fasten-onprem/backend/pkg/errors"
 	"github.com/spf13/viper"
+	"github.com/subosito/gotenv"
 	"log"
 	"os"
 	"path/filepath"
 	"strings"
 )
 
+// dotEnvFiles are loaded into the process environment at startup, in precedence order: a value in an
+// earlier file wins over a later one, and a value already in the real OS environment wins over both.
+// So: .env (base/committed example) < .env_custom (per-deployment, gitignored) < OS env. Missing files
+// are ignored. Values use the YOURPHR_ prefix (see Init).
+var dotEnvFiles = []string{".env_custom", ".env"}
+
+// loadDotEnvFiles merges the layered dotenv files into the environment without overriding values that
+// are already set (gotenv.Load is non-override), giving the precedence documented on dotEnvFiles.
+func loadDotEnvFiles() {
+	for _, f := range dotEnvFiles {
+		if _, err := os.Stat(f); err == nil {
+			if err := gotenv.Load(f); err != nil {
+				log.Printf("warning: could not load env file %s: %s", f, err)
+			}
+		}
+	}
+}
+
+// mirrorDeprecatedEnvPrefix copies any FASTEN_* env var to its YOURPHR_* equivalent (when the new one
+// is not already set), so deployments still on the old prefix keep working during the rename. Each
+// mirrored var logs a one-time deprecation warning.
+// DEPRECATED: remove once docker-compose + mj-infra-flux migrate to YOURPHR_* (yourphr#273, flux#117).
+func mirrorDeprecatedEnvPrefix() {
+	for _, kv := range os.Environ() {
+		k, v, ok := strings.Cut(kv, "=")
+		if !ok || !strings.HasPrefix(k, "FASTEN_") {
+			continue
+		}
+		newKey := "YOURPHR_" + strings.TrimPrefix(k, "FASTEN_")
+		if _, set := os.LookupEnv(newKey); !set {
+			_ = os.Setenv(newKey, v)
+			log.Printf("[deprecation] env %s is deprecated and will be removed; use %s instead (yourphr#273)", k, newKey)
+		}
+	}
+}
+
 // DefaultJWTIssuerKey is the placeholder HS256 signing key shipped in the
 // committed config.yaml. It is a KNOWN PUBLIC value (present in this repo and
 // upstream Fasten), so a deployment running with it can have tokens forged for
 // any user/role. The server refuses to start while this is the effective key —
 // see ValidateJWTIssuerKey. Real deployments must override it via
-// jwt.issuer.key (config.dev.yaml) or the FASTEN_JWT_ISSUER_KEY env var.
+// jwt.issuer.key (config.dev.yaml) or the YOURPHR_JWT_ISSUER_KEY env var.
 const DefaultJWTIssuerKey = "thisismysupersecuressessionsecretlength"
 
 // jwtKeyFileName is the basename of the auto-generated JWT signing key, persisted
@@ -30,7 +67,7 @@ const jwtKeyFileName = ".jwt_issuer_key"
 // key), so this is the root of trust for all auth and per-user data isolation —
 // the committed public default must never be used to sign tokens. Resolution order:
 //
-//  1. an explicit, non-default configuredKey (jwt.issuer.key / FASTEN_JWT_ISSUER_KEY)
+//  1. an explicit, non-default configuredKey (jwt.issuer.key / YOURPHR_JWT_ISSUER_KEY)
 //     is honored as-is, so operators/secret-managers keep full control — optionally;
 //  2. otherwise a key previously persisted at <dataDir>/.jwt_issuer_key is reused
 //     (stable across restarts, so sessions survive reboots);
@@ -44,7 +81,7 @@ func ResolveJWTIssuerKey(configuredKey string, dataDir string) (string, error) {
 		return configuredKey, nil
 	}
 	if dataDir == "" {
-		return "", fmt.Errorf("cannot resolve JWT signing key: data directory is empty (set jwt.issuer.key / FASTEN_JWT_ISSUER_KEY, or database.location)")
+		return "", fmt.Errorf("cannot resolve JWT signing key: data directory is empty (set jwt.issuer.key / YOURPHR_JWT_ISSUER_KEY, or database.location)")
 	}
 
 	keyPath := filepath.Join(dataDir, jwtKeyFileName)
@@ -80,6 +117,12 @@ type configuration struct {
 
 func (c *configuration) Init() error {
 	c.Viper = viper.New()
+
+	// Layer dotenv files into the environment, then bridge the deprecated FASTEN_* prefix, before
+	// viper reads env via AutomaticEnv below.
+	loadDotEnvFiles()
+	mirrorDeprecatedEnvPrefix()
+
 	//set defaults
 	c.SetDefault("web.listen.port", "8080")
 	c.SetDefault("web.listen.host", "0.0.0.0")
@@ -117,8 +160,9 @@ func (c *configuration) Init() error {
 	c.SetConfigName("template")
 	c.AddConfigPath("$HOME/")
 
-	//configure env variable parsing.
-	c.SetEnvPrefix("FASTEN")
+	//configure env variable parsing: YOURPHR_<KEY> with '.'/'-' -> '_' (e.g. cda_converter.enabled
+	//-> YOURPHR_CDA_CONVERTER_ENABLED). The deprecated FASTEN_* prefix is bridged in Init (above).
+	c.SetEnvPrefix("YOURPHR")
 	c.SetEnvKeyReplacer(strings.NewReplacer("-", "_", ".", "_"))
 	c.AutomaticEnv()
 	//CLI options will be added via the `Set()` function

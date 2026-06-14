@@ -81,7 +81,7 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
-            FASTEN_ENV=${{ matrix.flavor == 'sandbox' && 'sandbox' || 'prod' }}
+            YOURPHR_ENV=${{ matrix.flavor == 'sandbox' && 'sandbox' || 'prod' }}
 #          sbom: true
 #          sbom-dir: ./sbom-output
 #      - name: upload SBOM directory as a build artifact

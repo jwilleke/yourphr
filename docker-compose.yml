@@ -8,8 +8,8 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        - FASTEN_ENV=prod
-#        - FASTEN_ENV=sandbox
+        - YOURPHR_ENV=prod
+#        - YOURPHR_ENV=sandbox
     hostname: ${HOSTNAME:-fasten}
     environment:
       - HOST_IP=${IP}
