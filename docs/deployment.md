@@ -114,7 +114,7 @@ There are **two distinct kinds** — don't conflate them:
 - **FHIR JSON / NDJSON** — uploaded directly, no extra services.
 - **PDF / DICOM / image** — uploaded as viewable documents, no extra services ([#255](https://github.com/jwilleke/yourphr/issues/255)).
 - **C-CDA / CCD** — requires the optional **Metriport fhir-converter sidecar** (`cda_converter.*`); see [`FHIR/fhir-converter-local.md`](FHIR/fhir-converter-local.md).
-- **Live provider sync (SMART on FHIR)** — connect a provider with your own `client_id` (bring-your-own). This is the one feature with an external touch point: an **OAuth relay** catches the provider's redirect. The default is the project's demo relay (`relay.nerdsbythehour.com`); a self-hoster can point at their own with `YOURPHR_RELAY_URL`. **Manual upload needs no relay.**
+- **Live provider sync (SMART on FHIR)** — connect a provider with your own `client_id` (bring-your-own). This is the one feature with an external touch point: an **OAuth relay** catches the provider's redirect. The default is the project's demo relay (`relay.nerdsbythehour.com`); a self-hoster can point at their own with `YOURPHR_RELAY_URL`. **Manual upload needs no relay.** Worked example with exact settings: [`medicare-bluebutton.md`](medicare-bluebutton.md).
 
 ## See also
 
