@@ -4,6 +4,7 @@
 export interface SmartConnectRequest {
   api_endpoint_base_url: string;
   client_id: string;
+  client_secret?: string; // only for CONFIDENTIAL clients (e.g. CMS Blue Button 2.0); empty for public/PKCE (Epic). (#286)
   scopes: string;
   redirect_uri?: string;
   code?: string;

@@ -89,6 +89,7 @@ export class MedicalSourcesComponent implements OnInit {
   smartForm = {
     api_endpoint_base_url: '',
     client_id: '',
+    client_secret: '',
     scopes: 'launch/patient patient/*.read openid fhirUser offline_access',
     display: '',
   }
@@ -285,6 +286,7 @@ export class MedicalSourcesComponent implements OnInit {
     this.smartForm = {
       api_endpoint_base_url: EPIC_SANDBOX.api_endpoint_base_url,
       client_id: '',
+      client_secret: '', // Epic is a public/PKCE client — no secret
       scopes: EPIC_SANDBOX.scopes,
       display: EPIC_SANDBOX.display,
     }
@@ -309,6 +311,7 @@ export class MedicalSourcesComponent implements OnInit {
 
     const apiEndpoint = (this.smartForm.api_endpoint_base_url || '').trim()
     const clientId = (this.smartForm.client_id || '').trim()
+    const clientSecret = (this.smartForm.client_secret || '').trim()
     const scopes = (this.smartForm.scopes || '').trim()
     const display = (this.smartForm.display || '').trim()
 
@@ -357,6 +360,7 @@ export class MedicalSourcesComponent implements OnInit {
       const connectReq: SmartConnectRequest = {
         api_endpoint_base_url: apiEndpoint,
         client_id: clientId,
+        client_secret: clientSecret || undefined, // confidential clients (e.g. Blue Button); omit for public/PKCE
         scopes: scopes,
         redirect_uri: redirectUri,
         state: authorize.state,

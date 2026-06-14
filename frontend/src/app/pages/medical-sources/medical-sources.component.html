@@ -182,6 +182,14 @@
       </div>
 
       <div class="mb-3">
+        <label class="form-label" for="smart-client-secret">Client Secret <small class="tx-gray-500">(optional)</small></label>
+        <input id="smart-client-secret" name="client_secret" type="password" autocomplete="off" class="form-control"
+               placeholder="only for confidential providers (e.g. Blue Button)"
+               [(ngModel)]="smartForm.client_secret" [disabled]="smartConnecting">
+        <small class="tx-gray-500">Leave blank for public/PKCE providers (e.g. Epic). Required for confidential clients like CMS Blue Button 2.0.</small>
+      </div>
+
+      <div class="mb-3">
         <label class="form-label" for="smart-scopes">Scopes</label>
         <input id="smart-scopes" name="scopes" type="text" class="form-control"
                [(ngModel)]="smartForm.scopes" [disabled]="smartConnecting" required>
