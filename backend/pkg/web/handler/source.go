@@ -150,13 +150,22 @@ func ConnectSource(c *gin.Context) {
 		return
 	}
 
-	summary, err := BackgroundJobSyncResources(GetBackgroundContext(c), logger, databaseRepo, &sourceCred)
-	if err != nil {
-		logger.Errorln(err)
-		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "initial record sync failed. See background jobs page for more details"})
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{"success": true, "source": sourceCred, "data": summary})
+	// Run the initial sync in the background so the connect request returns promptly. A large import
+	// (e.g. CMS Blue Button claims for a synthetic beneficiary) can outlast a reverse-proxy read
+	// timeout and surface as a 502/504 even though the detached import keeps running. The context is
+	// already detached from the request; progress and errors surface on the Connected Sources list.
+	bgCtx := GetBackgroundContext(c)
+	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				logger.Errorf("recovered from panic during initial sync of source %s: %v", sourceCred.ID, r)
+			}
+		}()
+		if _, err := BackgroundJobSyncResources(bgCtx, logger, databaseRepo, &sourceCred); err != nil {
+			logger.Errorf("initial sync failed for source %s: %v", sourceCred.ID, err)
+		}
+	}()
+	c.JSON(http.StatusOK, gin.H{"success": true, "source": sourceCred, "data": gin.H{"status": "import_started"}})
 }
 
 // SmartAuthorizeRequest initiates a SMART on FHIR standalone-launch connection: given the

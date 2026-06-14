@@ -9,6 +9,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/fastenhealth/fasten-onprem/backend/pkg"
 	mock_config "github.com/fastenhealth/fasten-onprem/backend/pkg/config/mock"
@@ -146,8 +147,9 @@ func TestConnectSource_HappyPath(t *testing.T) {
 	require.NotNil(t, connected, "the connected SMART source should be persisted")
 	require.Equal(t, "pat1", connected.Patient)
 
-	// and Patient/$everything was fetched + ingested
-	obs, err := repo.ListResources(uctx, models.ListResourceQueryOptions{SourceResourceType: "Observation"})
-	require.NoError(t, err)
-	require.Len(t, obs, 1, "the Observation from $everything should be ingested")
+	// and Patient/$everything was fetched + ingested by the now-async background sync (wait for it)
+	require.Eventually(t, func() bool {
+		obs, err := repo.ListResources(uctx, models.ListResourceQueryOptions{SourceResourceType: "Observation"})
+		return err == nil && len(obs) == 1
+	}, 5*time.Second, 20*time.Millisecond, "the Observation from $everything should be ingested")
 }
