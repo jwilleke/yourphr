@@ -182,6 +182,13 @@ func GetResourceFhirGraph(c *gin.Context) {
 		return
 	}
 
+	// Attach provenance to every resource across the graph buckets (resolver built once for the batch).
+	var flat []*models.ResourceBase
+	for _, bucket := range resourceListDictionary {
+		flat = append(flat, bucket...)
+	}
+	attachProvenance(c, logger, databaseRepo, flat)
+
 	c.JSON(http.StatusOK, gin.H{"success": true, "data": map[string]interface{}{
 		"results": resourceListDictionary,
 	}})
