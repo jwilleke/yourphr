@@ -8,46 +8,49 @@
 
 ## 🟠 P1
 
-**Patient-legible display / provenance (active — #266/#262):**
+**Patient-legible display (active — [#266](https://github.com/jwilleke/yourphr/issues/266) / [#262](https://github.com/jwilleke/yourphr/issues/262)):**
 
-- #266 [EPIC] FollowMyHealth/Veradigm EHI classification & patient-legible display — Layer-1 classifiers + provenance shipped; condition/medication/Medical-Concerns/Patient-Profile surfaces + "who said this" on every card landed.
-- #262 [EPIC] Patient-legible display — health info a normal person can actually use (the quality bar).
-- #264 Medication card display gaps + reference-resolution blocker — backend done; frontend provenance landed; raw-card "unknown" title (low-pri) remains.
-- #249 Surface the 6 remaining US Core 9.0.0 Must-Support display gaps — `help wanted` (frontend; bounded).
+- [#266](https://github.com/jwilleke/yourphr/issues/266) [EPIC] FollowMyHealth/Veradigm EHI classification & patient-legible display — Layer-1 classifiers + provenance shipped; condition / medication / Medical-Concerns / Patient-Profile surfaces + "who said this" on every card landed.
+- [#262](https://github.com/jwilleke/yourphr/issues/262) [EPIC] Patient-legible display — the quality bar. Biggest open litmus gap: lab results "normal/high/low" (unissued).
 
-**Live provider sync (Blue Button thread — active):**
+**US Core 9.0.0 Must-Support display gaps ([#249](https://github.com/jwilleke/yourphr/issues/249) tracker → [#136](https://github.com/jwilleke/yourphr/issues/136) epic) — frontend, `help wanted`, bounded:**
 
-- #250 Add CMS Blue Button 2.0 as a SMART-on-FHIR sync source — `help wanted` (backend done: CapabilityStatement-driven fetch landed).
-- #286 SMART client: confidential-client (client_secret) support — backend **done** (the BB2.0 prerequisite; generic).
-- #279 Blue Button 2.0 — frontend source entry + sandbox end-to-end verification.
+- [#281](https://github.com/jwilleke/yourphr/issues/281) "Last updated" row on Condition + Observation cards (`meta.lastUpdated`, shared helper).
+- [#282](https://github.com/jwilleke/yourphr/issues/282) Condition `extension:assertedDate` as its own field.
+- [#283](https://github.com/jwilleke/yourphr/issues/283) MedicationRequest `dispenseRequest` — quantity / refills.
+- [#284](https://github.com/jwilleke/yourphr/issues/284) Observation `specimen` — specimen reference.
+- [#285](https://github.com/jwilleke/yourphr/issues/285) DocumentReference `context.encounter` — encounter in model context.
 
-**US Core / import:**
+**Live provider sync (Blue Button thread):**
 
-- #136 [EPIC] Support US Core 9.0.0 (profiles + Must-Support).
-- #254 Support C-CDA / CCD document import — `help wanted` (code-complete, pending Metriport sidecar deployment).
+- [#250](https://github.com/jwilleke/yourphr/issues/250) Add CMS Blue Button 2.0 as a SMART-on-FHIR sync source — `help wanted` (backend done: CapabilityStatement-driven fetch landed).
+- [#279](https://github.com/jwilleke/yourphr/issues/279) Blue Button 2.0 — frontend source entry + sandbox end-to-end verification.
+
+**Import:**
+
+- [#254](https://github.com/jwilleke/yourphr/issues/254) Support C-CDA / CCD document import — `help wanted` (code-complete, pending Metriport sidecar deployment).
 
 ## 🟡 P2
 
-- #287 Upload/import UI polish — make all supported file types selectable (`.pdf/.dcm/.jpg/.png`) + clearer "add my data" affordances (frontend).
-- #288 [ARCH] Decide future of fasten-sources-stub — fold into main module vs keep as owned source layer.
-- #277 Medical History hub page (/medical-history) — umbrella for Visits & Notes, Procedures, etc.
-- #244 [EPIC] Per-profile dashboard widgets (US Core display end-state).
-- #256 Sharing PHR data — drives the conformance-remodeling goal.
-- #253 [EPIC] Manual data entry / user-created records.
-- #252 Harden re-import dedup against stale overwrites.
-- #251 Explore Apple Health's supported-institution list as a provider-catalog source.
-- #241 release-please: authenticate with a PAT / GitHub App token.
-- #209 [EPIC] Migrate to Bootstrap 5.
-- #53 Veradigm/FollowMyHealth registration + integration — `blocked` (vendor approval).
-- #20 [EPIC] SMART on FHIR — live provider sync.
-- #14 User Profile Update (PII).
+- [#277](https://github.com/jwilleke/yourphr/issues/277) Medical History hub page (`/medical-history`) — umbrella for Visits & Notes, Procedures, etc.
+- [#280](https://github.com/jwilleke/yourphr/issues/280) Raw fhir-cards: resolve a referenced resource's display name (e.g. `Medication/{id}`) — `help wanted`.
+- [#244](https://github.com/jwilleke/yourphr/issues/244) [EPIC] Per-profile dashboard widgets (US Core display end-state).
+- [#256](https://github.com/jwilleke/yourphr/issues/256) Sharing PHR data — drives the conformance-remodeling goal.
+- [#253](https://github.com/jwilleke/yourphr/issues/253) [EPIC] Manual data entry / user-created records.
+- [#252](https://github.com/jwilleke/yourphr/issues/252) Harden re-import dedup against stale overwrites.
+- [#251](https://github.com/jwilleke/yourphr/issues/251) Explore Apple Health's supported-institution list as a provider-catalog source.
+- [#241](https://github.com/jwilleke/yourphr/issues/241) release-please: authenticate with a PAT / GitHub App token.
+- [#209](https://github.com/jwilleke/yourphr/issues/209) [EPIC] Migrate to Bootstrap 5.
+- [#53](https://github.com/jwilleke/yourphr/issues/53) Veradigm/FollowMyHealth registration + integration — `blocked` (vendor approval).
+- [#20](https://github.com/jwilleke/yourphr/issues/20) [EPIC] SMART on FHIR — live provider sync.
+- [#14](https://github.com/jwilleke/yourphr/issues/14) User Profile Update (PII).
 
 ## ⏸ Deferred
 
-- #278 [EPIC] Rename Fasten* → YourPHR — only on committing to a hard fork (one-way door).
-- #263 Message Provider.
-- #239 Revisit gofhir-models 0.1.x once encoding/json/v2 is default in Go.
-- #131 E2E testing — lforms questionnaire render + interact.
+- [#278](https://github.com/jwilleke/yourphr/issues/278) [EPIC] Rename Fasten* → YourPHR — only on committing to a hard fork (one-way door).
+- [#263](https://github.com/jwilleke/yourphr/issues/263) Message Provider.
+- [#239](https://github.com/jwilleke/yourphr/issues/239) Revisit gofhir-models 0.1.x once encoding/json/v2 is default in Go.
+- [#131](https://github.com/jwilleke/yourphr/issues/131) E2E testing — lforms questionnaire render + interact.
 
 ## ❓ Needs triage
 
