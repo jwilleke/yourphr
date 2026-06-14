@@ -23,6 +23,7 @@ func (f *fakeCred) GetPortalId() string                   { return "" }
 func (f *fakeCred) GetBrandId() string                    { return "" }
 func (f *fakeCred) GetPlatformType() pkg.PlatformType     { return "" }
 func (f *fakeCred) GetClientId() string                   { return "" }
+func (f *fakeCred) GetClientSecret() string               { return "" }
 func (f *fakeCred) GetPatientId() string                  { return "" }
 func (f *fakeCred) GetRefreshToken() string               { return "" }
 func (f *fakeCred) GetAccessToken() string                { return f.accessToken }

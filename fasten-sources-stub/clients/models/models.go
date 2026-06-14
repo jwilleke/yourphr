@@ -37,6 +37,7 @@ type SourceCredential interface {
 	GetBrandId() string
 	GetPlatformType() pkg.PlatformType
 	GetClientId() string
+	GetClientSecret() string // confidential-client secret; "" for a public/PKCE client (#286)
 	GetPatientId() string
 	GetRefreshToken() string
 	GetAccessToken() string

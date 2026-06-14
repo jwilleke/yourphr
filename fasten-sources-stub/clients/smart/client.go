@@ -28,10 +28,11 @@ import (
 // Config is the per-source SMART configuration. In production these values come from the
 // SourceCredential (BYO client_id + FHIR base URL).
 type Config struct {
-	FHIRBaseURL string   // e.g. https://fhir.example.com/r4
-	ClientID    string   // BYO per-user client_id
-	Scopes      []string // e.g. launch/patient patient/*.read openid fhirUser offline_access
-	RedirectURI string   // the relay/callback URL registered with the provider
+	FHIRBaseURL  string   // e.g. https://fhir.example.com/r4
+	ClientID     string   // BYO per-user client_id
+	ClientSecret string   // optional — set for a CONFIDENTIAL client (sent at the token endpoint). Empty = public/PKCE-only client (unchanged behavior).
+	Scopes       []string // e.g. launch/patient patient/*.read openid fhirUser offline_access
+	RedirectURI  string   // the relay/callback URL registered with the provider
 
 	// HTTPClient is optional; defaults to http.DefaultClient. Override in tests.
 	HTTPClient *http.Client
@@ -78,11 +79,14 @@ func (c Config) Discover(ctx context.Context) (Endpoints, error) {
 }
 
 func (c Config) oauth2Config(ep Endpoints) *oauth2.Config {
+	// ClientSecret is forwarded to x/oauth2: when non-empty the token exchange/refresh authenticates
+	// as a confidential client (default client_secret_basic); empty keeps it a public/PKCE client.
 	return &oauth2.Config{
-		ClientID:    c.ClientID,
-		RedirectURL: c.RedirectURI,
-		Scopes:      c.Scopes,
-		Endpoint:    oauth2.Endpoint{AuthURL: ep.Authorization, TokenURL: ep.Token},
+		ClientID:     c.ClientID,
+		ClientSecret: c.ClientSecret,
+		RedirectURL:  c.RedirectURI,
+		Scopes:       c.Scopes,
+		Endpoint:     oauth2.Endpoint{AuthURL: ep.Authorization, TokenURL: ep.Token},
 	}
 }
 

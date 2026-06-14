@@ -25,9 +25,10 @@ func newSmartClient(ctx context.Context, logger *logrus.Entry, cred models.Sourc
 	return &smartClient{
 		fileImportClient: &fileImportClient{ctx: ctx, logger: logger, cred: cred},
 		cfg: smart.Config{
-			FHIRBaseURL: cred.GetApiEndpointBaseUrl(),
-			ClientID:    cred.GetClientId(),
-			Scopes:      cred.GetScopes(),
+			FHIRBaseURL:  cred.GetApiEndpointBaseUrl(),
+			ClientID:     cred.GetClientId(),
+			ClientSecret: cred.GetClientSecret(), // confidential client when set; "" = public/PKCE (#286)
+			Scopes:       cred.GetScopes(),
 		},
 	}
 }

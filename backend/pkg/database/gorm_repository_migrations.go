@@ -248,6 +248,14 @@ func (gr *GormRepository) Migrate() error {
 				)
 			},
 		},
+		{
+			ID: "20260614000000", // add client_secret (confidential SMART client) to source_credential (#286)
+			Migrate: func(tx *gorm.DB) error {
+				return tx.AutoMigrate(
+					&models.SourceCredential{},
+				)
+			},
+		},
 	})
 
 	// run when database is empty

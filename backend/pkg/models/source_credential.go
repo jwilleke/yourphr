@@ -38,7 +38,10 @@ type SourceCredential struct {
 	LatestBackgroundJobID *uuid.UUID     `json:"-"`
 
 	// auth/credential data
-	ClientId      string `json:"client_id"`
+	ClientId string `json:"client_id"`
+	// ClientSecret is confidential-client secret material (#286). json:"-" so it is never serialized
+	// back to the browser; GORM still persists it (column client_secret), encrypted at rest with the DB.
+	ClientSecret  string `json:"-"`
 	AccessToken   string `json:"access_token"`
 	RefreshToken  string `json:"refresh_token"`
 	IdToken       string `json:"id_token"`
@@ -79,6 +82,10 @@ func (s *SourceCredential) GetPlatformType() sourcesPkg.PlatformType {
 
 func (s *SourceCredential) GetClientId() string {
 	return s.ClientId
+}
+
+func (s *SourceCredential) GetClientSecret() string {
+	return s.ClientSecret
 }
 
 func (s *SourceCredential) GetPatientId() string {

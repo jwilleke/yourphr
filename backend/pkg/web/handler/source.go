@@ -38,6 +38,7 @@ var validatePublicHTTPSURL = ssrf.ValidatePublicHTTPSURL
 type SmartConnectRequest struct {
 	ApiEndpointBaseUrl string `json:"api_endpoint_base_url"`
 	ClientId           string `json:"client_id"`
+	ClientSecret       string `json:"client_secret"` // optional — confidential-client secret (#286)
 	Scopes             string `json:"scopes"`
 	RedirectUri        string `json:"redirect_uri"`
 	Code               string `json:"code"`
@@ -94,10 +95,11 @@ func ConnectSource(c *gin.Context) {
 	}
 
 	cfg := smart.Config{
-		FHIRBaseURL: req.ApiEndpointBaseUrl,
-		ClientID:    req.ClientId,
-		Scopes:      strings.Fields(req.Scopes),
-		RedirectURI: req.RedirectUri,
+		FHIRBaseURL:  req.ApiEndpointBaseUrl,
+		ClientID:     req.ClientId,
+		ClientSecret: req.ClientSecret,
+		Scopes:       strings.Fields(req.Scopes),
+		RedirectURI:  req.RedirectUri,
 	}
 	ep, err := cfg.Discover(c)
 	if err != nil {
@@ -122,6 +124,7 @@ func ConnectSource(c *gin.Context) {
 		Display:            req.Display,
 		ApiEndpointBaseUrl: req.ApiEndpointBaseUrl,
 		ClientId:           req.ClientId,
+		ClientSecret:       req.ClientSecret, // confidential client; persisted (json:"-") + DB-encrypted (#286)
 		Scopes:             req.Scopes,
 		Patient:            patientId,
 		AccessToken:        tok.AccessToken,
