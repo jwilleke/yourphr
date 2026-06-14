@@ -37,6 +37,11 @@ Then:
 - Think before coding: state assumptions, surface trade-offs, ask when scope is ambiguous.
 - Simplicity first: the minimum that solves the problem; nothing speculative.
 - Use Conventional Commits for messages.
+- Issue decomposition — NEVER put "Steps", "Phases", or numbered sequences inside a single
+  GitHub issue. Break each step into its own issue and link them using GitHub relationships:
+  `closes #N` / `fixes #N` (resolves another), `blocked by #N` (dependency), `relates to #N`
+  (context link). Example: a 3-phase migration = 3 issues with "blocked by" chains, not one
+  issue with Phase headings.
 
 ## Markdown conventions
 
