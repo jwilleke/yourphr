@@ -75,7 +75,11 @@ Two generators must be re-run when their inputs change; generated files are comm
 
 ### fasten-sources stub
 
-The upstream `github.com/fastenhealth/fasten-sources` package was made private. This repo replaces it with a **local stub** (`./fasten-sources-stub`, wired via a `replace` directive in `go.mod`). The stub provides catalog/client interfaces but no real provider OAuth clients — so live provider sync is non-functional in this fork (manual FHIR bundle upload is the supported import path). Implementing a real SMART-on-FHIR client for Veradigm/FollowMyHealth is a roadmap item.
+The upstream `github.com/fastenhealth/fasten-sources` package was made private. This repo replaces it with a **local stub** (`./fasten-sources-stub`, wired via a `replace` directive in `go.mod`). What the stub drops is the upstream **provider catalog** — the big pre-registered provider list and the hosted **Lighthouse** OAuth relay, which moved into the commercial Fasten Connect.
+
+What it does **not** drop: this fork has its own **working SMART-on-FHIR OAuth client** — `fasten-sources-stub/clients/smart` (`.well-known/smart-configuration` discovery, PKCE, token exchange/refresh), a self-hosted OAuth **relay** (`backend/pkg/relay`, default `relay.nerdsbythehour.com` — store-and-poll for the auth code; the backend does the token exchange, the relay never sees tokens), and the backend + connect-UI wiring (EPIC #20: generic client #49, relay #50, backend OAuth #51, connect UI #52). So **live sync works via a bring-your-own-`client_id` flow** — you register your own `client_id` (e.g. Epic Sandbox) in the "Connect a SMART source" UI; there is no hosted catalog doing it for you. Manual FHIR bundle upload remains the zero-setup import path.
+
+The real gap is a **proven first end-to-end provider**: Veradigm/FollowMyHealth (#53) is blocked on vendor app approval (`unauthorized_client`); CMS Blue Button 2.0 (#250) is the self-serve unblock path. (When citing the older "live sync is non-functional" framing, note it predates EPIC #20 and is stale.)
 
 ## Frontend architecture (`frontend/src/app/`)
 
