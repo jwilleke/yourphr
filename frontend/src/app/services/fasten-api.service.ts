@@ -228,6 +228,7 @@ export class FastenApiService {
             authorize_url: response.authorize_url,
             state: response.state,
             code_verifier: response.code_verifier,
+            login_wait_seconds: response.login_wait_seconds,
           } as SmartAuthorizeResponse
         })
       );

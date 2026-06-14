@@ -81,6 +81,7 @@ Any config key can be set as an env var: prefix **`YOURPHR_`**, uppercase the ke
 | `web.listen.port` | `YOURPHR_WEB_LISTEN_PORT` |
 | `log.level` | `YOURPHR_LOG_LEVEL` |
 | `cda_converter.enabled` | `YOURPHR_CDA_CONVERTER_ENABLED` |
+| `web.smart_connect.login_wait_seconds` | `YOURPHR_WEB_SMART_CONNECT_LOGIN_WAIT_SECONDS` |
 
 ## Configuration reference
 
@@ -91,6 +92,7 @@ Any config key can be set as an env var: prefix **`YOURPHR_`**, uppercase the ke
 | `web.listen.basepath` | `""` | Sub-path when behind a reverse proxy (e.g. `/phr`). |
 | `web.listen.https.enabled` | `false` | Serve HTTPS with a self-generated CA (see the README HTTPS section). |
 | `web.allow_unsafe_endpoints` | `false` | **Never enable in production** — exposes unauthenticated API access. |
+| `web.smart_connect.login_wait_seconds` | `240` | How long the SMART-on-FHIR connect flow waits for the user to finish logging in at the provider before timing out. Served to the frontend, so changing it needs **no frontend rebuild** — raise it for slow provider logins (e.g. CMS Blue Button). |
 | `database.type` | `sqlite` | Only SQLite is supported; Postgres is present but **broken**. |
 | `database.location` | `/opt/fasten/db/fasten.db` | SQLite file — mount this path to persist data. |
 | `database.encryption.enabled` | `true` | DB-at-rest encryption (encrypted SQLite build). |

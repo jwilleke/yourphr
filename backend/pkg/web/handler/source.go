@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/fastenhealth/fasten-onprem/backend/pkg"
+	"github.com/fastenhealth/fasten-onprem/backend/pkg/config"
 	"github.com/fastenhealth/fasten-onprem/backend/pkg/database"
 	"github.com/fastenhealth/fasten-onprem/backend/pkg/event_bus"
 	"github.com/fastenhealth/fasten-onprem/backend/pkg/models"
@@ -164,6 +165,7 @@ type SmartAuthorizeRequest struct {
 // no server-side state; the caller round-trips state + code_verifier back to ConnectSource.
 func AuthorizeSource(c *gin.Context) {
 	logger := c.MustGet(pkg.ContextKeyTypeLogger).(*logrus.Entry)
+	appConfig := c.MustGet(pkg.ContextKeyTypeConfig).(config.Interface)
 
 	var req SmartAuthorizeRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -206,6 +208,9 @@ func AuthorizeSource(c *gin.Context) {
 		"authorize_url": cfg.AuthCodeURL(ep, state, verifier),
 		"state":         state,
 		"code_verifier": verifier,
+		// How long the client should keep polling for the auth code (operator-tunable backend
+		// config, no frontend rebuild). The frontend falls back to its own default if absent.
+		"login_wait_seconds": appConfig.GetInt("web.smart_connect.login_wait_seconds"),
 	})
 }
 

@@ -376,8 +376,14 @@ export class MedicalSourcesComponent implements OnInit {
       // provider can outlast one poll, so retry across the full sourceConnectWindowTimeout. Only the
       // relay-poll timeout is retried — at that point nothing has been created, so it is safe; any
       // other error (discovery, token exchange, sync) is terminal and stops immediately.
+      // The login-wait window is operator-tunable backend config (web.smart_connect.login_wait_seconds),
+      // delivered in the authorize response so it changes without a frontend rebuild. Fall back to the
+      // baked-in default if an older backend doesn't supply it.
+      const windowMs = (authorize.login_wait_seconds && authorize.login_wait_seconds > 0)
+        ? authorize.login_wait_seconds * 1000
+        : sourceConnectWindowTimeout
       const backendPollMs = 30 * 1000
-      const maxAttempts = Math.ceil(sourceConnectWindowTimeout / backendPollMs)
+      const maxAttempts = Math.ceil(windowMs / backendPollMs)
       let lastErr: any = null
       for (let attempt = 1; attempt <= maxAttempts; attempt++) {
         try {

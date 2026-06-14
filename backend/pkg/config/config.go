@@ -115,6 +115,12 @@ func (c *configuration) Init() error {
 	// It enables direct API access to healthcare providers without authentication.
 	c.SetDefault("web.allow_unsafe_endpoints", false)
 
+	// How long the SMART-on-FHIR connect flow waits for the user to finish logging in at the
+	// provider (the relay-poll phase) before giving up. A first provider login (read consent, pick
+	// account, authorize) can be slow — e.g. CMS Blue Button. Served to the frontend so it can be
+	// tuned via env/config without a frontend rebuild (YOURPHR_WEB_SMART_CONNECT_LOGIN_WAIT_SECONDS).
+	c.SetDefault("web.smart_connect.login_wait_seconds", 240)
+
 	c.SetDefault("web.src.frontend.path", "/opt/fasten/web")
 	c.SetDefault("database.type", "sqlite")
 	c.SetDefault("database.location", "/opt/fasten/db/fasten.db")

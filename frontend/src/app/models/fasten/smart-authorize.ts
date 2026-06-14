@@ -12,4 +12,8 @@ export interface SmartAuthorizeResponse {
   authorize_url: string;
   state: string;
   code_verifier: string;
+  // How long (seconds) the client should keep polling for the auth code while the user logs in at
+  // the provider. Operator-tunable backend config (web.smart_connect.login_wait_seconds) so it can
+  // change without a frontend rebuild; optional — the client falls back to its own default if absent.
+  login_wait_seconds?: number;
 }
