@@ -10,16 +10,15 @@
 
 **Patient-legible display / provenance (active — #266/#262):**
 
-- #266 [EPIC] FollowMyHealth/Veradigm EHI classification & patient-legible display — Layer-1 classifiers + provenance shipped; condition / medication / Medical-Concerns / Patient-Profile surfaces + "who said this" on every card landed.
-- #262 [EPIC] Patient-legible display — health info a normal person can actually use.
-- #267 Phase 1 — Condition classifier & Patient Profile — code done & deployed (`question`); **awaiting live verification on real data**.
+- #266 [EPIC] FollowMyHealth/Veradigm EHI classification & patient-legible display — Layer-1 classifiers + provenance shipped; condition/medication/Medical-Concerns/Patient-Profile surfaces + "who said this" on every card landed.
+- #262 [EPIC] Patient-legible display — health info a normal person can actually use (the quality bar).
 - #264 Medication card display gaps + reference-resolution blocker — backend done; frontend provenance landed; raw-card "unknown" title (low-pri) remains.
 - #249 Surface the 6 remaining US Core 9.0.0 Must-Support display gaps — `help wanted` (frontend; bounded).
 
 **Live provider sync (Blue Button thread — active):**
 
+- #250 Add CMS Blue Button 2.0 as a SMART-on-FHIR sync source — `help wanted` (backend done: CapabilityStatement-driven fetch landed).
 - #279 Blue Button 2.0 — frontend source entry + sandbox end-to-end verification.
-- #250 Add CMS Blue Button 2.0 as a SMART-on-FHIR sync source — `help wanted` (backend; CapabilityStatement-driven fetch landed).
 
 **US Core / import:**
 
@@ -36,8 +35,8 @@
 - #251 Explore Apple Health's supported-institution list as a provider-catalog source.
 - #241 release-please: authenticate with a PAT / GitHub App token.
 - #209 [EPIC] Migrate to Bootstrap 5.
-- #20 [EPIC] SMART on FHIR — live provider sync.
 - #53 Veradigm/FollowMyHealth registration + integration — `blocked` (vendor approval).
+- #20 [EPIC] SMART on FHIR — live provider sync.
 - #14 User Profile Update (PII).
 
 ## ⏸ Deferred
@@ -49,5 +48,4 @@
 
 ## ❓ Needs triage
 
-- #275 Procedures Card — **looks already shipped** this session (`/procedures` live, CI-green) → likely **close**, not triage.
-- #276 Recent activity — **looks already shipped** (dashboard "Recent activity", `main-248`) → likely **close**, not triage.
+- None — every open issue carries a priority label.
