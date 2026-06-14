@@ -31,6 +31,7 @@ export class DocumentReferenceModel extends FastenDisplayModel {
     practiceSettingCoding: CodingModel
     periodStart: string
     periodEnd: string
+    encounter?: ReferenceModel       // US Core MS: context.encounter (#285)
   } | undefined
 
   constructor(fhirResource: any, fhirVersion?: fhirVersions, fastenOptions?: FastenOptions) {
@@ -75,12 +76,14 @@ export class DocumentReferenceModel extends FastenDisplayModel {
     );
     const periodStart = _.get(fhirResource, 'context.period.start');
     const periodEnd = _.get(fhirResource, 'context.period.end');
+    const encounter = _.get(fhirResource, 'context.encounter.0');  // US Core MS (#285)
     this.context = {
       eventCoding,
       facilityTypeCoding,
       practiceSettingCoding,
       periodStart,
       periodEnd,
+      encounter,
     };
   };
 

@@ -43,6 +43,8 @@ export class ObservationModel extends FastenDisplayModel {
   fhirResource: any
   reference_range: ReferenceRangeModel
   interpretation: CodableConceptModel | undefined  // US Core MS: interpretation (High/Low/Normal flag)
+  specimen: ReferenceModel | undefined             // US Core MS: specimen (#284)
+  meta_last_updated: string                        // US Core MS: meta.lastUpdated (#281)
 
   value_model: ObservationValue
 
@@ -65,6 +67,8 @@ export class ObservationModel extends FastenDisplayModel {
     this.reference_range = new ReferenceRangeModel(_.get(this.fhirResource, 'referenceRange.0'))
     const interpretation = _.get(fhirResource, 'interpretation.0');
     if (interpretation) { this.interpretation = new CodableConceptModel(interpretation) }
+    this.specimen = _.get(fhirResource, 'specimen');                 // US Core MS (#284)
+    this.meta_last_updated = _.get(fhirResource, 'meta.lastUpdated'); // US Core MS (#281)
 
     this.meta_profiles = _.get(fhirResource, 'meta.profile', []) || [];
     this.us_core_profile = classifyObservationProfile(fhirResource);

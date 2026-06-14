@@ -76,6 +76,19 @@ export class ObservationComponent implements OnInit {
         label: 'Reference',
         data: this.displayModel?.reference_range.display(),
         enabled: !!this.displayModel?.reference_range.hasValue(),
+      },
+      {
+        // US Core MS: specimen (#284)
+        label: 'Specimen',
+        data: this.displayModel?.specimen,
+        data_type: TableRowItemDataType.Reference,
+        enabled: !!this.displayModel?.specimen,
+      },
+      {
+        // US Core MS: meta.lastUpdated (#281)
+        label: 'Last updated',
+        data: this.displayModel?.meta_last_updated,
+        enabled: !!this.displayModel?.meta_last_updated,
       }
     )
 

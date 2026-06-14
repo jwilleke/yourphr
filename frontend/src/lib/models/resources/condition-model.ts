@@ -26,6 +26,8 @@ export class ConditionModel extends FastenDisplayModel {
   onset_datetime: string | undefined
   abatement_datetime: string | undefined
   note: string | undefined
+  meta_last_updated: string | undefined   // US Core MS: meta.lastUpdated (#281)
+  asserted_date: string | undefined       // US Core MS: condition-assertedDate extension (#282)
 
   constructor(fhirResource: any, fhirVersion?: fhirVersions, fastenOptions?: FastenOptions) {
     super(fastenOptions)
@@ -57,6 +59,8 @@ export class ConditionModel extends FastenDisplayModel {
     if(bodySite){
       this.body_site = bodySite.map((body:any) => new CodableConceptModel(body))
     }
+    // US Core MS: meta.lastUpdated — "Last updated" (#281)
+    this.meta_last_updated = _.get(fhirResource, 'meta.lastUpdated');
   };
   dstu2DTO(fhirResource:any){
     this.clinical_status = _.get(fhirResource, 'clinicalStatus');
@@ -81,6 +85,11 @@ export class ConditionModel extends FastenDisplayModel {
     this.subject = _.get(fhirResource, 'subject');
     this.date_recorded = _.get(fhirResource, 'recordedDate');
     this.note = _.get(fhirResource, 'note.0.text');
+    // US Core MS: the condition-assertedDate extension — when the condition was first asserted (#282)
+    this.asserted_date = _.get(
+      _.find(_.get(fhirResource, 'extension', []), {url: 'http://hl7.org/fhir/StructureDefinition/condition-assertedDate'}),
+      'valueDateTime',
+    );
   };
 
   resourceDTO(fhirResource:any, fhirVersion:fhirVersions){

@@ -98,6 +98,18 @@ export class MedicationRequestComponent implements OnInit, FhirCardComponentInte
         enabled: !!this.displayModel?.dosage_instruction_text,
       },
       {
+        // US Core MS: dispenseRequest.quantity (#283)
+        label: 'Quantity',
+        data: this.displayModel?.dispense_request_quantity,
+        enabled: !!this.displayModel?.dispense_request_quantity,
+      },
+      {
+        // US Core MS: dispenseRequest.numberOfRepeatsAllowed (#283)
+        label: 'Refills',
+        data: this.displayModel?.dispense_request_refills != null ? String(this.displayModel.dispense_request_refills) : undefined,
+        enabled: this.displayModel?.dispense_request_refills != null,
+      },
+      {
         label: 'Category',
         data: (this.displayModel?.categories || []).join(', '),
         enabled: !!this.displayModel?.categories?.length,

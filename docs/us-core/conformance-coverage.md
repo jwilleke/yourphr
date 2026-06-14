@@ -13,8 +13,8 @@ Audited profiles: **6** (the Cures-Act USCDI core — Patient, Condition, Allerg
 | | Count |
 |---|---|
 | MS elements exercised by the official examples | **44** |
-| …displayed by the model | **38** |
-| …known gaps (not yet surfaced) | **6** |
+| …displayed by the model | **44** |
+| …known gaps (not yet surfaced) | **0** |
 
 Resource types that still render generically (Encounter, Immunization, Procedure, Care*, Device, Provider/Org, Coverage, Specimen, ServiceRequest, etc.) are **not** claimed here — no MS-display assertion is made for them.
 
@@ -47,8 +47,8 @@ Additional US Core elements surfaced (USCDI-supported; **not** MS-flagged in 9.0
 | onset[x] | yes | ✅ |
 | recordedDate | yes | ✅ |
 | abatement[x] | no | — |
-| meta.lastUpdated | yes | ⚠️ |
-| extension:assertedDate | yes | ⚠️ |
+| meta.lastUpdated | yes | ✅ |
+| extension:assertedDate | yes | ✅ |
 
 ### US Core AllergyIntolerance — `AllergyIntolerance-example` (audited #145)
 
@@ -73,7 +73,7 @@ Additional US Core elements surfaced (USCDI-supported; **not** MS-flagged in 9.0
 | requester | yes | ✅ |
 | dosageInstruction.text | yes | ✅ |
 | encounter | no | — |
-| dispenseRequest | yes | ⚠️ |
+| dispenseRequest | yes | ✅ |
 
 ### US Core Observation (Laboratory Result) — `Observation-cbc-hemoglobin` (audited #146)
 
@@ -84,8 +84,8 @@ Additional US Core elements surfaced (USCDI-supported; **not** MS-flagged in 9.0
 | value[x] | yes | ✅ |
 | interpretation | yes | ✅ |
 | referenceRange | yes | ✅ |
-| meta.lastUpdated | yes | ⚠️ |
-| specimen | yes | ⚠️ |
+| meta.lastUpdated | yes | ✅ |
+| specimen | yes | ✅ |
 
 ### US Core DocumentReference — `DocumentReference-discharge-summary` (audited #147)
 
@@ -104,19 +104,11 @@ Additional US Core elements surfaced (USCDI-supported; **not** MS-flagged in 9.0
 | content.attachment.url | no | — |
 | content.format | no | — |
 | context.period | no | — |
-| context.encounter | yes | ⚠️ |
+| context.encounter | yes | ✅ |
 
 ## Known gaps (follow-up work)
 
-Six MS elements are exercised by the official examples but not yet surfaced. Each is small and additive:
-
-1. **Condition.meta.lastUpdated** and **Observation.meta.lastUpdated** — the cards don't show the record's last-updated timestamp. (Same gap likely applies to other resource cards.)
-2. **Condition.extension:assertedDate** — the asserted-date extension is only used as an onset fallback, not surfaced as its own field.
-3. **MedicationRequest.dispenseRequest** — quantity / number-of-refills not surfaced by the model.
-4. **Observation.specimen** — the specimen reference is not surfaced.
-5. **DocumentReference.context.encounter** — the model's `context` carries event/facility/practiceSetting/period but omits the encounter reference.
-
-These do not block the display-conformance statement (Must-Support is "display when present"; the gate makes the gaps explicit and CI-tracked). They are good first follow-ups against [#136](https://github.com/jwilleke/yourphr/issues/136).
+**None.** All 44 Must-Support elements exercised by the official examples now display. The six prior gaps — `meta.lastUpdated` (Condition + Observation), Condition `extension:assertedDate`, MedicationRequest `dispenseRequest`, Observation `specimen`, and DocumentReference `context.encounter` — were closed in [#281](https://github.com/jwilleke/yourphr/issues/281)–[#285](https://github.com/jwilleke/yourphr/issues/285) (tracker [#249](https://github.com/jwilleke/yourphr/issues/249), epic [#136](https://github.com/jwilleke/yourphr/issues/136)). The display-conformance gate (`us-core-conformance.spec.ts`) now reports **44/44**.
 
 ## Regenerating
 

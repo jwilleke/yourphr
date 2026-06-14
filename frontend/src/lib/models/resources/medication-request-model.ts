@@ -25,6 +25,8 @@ export class MedicationRequestModel extends FastenDisplayModel {
   reported_reference: ReferenceModel|undefined
   categories: string[] = []                  // category:us-core (e.g. community, discharge)
   dosage_instruction_text: string|undefined  // dosageInstruction.text (MS)
+  dispense_request_quantity: string|undefined  // dispenseRequest.quantity (US Core MS, #283)
+  dispense_request_refills: number|undefined   // dispenseRequest.numberOfRepeatsAllowed (US Core MS, #283)
 
   constructor(fhirResource: any, fhirVersion?: fhirVersions, fastenOptions?: FastenOptions) {
     super(fastenOptions)
@@ -55,6 +57,15 @@ export class MedicationRequestModel extends FastenDisplayModel {
     this.categories = _.get(fhirResource, 'category', [])
       .map((c: any) => _.get(c, 'coding.0.display') || _.get(c, 'text') || _.get(c, 'coding.0.code'))
       .filter(Boolean);
+
+    // dispenseRequest — quantity + refills (US Core MS, #283)
+    const dispenseQuantity = _.get(fhirResource, 'dispenseRequest.quantity');
+    if (dispenseQuantity) {
+      this.dispense_request_quantity = [dispenseQuantity.value, dispenseQuantity.unit || dispenseQuantity.code]
+        .filter((x: any) => x !== undefined && x !== null && x !== '')
+        .join(' ') || undefined;
+    }
+    this.dispense_request_refills = _.get(fhirResource, 'dispenseRequest.numberOfRepeatsAllowed');
 
     this.display = _.get(fhirResource, 'medicationCodeableConcept.text') || _.get(fhirResource, 'medicationCodeableConcept.0.display') || _.get(fhirResource, 'dosageInstruction.0.text') || 'unknown'
   }

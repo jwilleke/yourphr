@@ -63,6 +63,12 @@ export class ConditionComponent implements OnInit, FhirCardComponentInterface {
         enabled: !!this.displayModel?.date_recorded,
       },
       {
+        // US Core MS: condition-assertedDate extension (#282)
+        label: 'Asserted date',
+        data: this.displayModel?.asserted_date,
+        enabled: !!this.displayModel?.asserted_date,
+      },
+      {
         label: 'Severity',
         data: this.displayModel?.severity_text,
         enabled: !!this.displayModel?.severity_text,
@@ -83,6 +89,12 @@ export class ConditionComponent implements OnInit, FhirCardComponentInterface {
         label: 'Note',
         data: this.displayModel?.note,
         enabled: !!this.displayModel?.note,
+      },
+      {
+        // US Core MS: meta.lastUpdated (#281)
+        label: 'Last updated',
+        data: this.displayModel?.meta_last_updated,
+        enabled: !!this.displayModel?.meta_last_updated,
       },
     ]
   }

@@ -47,7 +47,8 @@ describe('DocumentReferenceModel', () => {
         facilityTypeCoding: { system: 'http://www.ihe.net/xds/connectathon/healthcareFacilityTypeCodes', code: 'Outpatient', display: 'Outpatient' },
         practiceSettingCoding: { system: 'http://www.ihe.net/xds/connectathon/practiceSettingCodes', code: 'General Medicine', display: 'General Medicine' },
         periodStart: '2004-12-23T08:00:00+11:00',
-        periodEnd: '2004-12-23T08:01:00+11:00'
+        periodEnd: '2004-12-23T08:01:00+11:00',
+        encounter: { reference: 'Encounter/xcda' }   // US Core MS: context.encounter (#285)
       }
       // expected.context: any | undefined
       expected.code = { coding: [{ system: 'http://loinc.org', code: '34108-1', display: 'Outpatient Note' }] }

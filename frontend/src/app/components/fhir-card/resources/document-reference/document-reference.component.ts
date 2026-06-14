@@ -58,6 +58,13 @@ export class DocumentReferenceComponent implements OnInit, FhirCardComponentInte
         enabled: !!this.displayModel?.subject,
       },
       {
+        // US Core MS: context.encounter (#285)
+        label: 'Encounter',
+        data: this.displayModel?.context?.encounter,
+        data_type: TableRowItemDataType.Reference,
+        enabled: !!this.displayModel?.context?.encounter,
+      },
+      {
         // author is a list of References; render the display/reference joined (no ReferenceList row type)
         label: 'Author',
         data: (this.displayModel?.authors || []).map(a => a?.display || a?.reference).filter(Boolean).join(', '),
