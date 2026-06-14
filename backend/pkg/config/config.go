@@ -32,24 +32,6 @@ func loadDotEnvFiles() {
 	}
 }
 
-// mirrorDeprecatedEnvPrefix copies any FASTEN_* env var to its YOURPHR_* equivalent (when the new one
-// is not already set), so deployments still on the old prefix keep working during the rename. Each
-// mirrored var logs a one-time deprecation warning.
-// DEPRECATED: remove once docker-compose + mj-infra-flux migrate to YOURPHR_* (yourphr#273, flux#117).
-func mirrorDeprecatedEnvPrefix() {
-	for _, kv := range os.Environ() {
-		k, v, ok := strings.Cut(kv, "=")
-		if !ok || !strings.HasPrefix(k, "FASTEN_") {
-			continue
-		}
-		newKey := "YOURPHR_" + strings.TrimPrefix(k, "FASTEN_")
-		if _, set := os.LookupEnv(newKey); !set {
-			_ = os.Setenv(newKey, v)
-			log.Printf("[deprecation] env %s is deprecated and will be removed; use %s instead (yourphr#273)", k, newKey)
-		}
-	}
-}
-
 // DefaultJWTIssuerKey is the placeholder HS256 signing key shipped in the
 // committed config.yaml. It is a KNOWN PUBLIC value (present in this repo and
 // upstream Fasten), so a deployment running with it can have tokens forged for
@@ -118,10 +100,8 @@ type configuration struct {
 func (c *configuration) Init() error {
 	c.Viper = viper.New()
 
-	// Layer dotenv files into the environment, then bridge the deprecated FASTEN_* prefix, before
-	// viper reads env via AutomaticEnv below.
+	// Layer dotenv files into the environment before viper reads env via AutomaticEnv below.
 	loadDotEnvFiles()
-	mirrorDeprecatedEnvPrefix()
 
 	//set defaults
 	c.SetDefault("web.listen.port", "8080")
@@ -161,7 +141,7 @@ func (c *configuration) Init() error {
 	c.AddConfigPath("$HOME/")
 
 	//configure env variable parsing: YOURPHR_<KEY> with '.'/'-' -> '_' (e.g. cda_converter.enabled
-	//-> YOURPHR_CDA_CONVERTER_ENABLED). The deprecated FASTEN_* prefix is bridged in Init (above).
+	//-> YOURPHR_CDA_CONVERTER_ENABLED).
 	c.SetEnvPrefix("YOURPHR")
 	c.SetEnvKeyReplacer(strings.NewReplacer("-", "_", ".", "_"))
 	c.AutomaticEnv()
