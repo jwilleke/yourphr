@@ -18,6 +18,7 @@
 **Live provider sync (Blue Button thread — active):**
 
 - #250 Add CMS Blue Button 2.0 as a SMART-on-FHIR sync source — `help wanted` (backend done: CapabilityStatement-driven fetch landed).
+- #286 SMART client: confidential-client (client_secret) support — backend **done** (the BB2.0 prerequisite; generic).
 - #279 Blue Button 2.0 — frontend source entry + sandbox end-to-end verification.
 
 **US Core / import:**
@@ -27,6 +28,8 @@
 
 ## 🟡 P2
 
+- #287 Upload/import UI polish — make all supported file types selectable (`.pdf/.dcm/.jpg/.png`) + clearer "add my data" affordances (frontend).
+- #288 [ARCH] Decide future of fasten-sources-stub — fold into main module vs keep as owned source layer.
 - #277 Medical History hub page (/medical-history) — umbrella for Visits & Notes, Procedures, etc.
 - #244 [EPIC] Per-profile dashboard widgets (US Core display end-state).
 - #256 Sharing PHR data — drives the conformance-remodeling goal.
