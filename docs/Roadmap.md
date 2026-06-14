@@ -96,6 +96,8 @@ Replace the commercial Fasten Lighthouse with a self-hosted Cloudflare Worker re
 
 ## Upstream PR merge strategy
 
+> **Insurance:** an archival mirror of `fastenhealth/fasten-onprem` lives at [`jwilleke/fasten-onprem-mirror`](https://github.com/jwilleke/fasten-onprem-mirror) (private), with the four target PRs pinned as branches **`pr-594` / `pr-613` / `pr-614` / `pr-609`**. So these merges stay possible even if upstream disappears. (A full Fasten→YourPHR rename is parked as deferred epic #278 — only on committing to a hard fork, which would close this merge path.)
+
 Large feature PRs (#594, #613, #614, #609) are not merged directly because they would conflict with our `go.mod` replace directive, `vendor/` directory, and generated model changes. Approach:
 
 1. When ready for a phase, create a feature branch from `main`
