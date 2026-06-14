@@ -4,6 +4,18 @@
 
 //Custom
 
+// Page content should never sit flush against the screen edges. The app shell's
+// .az-content-wrapper (which wraps <router-outlet>) had no gutter, so list pages like
+// /medications, /medical-concerns, /procedures ran edge-to-edge. Give every routed page
+// a consistent, responsive gutter.
+.az-content-wrapper {
+  padding: 1rem 1.5rem;
+
+  @media (max-width: 575.98px) {
+    padding: 0.75rem 1rem;
+  }
+}
+
 .cursor-pointer {
   cursor: pointer;
 }
