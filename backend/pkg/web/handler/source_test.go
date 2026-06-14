@@ -141,6 +141,10 @@ func TestAuthorizeSource(t *testing.T) {
 	w := httptest.NewRecorder()
 	ctx, _ := gin.CreateTestContext(w)
 	ctx.Set(pkg.ContextKeyTypeLogger, logrus.WithField("test", t.Name()))
+	ctrl := gomock.NewController(t)
+	appConfig := mock_config.NewMockInterface(ctrl)
+	appConfig.EXPECT().GetInt("web.smart_connect.login_wait_seconds").Return(240).AnyTimes()
+	ctx.Set(pkg.ContextKeyTypeConfig, appConfig)
 
 	body, _ := json.Marshal(SmartAuthorizeRequest{
 		ApiEndpointBaseUrl: provider.URL,
@@ -157,15 +161,17 @@ func TestAuthorizeSource(t *testing.T) {
 	require.Equal(t, http.StatusOK, w.Code, w.Body.String())
 
 	var resp struct {
-		Success      bool   `json:"success"`
-		AuthorizeURL string `json:"authorize_url"`
-		State        string `json:"state"`
-		CodeVerifier string `json:"code_verifier"`
+		Success          bool   `json:"success"`
+		AuthorizeURL     string `json:"authorize_url"`
+		State            string `json:"state"`
+		CodeVerifier     string `json:"code_verifier"`
+		LoginWaitSeconds int    `json:"login_wait_seconds"`
 	}
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
 	require.True(t, resp.Success)
 	require.NotEmpty(t, resp.State)
 	require.NotEmpty(t, resp.CodeVerifier)
+	require.Equal(t, 240, resp.LoginWaitSeconds)
 
 	authURL, err := url.Parse(resp.AuthorizeURL)
 	require.NoError(t, err)
@@ -188,6 +194,7 @@ func TestAuthorizeSourceRejectsSSRF(t *testing.T) {
 	w := httptest.NewRecorder()
 	ctx, _ := gin.CreateTestContext(w)
 	ctx.Set(pkg.ContextKeyTypeLogger, logrus.WithField("test", t.Name()))
+	ctx.Set(pkg.ContextKeyTypeConfig, mock_config.NewMockInterface(gomock.NewController(t)))
 
 	body, _ := json.Marshal(SmartAuthorizeRequest{
 		ApiEndpointBaseUrl: "https://127.0.0.1/fhir",
