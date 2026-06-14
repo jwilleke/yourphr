@@ -1,0 +1,13 @@
+.sortable {
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.procedure-row {
+  cursor: pointer;
+}
+
+.procedure-detail > td {
+  background-color: rgba(0, 0, 0, 0.02);
+}

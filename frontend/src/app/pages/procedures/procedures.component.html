@@ -1,0 +1,46 @@
+<div class="az-content-body">
+  <div class="d-flex justify-content-between align-items-center mg-b-20">
+    <div>
+      <h4 class="mg-b-5">Procedures</h4>
+      <p class="tx-gray-500 mg-b-0">Procedures in your medical history — what was done, from your records as of your last import. Grouped by the kind of procedure your record states.</p>
+    </div>
+  </div>
+
+  <app-loading-spinner *ngIf="loading" loadingTitle="Loading your procedures..."></app-loading-spinner>
+
+  <div *ngIf="!loading && errored" class="alert alert-danger">Could not load your procedures. Please try again.</div>
+
+  <div *ngIf="!loading && !errored && filtered.length === 0" class="alert alert-info">No procedures found in your records.</div>
+
+  <div class="table-responsive" *ngIf="!loading && !errored && filtered.length > 0">
+    <table class="table table-hover">
+      <thead>
+        <tr>
+          <th style="width:1%"></th>
+          <th class="sortable" (click)="sortBy('name')">Procedure <i class="fas" [ngClass]="sortColumn==='name' ? (sortDirection==='asc' ? 'fa-caret-up' : 'fa-caret-down') : ''"></i></th>
+          <th class="sortable" (click)="sortBy('category')">Kind <i class="fas" [ngClass]="sortColumn==='category' ? (sortDirection==='asc' ? 'fa-caret-up' : 'fa-caret-down') : ''"></i></th>
+          <th class="sortable" (click)="sortBy('date')">Date <i class="fas" [ngClass]="sortColumn==='date' ? (sortDirection==='asc' ? 'fa-caret-up' : 'fa-caret-down') : ''"></i></th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <ng-container *ngFor="let p of filtered">
+          <tr class="procedure-row" (click)="toggleExpanded(rowKey(p))">
+            <td><i class="fas" [ngClass]="expanded[rowKey(p)] ? 'fa-chevron-down' : 'fa-chevron-right'"></i></td>
+            <td><strong>{{ name(p) }}</strong></td>
+            <td>{{ categoryLabel(p) }}</td>
+            <td><span *ngIf="date(p) as d; else noDate">{{ d | date }}</span><ng-template #noDate><span class="tx-gray-400">—</span></ng-template></td>
+            <td><span class="badge badge-light">{{ p.status || '—' }}</span></td>
+          </tr>
+          <tr *ngIf="expanded[rowKey(p)]" class="procedure-detail">
+            <td></td>
+            <td colspan="4">
+              <!-- The existing per-resource Procedure card remains the detail view. -->
+              <fhir-card [displayModel]="p"></fhir-card>
+            </td>
+          </tr>
+        </ng-container>
+      </tbody>
+    </table>
+  </div>
+</div>

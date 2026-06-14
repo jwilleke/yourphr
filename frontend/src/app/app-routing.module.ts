@@ -17,6 +17,7 @@ import { MedicalHistoryComponent } from './pages/medical-history/medical-history
 import { CurrentMedicationsComponent } from './pages/current-medications/current-medications.component';
 import { MedicalConcernsComponent } from './pages/medical-concerns/medical-concerns.component';
 import { AccountProfileComponent } from './pages/account-profile/account-profile.component';
+import { ProceduresComponent } from './pages/procedures/procedures.component';
 import { AdminDashboardComponent } from './pages/admin-dashboard/admin-dashboard.component';
 import { MedicalSourcesComponent } from './pages/medical-sources/medical-sources.component';
 import { PatientProfileComponent } from './pages/patient-profile/patient-profile.component';
@@ -67,6 +68,7 @@ const routes: Routes = [
   { path: 'account-profile', component: AccountProfileComponent, canActivate: [ IsAuthenticatedAuthGuard ] },
   { path: 'medications', component: CurrentMedicationsComponent, canActivate: [ IsAuthenticatedAuthGuard ] },
   { path: 'medical-concerns', component: MedicalConcernsComponent, canActivate: [ IsAuthenticatedAuthGuard ] },
+  { path: 'procedures', component: ProceduresComponent, canActivate: [ IsAuthenticatedAuthGuard ] },
   { path: 'admin', component: AdminDashboardComponent, canActivate: [ IsAuthenticatedAuthGuard, IsAdminAuthGuard ] },
   { path: 'labs', component: ReportLabsComponent, canActivate: [ IsAuthenticatedAuthGuard ] },
   { path: 'labs/report/:source_id/:resource_type/:resource_id', component: ReportLabsComponent, canActivate: [ IsAuthenticatedAuthGuard ] },

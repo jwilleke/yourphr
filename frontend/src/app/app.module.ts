@@ -23,6 +23,7 @@ import {AuthInterceptorService} from './services/auth-interceptor.service';
 import {AuthService} from './services/auth.service';
 import { PatientProfileComponent } from './pages/patient-profile/patient-profile.component';
 import { AccountProfileComponent } from './pages/account-profile/account-profile.component';
+import { ProceduresComponent } from './pages/procedures/procedures.component';
 import { MedicalHistoryComponent } from './pages/medical-history/medical-history.component';
 import { ReportLabsComponent } from './pages/report-labs/report-labs.component';
 import {PipesModule} from './pipes/pipes.module';
@@ -58,6 +59,7 @@ import { GetEncryptionKeyWizardComponent } from './pages/get-encryption-key-wiza
         SourceDetailComponent,
         PatientProfileComponent,
         AccountProfileComponent,
+        ProceduresComponent,
         MedicalHistoryComponent,
         ReportLabsComponent,
         ResourceCreatorComponent,
