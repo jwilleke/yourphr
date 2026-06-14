@@ -3,7 +3,7 @@
 How to connect **CMS Blue Button 2.0** (Medicare claims data) to YourPHR as a SMART-on-FHIR source. This page exists so you don't have to reverse-engineer the settings the way we did — it lists the **exact** values that work, plus the errors you'll hit if a value is wrong.
 
 > **✅ Verified working** against the Blue Button **sandbox** on 2026-06-14 — a real end-to-end connect (login → token exchange → sync) succeeded with exactly the settings below.
-
+>
 > **Heads-up — this is the manual / admin path.** Today you enter the OAuth settings by hand in the "Connect a SMART source" form. The patient-friendly "pick Medicare from a list, log in, never see a client id/secret" experience is the **Source Catalog** ([#291](https://github.com/jwilleke/yourphr/issues/291)) — until that lands, use the values below.
 
 ## What Blue Button 2.0 gives you
@@ -15,12 +15,12 @@ A national, standardized **FHIR R4** API for Medicare beneficiaries. It returns 
 1. Go to the CMS Blue Button developer portal: `https://bluebutton.cms.gov/developers/` → **Sandbox**.
 2. Create a developer account and **register an application** with these settings:
 
-| App setting | Value |
-|---|---|
-| **OAuth Client Type** | **`confidential`** (you get a `client_id` **and** a `client_secret`) |
-| **OAuth Grant Type** | **`authorization-code`** |
-| **Callback URL / Redirect URI** | your instance's relay callback — **`https://relay.nerdsbythehour.com/callback`** (default), or `${YOURPHR_RELAY_URL}/callback` if you run your own relay. **Must match exactly.** |
-| **Collect beneficiary demographic data** | **Yes** (needed to read Patient demographics) |
+   | App setting | Value |
+   |---|---|
+   | **OAuth Client Type** | **`confidential`** (you get a `client_id` **and** a `client_secret`) |
+   | **OAuth Grant Type** | **`authorization-code`** |
+   | **Callback URL / Redirect URI** | your instance's relay callback — **`https://relay.nerdsbythehour.com/callback`** (default), or `${YOURPHR_RELAY_URL}/callback` if you run your own relay. **Must match exactly.** |
+   | **Collect beneficiary demographic data** | **Yes** (needed to read Patient demographics) |
 
 3. CMS gives you a **Sandbox `client_id`** and **Sandbox `client_secret`**. Use the **Sandbox** pair (not Production).
 
