@@ -4,23 +4,23 @@
 
 ## 🔴 P0 — Security & Critical
 
-- [#272](https://github.com/jwilleke/yourphr/issues/272) 🔒 [security] **esbuild < 0.28.1** — HIGH RCE (GHSA-gv7w-rqvm-qjhr) + dev-server file read. **One fix: bump esbuild to ≥0.28.1** (closes Dependabot #181 + #180). Build-time dep only, but graded P0 by severity; trivial fix.
+- None. No open Dependabot or code-scanning alerts (esbuild RCE #181/#180 fixed in #272).
 
 ## 🟠 P1
 
-**Patient-legible display / provenance (active — #266/#262):**
+**Patient-legible display / provenance (active — #266/#262; mostly frontend now):**
 
-- [#266](https://github.com/jwilleke/yourphr/issues/266) [EPIC] FollowMyHealth/Veradigm EHI classification & patient-legible display — Layer-1 classifiers + provenance shipped (backend + "who said this" on every card).
+- [#266](https://github.com/jwilleke/yourphr/issues/266) [EPIC] FollowMyHealth/Veradigm EHI classification & patient-legible display — Layer-1 classifiers + provenance shipped (backend done; "who said this" on every card).
 - [#262](https://github.com/jwilleke/yourphr/issues/262) [EPIC] Patient-legible display — health info a normal person can actually use.
 - [#264](https://github.com/jwilleke/yourphr/issues/264) Medication card display gaps + reference-resolution blocker — backend done; frontend provenance landed; raw-card "unknown" title (low-pri) remains.
 - [#267](https://github.com/jwilleke/yourphr/issues/267) Phase 1 — Condition classifier & Patient Profile — code done & deployed; `question`, awaiting live verification.
 
 **US Core / import / providers:**
 
-- [#136](https://github.com/jwilleke/yourphr/issues/136) [EPIC] Support US Core 9.0.0 (profiles + Must-Support).
+- [#136](https://github.com/jwilleke/yourphr/issues/136) [EPIC] Support US Core 9.0.0 (profiles + Must-Support) — USCDI Provenance backend done; remaining is the 6 display gaps (#249).
 - [#249](https://github.com/jwilleke/yourphr/issues/249) Surface the 6 remaining US Core 9.0.0 Must-Support display gaps — `help wanted` (frontend).
 - [#254](https://github.com/jwilleke/yourphr/issues/254) Support C-CDA / CCD import — **code-complete, pending Metriport sidecar deployment** (`help wanted`).
-- [#250](https://github.com/jwilleke/yourphr/issues/250) Add CMS Blue Button 2.0 as a SMART-on-FHIR sync source — `help wanted` (first working live sync; big lift).
+- [#250](https://github.com/jwilleke/yourphr/issues/250) Add CMS Blue Button 2.0 as a SMART-on-FHIR sync source — `help wanted` (first working live sync; big backend lift).
 
 ## 🟡 P2
 
