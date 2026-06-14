@@ -22,6 +22,7 @@ import { HighlightModule, HIGHLIGHT_OPTIONS } from 'ngx-highlightjs';
 import {AuthInterceptorService} from './services/auth-interceptor.service';
 import {AuthService} from './services/auth.service';
 import { PatientProfileComponent } from './pages/patient-profile/patient-profile.component';
+import { AccountProfileComponent } from './pages/account-profile/account-profile.component';
 import { MedicalHistoryComponent } from './pages/medical-history/medical-history.component';
 import { ReportLabsComponent } from './pages/report-labs/report-labs.component';
 import {PipesModule} from './pipes/pipes.module';
@@ -56,6 +57,7 @@ import { GetEncryptionKeyWizardComponent } from './pages/get-encryption-key-wiza
         AuthSigninComponent,
         SourceDetailComponent,
         PatientProfileComponent,
+        AccountProfileComponent,
         MedicalHistoryComponent,
         ReportLabsComponent,
         ResourceCreatorComponent,

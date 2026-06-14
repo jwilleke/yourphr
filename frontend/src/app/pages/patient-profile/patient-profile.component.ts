@@ -7,7 +7,6 @@ import {ResourceType} from '../../../lib/models/constants';
 import {ImmunizationModel} from '../../../lib/models/resources/immunization-model';
 import {AllergyIntoleranceModel} from '../../../lib/models/resources/allergy-intolerance-model';
 import {ClassifiedCondition} from '../../models/fasten/classified-condition';
-import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'app-patient-profile',
@@ -16,9 +15,7 @@ import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
     standalone: false
 })
 export class PatientProfileComponent implements OnInit {
-  loading: Record<string, boolean> = {page: false, delete: false}
-
-  modalCloseResult = '';
+  loading: Record<string, boolean> = {page: false}
 
   patient: ResourceFhir = null
   immunizations: ImmunizationModel[] = []
@@ -26,7 +23,6 @@ export class PatientProfileComponent implements OnInit {
   profileItems: ClassifiedCondition[] = []   // SDOH / health-concern — "Personal & social information"
   constructor(
     private fastenApi: FastenApiService,
-    private modalService: NgbModal,
   ) { }
 
   ngOnInit(): void {
@@ -60,24 +56,6 @@ export class PatientProfileComponent implements OnInit {
       },
       error: () => { /* leave the section empty on error */ },
     })
-  }
-
-  deleteAccount() {
-    this.loading['delete'] = true
-    this.fastenApi.deleteAccount().subscribe(result => {
-      this.loading['delete'] = false
-    }, error => {
-      this.loading['delete'] = false
-      console.log(error)
-    })
-  }
-
-  openModal(contentModalRef) {
-    this.modalService.open(contentModalRef, {ariaLabelledBy: 'modal-basic-title'}).result.then((result) => {
-      this.modalCloseResult = `Closed with: ${result}`;
-    }, (reason) => {
-      this.modalCloseResult = `Dismissed ${reason}`;
-    });
   }
 
 }

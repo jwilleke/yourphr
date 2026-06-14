@@ -7,6 +7,7 @@ import {map} from 'rxjs/operators';
 import {ResponseWrapper} from '../models/response-wrapper';
 import {ReconciledMedication} from '../models/fasten/reconciled-medication';
 import {ClassifiedCondition} from '../models/fasten/classified-condition';
+import {AccountUser} from '../models/fasten/account-user';
 import {ResourceListItem} from '../models/fasten/resource-list-item';
 import {ServerLogs} from '../models/fasten/server-logs';
 import {Source} from '../models/fasten/source';
@@ -115,6 +116,16 @@ export class FastenApiService {
             })
           }
           return response.success
+        })
+      );
+  }
+
+  // The current system user account (Account Profile identity) — sanitized (no password hash).
+  getCurrentUser(): Observable<AccountUser> {
+    return this._httpClient.get<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/account/me`)
+      .pipe(
+        map((response: ResponseWrapper) => {
+          return (response.data || {}) as AccountUser
         })
       );
   }

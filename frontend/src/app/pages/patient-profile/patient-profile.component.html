@@ -198,17 +198,6 @@
           </div>
         </div>
 
-        <!-- Account Actions -->
-        <hr/>
-
-        <div class="row" style="padding-bottom:20px">
-          <div class="col-12">
-            <div class="btn-group" role="group">
-              <button (click)="openModal(manageModalRef)" type="button" class="btn btn-outline-danger">Delete Account</button>
-            </div>
-          </div>
-        </div>
-
       </div>
 
       <ng-template #isLoadingTemplate>
@@ -225,25 +214,3 @@
 
 
 
-<ng-template #manageModalRef let-modal>
-
-  <div class="modal-header">
-    <h4 class="modal-title" id="modal-basic-title">Delete Account</h4>
-    <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss('Cross click')"></button>
-  </div>
-
-  <div class="modal-body">
-    <p>Are you sure you would like to delete your YourPHR Account?</p>
-    <p>
-      All personal and medical data on this device will be deleted. You will not be able to recover this data.
-    </p>
-  </div>
-
-  <div class="modal-footer">
-    <button type="button" (click)="deleteAccount()" class="btn btn-danger">
-      <span *ngIf="loading['delete']" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-      Delete
-    </button>
-    <button (click)="modal.dismiss('Close click')" type="button" class="btn btn-outline-light">Close</button>
-  </div>
-</ng-template>

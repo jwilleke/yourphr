@@ -1,0 +1,83 @@
+<div class="az-content">
+  <div class="container">
+    <div class="az-content-body">
+
+      <report-header [reportHeaderTitle]="'Account Profile'"></report-header>
+
+      <div *ngIf="!loading.page; else isLoadingTemplate" class="ps-3 pe-3">
+        <p class="tx-gray-500 mt-4 mb-3">Your YourPHR login and account settings — this is your account on this system, not your medical record. Your health information lives under <a [routerLink]="'/patient-profile'">Patient Profile</a>.</p>
+
+        <!-- Account identity -->
+        <div class="row">
+          <div class="col-md-8">
+            <h2 class="tx-indigo">Account</h2>
+            <div class="d-flex align-items-center mb-4">
+              <div class="az-img-user mg-r-15"><span class="az-img-initials">{{ initials }}</span></div>
+              <div>
+                <h5 class="mg-b-0">{{ user.full_name || user.username || '—' }}</h5>
+                <span class="tx-gray-500">{{ (user.role || '') | titlecase }}</span>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-4"><strong class="tx-indigo">Username:</strong></div>
+              <div class="col-8">{{ user.username || '—' }}</div>
+
+              <div class="col-4"><strong class="tx-indigo">Full name:</strong></div>
+              <div class="col-8">{{ user.full_name || '—' }}</div>
+
+              <div class="col-4"><strong class="tx-indigo">Email:</strong></div>
+              <div class="col-8">{{ user.email || '—' }}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Connected devices (the existing /settings page — preserved, not orphaned) -->
+        <div class="row mt-5">
+          <div class="col-md-8">
+            <h2 class="tx-indigo">Connected devices</h2>
+            <p class="tx-gray-500">Pair companion apps and manage the access tokens devices use to reach your records.</p>
+            <a [routerLink]="'/settings'" class="btn btn-outline-primary btn-sm">Manage connected devices</a>
+          </div>
+        </div>
+
+        <!-- Danger zone — Delete Account (moved here from Patient Profile) -->
+        <hr class="mt-5"/>
+        <div class="row" style="padding-bottom:20px">
+          <div class="col-md-8">
+            <h2 class="tx-danger">Delete account</h2>
+            <p class="tx-gray-500">Permanently delete your YourPHR account and all personal and medical data on this device. This cannot be undone.</p>
+            <button (click)="openDeleteModal(deleteModalRef)" type="button" class="btn btn-outline-danger">Delete Account</button>
+          </div>
+        </div>
+
+      </div>
+
+      <ng-template #isLoadingTemplate>
+        <div class="row">
+          <div class="col-12">
+            <app-loading-spinner [loadingTitle]="'Please wait, loading account...'"></app-loading-spinner>
+          </div>
+        </div>
+      </ng-template>
+
+    </div>
+  </div>
+</div>
+
+<ng-template #deleteModalRef let-modal>
+  <div class="modal-header">
+    <h4 class="modal-title" id="delete-account-title">Delete Account</h4>
+    <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss('Cross click')"></button>
+  </div>
+  <div class="modal-body">
+    <p>Are you sure you would like to delete your YourPHR Account?</p>
+    <p>All personal and medical data on this device will be deleted. You will not be able to recover this data.</p>
+  </div>
+  <div class="modal-footer">
+    <button type="button" (click)="deleteAccount()" class="btn btn-danger">
+      <span *ngIf="loading.delete" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+      Delete
+    </button>
+    <button (click)="modal.dismiss('Close click')" type="button" class="btn btn-outline-light">Close</button>
+  </div>
+</ng-template>

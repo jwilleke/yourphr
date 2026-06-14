@@ -16,6 +16,7 @@ import { ExploreComponent } from './pages/explore/explore.component';
 import { MedicalHistoryComponent } from './pages/medical-history/medical-history.component';
 import { CurrentMedicationsComponent } from './pages/current-medications/current-medications.component';
 import { MedicalConcernsComponent } from './pages/medical-concerns/medical-concerns.component';
+import { AccountProfileComponent } from './pages/account-profile/account-profile.component';
 import { AdminDashboardComponent } from './pages/admin-dashboard/admin-dashboard.component';
 import { MedicalSourcesComponent } from './pages/medical-sources/medical-sources.component';
 import { PatientProfileComponent } from './pages/patient-profile/patient-profile.component';
@@ -63,6 +64,7 @@ const routes: Routes = [
   { path: 'background-jobs', component: BackgroundJobsComponent, canActivate: [ IsAuthenticatedAuthGuard ] },
   { path: 'patient-profile', component: PatientProfileComponent, canActivate: [ IsAuthenticatedAuthGuard ] },
   { path: 'medical-history', component: MedicalHistoryComponent, canActivate: [ IsAuthenticatedAuthGuard ] },
+  { path: 'account-profile', component: AccountProfileComponent, canActivate: [ IsAuthenticatedAuthGuard ] },
   { path: 'medications', component: CurrentMedicationsComponent, canActivate: [ IsAuthenticatedAuthGuard ] },
   { path: 'medical-concerns', component: MedicalConcernsComponent, canActivate: [ IsAuthenticatedAuthGuard ] },
   { path: 'admin', component: AdminDashboardComponent, canActivate: [ IsAuthenticatedAuthGuard, IsAdminAuthGuard ] },
