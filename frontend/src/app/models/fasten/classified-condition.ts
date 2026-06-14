@@ -2,6 +2,8 @@
 // GET /api/secure/conditions/classified. Hand-maintained (this endpoint is not tygo-exported).
 // See docs/your-phr-dashboard/phase-1-condition-classifier-spec.md.
 
+import {Provenance} from './provenance';
+
 export interface ConditionCoding {
   system?: string;
   code?: string;
@@ -24,4 +26,5 @@ export interface ClassifiedCondition {
   abated?: string;
   note?: string;
   standardCodings?: ConditionCoding[];
+  provenance?: Provenance;   // "who said this" — nil when no resolver ran
 }

@@ -1,0 +1,82 @@
+<div class="az-content-body">
+  <div class="d-flex justify-content-between align-items-center mg-b-20">
+    <div>
+      <h4 class="mg-b-5">Medical Concerns</h4>
+      <p class="tx-gray-500 mg-b-0">Your active health problems, from your records as of your last import. Social and personal information lives under Patient Profile.</p>
+    </div>
+    <div class="btn-group" role="group" aria-label="Filter">
+      <button type="button" class="btn btn-sm" [class.btn-primary]="showActiveOnly" [class.btn-outline-primary]="!showActiveOnly" (click)="showActiveOnly || toggleActiveOnly()">Active only</button>
+      <button type="button" class="btn btn-sm" [class.btn-primary]="!showActiveOnly" [class.btn-outline-primary]="showActiveOnly" (click)="!showActiveOnly || toggleActiveOnly()">All</button>
+    </div>
+  </div>
+
+  <app-loading-spinner *ngIf="loading" loadingTitle="Loading your medical concerns..."></app-loading-spinner>
+
+  <div *ngIf="!loading && errored" class="alert alert-danger">Could not load your medical concerns. Please try again.</div>
+
+  <div *ngIf="!loading && !errored && filtered.length === 0" class="alert alert-info">
+    No medical concerns found in your records{{ showActiveOnly ? ' that are currently active' : '' }}.
+  </div>
+
+  <div class="table-responsive" *ngIf="!loading && !errored && filtered.length > 0">
+    <table class="table table-hover">
+      <thead>
+        <tr>
+          <th style="width:1%"></th>
+          <th class="sortable" (click)="sortBy('title')">Medical term <i class="fas" [ngClass]="sortColumn==='title' ? (sortDirection==='asc' ? 'fa-caret-up' : 'fa-caret-down') : ''"></i></th>
+          <th class="sortable" (click)="sortBy('state')">Status <i class="fas" [ngClass]="sortColumn==='state' ? (sortDirection==='asc' ? 'fa-caret-up' : 'fa-caret-down') : ''"></i></th>
+          <th class="sortable" (click)="sortBy('recorded')">Recorded <i class="fas" [ngClass]="sortColumn==='recorded' ? (sortDirection==='asc' ? 'fa-caret-up' : 'fa-caret-down') : ''"></i></th>
+        </tr>
+      </thead>
+      <tbody>
+        <ng-container *ngFor="let c of filtered">
+          <tr class="concern-row" (click)="toggleExpanded(rowKey(c))">
+            <td><i class="fas" [ngClass]="expanded[rowKey(c)] ? 'fa-chevron-down' : 'fa-chevron-right'"></i></td>
+            <td>
+              <strong>{{ c.title }}</strong>
+              <span *ngIf="c.selfReported" class="badge badge-info mg-l-5" title="You reported this; it was not stated by a clinician in your records.">Self-reported</span>
+            </td>
+            <td><span class="badge" [ngClass]="stateBadgeClass(c.state)">{{ c.state }}</span></td>
+            <td><span *ngIf="c.recorded; else noDate">{{ c.recorded | date }}</span><ng-template #noDate><span class="tx-gray-400">—</span></ng-template></td>
+          </tr>
+          <tr *ngIf="expanded[rowKey(c)]" class="concern-detail">
+            <td></td>
+            <td colspan="3">
+              <div class="mg-b-15">
+                <strong class="tx-12 tx-uppercase tx-gray-500">Learn about this condition</strong>
+                <div class="mg-t-5">
+                  <a *ngIf="medlinePlusUrl(c) as mp" [href]="mp" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-info mg-r-5">MedlinePlus (consumer info)</a>
+                  <a [href]="medlinePlusSearchUrl(c)" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-info">Search MedlinePlus</a>
+                </div>
+              </div>
+
+              <div *ngIf="c.note" class="mg-b-15"><strong class="tx-12 tx-uppercase tx-gray-500">Notes</strong><div class="mg-t-5">{{ c.note }}</div></div>
+
+              <div class="row">
+                <div class="col-sm-4 mg-b-15" *ngIf="c.onset"><strong class="tx-12 tx-uppercase tx-gray-500">Started</strong><div class="mg-t-5">{{ c.onset | date }}</div></div>
+                <div class="col-sm-4 mg-b-15" *ngIf="c.recorded"><strong class="tx-12 tx-uppercase tx-gray-500">Recorded</strong><div class="mg-t-5">{{ c.recorded | date }}</div></div>
+                <div class="col-sm-4 mg-b-15" *ngIf="c.abated"><strong class="tx-12 tx-uppercase tx-gray-500">Ended</strong><div class="mg-t-5">{{ c.abated | date }}</div></div>
+              </div>
+
+              <div *ngIf="c.provenance" class="mg-b-15"><strong class="tx-12 tx-uppercase tx-gray-500">Reported by</strong><div class="mg-t-5">{{ c.provenance.display }}</div></div>
+
+              <div *ngIf="c.standardCodings?.length" class="mg-b-0">
+                <strong class="tx-12 tx-uppercase tx-gray-500">Medical codes</strong>
+                <table class="table table-sm mg-t-5 mg-b-0">
+                  <thead><tr><th>System</th><th>Code</th><th>Description</th></tr></thead>
+                  <tbody>
+                    <tr *ngFor="let code of c.standardCodings">
+                      <td>{{ codeSystemName(code.system) }}</td>
+                      <td>{{ code.code || '—' }}</td>
+                      <td>{{ code.display || '—' }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </td>
+          </tr>
+        </ng-container>
+      </tbody>
+    </table>
+  </div>
+</div>

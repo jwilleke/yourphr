@@ -32,7 +32,7 @@ export interface DashboardTile {
 }
 
 export const DEFAULT_TILES: DashboardTile[] = [
-  {id: 'concerns', label: 'Medical Concerns', clinicalLabel: 'Active health problems', icon: 'fa-solid fa-heart-pulse', route: '/medical-history', resourceTypes: [], count: 0, color: 'red', unit: 'active', countKey: 'concerns'},
+  {id: 'concerns', label: 'Medical Concerns', clinicalLabel: 'Active health problems', icon: 'fa-solid fa-heart-pulse', route: '/medical-concerns', resourceTypes: [], count: 0, color: 'red', unit: 'active', countKey: 'concerns'},
   {id: 'patient-profile', label: 'Patient Profile', clinicalLabel: 'Personal & social info', icon: 'fa-solid fa-id-card', route: '/medical-history', resourceTypes: [], count: 0, color: 'gray', unit: 'items', countKey: 'profile'},
   {id: 'medications', label: 'Medications', clinicalLabel: 'Prescriptions & medication statements', icon: 'fa-solid fa-pills', route: '/medications', resourceTypes: ['MedicationRequest', 'MedicationStatement', 'Medication', 'MedicationAdministration', 'MedicationDispense'], count: 0, color: 'amber', unit: 'records'},
   {id: 'allergies', label: 'Allergies', clinicalLabel: 'Allergies & intolerances', icon: 'fa-solid fa-triangle-exclamation', route: '/medical-history', resourceTypes: ['AllergyIntolerance'], count: 0, color: 'pink', unit: 'recorded'},
