@@ -173,7 +173,7 @@ func getBundlePage(ctx context.Context, client *http.Client, url string) (body [
 		return nil, "", err
 	}
 	if resp.StatusCode != http.StatusOK {
-		return nil, "", fmt.Errorf("$everything HTTP %d: %s", resp.StatusCode, truncate(body, 500))
+		return nil, "", fmt.Errorf("fetch HTTP %d: %s", resp.StatusCode, truncate(body, 500))
 	}
 	return body, nextBundleLink(body), nil
 }

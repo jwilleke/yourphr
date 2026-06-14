@@ -32,9 +32,10 @@ func newSmartClient(ctx context.Context, logger *logrus.Entry, cred models.Sourc
 	}
 }
 
-// SyncAll performs a full sync: discover endpoints, ensure a valid access token, fetch
-// Patient/$everything (paginated), and upsert every resource. Any refreshed token is written
-// back to the SourceCredential so the caller (BackgroundJobSyncResourcesWrapper) persists it.
+// SyncAll performs a full sync: discover endpoints, ensure a valid access token, fetch the patient's
+// data (Patient/$everything when the server supports it, else a per-resource compartment search), and
+// upsert every resource. Any refreshed token is written back to the SourceCredential so the caller
+// (BackgroundJobSyncResourcesWrapper) persists it.
 func (c *smartClient) SyncAll(db models.DatabaseRepository) (models.UpsertSummary, error) {
 	summary := models.UpsertSummary{}
 	if c.cfg.FHIRBaseURL == "" {
@@ -57,9 +58,12 @@ func (c *smartClient) SyncAll(db models.DatabaseRepository) (models.UpsertSummar
 		RefreshToken: c.cred.GetRefreshToken(),
 		Expiry:       time.Unix(c.cred.GetExpiresAt(), 0),
 	}
-	pages, refreshed, err := c.cfg.FetchEverything(c.ctx, ep, tok, c.cred.GetPatientId())
+	// FetchPatientData picks the strategy from the server's CapabilityStatement: Patient/$everything
+	// when supported, else a per-resource search across the patient compartment (e.g. CMS Blue Button
+	// 2.0, which has no $everything) — see clients/smart capability_fetch.go (#250).
+	pages, refreshed, err := c.cfg.FetchPatientData(c.ctx, ep, tok, c.cred.GetPatientId())
 	if err != nil {
-		return summary, fmt.Errorf("Patient/$everything failed: %w", err)
+		return summary, fmt.Errorf("fetching patient data failed: %w", err)
 	}
 	if refreshed != nil {
 		c.cred.SetTokens(refreshed.AccessToken, refreshed.RefreshToken, refreshed.Expiry.Unix())
@@ -69,7 +73,7 @@ func (c *smartClient) SyncAll(db models.DatabaseRepository) (models.UpsertSummar
 		resources, perr := extractResources(page)
 		if perr != nil {
 			if c.logger != nil {
-				c.logger.Warnf("skipping unparseable $everything page: %v", perr)
+				c.logger.Warnf("skipping unparseable fetch page: %v", perr)
 			}
 			continue
 		}
