@@ -117,11 +117,12 @@ func ConnectSource(c *gin.Context) {
 	patientId, _ := tok.Extra("patient").(string)
 	if patientId == "" {
 		// Some SMART servers (notably CMS Blue Button 2.0) omit the `patient` launch context from the
-		// initial token response — it only appears on refresh. Resolve it from the FHIR API instead.
+		// initial token response — it only appears on refresh. Resolve it from the FHIR API instead
+		// (Coverage/ExplanationOfBenefit references, then /Patient).
 		patientId, err = cfg.DiscoverPatientID(c, ep, tok)
 		if err != nil {
 			logger.Errorln(err)
-			c.JSON(http.StatusBadGateway, gin.H{"success": false, "error": fmt.Sprintf("token response had no patient id and the /Patient lookup failed: %s", err)})
+			c.JSON(http.StatusBadGateway, gin.H{"success": false, "error": fmt.Sprintf("token had no patient id and could not resolve one from the FHIR API: %s", err)})
 			return
 		}
 	}

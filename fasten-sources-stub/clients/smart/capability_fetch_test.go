@@ -124,24 +124,57 @@ func TestFetchByCapability_FollowsPagination(t *testing.T) {
 	}
 }
 
-// DiscoverPatientID resolves the patient id from GET /Patient when the token had no `patient`
-// context (CMS Blue Button 2.0 omits it from the initial token). Handles both a search Bundle and a
-// bare Patient resource.
+// DiscoverPatientID resolves the patient id when the token had no `patient` context. CMS Blue Button
+// 2.0 401s on /Patient unless the app collects demographic data, so the id is read from Coverage /
+// ExplanationOfBenefit references first, falling back to /Patient.
 func TestDiscoverPatientID(t *testing.T) {
-	cases := []struct{ name, body, want string }{
-		{"search bundle", `{"resourceType":"Bundle","entry":[{"resource":{"resourceType":"Patient","id":"-20140000008325"}}]}`, "-20140000008325"},
-		{"bare patient", `{"resourceType":"Patient","id":"bene-7"}`, "bene-7"},
+	const bene = "-20140000008325"
+	cases := []struct {
+		name    string
+		handler func(w http.ResponseWriter, r *http.Request)
+	}{
+		{
+			name: "from Coverage beneficiary reference",
+			handler: func(w http.ResponseWriter, r *http.Request) {
+				if strings.HasPrefix(r.URL.Path, "/Coverage") {
+					fmt.Fprintf(w, `{"resourceType":"Bundle","entry":[{"resource":{"resourceType":"Coverage","id":"c1","beneficiary":{"reference":"Patient/%s"}}}]}`, bene)
+					return
+				}
+				w.WriteHeader(http.StatusNotFound)
+			},
+		},
+		{
+			name: "from EOB patient reference (full-URL form), Coverage empty",
+			handler: func(w http.ResponseWriter, r *http.Request) {
+				switch {
+				case strings.HasPrefix(r.URL.Path, "/Coverage"):
+					fmt.Fprint(w, `{"resourceType":"Bundle","entry":[]}`)
+				case strings.HasPrefix(r.URL.Path, "/ExplanationOfBenefit"):
+					fmt.Fprintf(w, `{"resourceType":"Bundle","entry":[{"resource":{"resourceType":"ExplanationOfBenefit","id":"e1","patient":{"reference":"https://x/v2/fhir/Patient/%s"}}}]}`, bene)
+				default:
+					w.WriteHeader(http.StatusNotFound)
+				}
+			},
+		},
+		{
+			name: "Coverage/EOB 401, fall back to bare Patient",
+			handler: func(w http.ResponseWriter, r *http.Request) {
+				switch {
+				case strings.HasPrefix(r.URL.Path, "/Coverage"), strings.HasPrefix(r.URL.Path, "/ExplanationOfBenefit"):
+					w.WriteHeader(http.StatusUnauthorized)
+				case r.URL.Path == "/Patient":
+					fmt.Fprintf(w, `{"resourceType":"Patient","id":"%s"}`, bene)
+				default:
+					w.WriteHeader(http.StatusNotFound)
+				}
+			},
+		},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				if r.URL.Path != "/Patient" {
-					t.Errorf("unexpected path: %s", r.URL.Path)
-					w.WriteHeader(http.StatusNotFound)
-					return
-				}
 				w.Header().Set("Content-Type", "application/fhir+json")
-				fmt.Fprint(w, tc.body)
+				tc.handler(w, r)
 			}))
 			defer srv.Close()
 
@@ -150,15 +183,15 @@ func TestDiscoverPatientID(t *testing.T) {
 			if err != nil {
 				t.Fatalf("DiscoverPatientID: %v", err)
 			}
-			if got != tc.want {
-				t.Fatalf("got %q want %q", got, tc.want)
+			if got != bene {
+				t.Fatalf("got %q want %q", got, bene)
 			}
 		})
 	}
 }
 
-// An empty Bundle (no Patient) is an error, never a silent empty id.
-func TestDiscoverPatientID_NoPatient(t *testing.T) {
+// All sources reachable but empty → an error, never a silent empty id.
+func TestDiscoverPatientID_NoneFound(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/fhir+json")
 		fmt.Fprint(w, `{"resourceType":"Bundle","entry":[]}`)
@@ -166,6 +199,6 @@ func TestDiscoverPatientID_NoPatient(t *testing.T) {
 	defer srv.Close()
 	cfg := Config{FHIRBaseURL: srv.URL, ClientID: "c", HTTPClient: srv.Client()}
 	if _, err := cfg.DiscoverPatientID(context.Background(), Endpoints{Token: srv.URL + "/token"}, freshToken()); err == nil {
-		t.Fatal("expected an error when no Patient is returned")
+		t.Fatal("expected an error when no patient id is found anywhere")
 	}
 }

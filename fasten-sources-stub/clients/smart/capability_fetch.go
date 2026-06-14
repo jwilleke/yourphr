@@ -56,27 +56,81 @@ func (c Config) FetchPatientData(ctx context.Context, ep Endpoints, tok *oauth2.
 	return c.fetchByCapability(ctx, ep, tok, patientID, cap)
 }
 
-// patientIDResponse parses GET /Patient as either a search Bundle or a bare Patient resource,
-// to extract the beneficiary's Patient.id.
-type patientIDResponse struct {
+// patientRef parses just enough of a FHIR resource (bare or as a Bundle entry) to find a Patient:
+// a Patient's own id, or a patient/beneficiary reference on a claims resource.
+type patientRef struct {
 	ResourceType string `json:"resourceType"`
 	ID           string `json:"id"`
-	Entry        []struct {
-		Resource struct {
-			ResourceType string `json:"resourceType"`
-			ID           string `json:"id"`
-		} `json:"resource"`
+	Patient      struct {
+		Reference string `json:"reference"`
+	} `json:"patient"`
+	Beneficiary struct {
+		Reference string `json:"reference"`
+	} `json:"beneficiary"`
+}
+
+// patientID returns the Patient id this resource points at: its own id if it is a Patient, else the
+// id parsed from its patient (EOB) or beneficiary (Coverage) reference.
+func (r patientRef) patientID() string {
+	if r.ResourceType == "Patient" && r.ID != "" {
+		return r.ID
+	}
+	if id := idFromReference(r.Patient.Reference); id != "" {
+		return id
+	}
+	return idFromReference(r.Beneficiary.Reference)
+}
+
+// patientBundle is a search response: either a bare resource or a Bundle of them.
+type patientBundle struct {
+	patientRef
+	Entry []struct {
+		Resource patientRef `json:"resource"`
 	} `json:"entry"`
 }
 
-// DiscoverPatientID resolves the patient FHIR id from the FHIR API when the token response did not
-// carry a `patient` launch context. CMS Blue Button 2.0, for example, omits `patient` from the
-// initial token (it only appears on refresh) and documents reading the id from the API instead. This
-// GETs {FHIRBaseURL}/Patient with the patient-scoped token and returns the single beneficiary's id.
+// idFromReference extracts the id from a FHIR reference like "Patient/-2014" or ".../Patient/-2014".
+func idFromReference(ref string) string {
+	const marker = "Patient/"
+	i := strings.LastIndex(ref, marker)
+	if i < 0 {
+		return ""
+	}
+	return ref[i+len(marker):]
+}
+
+// DiscoverPatientID resolves the patient FHIR id when the token response carried no `patient` launch
+// context. CMS Blue Button 2.0 omits `patient` from the initial token AND returns 401 on GET /Patient
+// unless the app is approved to collect beneficiary demographic data — so we read the id from a claims
+// resource's patient reference (Coverage.beneficiary / ExplanationOfBenefit.patient), which CMS
+// recommends, and only then fall back to GET /Patient. Errors (never a silent empty id) if none work.
 func (c Config) DiscoverPatientID(ctx context.Context, ep Endpoints, tok *oauth2.Token) (string, error) {
 	ctx = context.WithValue(ctx, oauth2.HTTPClient, c.httpClient())
 	client := oauth2.NewClient(ctx, c.oauth2Config(ep).TokenSource(ctx, tok))
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, strings.TrimRight(c.FHIRBaseURL, "/")+"/Patient", nil)
+	base := strings.TrimRight(c.FHIRBaseURL, "/")
+
+	// Claims resources first (not gated by the demographic-data setting), then /Patient.
+	var lastErr error
+	for _, path := range []string{"/Coverage?_count=1", "/ExplanationOfBenefit?_count=1", "/Patient"} {
+		id, err := c.patientIDFrom(ctx, client, base+path)
+		if err != nil {
+			lastErr = err
+			continue
+		}
+		if id != "" {
+			return id, nil
+		}
+	}
+	if lastErr != nil {
+		return "", lastErr
+	}
+	return "", fmt.Errorf("authorized, but no patient id found in Coverage, ExplanationOfBenefit, or /Patient (was a beneficiary with data selected?)")
+}
+
+// patientIDFrom GETs a FHIR URL and extracts a Patient id from a bare resource or the first Bundle
+// entry. "" with a nil error means HTTP 200 but nothing usable was found (caller tries the next URL).
+func (c Config) patientIDFrom(ctx context.Context, client *http.Client, reqURL string) (string, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, reqURL, nil)
 	if err != nil {
 		return "", err
 	}
@@ -87,21 +141,21 @@ func (c Config) DiscoverPatientID(ctx context.Context, ep Endpoints, tok *oauth2
 	}
 	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("GET /Patient HTTP %d", resp.StatusCode)
+		return "", fmt.Errorf("GET %s HTTP %d", reqURL, resp.StatusCode)
 	}
-	var pr patientIDResponse
-	if err := json.NewDecoder(resp.Body).Decode(&pr); err != nil {
-		return "", fmt.Errorf("decoding /Patient response: %w", err)
+	var b patientBundle
+	if err := json.NewDecoder(resp.Body).Decode(&b); err != nil {
+		return "", fmt.Errorf("decoding %s: %w", reqURL, err)
 	}
-	if pr.ResourceType == "Patient" && pr.ID != "" {
-		return pr.ID, nil // server returned a bare Patient
+	if id := b.patientID(); id != "" { // bare resource (e.g. a Patient read)
+		return id, nil
 	}
-	for _, e := range pr.Entry {
-		if e.Resource.ResourceType == "Patient" && e.Resource.ID != "" {
-			return e.Resource.ID, nil // first Patient in the search Bundle
+	for _, e := range b.Entry { // first usable resource in the search Bundle
+		if id := e.Resource.patientID(); id != "" {
+			return id, nil
 		}
 	}
-	return "", fmt.Errorf("no Patient resource found at GET /Patient")
+	return "", nil
 }
 
 // fetchCapability fetches and parses GET {FHIRBaseURL}/metadata.
