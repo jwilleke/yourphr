@@ -15,7 +15,6 @@
 - [#264](https://github.com/jwilleke/yourphr/issues/264) Medication card display gaps + reference-resolution blocker — backend done (Encounter trap, provenance); frontend provenance landed; raw-card "unknown" title (low-pri) remains.
 - [#267](https://github.com/jwilleke/yourphr/issues/267) Phase 1 — Condition classifier & Patient Profile — code done & deployed; `question` label, awaiting live verification.
 - [#271](https://github.com/jwilleke/yourphr/issues/271) Provenance on the generic read path — **backend complete** (all 3 read paths); awaiting frontend consumer + close.
-- [#270](https://github.com/jwilleke/yourphr/issues/270) Provenance: resolve PractitionerRole → Practitioner/Organization indirection — **backend, open**.
 - [#269](https://github.com/jwilleke/yourphr/issues/269) Provenance: wire into /vitals/recognized + /documents/classified — **backend, open** (value dropped post-#271; candidate to supersede).
 - [#268](https://github.com/jwilleke/yourphr/issues/268) Provenance: Author Time Stamp (USCDI floor) — **implemented**, awaiting close.
 
@@ -30,6 +29,8 @@
 ## 🟡 P2
 
 - [#272](https://github.com/jwilleke/yourphr/issues/272) 🔒 [security] esbuild dev-server arbitrary file read (low; dev-only, Windows-only) — bump to ≥0.28.1.
+- [#274](https://github.com/jwilleke/yourphr/issues/274) Account Profile (replaces "Settings"; Delete Account moved off Patient Profile) — **Phases 1–2 shipped** (page + dropdown + change password); Phase 3 (avatar + profile edit) pending.
+- [#273](https://github.com/jwilleke/yourphr/issues/273) Layered config: defaults overridable by a custom values file (yaml/json) or env.
 - [#244](https://github.com/jwilleke/yourphr/issues/244) [EPIC] Per-profile dashboard widgets (US Core display end-state).
 - [#256](https://github.com/jwilleke/yourphr/issues/256) Sharing PHR data — drives the conformance-remodeling goal.
 - [#253](https://github.com/jwilleke/yourphr/issues/253) [EPIC] Support manual data entry and user-created records.
@@ -37,7 +38,6 @@
 - [#251](https://github.com/jwilleke/yourphr/issues/251) Explore Apple Health's supported-institution list as a provider-catalog source.
 - [#241](https://github.com/jwilleke/yourphr/issues/241) release-please: authenticate with a PAT / GitHub App token.
 - [#209](https://github.com/jwilleke/yourphr/issues/209) [EPIC] Migrate to Bootstrap 5.
-- [#261](https://github.com/jwilleke/yourphr/issues/261) Settings under User Profile — `good first issue`.
 - [#53](https://github.com/jwilleke/yourphr/issues/53) [SMART] Veradigm/FollowMyHealth registration + integration — `blocked` (vendor approval).
 - [#20](https://github.com/jwilleke/yourphr/issues/20) [EPIC] SMART on FHIR — live provider sync.
 - [#14](https://github.com/jwilleke/yourphr/issues/14) User Profile Update (PII).
