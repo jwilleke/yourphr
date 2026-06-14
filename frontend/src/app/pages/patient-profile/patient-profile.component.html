@@ -51,14 +51,14 @@
                 <strong class="tx-indigo">Religious Affil:</strong>
               </div>
               <div class="col-6">
-                N/A
+                {{ (patient | fhirPath: "Patient.extension('http://hl7.org/fhir/StructureDefinition/patient-religion').valueCodeableConcept.text") || 'Not recorded' }}
               </div>
 
               <div class="col-6">
                 <strong class="tx-indigo">Ethnicity:</strong>
               </div>
               <div class="col-6">
-                White/Caucasian
+                {{ (patient | fhirPath: "Patient.extension('http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity').extension('ombCategory').valueCoding.display") || 'Not recorded' }}
               </div>
 
               <div class="col-6">
@@ -104,34 +104,13 @@
 
             <div class="row">
               <div class="col-6">
-                <strong class="tx-indigo">Primary Care:</strong>
+                <strong class="tx-indigo">Primary care:</strong>
               </div>
               <div class="col-6">
-                Bishop, J. ANRP
+                {{ (patient | fhirPath: "Patient.generalPractitioner.display.first()") || 'Not recorded in your record' }}
               </div>
-
-              <div class="col-6">
-                <strong  class="tx-indigo">Address:</strong>
-              </div>
-              <div class="col-6">
-                Malcom Randall VA <br/>Medical Center Gainsville FL
-              </div>
-
-              <div class="col-6">
-                <strong  class="tx-indigo">Phone:</strong>
-              </div>
-              <div class="col-6">
-                123-321-5532
-              </div>
-
-              <div class="col-6">
-                <strong  class="tx-indigo">Email:</strong>
-              </div>
-              <div class="col-6">
-                myemail&#64;va.com
-              </div>
-
             </div>
+            <p class="tx-gray-500 tx-12 mt-2">Only providers stated in your imported records are shown here.</p>
           </div>
         </div>
 
