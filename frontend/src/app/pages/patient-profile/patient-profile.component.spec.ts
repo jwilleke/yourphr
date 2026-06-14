@@ -23,7 +23,11 @@ describe('PatientProfileComponent', () => {
       }]
     })
     .compileComponents();
-    mockedFastenApiService.getResources.and.returnValue(of([{}]));
+    // Only Patient needs an object; Immunization/AllergyIntolerance must be [] because the component
+    // maps them through fhirModelFactory, which THROWS on an unknown/undefined resource type. Feeding
+    // an untyped {} made that throw surface as an async unhandled error → "thrown in afterAll" →
+    // ChromeHeadless DISCONNECT at a random later spec (the CI flake this fixes).
+    mockedFastenApiService.getResources.and.callFake((type: string) => of(type === 'Patient' ? [{}] : []));
     mockedFastenApiService.getSummary.and.returnValue(of({sources: []}));
     mockedFastenApiService.getClassifiedConditions.and.returnValue(of([]));
     fixture = TestBed.createComponent(PatientProfileComponent);
