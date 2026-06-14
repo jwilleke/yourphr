@@ -1,17 +1,18 @@
 # TODO
 
 <!-- RESUME:START -->
-## ▶ Resume here — 2026-06-14
+## ▶ Resume here — 2026-06-14 (Blue Button live bring-up)
 
-- Last worked on: **Big frontend/display session.** Closed the 6 US Core 9.0.0 Must-Support display gaps ([#281](https://github.com/jwilleke/yourphr/issues/281)–[#285](https://github.com/jwilleke/yourphr/issues/285), gate now **44/44**; all `in-review`); "who said this" provenance on every card ([#271](https://github.com/jwilleke/yourphr/issues/271)); shipped Medical Concerns / Patient Profile (SDOH) / Procedures surfaces; Account Profile Phases 1–2 ([#274](https://github.com/jwilleke/yourphr/issues/274)); removed fabricated Care-Provider/ethnicity/religion from `/patient-profile`; added a global content gutter (`8b09e08e`). Fixed two markdown-lint failures.
-- Branch / state: `main`, clean, in sync with origin. 2 pre-existing stashes on OTHER branches (`fix/103-phase2a`, `feat/smart-connect-frontend`) — unrelated, leave them.
-- Running / in-flight: none (all background CI watches finished).
-- Parked / half-done: none from this session.
+- Last worked on: **Took CMS Blue Button live, end-to-end.** Drove the whole SMART connect chain to working on the prod instance: 4-min login window + tunable `web.smart_connect.login_wait_seconds` ([#292](https://github.com/jwilleke/yourphr/issues/292)), confidential client_secret, **patient id resolved from Coverage/EOB** when the token omits it ([#293](https://github.com/jwilleke/yourphr/issues/293)), and the initial sync moved to a background goroutine (no more connect 502). Imported real synthetic data: **155 EOBs + 4 coverages + 1 patient** (BBUser00000, source `b7793929`). Evaluated it and filed the Medicare display issues ([#294](https://github.com/jwilleke/yourphr/issues/294) EOB classifier, [#295](https://github.com/jwilleke/yourphr/issues/295) Coverage classifier, [#296](https://github.com/jwilleke/yourphr/issues/296) patient linking). Fixed the red CI the async change caused.
+- Branch / state: `main`, **2 unpushed** (`38be54fe` CI fix + this resume pointer) unless pushed at wrap. 2 pre-existing stashes on OTHER branches (`fix/103-phase2a`, `feat/smart-connect-frontend`) — unrelated, leave them.
+- Running / in-flight: a full `go test ./backend/pkg/web/handler/` was launched at wrap to confirm `38be54fe` — check it went green before trusting the push. Deploy watchers all finished (instance is on `main-283`).
+- Parked / half-done: none.
 - Next steps:
-  - **`main` CI is RED on Test Backend** (`backend/pkg/auth/jwt_utils_test.go:12/38`) — from the **Blue Button SMART-connect** commits (`e1d198ae` etc.), NOT the frontend work. Could be a real regression or a flake (a neighbouring commit passed). Run `go test ./backend/pkg/auth/ -run Jwt` locally to see the real assertion; the CI log is buried under GORM migration output.
-  - Verify the `in-review` US Core gaps ([#281](https://github.com/jwilleke/yourphr/issues/281)–[#285](https://github.com/jwilleke/yourphr/issues/285)) + [#249](https://github.com/jwilleke/yourphr/issues/249) on real data, then close.
-  - Allergies: [#289](https://github.com/jwilleke/yourphr/issues/289) (tiles → /patient-profile + host cards) and [#290](https://github.com/jwilleke/yourphr/issues/290) ("No Known Allergies" count). Next frontend after that: file + build labs "normal/high/low" (the top open [#262](https://github.com/jwilleke/yourphr/issues/262) litmus gap).
-- Blockers / significant notes: concurrent commits to `main` this session reordered history repeatedly (Blue Button work) — consider a branch when Jim is actively pushing. Upstream mirror lives at `jwilleke/fasten-onprem-mirror`; rename epic [#278](https://github.com/jwilleke/yourphr/issues/278) is deferred.
+  - **Push `38be54fe`** and confirm `main` CI goes GREEN (it was red on `TestSourceHandlerTestSuite/TestConnectSourceHandler` — async-sync broke its summary assertion; fixed via require.Eventually). NB: `go test -run ConnectSource` does NOT run the suite — run the whole package or `-run TestSourceHandlerTestSuite`.
+  - File two still-uncreated issues: (a) **SSE completion for async sync** — UI stuck "loading" because the done-event can't reach the browser (`Room <id> not found`); import actually finishes. (b) **Layer-2 EOB claims-overview** (aggregate 155 claims), blocked-by #294.
+  - Build the Medicare classifiers — start **#295 Coverage** (quick win: 4 parts, 3 period shapes), then #294 EOB, then #296 linking. Fixtures live in gitignored `sample-data/medicare/` (synthetic, safe to copy into `testdata/`).
+  - **Delete synthetic BB source `b7793929`** from Jim's real account (test-data hygiene — [[test-data-on-live-instance]]).
+- Blockers / significant notes: k8s namespace is **`yourphr`** (not `fasten`); kubectl works from Jim's machine (`jim@deby`), not this repo shell. Real Medicare claims need CMS **production** credentials (sandbox login = synthetic `BBUser00000`/`PW00000!`). A frontend agent shares `main` and reorders history — branch if pushing concurrently.
 <!-- RESUME:END -->
 
 > Generated by `/pstatus` from live GitHub state — ranked by priority label. Do not hand-edit.
