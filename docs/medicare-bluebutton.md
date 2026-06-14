@@ -33,7 +33,7 @@ In YourPHR: **Sources → Connect a SMART source**, fill in **exactly**:
 | **FHIR base URL** | `https://sandbox.bluebutton.cms.gov/v2/fhir` |
 | **Client ID** | your sandbox `client_id` — **just the id** (see the `/` gotcha below) |
 | **Client Secret** | your sandbox `client_secret` — Blue Button is a **confidential** client, so this is **required** |
-| **Scopes** | `openid profile launch/patient patient/Patient.read patient/Coverage.read patient/ExplanationOfBenefit.read offline_access` |
+| **Scopes** | `openid profile launch/patient patient/Patient.read patient/Coverage.read patient/ExplanationOfBenefit.read` |
 | **Display name** | e.g. `Medicare (Blue Button)` |
 
 Then **Connect** → a popup opens to the CMS login → log in as a **synthetic sandbox beneficiary** → **Authorize** → the popup redirects to the relay, YourPHR completes the token exchange and syncs.
@@ -43,15 +43,14 @@ Then **Connect** → a popup opens to the CMS login → log in as a **synthetic 
 The form's default scopes are Epic-shaped and **Blue Button rejects them** (`invalid_scope`). Blue Button supports a **specific** set — use exactly:
 
 ```
-openid profile launch/patient patient/Patient.read patient/Coverage.read patient/ExplanationOfBenefit.read offline_access
+openid profile launch/patient patient/Patient.read patient/Coverage.read patient/ExplanationOfBenefit.read
 ```
 
 Blue Button does **NOT** support these (they cause `invalid_scope`) — leave them out:
 
 - `patient/*.read` — **no wildcard**; only the three specific resources above
 - `fhirUser`
-
-`offline_access` **is** included above on purpose: it requests a **refresh token** so YourPHR can pull updated claims during the 13-month grant **without you logging in again** each time (the access token alone lasts only ~1h). If your app registration doesn't have offline enabled and you get `invalid_scope`, drop just `offline_access` — you'll still sync, but each sync after ~1h will need a fresh login.
+- `offline_access` — **confirmed rejected** by the sandbox authorize endpoint (it's not in Blue Button's published `scopes_supported`), even though Blue Button advertises an offline *capability*. Including it gives `invalid_scope`. **Omit it.** The trade-off: no refresh token, so the access token lasts only ~1h and a later re-sync needs a fresh login. (True offline/refresh on Blue Button may require a registration setting or production access — out of scope here.)
 
 ## Troubleshooting — the exact errors and their fixes
 
@@ -59,7 +58,7 @@ Blue Button does **NOT** support these (they cause `invalid_scope`) — leave th
 |---|---|---|
 | `invalid api_endpoint_base_url: URL must use https (got "")` | **FHIR base URL is empty** (the field shows the grey `https://fhir.example.com/r4` *placeholder*, which counts as blank). | Type `https://sandbox.bluebutton.cms.gov/v2/fhir` into the field. |
 | `invalid_client : Application does not exist (client_id)` | The `client_id` CMS received isn't a registered sandbox app — usually **id+secret jammed into the Client ID field** (separated by `/`), a **wrong/Production** id, or a typo/space. | Put **only** the `client_id` in Client ID (the part **before** any `/`), and the secret in the **Client Secret** field. Use the **Sandbox** id. |
-| `invalid_scope` | Requested scopes Blue Button doesn't support — the wildcard `patient/*.read` and `fhirUser`. | Replace Scopes with the exact list above. If it persists *with* `offline_access`, your app registration may not have offline enabled — drop just `offline_access`. |
+| `invalid_scope` | Requested scopes Blue Button doesn't support — the wildcard `patient/*.read`, `fhirUser`, **or `offline_access`** (the sandbox rejects all three). | Replace Scopes with the exact list above — none of those three. |
 | `could not retrieve authorization code from relay: timed out` **and the popup said "Connected"** | The login took **longer than YourPHR's connect-wait window**. The popup "Connected" means the relay *did* get the code — but the backend had already stopped polling. Not a config error. | The window now defaults to **4 minutes** and is **operator-tunable** via `web.smart_connect.login_wait_seconds` (env `YOURPHR_WEB_SMART_CONNECT_LOGIN_WAIT_SECONDS`) — no frontend rebuild. If your login is even slower, raise it and restart. Quick workaround: pre-log-in at `bluebutton.cms.gov` in another tab first, then Connect so the popup skips straight to Authorize. |
 | `could not retrieve authorization code from relay: timed out` **and no "Connected" popup** | The auth code never reached the relay — usually a **redirect-URI mismatch** (the app's registered Callback URL ≠ the relay callback) or the **login wasn't completed**. | Make the app's redirect URI **exactly** `https://relay.nerdsbythehour.com/callback`; complete the CMS login + Authorize with a **synthetic** beneficiary. |
 
