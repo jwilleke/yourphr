@@ -14,7 +14,7 @@ Every FHIR sandbox / test server YourPHR can connect to, in one place — with t
 | **CMS Blue Button 2.0** | **confidential** (secret) | sandbox app | per-resource (no `$everything`) | ✅ **verified working** (2026-06-14) | [`medicare-bluebutton.md`](medicare-bluebutton.md) |
 | **Epic** | public (PKCE) | BYO `client_id` | `$everything` | 🧪 used earlier | [`vendors/epic-sandbox.md`](vendors/epic-sandbox.md) |
 | **Veradigm / FollowMyHealth (test)** | public (PKCE) | Veradigm app | per-resource | ⛔ **blocked** (`unauthorized_client`, ticket #17849) | [`FHIR/fhir-testing.md`](FHIR/fhir-testing.md) |
-| **Oracle Health (Cerner)** | public (PKCE) | code Console app | `$everything` | 📄 documented, not yet run | this doc |
+| **Oracle Health (Cerner)** | public (PKCE) | **gated** (Cerner-org affiliation) | `$everything` | ⛔ **blocked** — no self-serve account | this doc |
 | **athenahealth** | public (PKCE) | Developer Portal app (gated) | per-resource | 📄 documented, not yet run | this doc |
 | **Raw FHIR servers** (HAPI, etc.) | — (no SMART login) | none | — | reference only (no connect flow) | this doc |
 
@@ -37,7 +37,7 @@ Public demo FHIR server with fake patients. No account, no credentials.
 |---|---|
 | **FHIR base URL** | `https://launch.smarthealthit.org/v/r4/sim/eyJsYXVuY2hfdHlwZSI6InBhdGllbnQtc3RhbmRhbG9uZSJ9/fhir` |
 | **Client ID** | anything (e.g. `my-client-id`) — the open sandbox ignores it |
-| **Client Secret** | *(blank — public client)* |
+| **Client Secret** | _(blank — public client)_ |
 | **Scopes** | leave the prefilled default (`launch/patient patient/*.read openid fhirUser offline_access`) |
 
 Connect → login/patient-picker popup → pick any test patient → records import.
@@ -76,7 +76,7 @@ Standard SMART-on-FHIR; bring your own `client_id` (register a free patient-faci
 |---|---|
 | **FHIR base URL** | `https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/R4` |
 | **Client ID** | your registered Epic `client_id` (the connect form's **"Use Epic Sandbox"** button prefills the URL + scopes) |
-| **Client Secret** | *(blank — public/PKCE)* |
+| **Client Secret** | _(blank — public/PKCE)_ |
 | **Scopes** | `launch/patient patient/*.read openid fhirUser offline_access` |
 
 Epic supports the wildcard, `fhirUser`, `offline_access`, and `$everything`. Test patients (e.g. Camila Lopez) — see Epic's docs. **Setup guide: [`vendors/epic-sandbox.md`](vendors/epic-sandbox.md).**
@@ -94,17 +94,17 @@ The near-term primary target ([#53](https://github.com/jwilleke/yourphr/issues/5
 |---|---|
 | **FHIR base URL** | `https://fhir.fhirpoint.open.allscripts.com/fhirroute/open/{OrganizationID}` (Test orgs, e.g. `76308`, `A02Test`, `10028917`) |
 | **Client ID** | your registration GUID |
-| **Client Secret** | *(blank — public PKCE)* |
+| **Client Secret** | _(blank — public PKCE)_ |
 | **Scopes** | SMART **v1** only (`.read`, not `.rs`); identity scope is lowercase **`fhiruser`**. Use the explicit read-scope list in [`FHIR/fhir-testing.md`](FHIR/fhir-testing.md) if the `patient/*.read` wildcard is rejected. |
 
 **Status:** discovery + authorize work (Client ID recognized, redirect accepted), but after login Veradigm returns **`unauthorized_client`** — an app-level provisioning gate, **not a YourPHR bug**. Veradigm support ticket **#17849**. Don't mix v1/v2 scopes (rejects the app). **Details + reproduction: [`FHIR/fhir-testing.md`](FHIR/fhir-testing.md), [`vendors/followmyhealth.md`](vendors/followmyhealth.md).**
 
 ## 5. Oracle Health (Cerner) — Millennium sandbox
 
-- **Status:** 🔴 Not started
-- **Credentials:** ❌ **need** — register a SMART app in the Oracle Health **code Console** (free CernerCare account) for a `client_id` (public/PKCE, no secret); record in `private/secrets.md`
+- **Status:** ⛔ Blocked — **deprioritized** (2026-06-15). The prerequisite **CernerCare account** can't be created without affiliation to a real Cerner customer.
+- **Credentials:** ❌ unobtainable self-serve. CernerCare account creation hard-requires an **"Organization (Client Number)"** — a search that must match an **actual Cerner client org** (a provider that runs Cerner); a placeholder like `1234` is rejected. Unlike Epic / SMART Health IT, there is **no open developer self-registration** — access is gated behind affiliation with a Cerner-customer organization.
 - **Tracking issue:** _none yet_
-- **Next:** register the code Console app, then connect
+- **Next:** **Parked.** Revisit only with a contact/affiliation at a Cerner-using provider. Use SMART Health IT + Epic for standard-SMART testing in the meantime.
 
 Cerner Millennium's public sandbox; YourPHR connects as a **patient-access** SMART app.
 
@@ -112,7 +112,7 @@ Cerner Millennium's public sandbox; YourPHR connects as a **patient-access** SMA
 |---|---|
 | **FHIR base URL** | sandbox pattern `https://fhir-myrecord.sandboxcerner.com/r4/{tenant}` (patient access). Provider/EHR-launch is `fhir-ehr.sandboxcerner.com`; an **open / no-auth** POC endpoint is `fhir-open.sandboxcerner.com`. The common public sandbox tenant is `ec2458f2-1e24-41c8-b71b-0e701af7583d` — **confirm the exact Service Root URL in code Console.** |
 | **Client ID** | register a SMART app in the **Oracle Health code Console** (needs a free CernerCare account) |
-| **Client Secret** | *(blank — public/PKCE for patient apps)* |
+| **Client Secret** | _(blank — public/PKCE for patient apps)_ |
 | **Scopes** | standard SMART patient scopes; supports `$everything` |
 
 Pick a test patient in the sandbox to drive the flow. Registration + exact endpoints: [Oracle Health — Build & Test SMART on FHIR Apps](https://docs.oracle.com/en/industries/health/millennium-platform-apis/build-smart-on-fhir-apps/) and [SMART App Provisioning](https://docs.oracle.com/en/industries/health/millennium-platform-apis/smart-app-provisioning/).
