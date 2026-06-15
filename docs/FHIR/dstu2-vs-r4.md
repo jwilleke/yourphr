@@ -55,6 +55,7 @@ So DSTU2 data would need its own conversion path before any of this applies. Sup
 
 ## See also
 
+- [`uscdi-vs-us-core.md`](uscdi-vs-us-core.md) — the *what vs how* axis (USCDI = the data list; US Core = the FHIR profiles) — a different distinction from FHIR version
 - [`../test-sandboxes.md`](../test-sandboxes.md) — sandbox index (all R4)
 - [`../vendors/athenahealth.md`](../vendors/athenahealth.md) — where this choice comes up (the "Scopes product" field)
 - [`fhir-testing.md`](fhir-testing.md) — connect/testing guide

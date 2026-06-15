@@ -19,7 +19,7 @@ Record credentials in `private/secrets.md` (gitignored).
 
 | Field | Choose | Why |
 |---|---|---|
-| **API Access** | **My app will use Certified APIs ONLY** | YourPHR reads only the standard FHIR R4 patient-access API (ONC-certified §170.315(g)(10), "standardized API for patient and population services"); no proprietary athenaOne APIs. Also the 21st Century Cures Act patient-access path. |
+| **API Access** | **My app will use Certified APIs ONLY** | YourPHR reads only the standard FHIR R4 patient-access API (ONC-certified §170.315(g)(10), "standardized API for patient and population services"); no proprietary athenaOne APIs. This Certified path = **US-Core R4 / USCDI** (see [`../FHIR/uscdi-vs-us-core.md`](../FHIR/uscdi-vs-us-core.md)); also the 21st Century Cures Act patient-access path. |
 | **App Category** | **3-Legged OAuth for Patients** | Patient-facing — the patient logs in via athenahealth's widget to authorize access to their own records (SMART patient-standalone). Not 2-Legged (service-to-service) or 3-Legged for Providers (clinician login). |
 | **Application Type** | **Web** | YourPHR handles auth + tokens **server-side** — the relay catches the code, the backend exchanges it; the browser never sees tokens. That's athenahealth's "Web" type. Not "Browser" (SPA where the browser receives tokens → public/PKCE) or "Native". |
 | **Authentication Method** | **Secret** | "Web" apps are **confidential** and authenticate with a client secret — athenahealth disallows PKCE for Web. YourPHR stores the secret server-side, DB-encrypted — the same confidential-client path as Blue Button ([#286](https://github.com/jwilleke/yourphr/issues/286)). ("JWK" = asymmetric `private_key_jwt`, for backend/system apps.) |
