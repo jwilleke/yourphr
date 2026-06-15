@@ -46,6 +46,8 @@ Connect → login/patient-picker popup → pick any test patient → records imp
 
 > ⚠️ **The long `/sim/…/fhir` path is required.** The plain `https://launch.smarthealthit.org/v/r4/fhir` returns `invalid_request — Invalid launch options`. The `/sim/<base64>/` segment is base64url of `{"launch_type":"patient-standalone"}`. Real providers never need this — it's purely a quirk of this launcher.
 
+**✅ Discovery pre-flight (2026-06-15, no relay needed):** `…/fhir/.well-known/smart-configuration` → **200**, PKCE `S256`, capabilities include `launch-standalone` + `client-public` + `context-standalone-patient`, and `scopes_supported` includes the `patient/*.*` wildcard. Fully ready to connect.
+
 ## 2. CMS Blue Button 2.0 — Medicare claims ✅ verified
 
 - **Status:** 🟢 Verified working (2026-06-14, sandbox)
@@ -82,6 +84,8 @@ Standard SMART-on-FHIR; bring your own `client_id` (register a free patient-faci
 | **Scopes** | `launch/patient patient/*.read openid fhirUser offline_access` |
 
 Epic supports the wildcard, `fhirUser`, `offline_access`, and `$everything`. Test patients (e.g. Camila Lopez) — see Epic's docs. **Setup guide: [`vendors/epic-sandbox.md`](vendors/epic-sandbox.md).**
+
+**✅ Discovery pre-flight (2026-06-15, no relay needed):** `…/FHIR/R4/.well-known/smart-configuration` → **200**, PKCE `S256`, capabilities include `launch-standalone` + `client-public` + `context-standalone-patient` + `permission-offline`. Epic's `scopes_supported` lists only a few entries (it doesn't advertise the full resource-scope set — normal for Epic; `patient/*.read` still works).
 
 ## 4. Veradigm / FollowMyHealth (test) — ⛔ blocked
 
