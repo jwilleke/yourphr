@@ -14,7 +14,7 @@ Every FHIR sandbox / test server YourPHR can connect to, in one place — with t
 | **CMS Blue Button 2.0** | **confidential** (secret) | sandbox app | per-resource (no `$everything`) | ✅ **verified working** (2026-06-14) | [`medicare-bluebutton.md`](medicare-bluebutton.md) |
 | **Epic** | public (PKCE) | BYO `client_id` | `$everything` | 🧪 used earlier | [`vendors/epic-sandbox.md`](vendors/epic-sandbox.md) |
 | **Veradigm / FollowMyHealth (test)** | public (PKCE) | Veradigm app | per-resource | ⛔ **blocked** (`unauthorized_client`, ticket #17849) | [`FHIR/fhir-testing.md`](FHIR/fhir-testing.md) |
-| **Oracle Health (Cerner)** | public (PKCE) | **gated** (Cerner-org affiliation) | `$everything` | ⛔ **blocked** — no self-serve account | this doc |
+| **Oracle Health (Cerner)** | public (PKCE) | code Console app (issues client_id) | `$everything` | 🟡 account created; register app next | this doc |
 | **athenahealth** | public (PKCE) | Developer Portal app (gated) | per-resource | 📄 documented, not yet run | this doc |
 | **Raw FHIR servers** (HAPI, etc.) | — (no SMART login) | none | — | reference only (no connect flow) | this doc |
 
@@ -101,10 +101,10 @@ The near-term primary target ([#53](https://github.com/jwilleke/yourphr/issues/5
 
 ## 5. Oracle Health (Cerner) — Millennium sandbox
 
-- **Status:** ⛔ Blocked — **deprioritized** (2026-06-15). The prerequisite **CernerCare account** can't be created without affiliation to a real Cerner customer.
-- **Credentials:** ❌ unobtainable self-serve. CernerCare account creation hard-requires an **"Organization (Client Number)"** — a search that must match an **actual Cerner client org** (a provider that runs Cerner); a placeholder like `1234` is rejected. Unlike Epic / SMART Health IT, there is **no open developer self-registration** — access is gated behind affiliation with a Cerner-customer organization.
+- **Status:** 🟡 In progress — **CernerCare account created** 2026-06-15; register the app at code Console to get the `client_id`.
+- **Credentials:** ✅ **have** a CernerCare account (id in `private/secrets.md`). ❌ still **need** the app `client_id` — **the code Console *issues* it; you do NOT supply an "Oracle CID".** The "Organization / Client Number" prompts come from the CernerCare **profile** / Oracle **enterprise** console, not from code Console app registration (whose fields are redirect URI + scopes).
 - **Tracking issue:** _none yet_
-- **Next:** **Parked.** Revisit only with a contact/affiliation at a Cerner-using provider. Use SMART Health IT + Epic for standard-SMART testing in the meantime.
+- **Next:** go to **`https://code-console.cerner.com/`** → sign in with the CernerCare account → **+ New App** → App type **Patient**, Client type **Public** (PKCE), FHIR **R4**, Redirect URI = the relay `/callback`, patient scopes → code Console generates the `client_id` (save to `private/secrets.md`). The sandbox tenant `ec2458f2-1e24-41c8-b71b-0e701af7583d` is built in — then connect with the base URL above.
 
 Cerner Millennium's public sandbox; YourPHR connects as a **patient-access** SMART app.
 
