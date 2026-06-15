@@ -160,6 +160,20 @@ Expect HTTP 200 JSON with `authorization_endpoint`, `token_endpoint`, and `code_
 
 All SMART connects route the provider redirect through the **relay** (`https://relay.nerdsbythehour.com/callback`); the redirect URI you register with each provider must match it exactly. Override with `YOURPHR_RELAY_URL` (in-cluster the backend polls `http://yourphr-relay.yourphr.svc.cluster.local:8080`). See [`deployment.md`](deployment.md) and [`FHIR/fhir-testing.md`](FHIR/fhir-testing.md).
 
+## Automated tests (Playwright)
+
+`frontend/e2e/sandbox-connect.spec.ts` exercises the connect flow for every sandbox in this doc:
+
+- **CI-safe (default, in `make test-e2e`):** the backend is mocked — no external network, no real credentials. It asserts the connect **form builds the correct `/source/authorize` + `/source/connect` requests** per sandbox (FHIR base URL, scopes, and `client_secret` **only** for confidential clients like Blue Button), opens the OAuth popup synchronously, and handles success — plus a required-fields validation guard.
+- **Live (opt-in):** a real end-to-end handshake against the SMART Health IT launcher, **skipped unless `E2E_LIVE=1`** and pointed at a relay-configured backend. The launcher selectors are a scaffold — confirm them on the first live run.
+
+```bash
+make test-e2e                                                  # CI-safe suite (includes the sandbox payload tests)
+E2E_LIVE=1 npx playwright test sandbox-connect --grep @live    # opt-in live handshake (needs a relay-configured backend)
+```
+
+Keep the `SANDBOXES` catalog in that spec in sync with the list above whenever a sandbox is added.
+
 ## See also
 
 - [`FHIR/fhir-testing.md`](FHIR/fhir-testing.md) — step-by-step connect + the relay/poll issues log

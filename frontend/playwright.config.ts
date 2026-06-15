@@ -33,7 +33,7 @@ export default defineConfig({
     {
       name: 'firefox',
       use: { ...devices['Desktop Firefox'] },
-      testIgnore: ['**/data.spec.ts', '**/lforms-modal.spec.ts'],
+      testIgnore: ['**/data.spec.ts', '**/lforms-modal.spec.ts', '**/sandbox-connect.spec.ts'],
     },
   ],
   // Boot the Go backend with a fresh test DB, serving the built dist. cwd is the repo
