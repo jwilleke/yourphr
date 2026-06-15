@@ -11,6 +11,8 @@ serving the mission of immediate patient access ([#15](https://github.com/jwille
 This work is tracked by [#257](https://github.com/jwilleke/yourphr/issues/257)
 and rides on the now-complete SMART on FHIR stack ([EPIC #20](https://github.com/jwilleke/yourphr/issues/20)).
 
+**Register at:** <https://fhir.epic.com> — self-register a patient-facing app to get a non-production `client_id` (public / PKCE, no secret); no approval gate. Save it to `private/secrets.md`.
+
 ## Status at a glance
 
 - **Is anything blocking Epic? No.** Epic's sandbox is self-service — register a
