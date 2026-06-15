@@ -36,7 +36,7 @@ Record credentials in `private/secrets.md` (gitignored).
 
 ## Status
 
-🔴 Not started — approval-gated and site-specific, so **lower priority**. SMART Health IT + Epic + Cerner already cover standard-SMART testing.
+🟡 Registered — `client_id` + `client_secret` obtained 2026-06-15 (in `private/secrets.md`). Remaining before a connect: confirm the **site-specific FHIR base URL** from the portal, clear any approval gate, and have the relay online. It's a **confidential** client, so the YourPHR connect form needs **both** the `client_id` and `client_secret` (same as Blue Button).
 
 ## See also
 

@@ -17,7 +17,7 @@ Every FHIR sandbox / test server YourPHR can connect to, in one place — with t
 | **Epic** | public (PKCE) | BYO `client_id` | `$everything` | 🧪 used earlier | [`vendors/epic-sandbox.md`](vendors/epic-sandbox.md) |
 | **Veradigm / FollowMyHealth (test)** | public (PKCE) | Veradigm app | per-resource | ⛔ **blocked** (`unauthorized_client`, ticket #17849) | [`FHIR/fhir-testing.md`](FHIR/fhir-testing.md) |
 | **Oracle Health (Cerner)** | public (PKCE) | code Console app (issues client_id) | `$everything` | 🟡 registered; ready to connect | [`vendors/oracle-cerner.md`](vendors/oracle-cerner.md) |
-| **athenahealth** | **confidential** (secret) | Developer Portal app (gated) | per-resource | 📄 documented, not yet run | [`vendors/athenahealth.md`](vendors/athenahealth.md) |
+| **athenahealth** | **confidential** (secret) | Developer Portal app (gated) | per-resource | 🟡 registered; creds obtained | [`vendors/athenahealth.md`](vendors/athenahealth.md) |
 | **Raw FHIR servers** (HAPI, etc.) | — (no SMART login) | none | — | reference only (no connect flow) | this doc |
 
 **Status legend:** 🟢 connected / verified · 🟡 partially tested · 🔴 not started · ⛔ blocked · 📄 documented only. Each sandbox below carries its own **Status / Credentials / Tracking issue / Next** block — keep it updated as we make progress, and file a tracking issue per sandbox when we start one.
@@ -152,8 +152,8 @@ curl -s "https://fhir-myrecord.sandboxcerner.com/r4/ec2458f2-1e24-41c8-b71b-0e70
 
 ## 6. athenahealth — Developer Portal
 
-- **Status:** 🔴 Not started (registration gated)
-- **Credentials:** ❌ **need** — Developer Portal registration + approval for a `client_id` + `client_secret` (**confidential** — Web app, like Blue Button); record in `private/secrets.md`. App-creation choices: API Access = **Certified APIs ONLY**, App Category = **3-Legged OAuth for Patients**, Application Type = **Web**, Auth = **Secret** (see [`vendors/athenahealth.md`](vendors/athenahealth.md)).
+- **Status:** 🟡 Registered — `client_id` + `client_secret` obtained 2026-06-15 (in `private/secrets.md`); still need the site-specific FHIR base URL (+ any approval) before connecting.
+- **Credentials:** ✅ **have** `client_id` + `client_secret` (confidential / Web app) in `private/secrets.md`. App-creation choices: API Access = **Certified APIs ONLY**, App Category = **3-Legged OAuth for Patients**, Application Type = **Web**, Auth = **Secret** (see [`vendors/athenahealth.md`](vendors/athenahealth.md)). ❌ still need the **site-specific FHIR base URL** from the portal.
 - **Tracking issue:** _none yet_
 - **Next:** apply for athenahealth Developer Portal access
 
