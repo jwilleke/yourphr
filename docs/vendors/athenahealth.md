@@ -25,7 +25,7 @@ Record credentials in `private/secrets.md` (gitignored).
 | **Authentication Method** | **Secret** | "Web" apps are **confidential** and authenticate with a client secret — athenahealth disallows PKCE for Web. YourPHR stores the secret server-side, DB-encrypted — the same confidential-client path as Blue Button ([#286](https://github.com/jwilleke/yourphr/issues/286)). ("JWK" = asymmetric `private_key_jwt`, for backend/system apps.) |
 | **Post-Login Redirect URL** (redirect URI) | `https://relay.nerdsbythehour.com/callback` | The YourPHR OAuth relay catches the auth code here — same for every sandbox; must match exactly. |
 | **Post-Logout Redirect URL** | _blank_ (or `https://yourphr.org` if required) | YourPHR doesn't do OIDC RP-initiated logout (the patient disconnects the source in-app), so this isn't exercised — just needs a valid whitelisted URL if the field is mandatory. |
-| **API framework (Scopes product)** | **FHIR R4 SMART V1** | YourPHR uses standard R4 FHIR with **v1** scopes (`patient/*.read`). Not athenaOne (proprietary / non-certified), Event Notifications, FHIR DSTU2 (old version), or SMART V2 (granular `.rs` scopes we don't use). |
+| **API framework (Scopes product)** | **FHIR R4 SMART V1** | YourPHR uses standard R4 FHIR with **v1** scopes (`patient/*.read`). Not athenaOne (proprietary / non-certified), Event Notifications, **FHIR DSTU2** (old FHIR version — wrong schema; see [`../FHIR/dstu2-vs-r4.md`](../FHIR/dstu2-vs-r4.md)), or SMART V2 (granular `.rs` scopes we don't use). |
 | **Scopes** (within FHIR R4 SMART V1) | `launch/patient openid fhirUser offline_access patient/*.read` | patient standalone + offline (refresh) + read. If no wildcard, tick the individual `patient/<Resource>.read` scopes. |
 
 ## Steps
