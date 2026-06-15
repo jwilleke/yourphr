@@ -106,7 +106,7 @@ The near-term primary target ([#53](https://github.com/jwilleke/yourphr/issues/5
 - **Status:** 🟡 Registered — app created + `client_id` obtained 2026-06-15; **ready to connect** (not yet run).
 - **Credentials:** ✅ **have** the CernerCare account + the registered app's **Application ID** and **`client_id`** (public/PKCE) — values in `private/secrets.md`. The code Console _issued_ the client_id; no "Oracle CID" was supplied (the org/Client-Number prompts were from the CernerCare profile, not app registration).
 - **Tracking issue:** _none yet_
-- **Next:** connect in YourPHR — the sandbox base URL below + the `client_id` from `private/secrets.md`. **Confirm the app's FHIR Version = R4** in code Console (the registration summary showed "-").
+- **Next:** in code Console, **subscribe the app to the "Oracle Health FHIR APIs for Millennium: FHIR R4, All" API product** (grants R4 — fixes the FHIR Version `-`), then connect in YourPHR with the sandbox base URL below + the `client_id` from `private/secrets.md`.
 
 Cerner Millennium's public sandbox; YourPHR connects as a **patient-access** SMART app.
 
@@ -124,6 +124,7 @@ Cerner Millennium's public sandbox; YourPHR connects as a **patient-access** SMA
 | **App Type** | Patient |
 | **Client Type** | Public (PKCE — no secret) |
 | **FHIR Spec** | R4 |
+| **API product** | subscribe the app to **"Oracle Health FHIR APIs for Millennium: FHIR R4, All"** — required to grant R4 access (otherwise the app's FHIR Version shows `-` and FHIR calls fail) |
 | **SMART Launch URI** | _(blank — standalone / patient launch, not EHR launch)_ |
 | **Redirect URI** | `https://relay.nerdsbythehour.com/callback` |
 | **Scopes** | `launch/patient openid fhirUser offline_access patient/*.read` |
