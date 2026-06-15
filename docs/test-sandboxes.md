@@ -12,12 +12,12 @@ Every FHIR sandbox / test server YourPHR can connect to, in one place — with t
 
 | Sandbox | Client | Registration | Bulk fetch | Status | Deep-dive |
 |---|---|---|---|---|---|
-| **SMART Health IT** | public (no secret) | **none** | `$everything` | 📄 documented, not yet run live | this doc |
+| **SMART Health IT** | public (no secret) | **none** | `$everything` | 📄 documented, not yet run live | [`vendors/smart-health-it.md`](vendors/smart-health-it.md) |
 | **CMS Blue Button 2.0** | **confidential** (secret) | sandbox app | per-resource (no `$everything`) | ✅ **verified working** (2026-06-14) | [`medicare-bluebutton.md`](medicare-bluebutton.md) |
 | **Epic** | public (PKCE) | BYO `client_id` | `$everything` | 🧪 used earlier | [`vendors/epic-sandbox.md`](vendors/epic-sandbox.md) |
 | **Veradigm / FollowMyHealth (test)** | public (PKCE) | Veradigm app | per-resource | ⛔ **blocked** (`unauthorized_client`, ticket #17849) | [`FHIR/fhir-testing.md`](FHIR/fhir-testing.md) |
-| **Oracle Health (Cerner)** | public (PKCE) | code Console app (issues client_id) | `$everything` | 🟡 registered; ready to connect | this doc |
-| **athenahealth** | public (PKCE) | Developer Portal app (gated) | per-resource | 📄 documented, not yet run | this doc |
+| **Oracle Health (Cerner)** | public (PKCE) | code Console app (issues client_id) | `$everything` | 🟡 registered; ready to connect | [`vendors/oracle-cerner.md`](vendors/oracle-cerner.md) |
+| **athenahealth** | public (PKCE) | Developer Portal app (gated) | per-resource | 📄 documented, not yet run | [`vendors/athenahealth.md`](vendors/athenahealth.md) |
 | **Raw FHIR servers** (HAPI, etc.) | — (no SMART login) | none | — | reference only (no connect flow) | this doc |
 
 **Status legend:** 🟢 connected / verified · 🟡 partially tested · 🔴 not started · ⛔ blocked · 📄 documented only. Each sandbox below carries its own **Status / Credentials / Tracking issue / Next** block — keep it updated as we make progress, and file a tracking issue per sandbox when we start one.
