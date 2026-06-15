@@ -34,14 +34,19 @@ Every reachable endpoint supports YourPHR's flow (standalone patient launch + PK
 - ✅ validation — empty required fields block the connect
 - ⏭ `@live` SMART Health IT — skipped (opt-in `E2E_LIVE=1`)
 
-## What is NOT covered here (and why)
+## Live `@live` run (2026-06-15) — infra verified, launcher automation open
 
-The **full live OAuth handshake** (browser login at the provider → relay → token exchange → record import) is **not** run by these checks. It needs both:
+With the relay back up, the real relay secret was wired into a local e2e backend (`YOURPHR_RELAY_URL` + `YOURPHR_RELAY_SECRET`) and the `@live` SMART Health IT test was run against the live relay.
 
-1. a backend with the **relay configured** (`YOURPHR_RELAY_URL` / `YOURPHR_RELAY_SECRET`) — the default e2e backend has neither, and the secret lives in the cluster, and
-2. **provider-login UI automation** (the SMART Health IT launcher is scriptable; Epic/Cerner/athenahealth logins are not reliably automatable).
+**✅ The YourPHR side works end-to-end:**
 
-The `@live` Playwright test (`E2E_LIVE=1`) is the scaffold for #2 against SMART Health IT; running it requires #1. Until then, the live connect is validated manually (Blue Button was, end-to-end, 2026-06-14).
+- `POST /source/authorize` → **200** (live discovery + PKCE authorize URL built against smarthealthit)
+- the popup opened the **real** SMART Health IT launcher
+- the backend **correctly authenticated to + polled the live relay** for the auth code (the repeated `relay: timed out waiting for authorization code` lines are it *waiting*, not a failure)
+
+**❌ Not solved — the headless launcher click-through.** The launcher is a multi-step interactive UI ("Practitioner Login" → patient pick → Authorize). Five approaches — single Authorize click, multi-step click loop, password fill, sim `skip_login`/`skip_auth` flags, pinned-patient sim — did **not** drive it to completion headlessly, so no code reached the relay and the connect timed out. This is **brittle third-party-UI automation**, not a YourPHR issue.
+
+**Conclusion:** the live connect **infrastructure is verified**; the only open gap is scripting a third-party login UI, which is low-value / high-brittleness. The reliable end-to-end proof is a **manual** connect (a human clicks the launcher in ~20s) — exactly how Blue Button was verified end-to-end with real data on 2026-06-14. The `@live` test stays a documented scaffold (`E2E_LIVE=1` + a relay-configured backend); see `frontend/e2e/sandbox-connect.spec.ts`.
 
 ## Reproduce
 

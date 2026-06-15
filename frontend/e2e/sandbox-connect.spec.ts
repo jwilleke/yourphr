@@ -164,23 +164,30 @@ test.describe('sandbox connect — form builds correct requests (backend mocked)
 //
 //   E2E_LIVE=1 yarn playwright test sandbox-connect --grep @live
 //
-// Requirements (why it's skipped by default):
-//   • external network to launch.smarthealthit.org + the OAuth relay,
-//   • a backend with the relay configured (YOURPHR_RELAY_URL / _SECRET) — the default e2e backend
-//     has none, so point BASE_URL at an instance that does, and
-//   • the launcher's login/patient-picker UI, which is provider-specific and may drift.
+// Run:  YOURPHR_RELAY_URL=https://relay.nerdsbythehour.com YOURPHR_RELAY_SECRET=<secret> \
+//       E2E_SMARTHEALTHIT_BASE=<optional non-interactive sim base> E2E_LIVE=1 \
+//       npx playwright test sandbox-connect --grep @live
 //
-// The selectors below are a best-effort starting point for the patient-standalone sim and will likely
-// need adjustment the first time it's run live — treat this as the scaffold, not a guaranteed-green test.
+// VERIFIED 2026-06-15: with the relay secret wired in, the YourPHR side works end-to-end — /authorize
+// builds the live PKCE URL, the popup opens the real launcher, and the backend correctly polls the
+// relay for the code. What is NOT solved is the HEADLESS click-through of SMART Health IT's interactive
+// launcher (a "Practitioner Login" -> patient pick -> Authorize sequence); several approaches (click
+// loop, password fill, sim skip_* flags) did not complete it, and it's brittle third-party UI. So this
+// stays a SCAFFOLD: the loop below is a best-effort starting point. For a real end-to-end check, a
+// 2-minute MANUAL connect (a human clicks through the launcher) is the reliable proof.
 // ---------------------------------------------------------------------------------------------------
 test.describe('@live sandbox connect (opt-in: E2E_LIVE=1)', () => {
   test.skip(!process.env.E2E_LIVE, 'set E2E_LIVE=1 and run against a relay-configured backend');
 
   test('@live SMART Health IT — full OAuth handshake imports records', async ({ page }) => {
     const sb = SANDBOXES[0]; // smart-health-it
+    // Override with a non-interactive sim base URL (skip_login + skip_auth + a fixed patient) so the
+    // launcher auto-redirects to the relay without a brittle UI click-through. See the launcher sim
+    // flags at launch.smarthealthit.org. Falls back to the plain patient-standalone base.
+    const baseUrl = process.env.E2E_SMARTHEALTHIT_BASE || sb.base;
     await login(page);
     const modal = await openConnectModal(page);
-    await modal.locator('#smart-api-endpoint').fill(sb.base);
+    await modal.locator('#smart-api-endpoint').fill(baseUrl);
     await modal.locator('#smart-client-id').fill(sb.clientId);
     await modal.locator('#smart-scopes').fill(sb.scopes);
 
@@ -189,10 +196,24 @@ test.describe('@live sandbox connect (opt-in: E2E_LIVE=1)', () => {
       modal.getByRole('button', { name: 'Connect', exact: true }).click(),
     ]);
 
-    // Drive the SMART Health IT launcher (patient-standalone): pick a patient, then authorize.
-    // TODO(first live run): confirm these selectors against the current launcher UI.
+    // The SMART Health IT launcher is multi-step: a Login screen (dropdown + password pre-filled,
+    // any password accepted) -> possibly a patient pick -> an Authorize/Allow consent. Forms are
+    // pre-filled, so just click the primary action button at each step until the popup redirects to
+    // the relay callback (which is when the backend's poll gets the code and completes the connect).
     await popup.waitForLoadState('domcontentloaded');
-    await popup.getByRole('button', { name: /authorize/i }).click({ timeout: 60_000 }).catch(() => { /* selector drift */ });
+    for (let step = 0; step < 8 && !popup.isClosed(); step++) {
+      const url = popup.url();
+      if (url.includes('relay.nerdsbythehour.com') || url.includes('/callback')) break;
+      // The launcher login needs a typed password (any value); fill it if present, then click the
+      // primary action button (Login -> [patient pick] -> Authorize/Allow).
+      await popup.locator('input[type=password]').first().fill('test').catch(() => {});
+      const btn = popup.getByRole('button', { name: /login|authorize|allow|continue|sign in|approve|launch/i }).first();
+      if (await btn.count().catch(() => 0)) {
+        await btn.click({ timeout: 6_000 }).catch(() => {});
+      }
+      await popup.waitForTimeout(2500);
+    }
+    await popup.screenshot({ path: 'test-results/launcher-final.png', fullPage: true }).catch(() => {});
 
     // Back in the app, a successful connect dismisses the modal (import runs in the background).
     await expect(modal).toBeHidden({ timeout: 120_000 });
