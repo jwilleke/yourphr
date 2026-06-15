@@ -1,5 +1,7 @@
 # Test sandboxes & servers
 
+_Last updated: 2026-06-15._
+
 Every FHIR sandbox / test server YourPHR can connect to, in one place — with the **exact** connect values, quirks, and current status. All of these serve **synthetic data (zero real PHI)**.
 
 > **Test-data hygiene.** Synthetic sandbox data must never commingle with real records. Connect sandboxes under a **dedicated test login** (or a throwaway instance), and delete the source when you're done.
@@ -102,7 +104,7 @@ The near-term primary target ([#53](https://github.com/jwilleke/yourphr/issues/5
 ## 5. Oracle Health (Cerner) — Millennium sandbox
 
 - **Status:** 🟡 In progress — **CernerCare account created** 2026-06-15; register the app at code Console to get the `client_id`.
-- **Credentials:** ✅ **have** a CernerCare account (id in `private/secrets.md`). ❌ still **need** the app `client_id` — **the code Console *issues* it; you do NOT supply an "Oracle CID".** The "Organization / Client Number" prompts come from the CernerCare **profile** / Oracle **enterprise** console, not from code Console app registration (whose fields are redirect URI + scopes).
+- **Credentials:** ✅ **have** a CernerCare account (id in `private/secrets.md`). ❌ still **need** the app `client_id` — **the code Console _issues_ it; you do NOT supply an "Oracle CID".** The "Organization / Client Number" prompts come from the CernerCare **profile** / Oracle **enterprise** console, not from code Console app registration (whose fields are redirect URI + scopes).
 - **Tracking issue:** _none yet_
 - **Next:** go to **`https://code-console.cerner.com/`** → sign in with the CernerCare account → **+ New App** → App type **Patient**, Client type **Public** (PKCE), FHIR **R4**, Redirect URI = the relay `/callback`, patient scopes → code Console generates the `client_id` (save to `private/secrets.md`). The sandbox tenant `ec2458f2-1e24-41c8-b71b-0e701af7583d` is built in — then connect with the base URL above.
 
@@ -114,6 +116,22 @@ Cerner Millennium's public sandbox; YourPHR connects as a **patient-access** SMA
 | **Client ID** | register a SMART app in the **Oracle Health code Console** (needs a free CernerCare account) |
 | **Client Secret** | _(blank — public/PKCE for patient apps)_ |
 | **Scopes** | standard SMART patient scopes; supports `$everything` |
+
+**Registered app (code Console, 2026-06-15)** — the non-secret config we enter; the issued `client_id` goes in `private/secrets.md`:
+
+| Setting | Value |
+|---|---|
+| **App Type** | Patient |
+| **Client Type** | Public (PKCE — no secret) |
+| **FHIR Spec** | R4 |
+| **SMART Launch URI** | _(blank — standalone / patient launch, not EHR launch)_ |
+| **Redirect URI** | `https://relay.nerdsbythehour.com/callback` |
+| **Scopes** | `launch/patient openid fhirUser offline_access patient/*.read` |
+| **Terms of Use URL** | `https://yourphr.org/terms` |
+| **Privacy Policy URL** | `https://yourphr.org/privacy` |
+| **App Name** | YourPHR |
+| **Description** | Patient-facing personal health record viewer; imports your records via SMART on FHIR |
+| **Support / contact** | `https://yourphr.org` (or operator email) |
 
 Pick a test patient in the sandbox to drive the flow. Registration + exact endpoints: [Oracle Health — Build & Test SMART on FHIR Apps](https://docs.oracle.com/en/industries/health/millennium-platform-apis/build-smart-on-fhir-apps/) and [SMART App Provisioning](https://docs.oracle.com/en/industries/health/millennium-platform-apis/smart-app-provisioning/).
 
