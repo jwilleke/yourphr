@@ -153,7 +153,7 @@ curl -s "https://fhir-myrecord.sandboxcerner.com/r4/ec2458f2-1e24-41c8-b71b-0e70
 ## 6. athenahealth — Developer Portal
 
 - **Status:** 🔴 Not started (registration gated)
-- **Credentials:** ❌ **need** — Developer Portal registration + approval for a `client_id` / `client_secret`; record in `private/secrets.md`
+- **Credentials:** ❌ **need** — Developer Portal registration + approval for a `client_id` (public/PKCE, no secret); record in `private/secrets.md`. App-creation choices: API Access = **Certified APIs ONLY**, App Category = **3-Legged OAuth for Patients**, Auth = **PKCE** (see [`vendors/athenahealth.md`](vendors/athenahealth.md)).
 - **Tracking issue:** _none yet_
 - **Next:** apply for athenahealth Developer Portal access
 
