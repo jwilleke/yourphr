@@ -18,11 +18,18 @@ Every FHIR sandbox / test server YourPHR can connect to, in one place — with t
 | **athenahealth** | public (PKCE) | Developer Portal app (gated) | per-resource | 📄 documented, not yet run | this doc |
 | **Raw FHIR servers** (HAPI, etc.) | — (no SMART login) | none | — | reference only (no connect flow) | this doc |
 
+**Status legend:** 🟢 connected / verified · 🟡 partially tested · 🔴 not started · ⛔ blocked · 📄 documented only. Each sandbox below carries its own **Status / Credentials / Tracking issue / Next** block — keep it updated as we make progress, and file a tracking issue per sandbox when we start one.
+
 **Recommended first test:** **SMART Health IT** — zero setup, public client, returns `patient` in the token, supports `$everything`. It's the clean happy-path smoke test (the opposite of Blue Button's quirks).
 
 ---
 
 ## 1. SMART Health IT sandbox — easiest, no registration
+
+- **Status:** 📄 Documented — not yet run live
+- **Credentials:** ✅ **none needed** — open sandbox accepts any `client_id`, no secret, no account
+- **Tracking issue:** _none yet_
+- **Next:** run a connect as the happy-path smoke test
 
 Public demo FHIR server with fake patients. No account, no credentials.
 
@@ -39,6 +46,11 @@ Connect → login/patient-picker popup → pick any test patient → records imp
 
 ## 2. CMS Blue Button 2.0 — Medicare claims ✅ verified
 
+- **Status:** 🟢 Verified working (2026-06-14, sandbox)
+- **Credentials:** ✅ **have** sandbox `client_id` + `client_secret` (registered sandbox app) and the public synthetic login `BBUser00000` / `PW00000!`. ❌ Production credentials (real claims) not yet requested. → values in `private/secrets.md`.
+- **Tracking issue:** [#293](https://github.com/jwilleke/yourphr/issues/293) (patient-id), [#250](https://github.com/jwilleke/yourphr/issues/250) (capability fetch), [#286](https://github.com/jwilleke/yourphr/issues/286) (confidential client)
+- **Next:** request CMS production credentials; build the display classifiers [#294](https://github.com/jwilleke/yourphr/issues/294)–[#296](https://github.com/jwilleke/yourphr/issues/296)
+
 Synthetic Medicare beneficiaries; **claims/insurance** data (ExplanationOfBenefit, Coverage, Patient). This is the one we drove to working end-to-end on 2026-06-14.
 
 | Field | Value |
@@ -53,6 +65,11 @@ Blue Button quirks (all handled in code now): **no wildcard / `fhirUser` / `offl
 
 ## 3. Epic sandbox — synthetic clinical data
 
+- **Status:** 🟡 Exercised earlier — re-verify on the current build
+- **Credentials:** ❓ needs a **registered Epic `client_id`** (public/PKCE, no secret) from `fhir.epic.com` — confirm whether one already exists; record in `private/secrets.md`
+- **Tracking issue:** _none yet_ (relates to [#52](https://github.com/jwilleke/yourphr/issues/52))
+- **Next:** confirm/register an Epic client_id, then re-run a connect
+
 Standard SMART-on-FHIR; bring your own `client_id` (register a free patient-facing app at `fhir.epic.com`).
 
 | Field | Value |
@@ -65,6 +82,11 @@ Standard SMART-on-FHIR; bring your own `client_id` (register a free patient-faci
 Epic supports the wildcard, `fhirUser`, `offline_access`, and `$everything`. Test patients (e.g. Camila Lopez) — see Epic's docs. **Setup guide: [`vendors/epic-sandbox.md`](vendors/epic-sandbox.md).**
 
 ## 4. Veradigm / FollowMyHealth (test) — ⛔ blocked
+
+- **Status:** ⛔ Blocked — discovery + authorize work, but login returns `unauthorized_client`
+- **Credentials:** ✅ **have** a registered `client_id` GUID (public PKCE, no secret) + Veradigm test-patient logins (in `private/secrets.md`). ❌ Blocked on Veradigm provisioning (support ticket #17849).
+- **Tracking issue:** [#53](https://github.com/jwilleke/yourphr/issues/53)
+- **Next:** Veradigm support resolution (ticket #17849)
 
 The near-term primary target ([#53](https://github.com/jwilleke/yourphr/issues/53)). Register a **Patient / Public (PKCE)** app at `developer.veradigm.com`; connect to a **Test** org endpoint.
 
@@ -79,6 +101,11 @@ The near-term primary target ([#53](https://github.com/jwilleke/yourphr/issues/5
 
 ## 5. Oracle Health (Cerner) — Millennium sandbox
 
+- **Status:** 🔴 Not started
+- **Credentials:** ❌ **need** — register a SMART app in the Oracle Health **code Console** (free CernerCare account) for a `client_id` (public/PKCE, no secret); record in `private/secrets.md`
+- **Tracking issue:** _none yet_
+- **Next:** register the code Console app, then connect
+
 Cerner Millennium's public sandbox; YourPHR connects as a **patient-access** SMART app.
 
 | Field | Value |
@@ -91,6 +118,11 @@ Cerner Millennium's public sandbox; YourPHR connects as a **patient-access** SMA
 Pick a test patient in the sandbox to drive the flow. Registration + exact endpoints: [Oracle Health — Build & Test SMART on FHIR Apps](https://docs.oracle.com/en/industries/health/millennium-platform-apis/build-smart-on-fhir-apps/) and [SMART App Provisioning](https://docs.oracle.com/en/industries/health/millennium-platform-apis/smart-app-provisioning/).
 
 ## 6. athenahealth — Developer Portal
+
+- **Status:** 🔴 Not started (registration gated)
+- **Credentials:** ❌ **need** — Developer Portal registration + approval for a `client_id` / `client_secret`; record in `private/secrets.md`
+- **Tracking issue:** _none yet_
+- **Next:** apply for athenahealth Developer Portal access
 
 athenahealth's FHIR R4 (athenaPractice / athenaFlow). More involved than the public sandboxes — registration is **gated behind approval**, and base URLs are **site/practice-specific**.
 
