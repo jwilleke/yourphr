@@ -3,7 +3,7 @@
 Every FHIR sandbox / test server YourPHR can connect to, in one place — with the **exact** connect values, quirks, and current status. All of these serve **synthetic data (zero real PHI)**.
 
 > **Test-data hygiene.** Synthetic sandbox data must never commingle with real records. Connect sandboxes under a **dedicated test login** (or a throwaway instance), and delete the source when you're done.
-
+>
 > **How the connect flow works** (same for all SMART sandboxes): the connect form → `/api/secure/source/authorize` (SMART discovery + PKCE URL) → provider login popup → the **relay** catches the redirect → `/api/secure/source/connect` (token exchange) → records import. Full walkthrough: [`FHIR/fhir-testing.md`](FHIR/fhir-testing.md).
 
 ## At a glance
@@ -14,6 +14,8 @@ Every FHIR sandbox / test server YourPHR can connect to, in one place — with t
 | **CMS Blue Button 2.0** | **confidential** (secret) | sandbox app | per-resource (no `$everything`) | ✅ **verified working** (2026-06-14) | [`medicare-bluebutton.md`](medicare-bluebutton.md) |
 | **Epic** | public (PKCE) | BYO `client_id` | `$everything` | 🧪 used earlier | [`vendors/epic-sandbox.md`](vendors/epic-sandbox.md) |
 | **Veradigm / FollowMyHealth (test)** | public (PKCE) | Veradigm app | per-resource | ⛔ **blocked** (`unauthorized_client`, ticket #17849) | [`FHIR/fhir-testing.md`](FHIR/fhir-testing.md) |
+| **Oracle Health (Cerner)** | public (PKCE) | code Console app | `$everything` | 📄 documented, not yet run | this doc |
+| **athenahealth** | public (PKCE) | Developer Portal app (gated) | per-resource | 📄 documented, not yet run | this doc |
 | **Raw FHIR servers** (HAPI, etc.) | — (no SMART login) | none | — | reference only (no connect flow) | this doc |
 
 **Recommended first test:** **SMART Health IT** — zero setup, public client, returns `patient` in the token, supports `$everything`. It's the clean happy-path smoke test (the opposite of Blue Button's quirks).
@@ -75,13 +77,38 @@ The near-term primary target ([#53](https://github.com/jwilleke/yourphr/issues/5
 
 **Status:** discovery + authorize work (Client ID recognized, redirect accepted), but after login Veradigm returns **`unauthorized_client`** — an app-level provisioning gate, **not a YourPHR bug**. Veradigm support ticket **#17849**. Don't mix v1/v2 scopes (rejects the app). **Details + reproduction: [`FHIR/fhir-testing.md`](FHIR/fhir-testing.md), [`vendors/followmyhealth.md`](vendors/followmyhealth.md).**
 
-## 5. Raw FHIR servers (no SMART login)
+## 5. Oracle Health (Cerner) — Millennium sandbox
+
+Cerner Millennium's public sandbox; YourPHR connects as a **patient-access** SMART app.
+
+| Field | Value |
+|---|---|
+| **FHIR base URL** | sandbox pattern `https://fhir-myrecord.sandboxcerner.com/r4/{tenant}` (patient access). Provider/EHR-launch is `fhir-ehr.sandboxcerner.com`; an **open / no-auth** POC endpoint is `fhir-open.sandboxcerner.com`. The common public sandbox tenant is `ec2458f2-1e24-41c8-b71b-0e701af7583d` — **confirm the exact Service Root URL in code Console.** |
+| **Client ID** | register a SMART app in the **Oracle Health code Console** (needs a free CernerCare account) |
+| **Client Secret** | *(blank — public/PKCE for patient apps)* |
+| **Scopes** | standard SMART patient scopes; supports `$everything` |
+
+Pick a test patient in the sandbox to drive the flow. Registration + exact endpoints: [Oracle Health — Build & Test SMART on FHIR Apps](https://docs.oracle.com/en/industries/health/millennium-platform-apis/build-smart-on-fhir-apps/) and [SMART App Provisioning](https://docs.oracle.com/en/industries/health/millennium-platform-apis/smart-app-provisioning/).
+
+## 6. athenahealth — Developer Portal
+
+athenahealth's FHIR R4 (athenaPractice / athenaFlow). More involved than the public sandboxes — registration is **gated behind approval**, and base URLs are **site/practice-specific**.
+
+| Field | Value |
+|---|---|
+| **FHIR base URL** | **site-specific** — get the exact base from the athenahealth Developer Portal ([base-FHIR-URLs guide](https://docs.athenahealth.com/api/guides/base-fhir-urls)). Patient-data (mydata) APIs live under `mydata.athenahealth.com`. |
+| **Client ID / Secret** | register an app in the **[athenahealth Developer Portal](https://docs.athenahealth.com/api/guides/overview)** (registration + approval required) |
+| **Sample patient** | sandbox sample login `athenainterop@aol.com` |
+| **Scopes** | standard SMART patient scopes (confirm from the org's discovery doc) |
+
+Because base URLs are site-specific and access is approval-gated, treat this as a **later** target — verify against the portal before connecting; don't hard-code a URL.
+
+## 7. Raw FHIR servers & manual upload (no SMART login)
 
 For inspecting FHIR data / testing the import models directly — **not** the connect flow (no OAuth):
 
 - **HAPI FHIR public test server** — `https://hapi.fhir.org/baseR4` — open, no auth, anyone-can-read/write; good for poking at FHIR shapes.
 - **Logica Health sandbox** — `https://api.logicahealth.org` — SMART-capable, registration required.
-- **Cerner / Oracle Health sandbox** — open (`fhir-open`) and SMART (`fhir-ehr`) R4 endpoints; synthetic patients.
 
 Manual **FHIR bundle / NDJSON upload** (Medical Sources → drop a file) needs none of these — it's the zero-setup import path, and synthetic fixtures live in `frontend/src/lib/fixtures/` and `backend/pkg/database/testdata/`.
 
