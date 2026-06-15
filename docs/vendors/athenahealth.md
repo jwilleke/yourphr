@@ -15,10 +15,17 @@ athenahealth's FHIR R4 (athenaPractice / athenaFlow). **More involved than the o
 
 Record credentials in `private/secrets.md` (gitignored).
 
+## "Create New Application" form choices
+
+| Field | Choose | Why |
+|---|---|---|
+| **API Access** | **My app will use Certified APIs ONLY** | YourPHR reads only the standard FHIR R4 patient-access API (ONC-certified §170.315(g)(10), "standardized API for patient and population services"); no proprietary athenaOne APIs. Also the 21st Century Cures Act patient-access path. |
+| **App Category** | **3-Legged OAuth for Patients** | Patient-facing — the patient logs in via athenahealth's widget to authorize access to their own records (SMART patient-standalone). Not 2-Legged (service-to-service) or 3-Legged for Providers (clinician login). |
+
 ## Steps
 
 1. Register at the **athenahealth Developer Portal**: <https://docs.athenahealth.com/api/guides/overview> (patient-data / mydata APIs: <https://mydata.athenahealth.com>).
-2. Create an app and request the **FHIR R4** product. Wait for **approval**.
+2. Create an app — **API Access: Certified APIs ONLY**, **App Category: 3-Legged OAuth for Patients** (see table above) — and request the **FHIR R4** product. Wait for **approval**.
 3. Get the **base FHIR URL** — it is site-specific; see the [base-FHIR-URLs guide](https://docs.athenahealth.com/api/guides/base-fhir-urls).
 4. Sandbox sample patient login: `athenainterop@aol.com`.
 
