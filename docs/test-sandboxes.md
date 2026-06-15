@@ -16,7 +16,7 @@ Every FHIR sandbox / test server YourPHR can connect to, in one place — with t
 | **CMS Blue Button 2.0** | **confidential** (secret) | sandbox app | per-resource (no `$everything`) | ✅ **verified working** (2026-06-14) | [`medicare-bluebutton.md`](medicare-bluebutton.md) |
 | **Epic** | public (PKCE) | BYO `client_id` | `$everything` | 🧪 used earlier | [`vendors/epic-sandbox.md`](vendors/epic-sandbox.md) |
 | **Veradigm / FollowMyHealth (test)** | public (PKCE) | Veradigm app | per-resource | ⛔ **blocked** (`unauthorized_client`, ticket #17849) | [`FHIR/fhir-testing.md`](FHIR/fhir-testing.md) |
-| **Oracle Health (Cerner)** | public (PKCE) | code Console app (issues client_id) | `$everything` | 🟡 account created; register app next | this doc |
+| **Oracle Health (Cerner)** | public (PKCE) | code Console app (issues client_id) | `$everything` | 🟡 registered; ready to connect | this doc |
 | **athenahealth** | public (PKCE) | Developer Portal app (gated) | per-resource | 📄 documented, not yet run | this doc |
 | **Raw FHIR servers** (HAPI, etc.) | — (no SMART login) | none | — | reference only (no connect flow) | this doc |
 
@@ -103,10 +103,10 @@ The near-term primary target ([#53](https://github.com/jwilleke/yourphr/issues/5
 
 ## 5. Oracle Health (Cerner) — Millennium sandbox
 
-- **Status:** 🟡 In progress — **CernerCare account created** 2026-06-15; register the app at code Console to get the `client_id`.
-- **Credentials:** ✅ **have** a CernerCare account (id in `private/secrets.md`). ❌ still **need** the app `client_id` — **the code Console _issues_ it; you do NOT supply an "Oracle CID".** The "Organization / Client Number" prompts come from the CernerCare **profile** / Oracle **enterprise** console, not from code Console app registration (whose fields are redirect URI + scopes).
+- **Status:** 🟡 Registered — app created + `client_id` obtained 2026-06-15; **ready to connect** (not yet run).
+- **Credentials:** ✅ **have** the CernerCare account + the registered app's **Application ID** and **`client_id`** (public/PKCE) — values in `private/secrets.md`. The code Console _issued_ the client_id; no "Oracle CID" was supplied (the org/Client-Number prompts were from the CernerCare profile, not app registration).
 - **Tracking issue:** _none yet_
-- **Next:** go to **`https://code-console.cerner.com/`** → sign in with the CernerCare account → **+ New App** → App type **Patient**, Client type **Public** (PKCE), FHIR **R4**, Redirect URI = the relay `/callback`, patient scopes → code Console generates the `client_id` (save to `private/secrets.md`). The sandbox tenant `ec2458f2-1e24-41c8-b71b-0e701af7583d` is built in — then connect with the base URL above.
+- **Next:** connect in YourPHR — the sandbox base URL below + the `client_id` from `private/secrets.md`. **Confirm the app's FHIR Version = R4** in code Console (the registration summary showed "-").
 
 Cerner Millennium's public sandbox; YourPHR connects as a **patient-access** SMART app.
 
