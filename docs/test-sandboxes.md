@@ -136,6 +136,8 @@ Cerner Millennium's public sandbox; YourPHR connects as a **patient-access** SMA
 
 Pick a test patient in the sandbox to drive the flow. Registration + exact endpoints: [Oracle Health — Build & Test SMART on FHIR Apps](https://docs.oracle.com/en/industries/health/millennium-platform-apis/build-smart-on-fhir-apps/) and [SMART App Provisioning](https://docs.oracle.com/en/industries/health/millennium-platform-apis/smart-app-provisioning/).
 
+**✅ Discovery pre-flight (2026-06-15, no relay needed):** `fhir-myrecord/.well-known/smart-configuration` → **200**, **patient-persona** authorize endpoint, PKCE `S256`, scopes include `launch/patient openid fhirUser offline_access profile`. Confirms the base URL above. The `fhir-ehr` host returns the **provider** persona — don't use it for YourPHR; `fhir-open` has no SMART config (404). Remaining blockers to a full connect are external: the **relay** must be online (catches the redirect) and the app must be **subscribed to the FHIR R4 API product**.
+
 ## 6. athenahealth — Developer Portal
 
 - **Status:** 🔴 Not started (registration gated)
