@@ -30,7 +30,6 @@ No open action — all merged, just waiting on scanner re-scans (nothing to do):
 - [#279](https://github.com/jwilleke/yourphr/issues/279) Blue Button 2.0 — frontend source entry + sandbox end-to-end verification.
 - [#291](https://github.com/jwilleke/yourphr/issues/291) Admin-configured provider catalog (umbrella) → split: [#304](https://github.com/jwilleke/yourphr/issues/304) backend (server-held creds + connect), [#306](https://github.com/jwilleke/yourphr/issues/306) frontend (provider-picker UI, blocked by #304).
 
-
 ## 🟡 P2
 
 - [#300](https://github.com/jwilleke/yourphr/issues/300) Angular surface for Medicare claims & coverage (insurance view) — parked; consumes the #294/#295/#296 endpoints. Under #262.
