@@ -30,7 +30,31 @@ jobs:
     name: release-please
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - uses: googleapis/release-please-action@v5
+        id: release
         with:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
+
+      # release-please writes CHANGELOG.md with '*' bullets + extra blank lines that fail our markdown
+      # rulebook (MD004 wants '-', MD012). Normalize it on the release branch so the changelog lands on
+      # main already markdown-lint-clean — same rulebook as every other doc, no exclusion needed.
+      # Runs only when a release PR was created/updated. (Relates to #241.)
+      - name: Normalize generated CHANGELOG to the markdown rulebook
+        if: ${{ steps.release.outputs.prs_created == 'true' }}
+        env:
+          RELEASE_BRANCH: ${{ fromJSON(steps.release.outputs.pr).headBranchName }}
+        run: |
+          git fetch origin "$RELEASE_BRANCH"
+          git checkout "$RELEASE_BRANCH"
+          npx --yes markdownlint-cli2 --fix CHANGELOG.md || true
+          if ! git diff --quiet -- CHANGELOG.md; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit -am "style(changelog): markdownlint --fix generated CHANGELOG"
+            git push origin HEAD:"$RELEASE_BRANCH"
+          fi
