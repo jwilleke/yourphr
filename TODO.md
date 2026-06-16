@@ -4,9 +4,15 @@
 
 ## 🔴 P0 — Security & Critical
 
-- [#301](https://github.com/jwilleke/yourphr/issues/301) Bump `@angular/*` → 20.3.25 — **done, `in-review`** ([538058dd](https://github.com/jwilleke/yourphr/commit/538058dd)); clears the 4 Dependabot Angular CVEs (DA#182/183/184/185) once re-scanned.
-- [#302](https://github.com/jwilleke/yourphr/issues/302) SSRF guard for user-supplied FHIR base URL (CodeQL CS#23 `go/request-forgery`) — **done, `in-review`** ([18dd7895](https://github.com/jwilleke/yourphr/commit/18dd7895)); `smart/ssrf.go` gates all FHIR-base fetches. CS#23 may persist until CodeQL re-scans (custom sanitizer not modeled).
-- CS#24 (`js/incomplete-url-substring-sanitization`, e2e test file) — **dismissed** as a test-file false positive ("used in tests").
+**Code-scanning: 0 open** ✅
+
+- [#302](https://github.com/jwilleke/yourphr/issues/302) SSRF guard for user-supplied FHIR base URL (CodeQL CS#23) — **DONE, closed** ([18dd7895](https://github.com/jwilleke/yourphr/commit/18dd7895)); `smart/ssrf.go` gates all FHIR-base fetches. CodeQL re-scanned with the guard and still flagged the sink (doesn't model the custom sanitizer) → CS#23 dismissed won't-fix.
+- CS#24 (`js/incomplete-url-substring-sanitization`, e2e test) — **dismissed** (test-file false positive).
+
+**Dependabot: 8 open** — bump in flight + new transitive alerts:
+
+- [#301](https://github.com/jwilleke/yourphr/issues/301) Bump `@angular/*` → 20.3.25 — **done, `in-review`** ([538058dd](https://github.com/jwilleke/yourphr/commit/538058dd)); DA#182/183/184/185 still open, **awaiting Dependabot re-scan** of the bumped `yarn.lock` to confirm fixed.
+- **NEW (untriaged, no issue yet):** DA#188 `vite` **high**, DA#189 `vite` **medium**, DA#187 `js-yaml` **medium**, DA#186 `@babel/core` **low** — surfaced after the lockfile change; likely transitive. Triage / bump.
 
 ## 🟠 P1
 
