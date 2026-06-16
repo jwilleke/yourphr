@@ -4,15 +4,9 @@
 
 ## 🔴 P0 — Security & Critical
 
-**Open scanner alerts (no tracking issues filed yet — see /pstatus brief):**
-
-- Dependabot DA#182 — `@angular/core` **high**: Client Hydration DOM Clobbering & response-cache poisoning (GHSA-rgjc-h3x7-9mwg).
-- Dependabot DA#184 — `@angular/common` **high**: weak 32-bit cache-key hashing in `HttpTransferCache` → cross-request data leakage (GHSA-39pv-4j6c-2g6v).
-- Dependabot DA#185 — `@angular/common` **high**: DoS via OOM in `formatDate` (GHSA-48r7-hpm6-gfxm).
-- Dependabot DA#183 — `@angular/compiler` **medium**: two-way binding sanitization bypass / XSS (GHSA-58w9-8g37-x9v5).
-  - ↑ all four are fixed by **one Angular patch bump** ([[prefer-latest-stable]] — upgrade-first).
-- Code-scanning CS#23 — `go/request-forgery` **critical**: SSRF in `fasten-sources-stub/clients/smart/capability_fetch.go:138`. Real-risk caveat: the fetch URL is the user's own BYO FHIR base in a single-user self-hosted PHR (attacker == victim) — still worth a fix/guard.
-- Code-scanning CS#24 — `js/incomplete-url-substring-sanitization` **high**: in a **test file** (`frontend/e2e/sandbox-connect.spec.ts:206`) — likely a false positive; candidate to dismiss rather than track.
+- [#301](https://github.com/jwilleke/yourphr/issues/301) Bump `@angular/*` → 20.3.25 — **done, `in-review`** ([538058dd](https://github.com/jwilleke/yourphr/commit/538058dd)); clears the 4 Dependabot Angular CVEs (DA#182/183/184/185) once re-scanned.
+- Code-scanning **CS#23** — `go/request-forgery` **critical**: SSRF in `fasten-sources-stub/clients/smart/capability_fetch.go:138`. No issue yet. Real-risk caveat: the fetch URL is the user's own BYO FHIR base in a single-user self-hosted PHR (attacker == victim) — still worth a guard. Triage.
+- Code-scanning **CS#24** — `js/incomplete-url-substring-sanitization` **high**: in a **test file** (`frontend/e2e/sandbox-connect.spec.ts:206`) — likely a false positive; candidate to dismiss rather than track.
 
 ## 🟠 P1
 
