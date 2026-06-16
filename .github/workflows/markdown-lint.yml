@@ -24,3 +24,7 @@ jobs:
             !node_modules/**
             !dist/**
             !CHANGELOG.md
+            !LICENSE.md
+            !vendor/**
+            !private/**
+            !frontend/test-results/**

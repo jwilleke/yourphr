@@ -2,8 +2,8 @@
 
 Two layers of the same US interoperability stack, often used interchangeably but distinct:
 
-- **USCDI** = the government's **list of health data** that must be exchangeable (the _what_).
-- **US Core** = the HL7 **FHIR R4 specification** that defines how to represent that data (the _how_).
+- **USCDI** = the government's **list of health data** that must be exchangeable (the *what*).
+- **US Core** = the HL7 **FHIR R4 specification** that defines how to represent that data (the *how*).
 
 US Core **implements** USCDI in FHIR.
 

@@ -31,7 +31,7 @@ CernerCare **account creation** asks for an **Organization (Client Number)** —
    | **App Type** | Patient |
    | **Client Type** | Public (PKCE — no secret) |
    | **FHIR Spec** | R4 |
-   | **SMART Launch URI** | _(blank — standalone, not EHR launch)_ |
+   | **SMART Launch URI** | *(blank — standalone, not EHR launch)* |
    | **Redirect URI** | `https://relay.nerdsbythehour.com/callback` |
    | **Scopes** | `launch/patient openid fhirUser offline_access patient/*.read` |
    | **Terms of Use URL** | `https://yourphr.org/terms` |
@@ -49,10 +49,10 @@ After registering, the app's **FHIR Version may show `-`** and FHIR calls fail. 
 |---|---|
 | **FHIR base URL** | `https://fhir-myrecord.sandboxcerner.com/r4/ec2458f2-1e24-41c8-b71b-0e701af7583d` |
 | **Client ID** | from registration (in `private/secrets.md`) |
-| **Client Secret** | _(blank)_ |
+| **Client Secret** | *(blank)* |
 | **Scopes** | `launch/patient openid fhirUser offline_access patient/*.read` |
 
-Use **`fhir-myrecord`** (patient persona). `fhir-ehr` is the _provider_ (EHR-launch) persona — don't use it for YourPHR. `fhir-open` is the unauth endpoint (no SMART config).
+Use **`fhir-myrecord`** (patient persona). `fhir-ehr` is the *provider* (EHR-launch) persona — don't use it for YourPHR. `fhir-open` is the unauth endpoint (no SMART config).
 
 ## Discovery pre-flight (verified 2026-06-15, no relay needed)
 
