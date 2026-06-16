@@ -116,6 +116,15 @@
     "@compodoc/compodoc/@compodoc/live-server/send": "^0.19.0",
     "esbuild": "0.28.1",
     "vite": "^7.3.5",
-    "@babel/core": "^7.29.6"
+    "@babel/core": "^7.29.6",
+    "@angular/animations": "20.3.25",
+    "@angular/common": "20.3.25",
+    "@angular/compiler": "20.3.25",
+    "@angular/core": "20.3.25",
+    "@angular/elements": "20.3.25",
+    "@angular/forms": "20.3.25",
+    "@angular/platform-browser": "20.3.25",
+    "@angular/platform-browser-dynamic": "20.3.25",
+    "@angular/router": "20.3.25"
   }
 }
