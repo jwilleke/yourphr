@@ -9,6 +9,7 @@ import { HeaderComponent } from './components/header/header.component';
 import { FooterComponent } from './components/footer/footer.component';
 import { DashboardComponent } from './pages/dashboard/dashboard.component';
 import { MedicalSourcesComponent } from './pages/medical-sources/medical-sources.component';
+import { SandboxComponent } from './pages/sandbox/sandbox.component';
 import { BaseChartDirective } from 'ng2-charts';
 import {SharedModule} from './components/shared.module';
 import { ResourceDetailComponent } from './pages/resource-detail/resource-detail.component';
@@ -53,6 +54,7 @@ import { GetEncryptionKeyWizardComponent } from './pages/get-encryption-key-wiza
         FooterComponent,
         DashboardComponent,
         MedicalSourcesComponent,
+        SandboxComponent,
         ResourceDetailComponent,
         AuthSignupComponent,
         AuthSigninComponent,

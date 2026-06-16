@@ -1,0 +1,120 @@
+<div class="az-content">
+  <div class="container">
+    <div class="az-content-body d-flex flex-column">
+      <div class="az-content-breadcrumb">
+        <span>Admin</span>
+        <span>Sandbox testing</span>
+      </div>
+
+      <div class="alert alert-warning" role="alert">
+        <strong>Admin / developer tool.</strong> This page is for testing SMART-on-FHIR sandboxes by
+        registering your own <code>client_id</code> (and, for confidential providers, a
+        <code>client_secret</code>). Patients never see this — their connect path is the
+        admin-configured provider directory on the <a routerLink="/sources">Sources</a> page.
+        <span *ngIf="environment_name == 'sandbox'">
+          <br/><br/>
+          You are in <strong>Sandbox mode</strong>: use synthetic sandbox credentials only — never real PHI.
+        </span>
+      </div>
+
+      <h2 class="az-content-title mg-t-20">SMART source testing</h2>
+
+      <div class="az-content-label mg-b-5">Connect a SMART source (beta)</div>
+      <p class="mg-b-20">Connect directly to a provider's SMART on FHIR patient API using a registered client. You will log in at the provider in a popup window; YourPHR never sees the password or tokens.</p>
+
+      <div class="row row-sm">
+        <div class="col-lg">
+          <button type="button" class="btn btn-az-primary" (click)="openSmartConnectModal()">
+            <i class="fas fa-plug mg-r-5"></i> Connect a SMART source
+          </button>
+          <button type="button" class="btn btn-outline-az-primary mg-l-5" (click)="openEpicSandboxModal()">
+            <i class="fas fa-flask mg-r-5"></i> Use Epic Sandbox
+          </button>
+          <button type="button" class="btn btn-outline-az-primary mg-l-5" (click)="openBlueButtonSandboxModal()">
+            <i class="fas fa-flask mg-r-5"></i> Use Blue Button Sandbox
+          </button>
+          <small class="d-block tx-gray-500 mg-t-5">
+            The Epic sandbox lets you test with synthetic patients and no real data —
+            see the <a href="https://github.com/jwilleke/yourphr/blob/main/docs/vendors/epic-sandbox.md" externalLink>Epic sandbox setup guide</a>.
+          </small>
+          <small class="d-block tx-gray-500 mg-t-5">
+            Blue Button 2.0 imports <strong>Medicare claims &amp; coverage</strong> (synthetic in the sandbox). It needs a Client ID <em>and</em> Secret —
+            see the <a href="https://github.com/jwilleke/yourphr/blob/main/docs/medicare-bluebutton.md" externalLink>Blue Button setup guide</a>.
+          </small>
+        </div><!-- col -->
+      </div><!-- row -->
+
+      <h2 class="az-content-title mg-t-40">Imported sources</h2>
+      <p class="mg-b-20">Sources connected here import into the same record as the Sources page — useful for verifying a sandbox connect end-to-end.</p>
+      <app-medical-sources-connected *ngIf="showConnectedList"></app-medical-sources-connected>
+
+    </div><!-- az-content-body -->
+  </div><!-- container -->
+</div><!-- az-content -->
+
+
+<ng-template #smartConnectModal let-modal>
+  <div class="modal-header">
+    <h6 class="modal-title" id="smart-connect-title">Connect a SMART source (beta)</h6>
+    <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss('Cross click')"></button>
+  </div>
+
+  <div class="modal-body">
+    <form (ngSubmit)="connectSmartSource()" #smartConnectForm="ngForm">
+      <div class="mb-3">
+        <label class="form-label" for="smart-api-endpoint">FHIR base URL</label>
+        <input id="smart-api-endpoint" name="api_endpoint_base_url" type="url" class="form-control"
+               placeholder="https://fhir.example.com/r4"
+               [(ngModel)]="smartForm.api_endpoint_base_url" [disabled]="smartConnecting" required>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label" for="smart-client-id">Client ID</label>
+        <input id="smart-client-id" name="client_id" type="text" class="form-control"
+               placeholder="your-registered-client-id"
+               [(ngModel)]="smartForm.client_id" [disabled]="smartConnecting" required>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label" for="smart-client-secret">Client Secret <small class="tx-gray-500">(optional)</small></label>
+        <input id="smart-client-secret" name="client_secret" type="password" autocomplete="off" class="form-control"
+               placeholder="only for confidential providers (e.g. Blue Button)"
+               [(ngModel)]="smartForm.client_secret" [disabled]="smartConnecting">
+        <small class="tx-gray-500">Leave blank for public/PKCE providers (e.g. Epic). Required for confidential clients like CMS Blue Button 2.0.</small>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label" for="smart-scopes">Scopes</label>
+        <input id="smart-scopes" name="scopes" type="text" class="form-control"
+               [(ngModel)]="smartForm.scopes" [disabled]="smartConnecting" required>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label" for="smart-display">Display name <small class="tx-gray-500">(optional)</small></label>
+        <input id="smart-display" name="display" type="text" class="form-control"
+               placeholder="My Clinic"
+               [(ngModel)]="smartForm.display" [disabled]="smartConnecting">
+      </div>
+
+      <div *ngIf="smartErrorMsg" class="alert alert-danger" role="alert">
+        {{smartErrorMsg}}
+      </div>
+      <div *ngIf="smartSuccessMsg" class="alert alert-success" role="alert">
+        {{smartSuccessMsg}}
+      </div>
+
+      <p *ngIf="smartConnecting" class="tx-gray-600 mg-b-0">
+        <span class="spinner-border spinner-border-sm text-primary mg-r-5" role="status" aria-hidden="true"></span>
+        Waiting for you to complete login in the popup window, then importing your records...
+      </p>
+    </form>
+  </div>
+
+  <div class="modal-footer">
+    <button type="button" class="btn btn-az-primary" (click)="connectSmartSource()" [disabled]="smartConnecting">
+      <span *ngIf="smartConnecting" class="spinner-border spinner-border-sm mg-r-5" role="status" aria-hidden="true"></span>
+      Connect
+    </button>
+    <button type="button" class="btn btn-outline-light" (click)="modal.dismiss('cancel')" [disabled]="smartConnecting">Cancel</button>
+  </div>
+</ng-template>

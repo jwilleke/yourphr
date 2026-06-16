@@ -9,7 +9,6 @@ import {FormsModule, ReactiveFormsModule} from '@angular/forms';
 import { LoadingSpinnerComponent } from 'src/app/components/loading-spinner/loading-spinner.component';
 import { MedicalSourcesFilterComponent } from 'src/app/components/medical-sources-filter/medical-sources-filter.component';
 import { MedicalSourcesConnectedComponent } from 'src/app/components/medical-sources-connected/medical-sources-connected.component';
-import { of } from 'rxjs';
 
 describe('MedicalSourcesComponent', () => {
   let component: MedicalSourcesComponent;
@@ -39,57 +38,6 @@ describe('MedicalSourcesComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  // The "Use Epic Sandbox" button pre-fills the BYO SMART form with Epic's public sandbox
-  // endpoint + scopes, but leaves client_id empty (each user supplies their own).
-  it('openEpicSandboxModal: pre-fills the Epic sandbox endpoint + scopes and opens the modal', () => {
-    const openSpy = spyOn(component['modalService'], 'open').and.returnValue({ result: Promise.resolve() } as any);
-
-    component.openEpicSandboxModal();
-
-    expect(component.smartForm.api_endpoint_base_url).toContain('fhir.epic.com');
-    expect(component.smartForm.scopes).toContain('launch/patient');
-    expect(component.smartForm.client_id).toBe('');   // bring-your-own — user supplies it
-    expect(openSpy).toHaveBeenCalled();
-  });
-
-  function fillSmartForm() {
-    component.smartForm.api_endpoint_base_url = 'https://launch.smarthealthit.org/v/r4/fhir';
-    component.smartForm.client_id = 'test-client';
-    component.smartForm.scopes = 'launch/patient patient/*.read openid fhirUser offline_access';
-  }
-
-  // The popup must be opened synchronously in the click handler; if the browser blocks it,
-  // surface a clear error and don't even start the authorize call.
-  it('connectSmartSource: errors clearly when the popup is blocked', async () => {
-    fillSmartForm();
-    spyOn(window, 'open').and.returnValue(null);
-    const authSpy = spyOn(component['fastenApi'], 'authorizeSource');
-
-    await component.connectSmartSource();
-
-    expect(authSpy).not.toHaveBeenCalled();
-    expect(component.smartErrorMsg.toLowerCase()).toContain('popup');
-    expect(component.smartConnecting).toBeFalse();
-  });
-
-  // Happy path: open a blank popup synchronously, then navigate it to the authorize URL once the
-  // backend responds (proves we don't call window.open *after* the await).
-  it('connectSmartSource: opens popup synchronously then navigates it to the authorize URL', async () => {
-    fillSmartForm();
-    const fakePopup: any = { location: { href: '' }, document: { write: () => {} }, close: () => {} };
-    const openSpy = spyOn(window, 'open').and.returnValue(fakePopup);
-    spyOn(component['fastenApi'], 'authorizeSource').and.returnValue(of({
-      authorize_url: 'https://provider.example/authorize?x=1',
-      state: 's1',
-      code_verifier: 'v1',
-    } as any));
-    spyOn(component['fastenApi'], 'connectSource').and.returnValue(of({} as any));
-
-    await component.connectSmartSource();
-
-    expect(openSpy).toHaveBeenCalledWith('', '_blank');          // opened blank, synchronously
-    expect(fakePopup.location.href).toBe('https://provider.example/authorize?x=1'); // navigated after authorize
-    expect(component.smartSuccessMsg.toLowerCase()).toContain('connected');
-    expect(component.smartConnecting).toBeFalse();
-  });
+  // The bring-your-own SMART connect flow moved to the admin-only /sandbox page
+  // (SandboxComponent) — its tests live in sandbox.component.spec.ts.
 });

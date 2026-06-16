@@ -20,6 +20,7 @@ import { AccountProfileComponent } from './pages/account-profile/account-profile
 import { ProceduresComponent } from './pages/procedures/procedures.component';
 import { AdminDashboardComponent } from './pages/admin-dashboard/admin-dashboard.component';
 import { MedicalSourcesComponent } from './pages/medical-sources/medical-sources.component';
+import { SandboxComponent } from './pages/sandbox/sandbox.component';
 import { PatientProfileComponent } from './pages/patient-profile/patient-profile.component';
 import { ReportLabsComponent } from './pages/report-labs/report-labs.component';
 import { ResourceCreatorComponent } from './pages/resource-creator/resource-creator.component';
@@ -75,6 +76,9 @@ const routes: Routes = [
 
   { path: 'users', component: UserListComponent, canActivate: [ IsAuthenticatedAuthGuard, IsAdminAuthGuard ] },
   { path: 'users/new', component: UserCreateComponent, canActivate: [ IsAuthenticatedAuthGuard, IsAdminAuthGuard ] },
+
+  // Admin-only SMART sandbox-testing page (bring-your-own client_id connect flow, EPIC #20).
+  { path: 'sandbox', component: SandboxComponent, canActivate: [ IsAuthenticatedAuthGuard, IsAdminAuthGuard ] },
 
   { path: 'practitioners', component: PractitionerListComponent, canActivate: [ IsAuthenticatedAuthGuard ] },
   { path: 'practitioners/new', component: PractitionerCreateComponent, canActivate: [ IsAuthenticatedAuthGuard ] },

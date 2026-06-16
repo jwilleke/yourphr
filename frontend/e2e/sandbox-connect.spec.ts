@@ -72,9 +72,11 @@ const SANDBOXES: Sandbox[] = [
   },
 ];
 
-// Open the BYO SMART connect modal from the Sources page and return its locator.
+// Open the BYO SMART connect modal from the admin-only Sandbox testing page and return its locator.
+// (The e2e user is the first registered account, which the backend assigns the admin role, so the
+// IsAdminAuthGuard on /sandbox passes.)
 async function openConnectModal(page: Page): Promise<Locator> {
-  await page.goto('sources');
+  await page.goto('sandbox');
   await page.getByRole('button', { name: 'Connect a SMART source' }).click();
   const modal = page.locator('.modal-content', { hasText: 'Connect a SMART source' });
   await expect(modal).toBeVisible();
