@@ -30,7 +30,11 @@ database:
   type: 'sqlite' # postgres will be supported in the future, but is completely **BROKEN** at the moment.
   location: '/opt/fasten/db/fasten.db' # if postgres (**BROKEN**) use a DSN, eg. `host=localhost user=gorm password=gorm dbname=gorm port=9920 sslmode=required TimeZone=Asia/Shanghai`
 log:
-  file: '' # absolute or relative paths allowed, eg. web.log
+  # Logs always go to STDOUT/STDERR; when this is set they are ALSO tee'd to this file so the
+  # Admin Dashboard "Server Logs" card can read them back. Defaults to the persistent DB volume
+  # so it survives restarts (`kubectl logs`/`docker logs` keep working regardless). Set to '' to
+  # disable file logging (STDOUT only). For local dev, override this in config.dev.yaml.
+  file: '/opt/fasten/db/fasten.log' # absolute or relative paths allowed, eg. web.log
   level: INFO
 # C-CDA / CCD document import (#254). Opt-in: requires the external fhir-converter
 # sidecar (Metriport). Leave disabled for a stock install — FHIR/NDJSON upload is

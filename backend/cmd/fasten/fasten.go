@@ -226,12 +226,17 @@ func CreateLogger(appConfig config.Interface) (*logrus.Entry, *os.File, error) {
 	var logFile *os.File
 	var err error
 	if appConfig.IsSet("log.file") && len(appConfig.GetString("log.file")) > 0 {
-		logFile, err = os.OpenFile(appConfig.GetString("log.file"), os.O_CREATE|os.O_WRONLY, 0644)
+		// O_APPEND so restarts add to the log instead of overwriting from offset 0 (which would
+		// leave a corrupted mix of old + new bytes).
+		logFile, err = os.OpenFile(appConfig.GetString("log.file"), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
 		if err != nil {
-			logger.Logger.Errorf("Failed to open log file %s for output: %s", appConfig.GetString("log.file"), err)
-			return nil, logFile, err
+			// File logging is a convenience (the Admin Dashboard reads this file). A bad/unwritable
+			// path must NOT prevent the server from starting — fall back to STDOUT only and warn.
+			logger.Logger.Errorf("Failed to open log file %s for output, continuing with STDOUT only: %s", appConfig.GetString("log.file"), err)
+			logFile = nil
+		} else {
+			logger.Logger.SetOutput(io.MultiWriter(os.Stderr, logFile))
 		}
-		logger.Logger.SetOutput(io.MultiWriter(os.Stderr, logFile))
 	}
 	return logger, logFile, nil
 }
