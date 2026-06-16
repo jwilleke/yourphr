@@ -33,6 +33,20 @@
           <button type="button" class="btn btn-outline-az-primary mg-l-5" (click)="openBlueButtonSandboxModal()">
             <i class="fas fa-flask mg-r-5"></i> Use Blue Button Sandbox
           </button>
+          <button type="button" class="btn btn-outline-az-primary mg-l-5" (click)="openSmartHealthItModal()">
+            <i class="fas fa-flask mg-r-5"></i> Use SMART Health IT
+          </button>
+          <button type="button" class="btn btn-outline-az-primary mg-l-5" (click)="openOracleCernerModal()">
+            <i class="fas fa-flask mg-r-5"></i> Use Oracle (Cerner)
+          </button>
+          <button type="button" class="btn btn-outline-az-primary mg-l-5" (click)="openAthenahealthModal()">
+            <i class="fas fa-flask mg-r-5"></i> Use athenahealth
+          </button>
+          <small class="d-block tx-gray-500 mg-t-5">
+            <strong>SMART Health IT</strong> needs no credentials (open sandbox) — the recommended first smoke test.
+            <strong>athenahealth</strong> prefills scopes only: its FHIR base URL is site-specific, so paste it from the Developer Portal.
+            All values + logins are in <a href="https://github.com/jwilleke/yourphr/blob/main/docs/test-sandboxes.md" externalLink>docs/test-sandboxes.md</a>.
+          </small>
           <small class="d-block tx-gray-500 mg-t-5">
             The Epic sandbox lets you test with synthetic patients and no real data —
             see the <a href="https://github.com/jwilleke/yourphr/blob/main/docs/vendors/epic-sandbox.md" externalLink>Epic sandbox setup guide</a>.

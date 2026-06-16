@@ -38,7 +38,7 @@ Public demo FHIR server with fake patients. No account, no credentials.
 | Field | Value |
 |---|---|
 | **FHIR base URL** | `https://launch.smarthealthit.org/v/r4/sim/eyJsYXVuY2hfdHlwZSI6InBhdGllbnQtc3RhbmRhbG9uZSJ9/fhir` |
-| **Client ID** | anything (e.g. `my-client-id`) — the open sandbox ignores it |
+| **Client ID** | anything (e.g. `my-client-id`) — the open sandbox ignores it. The admin **Sandbox testing** page (`/sandbox`) has a **"Use SMART Health IT"** button that prefills everything. |
 | **Client Secret** | _(blank — public client)_ |
 | **Scopes** | leave the prefilled default (`launch/patient patient/*.read openid fhirUser offline_access`) |
 
@@ -117,7 +117,7 @@ Cerner Millennium's public sandbox; YourPHR connects as a **patient-access** SMA
 | Field | Value |
 |---|---|
 | **FHIR base URL** | sandbox pattern `https://fhir-myrecord.sandboxcerner.com/r4/{tenant}` (patient access). Provider/EHR-launch is `fhir-ehr.sandboxcerner.com`; an **open / no-auth** POC endpoint is `fhir-open.sandboxcerner.com`. The common public sandbox tenant is `ec2458f2-1e24-41c8-b71b-0e701af7583d` — **confirm the exact Service Root URL in code Console.** |
-| **Client ID** | register a SMART app in the **Oracle Health code Console** (needs a free CernerCare account) |
+| **Client ID** | register a SMART app in the **Oracle Health code Console** (needs a free CernerCare account). The admin **Sandbox testing** page (`/sandbox`) has a **"Use Oracle (Cerner)"** button that prefills the base + scopes. |
 | **Client Secret** | _(blank — public/PKCE for patient apps)_ |
 | **Scopes** | standard SMART patient scopes; supports `$everything` |
 
@@ -161,7 +161,7 @@ athenahealth's FHIR R4 (athenaPractice / athenaFlow). More involved than the pub
 
 | Field | Value |
 |---|---|
-| **FHIR base URL** | **site-specific** — get the exact base from the athenahealth Developer Portal ([base-FHIR-URLs guide](https://docs.athenahealth.com/api/guides/base-fhir-urls)). Patient-data (mydata) APIs live under `mydata.athenahealth.com`. |
+| **FHIR base URL** | **site-specific** — get the exact base from the athenahealth Developer Portal ([base-FHIR-URLs guide](https://docs.athenahealth.com/api/guides/base-fhir-urls)). Patient-data (mydata) APIs live under `mydata.athenahealth.com`. The admin **Sandbox testing** page (`/sandbox`) has a **"Use athenahealth"** button that prefills scopes only — paste this base URL by hand (it is deliberately not hard-coded). |
 | **Client ID / Secret** | register an app in the **[athenahealth Developer Portal](https://docs.athenahealth.com/api/guides/overview)** (registration + approval required) |
 | **Sample patient** | sandbox sample login `athenainterop@aol.com` |
 | **Scopes** | standard SMART patient scopes (confirm from the org's discovery doc) |

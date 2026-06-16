@@ -34,6 +34,35 @@ export const BLUE_BUTTON_SANDBOX = {
   display: 'Blue Button 2.0 (Medicare)',
 }
 
+// SMART Health IT — the open public demo launcher (no account, no credentials). The long
+// `/sim/<base64>/fhir` path is REQUIRED: the base64 segment is {"launch_type":"patient-standalone"}
+// and the plain base returns "Invalid launch options". The doc's recommended first smoke test.
+// See docs/test-sandboxes.md §1.
+export const SMART_HEALTH_IT_SANDBOX = {
+  api_endpoint_base_url: 'https://launch.smarthealthit.org/v/r4/sim/eyJsYXVuY2hfdHlwZSI6InBhdGllbnQtc3RhbmRhbG9uZSJ9/fhir',
+  scopes: 'launch/patient patient/*.read openid fhirUser offline_access',
+  display: 'SMART Health IT',
+}
+
+// Oracle Health (Cerner) Millennium public sandbox — patient-access, public/PKCE (no secret).
+// The common public tenant is baked into the base URL. client_id is bring-your-own (register in
+// the Oracle code Console). See docs/test-sandboxes.md §5.
+export const ORACLE_CERNER_SANDBOX = {
+  api_endpoint_base_url: 'https://fhir-myrecord.sandboxcerner.com/r4/ec2458f2-1e24-41c8-b71b-0e701af7583d',
+  scopes: 'launch/patient openid fhirUser offline_access patient/*.read',
+  display: 'Oracle Health (Cerner)',
+}
+
+// athenahealth — confidential client. Its FHIR base URL is SITE/PRACTICE-SPECIFIC and the doc
+// explicitly says not to hard-code one (docs/test-sandboxes.md §6), and we don't have it yet
+// (private/secrets.md). So this prefill carries only the scopes + display; the admin pastes the
+// site-specific base URL (from the athenahealth Developer Portal) and the client_id/secret.
+export const ATHENAHEALTH_SANDBOX = {
+  api_endpoint_base_url: '', // site-specific — must be entered by hand; do NOT hard-code
+  scopes: 'launch/patient patient/*.read openid fhirUser offline_access',
+  display: 'athenahealth',
+}
+
 // Admin-only sandbox-testing page (EPIC #20). This holds the bring-your-own-client_id SMART connect
 // flow — the raw FHIR-base/client_id/secret form — which is a developer/admin testing affordance,
 // NOT something a patient should ever see. The patient-facing connect path is the admin-configured
@@ -104,6 +133,46 @@ export class SandboxComponent {
       client_secret: '', // BB2.0 is confidential — the user pastes their own sandbox secret
       scopes: BLUE_BUTTON_SANDBOX.scopes,
       display: BLUE_BUTTON_SANDBOX.display,
+    }
+    this.openSmartConnectModal()
+  }
+
+  // Pre-fills the form with the open SMART Health IT launcher (no credentials needed — the open
+  // sandbox accepts any client_id). The recommended first smoke test. See docs/test-sandboxes.md §1.
+  public openSmartHealthItModal(): void {
+    this.smartForm = {
+      api_endpoint_base_url: SMART_HEALTH_IT_SANDBOX.api_endpoint_base_url,
+      client_id: 'my-client-id', // open sandbox ignores it, but the form requires a non-empty value
+      client_secret: '',         // public client — no secret
+      scopes: SMART_HEALTH_IT_SANDBOX.scopes,
+      display: SMART_HEALTH_IT_SANDBOX.display,
+    }
+    this.openSmartConnectModal()
+  }
+
+  // Pre-fills the form with Oracle Health (Cerner)'s public sandbox endpoint + scopes. client_id is
+  // bring-your-own (register in the Oracle code Console); public/PKCE so no secret.
+  public openOracleCernerModal(): void {
+    this.smartForm = {
+      api_endpoint_base_url: ORACLE_CERNER_SANDBOX.api_endpoint_base_url,
+      client_id: '',
+      client_secret: '', // public/PKCE — no secret
+      scopes: ORACLE_CERNER_SANDBOX.scopes,
+      display: ORACLE_CERNER_SANDBOX.display,
+    }
+    this.openSmartConnectModal()
+  }
+
+  // Pre-fills scopes + display for athenahealth, but NOT the FHIR base URL: it is site/practice-
+  // specific and must be entered by hand (docs/test-sandboxes.md §6). athenahealth is a confidential
+  // client, so the admin also pastes the client_id + client_secret.
+  public openAthenahealthModal(): void {
+    this.smartForm = {
+      api_endpoint_base_url: ATHENAHEALTH_SANDBOX.api_endpoint_base_url, // intentionally blank
+      client_id: '',
+      client_secret: '',
+      scopes: ATHENAHEALTH_SANDBOX.scopes,
+      display: ATHENAHEALTH_SANDBOX.display,
     }
     this.openSmartConnectModal()
   }

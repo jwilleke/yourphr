@@ -69,6 +69,46 @@ describe('SandboxComponent', () => {
     expect(openSpy).toHaveBeenCalled();
   });
 
+  // SMART Health IT is the open sandbox: prefills the long /sim/ launcher URL and a throwaway
+  // client_id (the form requires non-empty), no secret.
+  it('openSmartHealthItModal: prefills the launcher URL + a client_id, no secret', () => {
+    const openSpy = spyOn(component['modalService'], 'open').and.returnValue({ result: Promise.resolve() } as any);
+
+    component.openSmartHealthItModal();
+
+    expect(component.smartForm.api_endpoint_base_url).toContain('launch.smarthealthit.org');
+    expect(component.smartForm.api_endpoint_base_url).toContain('/sim/'); // required launch-options segment
+    expect(component.smartForm.client_id).toBeTruthy();   // open sandbox ignores it but form needs non-empty
+    expect(component.smartForm.client_secret).toBe('');
+    expect(openSpy).toHaveBeenCalled();
+  });
+
+  // Oracle/Cerner: prefills the public sandbox tenant base + scopes, client_id BYO, no secret.
+  it('openOracleCernerModal: prefills the Cerner sandbox base + scopes, no secret', () => {
+    const openSpy = spyOn(component['modalService'], 'open').and.returnValue({ result: Promise.resolve() } as any);
+
+    component.openOracleCernerModal();
+
+    expect(component.smartForm.api_endpoint_base_url).toContain('sandboxcerner.com');
+    expect(component.smartForm.scopes).toContain('patient/*.read');
+    expect(component.smartForm.client_id).toBe('');     // bring-your-own
+    expect(component.smartForm.client_secret).toBe(''); // public/PKCE
+    expect(openSpy).toHaveBeenCalled();
+  });
+
+  // athenahealth: prefills scopes + display but deliberately leaves the FHIR base URL blank — it is
+  // site-specific and must not be hard-coded.
+  it('openAthenahealthModal: prefills scopes but leaves the site-specific base URL blank', () => {
+    const openSpy = spyOn(component['modalService'], 'open').and.returnValue({ result: Promise.resolve() } as any);
+
+    component.openAthenahealthModal();
+
+    expect(component.smartForm.api_endpoint_base_url).toBe(''); // site-specific — entered by hand
+    expect(component.smartForm.scopes).toContain('launch/patient');
+    expect(component.smartForm.display).toBe('athenahealth');
+    expect(openSpy).toHaveBeenCalled();
+  });
+
   function fillSmartForm() {
     component.smartForm.api_endpoint_base_url = 'https://launch.smarthealthit.org/v/r4/fhir';
     component.smartForm.client_id = 'test-client';
