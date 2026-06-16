@@ -29,7 +29,6 @@ No open action — all merged, just waiting on scanner re-scans (nothing to do):
 - [#250](https://github.com/jwilleke/yourphr/issues/250) Add CMS Blue Button 2.0 as a SMART-on-FHIR sync source — `help wanted` (backend done: CapabilityStatement-driven fetch landed; live import verified end-to-end).
 - [#279](https://github.com/jwilleke/yourphr/issues/279) Blue Button 2.0 — frontend source entry + sandbox end-to-end verification.
 - [#291](https://github.com/jwilleke/yourphr/issues/291) Admin-configured provider catalog — connect providers without patients seeing client_id/secret.
-- [#286](https://github.com/jwilleke/yourphr/issues/286) SMART client: confidential-client (client_secret) support.
 
 **Import:**
 
