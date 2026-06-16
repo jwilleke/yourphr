@@ -30,9 +30,6 @@ No open action — all merged, just waiting on scanner re-scans (nothing to do):
 - [#279](https://github.com/jwilleke/yourphr/issues/279) Blue Button 2.0 — frontend source entry + sandbox end-to-end verification.
 - [#291](https://github.com/jwilleke/yourphr/issues/291) Admin-configured provider catalog (umbrella) → split: [#304](https://github.com/jwilleke/yourphr/issues/304) backend (server-held creds + connect), [#306](https://github.com/jwilleke/yourphr/issues/306) frontend (provider-picker UI, blocked by #304).
 
-**Import:**
-
-- [#254](https://github.com/jwilleke/yourphr/issues/254) C-CDA / CCD import — **`in-review`**: code complete (FE+BE) + sidecar deployed/enabled. Only remaining is a manual real-PHI validation pass (your sign-off closes it).
 
 ## 🟡 P2
 
