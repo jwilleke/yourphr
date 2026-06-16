@@ -3,7 +3,7 @@ package models
 import sourcesPkg "github.com/fastenhealth/fasten-sources/pkg"
 
 // ProviderCatalogEntry is an admin-configured connectable source. It is the self-hosted replacement
-// for the upstream Fasten/Lighthouse provider catalog (EPIC #2): an admin registers a provider app
+// for the upstream Fasten/Lighthouse provider catalog (EPIC #20 / #288): an admin registers a provider app
 // once (FHIR base, scopes, client_id, optional client_secret), and patients connect by picking it —
 // without ever seeing or handling credentials. See docs/provider-catalog/README.md (#304 / #291).
 type ProviderCatalogEntry struct {

@@ -19,7 +19,7 @@ import (
 )
 
 // Provider catalog (#304): admin-configured connectable sources — the self-hosted replacement for the
-// upstream Fasten/Lighthouse catalog (EPIC #2). An admin curates providers (FHIR base, scopes,
+// upstream Fasten/Lighthouse catalog (EPIC #20 / #288). An admin curates providers (FHIR base, scopes,
 // client_id, optional client_secret) once; patients connect by picking one, without ever seeing or
 // sending credentials. See docs/provider-catalog/README.md.
 

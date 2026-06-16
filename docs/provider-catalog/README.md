@@ -8,7 +8,7 @@ A patient should connect a data source by **picking it from a list** ("Connect M
 
 The BYO model exists only because this fork **lost upstream Fasten's hosted provider catalog** — the pre-registered provider list + the **Lighthouse** OAuth relay that centrally held app credentials so users never saw them. That moved into the commercial Fasten Connect. This catalog is the **self-hosted replacement**: the admin of a YourPHR instance registers provider apps once, centrally; patients (the family on that instance) just pick and log in.
 
-This is a load-bearing step toward going **standalone** (EPIC [#2](https://github.com/jwilleke/yourphr/issues/2)): it removes the dependence on the upstream `fasten-sources` definitions catalog (`sourceDefinitions.GetSourceDefinition`, used by `CreateReconnectSource`) by giving the instance its own owned catalog. Nothing here calls Lighthouse; the existing self-hosted relay ([#50](https://github.com/jwilleke/yourphr/issues/50)) keeps tokens off the browser.
+This is a load-bearing step toward replacing the upstream hosted catalog (EPIC [#20](https://github.com/jwilleke/yourphr/issues/20) live provider sync; the `fasten-sources-stub` decision is [#288](https://github.com/jwilleke/yourphr/issues/288)): it removes the dependence on the upstream `fasten-sources` definitions catalog (`sourceDefinitions.GetSourceDefinition`, used by `CreateReconnectSource`) by giving the instance its own owned catalog. Nothing here calls Lighthouse; the existing self-hosted relay ([#50](https://github.com/jwilleke/yourphr/issues/50)) keeps tokens off the browser. (The broader standalone rebrand/detach was EPIC [#2](https://github.com/jwilleke/yourphr/issues/2), now closed — repo/naming, not this runtime sync layer.)
 
 ## Roles
 
@@ -62,4 +62,4 @@ This mirrors the existing BYO `/source/authorize` + `/source/connect` ([#51](htt
 
 ## Relationship to the upstream catalog
 
-`CreateReconnectSource` still calls `sourceDefinitions.GetSourceDefinition` (the upstream `fasten-sources` definitions). The provider catalog is the **owned** replacement for that. Migrating the reconnect path onto the catalog — and retiring the `fasten-sources` definitions dependency — is follow-on standalone work (EPIC [#2](https://github.com/jwilleke/yourphr/issues/2)); this issue establishes the catalog + the new connect path.
+`CreateReconnectSource` still calls `sourceDefinitions.GetSourceDefinition` (the upstream `fasten-sources` definitions). The provider catalog is the **owned** replacement for that. Migrating the reconnect path onto the catalog — and retiring the `fasten-sources` definitions dependency — is follow-on work under EPIC [#20](https://github.com/jwilleke/yourphr/issues/20) (live provider sync) / [#288](https://github.com/jwilleke/yourphr/issues/288) (`fasten-sources-stub` future); this issue establishes the catalog + the new connect path.
