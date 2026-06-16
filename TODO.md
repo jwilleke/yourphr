@@ -4,10 +4,10 @@
 
 ## 🔴 P0 — Security & Critical
 
-No open action. Code-scanning: 0 open. Two security bumps are merged and `in-review`, just waiting on Dependabot to re-scan the lockfile (no work to do):
+No open action — all merged, just waiting on scanner re-scans (nothing to do):
 
-- [#301](https://github.com/jwilleke/yourphr/issues/301) `@angular/*` → 20.3.25 (4 CVEs) — merged, awaiting re-scan.
-- [#303](https://github.com/jwilleke/yourphr/issues/303) `vite` → 7.3.5 + `@babel/core` → 7.29.6 — merged, awaiting re-scan.
+- [#301](https://github.com/jwilleke/yourphr/issues/301) `@angular/*` → 20.3.25 (4 CVEs) — merged, `in-review`, awaiting Dependabot re-scan.
+- Markdown-lint workflow least-privilege `permissions` block added (clears the `actions/missing-workflow-permissions` finding on next scan).
 
 ## 🟠 P1
 

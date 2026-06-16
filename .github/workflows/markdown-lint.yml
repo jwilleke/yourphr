@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [master, main]
 
+# Least privilege: the lint job only reads the checked-out repo.
+permissions:
+  contents: read
+
 jobs:
   markdown-lint:
     runs-on: ubuntu-latest
