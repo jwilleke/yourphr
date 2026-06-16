@@ -67,11 +67,16 @@
 - [#239](https://github.com/jwilleke/yourphr/issues/239) Revisit gofhir-models 0.1.x once encoding/json/v2 is default in Go.
 - [#131](https://github.com/jwilleke/yourphr/issues/131) E2E testing — lforms questionnaire render + interact.
 
+## 🔵 In review — awaiting sign-off (human closes)
+
+Work complete; labeled `in-review` per the AGENTS.md working agreement (never self-close):
+
+- [#296](https://github.com/jwilleke/yourphr/issues/296) Link EOB & Coverage to the patient — `backend/pkg/patientlink` + `/patient/insurance-claims` + tests.
+- [#294](https://github.com/jwilleke/yourphr/issues/294) ExplanationOfBenefit classifier — `backend/pkg/explanationofbenefit` + `/claims/classified` + tests.
+- [#295](https://github.com/jwilleke/yourphr/issues/295) Coverage classifier — `backend/pkg/coverage` + `/coverages/classified` + tests.
+- [#293](https://github.com/jwilleke/yourphr/issues/293) [BUG] BB SMART connect patient-id fallback — fixed (Coverage/EOB fallback), proven live.
+- [#292](https://github.com/jwilleke/yourphr/issues/292) Operator-tunable `login_wait_seconds` from backend config — shipped.
+
 ## ❓ Needs triage
 
-Unlabeled — awaiting a priority band:
-
-- [#294](https://github.com/jwilleke/yourphr/issues/294) ExplanationOfBenefit (Medicare claims) classifier — **backend done** (classifier + `/claims/classified` + tests); open pending close.
-- [#295](https://github.com/jwilleke/yourphr/issues/295) Coverage (Medicare/insurance) classifier — **backend done** (classifier + `/coverages/classified` + tests); open pending close.
-- [#293](https://github.com/jwilleke/yourphr/issues/293) [BUG] SMART connect fails for Blue Button — patient id required in token, no /Patient fallback — **fixed** (Coverage/EOB fallback shipped); open pending close.
-- [#292](https://github.com/jwilleke/yourphr/issues/292) Serve operator-tunable frontend settings from backend config (no rebuild) — `login_wait_seconds` shipped.
+- None — every open issue carries a priority label or `in-review`.
