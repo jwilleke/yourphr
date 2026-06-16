@@ -28,6 +28,8 @@ import (
 
 // validatePublicHTTPSURL guards the user-supplied FHIR base URL against SSRF before the backend
 // fetches it. It is a package var so tests can point discovery at an httptest loopback server.
+// (The SMART client carries its own deeper SSRF guard, #302; loopback tests relax it via
+// smart.AllowInternalHostsForTest, which also covers factory-built clients in the background sync.)
 var validatePublicHTTPSURL = ssrf.ValidatePublicHTTPSURL
 
 // SmartConnectRequest is the payload to complete a SMART on FHIR connection: the self-describing

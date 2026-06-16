@@ -10,6 +10,7 @@ import (
 	"github.com/fastenhealth/fasten-onprem/backend/pkg/database"
 	"github.com/fastenhealth/fasten-onprem/backend/pkg/event_bus"
 	"github.com/fastenhealth/fasten-onprem/backend/pkg/models"
+	"github.com/fastenhealth/fasten-sources/clients/smart"
 	"github.com/gin-gonic/gin"
 	"github.com/golang/mock/gomock"
 	"github.com/sirupsen/logrus"
@@ -123,6 +124,8 @@ func TestAuthorizeSource(t *testing.T) {
 	// covered by backend/pkg/ssrf tests.)
 	orig := validatePublicHTTPSURL
 	validatePublicHTTPSURL = func(string) error { return nil }
+	smart.AllowInternalHostsForTest = true
+	defer func() { smart.AllowInternalHostsForTest = false }()
 	defer func() { validatePublicHTTPSURL = orig }()
 
 	// Stub provider: serve .well-known/smart-configuration with authorize/token endpoints.
@@ -355,6 +358,8 @@ func (suite *SourceHandlerTestSuite) TestConnectSourceHandler() {
 	// The fake provider runs on loopback, which the real SSRF guard rejects; bypass it here.
 	origValidate := validatePublicHTTPSURL
 	validatePublicHTTPSURL = func(string) error { return nil }
+	smart.AllowInternalHostsForTest = true
+	defer func() { smart.AllowInternalHostsForTest = false }()
 	defer func() { validatePublicHTTPSURL = origValidate }()
 
 	const patientID = "test-patient-1"

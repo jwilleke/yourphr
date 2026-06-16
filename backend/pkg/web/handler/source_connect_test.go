@@ -16,6 +16,7 @@ import (
 	"github.com/fastenhealth/fasten-onprem/backend/pkg/database"
 	"github.com/fastenhealth/fasten-onprem/backend/pkg/event_bus"
 	"github.com/fastenhealth/fasten-onprem/backend/pkg/models"
+	"github.com/fastenhealth/fasten-sources/clients/smart"
 	"github.com/gin-gonic/gin"
 	"github.com/golang/mock/gomock"
 	"github.com/sirupsen/logrus"
@@ -79,6 +80,8 @@ func TestConnectSource_HappyPath(t *testing.T) {
 	// allow discovery against the httptest loopback URL (the SSRF guard blocks loopback in prod).
 	original := validatePublicHTTPSURL
 	validatePublicHTTPSURL = func(string) error { return nil }
+	smart.AllowInternalHostsForTest = true
+	defer func() { smart.AllowInternalHostsForTest = false }()
 	defer func() { validatePublicHTTPSURL = original }()
 
 	provider := fakeSmartProvider(t, "pat1")

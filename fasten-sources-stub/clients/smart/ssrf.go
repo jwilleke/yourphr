@@ -21,8 +21,16 @@ import (
 // It deliberately does NOT resolve DNS: a public name that resolves to a private IP is not caught
 // here. Full egress filtering belongs at the network layer; this is the cheap, in-process first line.
 //
-// allowInternal bypasses the internal-host checks (still validating scheme + host). It is wired only
-// to Config.AllowInternalHosts for tests that hit httptest loopback servers — never set in production.
+// AllowInternalHostsForTest, when true, disables the internal-host SSRF guard process-wide,
+// regardless of Config.AllowInternalHosts. It exists ONLY so a consumer's test suite can drive the
+// full connect+sync flow (including factory-built clients in background jobs) against httptest
+// loopback servers. NEVER set it in production. Per-instance loopback in this package's own tests uses
+// Config.AllowInternalHosts instead.
+var AllowInternalHostsForTest bool
+
+// allowInternal bypasses the internal-host checks (still validating scheme + host). It is wired to
+// Config.AllowInternalHosts (per-instance) and the AllowInternalHostsForTest global — both test-only,
+// for httptest loopback servers; never set in production.
 func validateBaseURL(raw string, allowInternal bool) (string, error) {
 	raw = strings.TrimSpace(raw)
 	if raw == "" {
@@ -39,7 +47,7 @@ func validateBaseURL(raw string, allowInternal bool) (string, error) {
 	if host == "" {
 		return "", fmt.Errorf("FHIR base URL has no host")
 	}
-	if !allowInternal {
+	if !allowInternal && !AllowInternalHostsForTest {
 		if isBlockedHostname(host) {
 			return "", fmt.Errorf("FHIR base URL host %q is not allowed (internal/loopback)", host)
 		}
