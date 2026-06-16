@@ -1,0 +1,11 @@
+{
+  "resourceType": "Patient",
+  "id": "-10000010254618",
+  "identifier": [
+    { "system": "https://bluebutton.cms.gov/resources/variables/bene_id", "value": "-10000010254618" },
+    { "system": "http://hl7.org/fhir/sid/us-mbi", "value": "1S00E00AA00" }
+  ],
+  "name": [
+    { "use": "usual", "family": "Greenfelder433", "given": ["Chi716"] }
+  ]
+}

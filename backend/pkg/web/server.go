@@ -183,6 +183,7 @@ func (ae *AppEngine) Setup() (*gin.RouterGroup, *gin.Engine) {
 					secure.GET("/conditions/classified", handler.GetConditionsClassified)
 					secure.GET("/coverages/classified", handler.GetCoveragesClassified)
 					secure.GET("/claims/classified", handler.GetClaimsClassified)
+					secure.GET("/patient/insurance-claims", handler.GetPatientInsuranceClaims)
 					secure.GET("/vitals/recognized", handler.GetVitalsRecognized)
 					secure.GET("/documents/classified", handler.GetDocumentsClassified)
 					secure.GET("/resources/recent", handler.GetRecentResources)
