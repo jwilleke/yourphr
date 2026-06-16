@@ -28,7 +28,7 @@ No open action — all merged, just waiting on scanner re-scans (nothing to do):
 
 - [#250](https://github.com/jwilleke/yourphr/issues/250) Add CMS Blue Button 2.0 as a SMART-on-FHIR sync source — `help wanted` (backend done: CapabilityStatement-driven fetch landed; live import verified end-to-end).
 - [#279](https://github.com/jwilleke/yourphr/issues/279) Blue Button 2.0 — frontend source entry + sandbox end-to-end verification.
-- [#291](https://github.com/jwilleke/yourphr/issues/291) Admin-configured provider catalog — connect providers without patients seeing client_id/secret.
+- [#291](https://github.com/jwilleke/yourphr/issues/291) Admin-configured provider catalog (umbrella) → split: [#304](https://github.com/jwilleke/yourphr/issues/304) backend (server-held creds + connect), [#306](https://github.com/jwilleke/yourphr/issues/306) frontend (provider-picker UI, blocked by #304).
 
 **Import:**
 
@@ -45,7 +45,7 @@ No open action — all merged, just waiting on scanner re-scans (nothing to do):
 - [#288](https://github.com/jwilleke/yourphr/issues/288) [ARCH] Decide the future of `fasten-sources-stub` — fold into main module vs keep as owned source layer.
 - [#244](https://github.com/jwilleke/yourphr/issues/244) [EPIC] Per-profile dashboard widgets (US Core display end-state).
 - [#256](https://github.com/jwilleke/yourphr/issues/256) Sharing PHR data — drives the conformance-remodeling goal.
-- [#253](https://github.com/jwilleke/yourphr/issues/253) [EPIC] Manual data entry / user-created records.
+- [#253](https://github.com/jwilleke/yourphr/issues/253) [EPIC] Manual data entry / user-created records (umbrella) → split: [#305](https://github.com/jwilleke/yourphr/issues/305) backend (store/edit/delete), [#307](https://github.com/jwilleke/yourphr/issues/307) frontend (entry forms, blocked by #305).
 - [#252](https://github.com/jwilleke/yourphr/issues/252) Harden re-import dedup against stale overwrites.
 - [#251](https://github.com/jwilleke/yourphr/issues/251) Explore Apple Health's supported-institution list as a provider-catalog source.
 - [#241](https://github.com/jwilleke/yourphr/issues/241) release-please: authenticate with a PAT / GitHub App token.
