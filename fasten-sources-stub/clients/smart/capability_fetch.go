@@ -105,9 +105,12 @@ func idFromReference(ref string) string {
 // resource's patient reference (Coverage.beneficiary / ExplanationOfBenefit.patient), which CMS
 // recommends, and only then fall back to GET /Patient. Errors (never a silent empty id) if none work.
 func (c Config) DiscoverPatientID(ctx context.Context, ep Endpoints, tok *oauth2.Token) (string, error) {
+	base, err := c.safeBaseURL()
+	if err != nil {
+		return "", err
+	}
 	ctx = context.WithValue(ctx, oauth2.HTTPClient, c.httpClient())
 	client := oauth2.NewClient(ctx, c.oauth2Config(ep).TokenSource(ctx, tok))
-	base := strings.TrimRight(c.FHIRBaseURL, "/")
 
 	// Claims resources first (not gated by the demographic-data setting), then /Patient.
 	var lastErr error
@@ -161,9 +164,13 @@ func (c Config) patientIDFrom(ctx context.Context, client *http.Client, reqURL s
 // fetchCapability fetches and parses GET {FHIRBaseURL}/metadata.
 func (c Config) fetchCapability(ctx context.Context, ep Endpoints, tok *oauth2.Token) (capabilityStatement, error) {
 	var cap capabilityStatement
+	base, err := c.safeBaseURL()
+	if err != nil {
+		return cap, err
+	}
 	ctx = context.WithValue(ctx, oauth2.HTTPClient, c.httpClient())
 	client := oauth2.NewClient(ctx, c.oauth2Config(ep).TokenSource(ctx, tok))
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, strings.TrimRight(c.FHIRBaseURL, "/")+"/metadata", nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, base+"/metadata", nil)
 	if err != nil {
 		return cap, err
 	}
@@ -203,10 +210,13 @@ func (cs capabilityStatement) supportsPatientEverything() bool {
 // patient link are skipped (never guessed). Pagination follows Bundle "next" links.
 func (c Config) fetchByCapability(ctx context.Context, ep Endpoints, tok *oauth2.Token, patientID string, cs capabilityStatement) (pages [][]byte, refreshed *oauth2.Token, err error) {
 	const pageCap = 1000
+	base, err := c.safeBaseURL()
+	if err != nil {
+		return nil, nil, err
+	}
 	ctx = context.WithValue(ctx, oauth2.HTTPClient, c.httpClient())
 	ts := c.oauth2Config(ep).TokenSource(ctx, tok)
 	httpClient := oauth2.NewClient(ctx, ts)
-	base := strings.TrimRight(c.FHIRBaseURL, "/")
 
 	for _, rest := range cs.Rest {
 		for _, r := range rest.Resource {

@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"strings"
+	"net/url"
 
 	"golang.org/x/oauth2"
 )
@@ -36,6 +36,10 @@ type Config struct {
 
 	// HTTPClient is optional; defaults to http.DefaultClient. Override in tests.
 	HTTPClient *http.Client
+
+	// AllowInternalHosts disables the SSRF host guard (loopback/private/link-local/metadata).
+	// Set ONLY by tests that talk to httptest servers on 127.0.0.1 — never in production.
+	AllowInternalHosts bool
 }
 
 // Endpoints holds the SMART authorize/token endpoints from .well-known/smart-configuration.
@@ -54,7 +58,11 @@ func (c Config) httpClient() *http.Client {
 // Discover fetches and parses {FHIRBaseURL}/.well-known/smart-configuration.
 func (c Config) Discover(ctx context.Context) (Endpoints, error) {
 	var ep Endpoints
-	url := strings.TrimRight(c.FHIRBaseURL, "/") + "/.well-known/smart-configuration"
+	base, err := c.safeBaseURL()
+	if err != nil {
+		return ep, err
+	}
+	url := base + "/.well-known/smart-configuration"
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return ep, err
@@ -137,11 +145,15 @@ func (c Config) Refresh(ctx context.Context, ep Endpoints, refreshToken string) 
 // the caller should persist it. The pageCap guards against runaway pagination.
 func (c Config) FetchEverything(ctx context.Context, ep Endpoints, tok *oauth2.Token, patientID string) (pages [][]byte, refreshed *oauth2.Token, err error) {
 	const pageCap = 1000
+	base, err := c.safeBaseURL()
+	if err != nil {
+		return nil, nil, err
+	}
 	ctx = context.WithValue(ctx, oauth2.HTTPClient, c.httpClient())
 	ts := c.oauth2Config(ep).TokenSource(ctx, tok)
 	httpClient := oauth2.NewClient(ctx, ts)
 
-	next := fmt.Sprintf("%s/Patient/%s/$everything", strings.TrimRight(c.FHIRBaseURL, "/"), patientID)
+	next := fmt.Sprintf("%s/Patient/%s/$everything", base, url.PathEscape(patientID))
 	for next != "" {
 		body, link, gerr := getBundlePage(ctx, httpClient, next)
 		if gerr != nil {

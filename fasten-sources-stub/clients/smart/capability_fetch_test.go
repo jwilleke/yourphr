@@ -48,7 +48,7 @@ func TestFetchPatientData_BlueButtonStyle_SearchFallback(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	cfg := Config{FHIRBaseURL: srv.URL, ClientID: "c", HTTPClient: srv.Client()}
+	cfg := Config{FHIRBaseURL: srv.URL, AllowInternalHosts: true, ClientID: "c", HTTPClient: srv.Client()}
 	pages, _, err := cfg.FetchPatientData(context.Background(), Endpoints{Token: srv.URL + "/token"}, freshToken(), "bene123")
 	if err != nil {
 		t.Fatalf("FetchPatientData: %v", err)
@@ -85,7 +85,7 @@ func TestFetchPatientData_EverythingSupported_UsesEverything(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	cfg := Config{FHIRBaseURL: srv.URL, ClientID: "c", HTTPClient: srv.Client()}
+	cfg := Config{FHIRBaseURL: srv.URL, AllowInternalHosts: true, ClientID: "c", HTTPClient: srv.Client()}
 	if _, _, err := cfg.FetchPatientData(context.Background(), Endpoints{Token: srv.URL + "/token"}, freshToken(), "p1"); err != nil {
 		t.Fatalf("FetchPatientData: %v", err)
 	}
@@ -114,7 +114,7 @@ func TestFetchByCapability_FollowsPagination(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	cfg := Config{FHIRBaseURL: srv.URL, ClientID: "c", HTTPClient: srv.Client()}
+	cfg := Config{FHIRBaseURL: srv.URL, AllowInternalHosts: true, ClientID: "c", HTTPClient: srv.Client()}
 	pages, _, err := cfg.FetchPatientData(context.Background(), Endpoints{Token: srv.URL + "/token"}, freshToken(), "p1")
 	if err != nil {
 		t.Fatalf("FetchPatientData: %v", err)
@@ -178,7 +178,7 @@ func TestDiscoverPatientID(t *testing.T) {
 			}))
 			defer srv.Close()
 
-			cfg := Config{FHIRBaseURL: srv.URL, ClientID: "c", HTTPClient: srv.Client()}
+			cfg := Config{FHIRBaseURL: srv.URL, AllowInternalHosts: true, ClientID: "c", HTTPClient: srv.Client()}
 			got, err := cfg.DiscoverPatientID(context.Background(), Endpoints{Token: srv.URL + "/token"}, freshToken())
 			if err != nil {
 				t.Fatalf("DiscoverPatientID: %v", err)
@@ -197,7 +197,7 @@ func TestDiscoverPatientID_NoneFound(t *testing.T) {
 		fmt.Fprint(w, `{"resourceType":"Bundle","entry":[]}`)
 	}))
 	defer srv.Close()
-	cfg := Config{FHIRBaseURL: srv.URL, ClientID: "c", HTTPClient: srv.Client()}
+	cfg := Config{FHIRBaseURL: srv.URL, AllowInternalHosts: true, ClientID: "c", HTTPClient: srv.Client()}
 	if _, err := cfg.DiscoverPatientID(context.Background(), Endpoints{Token: srv.URL + "/token"}, freshToken()); err == nil {
 		t.Fatal("expected an error when no patient id is found anywhere")
 	}

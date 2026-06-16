@@ -25,7 +25,7 @@ func TestDiscover(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	cfg := Config{FHIRBaseURL: srv.URL, HTTPClient: srv.Client()}
+	cfg := Config{FHIRBaseURL: srv.URL, AllowInternalHosts: true, HTTPClient: srv.Client()}
 	ep, err := cfg.Discover(context.Background())
 	if err != nil {
 		t.Fatalf("Discover: %v", err)
@@ -40,7 +40,7 @@ func TestDiscoverMissingEndpoints(t *testing.T) {
 		fmt.Fprint(w, `{"authorization_endpoint":""}`)
 	}))
 	defer srv.Close()
-	cfg := Config{FHIRBaseURL: srv.URL, HTTPClient: srv.Client()}
+	cfg := Config{FHIRBaseURL: srv.URL, AllowInternalHosts: true, HTTPClient: srv.Client()}
 	if _, err := cfg.Discover(context.Background()); err == nil {
 		t.Fatal("expected error for missing endpoints")
 	}
@@ -118,7 +118,7 @@ func TestFetchEverythingPagination(t *testing.T) {
 	defer srv.Close()
 	base = srv.URL
 
-	cfg := Config{FHIRBaseURL: srv.URL, HTTPClient: srv.Client()}
+	cfg := Config{FHIRBaseURL: srv.URL, AllowInternalHosts: true, HTTPClient: srv.Client()}
 	ep := Endpoints{Token: srv.URL + "/token"}
 	tok := &oauth2.Token{AccessToken: "test-token", Expiry: time.Now().Add(time.Hour)}
 
