@@ -13,7 +13,7 @@ No open action — all merged, just waiting on scanner re-scans (nothing to do):
 
 **Patient-legible display (active — [#266](https://github.com/jwilleke/yourphr/issues/266) / [#262](https://github.com/jwilleke/yourphr/issues/262)):**
 
-- [#266](https://github.com/jwilleke/yourphr/issues/266) [EPIC] FollowMyHealth/Veradigm EHI classification & patient-legible display — Layer-1 classifiers + provenance shipped; condition / medication / Medical-Concerns / Patient-Profile surfaces + "who said this" on every card landed.
+- [#266](https://github.com/jwilleke/yourphr/issues/266) [EPIC] FollowMyHealth/Veradigm EHI classification & patient-legible display — Layer-1 classifiers + provenance + first surfaces shipped. Remaining split out, **blocked by**: [#308](https://github.com/jwilleke/yourphr/issues/308) detail-card legibility (frontend), [#309](https://github.com/jwilleke/yourphr/issues/309) generalize Layer-1 classifiers/resolvers (backend).
 - [#262](https://github.com/jwilleke/yourphr/issues/262) [EPIC] Patient-legible display — the quality bar. Biggest open litmus gap: lab results "normal/high/low" (unissued).
 
 **US Core 9.0.0 Must-Support display gaps ([#249](https://github.com/jwilleke/yourphr/issues/249) tracker → [#136](https://github.com/jwilleke/yourphr/issues/136) epic) — frontend, `help wanted`, bounded:**
