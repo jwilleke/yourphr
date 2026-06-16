@@ -59,9 +59,9 @@ Synthetic Medicare beneficiaries; **claims/insurance** data (ExplanationOfBenefi
 
 | Field | Value |
 |---|---|
-| **FHIR base URL** | `https://sandbox.bluebutton.cms.gov/v2/fhir` |
+| **FHIR base URL** | `https://sandbox.bluebutton.cms.gov/v2/fhir` (the admin-only **Sandbox testing** page at `/sandbox` has a **"Use Blue Button Sandbox"** button that prefills this + the scopes below) |
 | **Client ID** | your **Sandbox** `client_id` (register an app at `bluebutton.cms.gov/developers`) |
-| **Client Secret** | your **Sandbox** `client_secret` — Blue Button is a **confidential** client |
+| **Client Secret** | your **Sandbox** `client_secret` — Blue Button is a **confidential** client (paste it into the Client Secret field; the prefill leaves it blank) |
 | **Scopes** | `openid profile launch/patient patient/Patient.read patient/Coverage.read patient/ExplanationOfBenefit.read` |
 | **Login (synthetic beneficiary)** | `BBUser00000` / `PW00000!` (range `BBUser00000`–`BBUser29999`, password `PW<digits>!`) |
 
@@ -79,7 +79,7 @@ Standard SMART-on-FHIR; bring your own `client_id` (register a free patient-faci
 | Field | Value |
 |---|---|
 | **FHIR base URL** | `https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/R4` |
-| **Client ID** | your registered Epic `client_id` (the connect form's **"Use Epic Sandbox"** button prefills the URL + scopes) |
+| **Client ID** | your registered Epic `client_id` (the admin-only **Sandbox testing** page at `/sandbox` has a **"Use Epic Sandbox"** button that prefills the URL + scopes) |
 | **Client Secret** | _(blank — public/PKCE)_ |
 | **Scopes** | `launch/patient patient/*.read openid fhirUser offline_access` |
 
