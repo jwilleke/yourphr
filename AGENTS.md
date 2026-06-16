@@ -1,4 +1,4 @@
-<!-- KIT:START — managed by mjs-project-template; edit below the KIT:END marker -->
+<!-- KIT:START v1.0.0-0-g6f0646c — managed by mjs-project-template; edit below the KIT:END marker -->
 # Agent Context & Protocols
 
 This section is **managed by the kit** (`install-kit.sh`) — it is identical across
@@ -42,9 +42,15 @@ Then:
   `closes #N` / `fixes #N` (resolves another), `blocked by #N` (dependency), `relates to #N`
   (context link). Example: a 3-phase migration = 3 issues with "blocked by" chains, not one
   issue with Phase headings.
-- Issue/PR links — Never use a bare `#N` reference alone. Always pair it with the full GitHub URL: `[#333](https://github.com/owner/repo/issues/333)`. This applies in commit messages, PR descriptions, comments, and any agent output. Use `/issues/N` for issues and `/pull/N` for PRs.
-- Awaiting approval — When work is complete but requires human sign-off before closing, apply the `in-review` label and leave a comment on the issue/PR that states: what was done, what the human needs to verify, and what action closes it. Never self-close an issue or PR.
-- Commits — always use the `/session-commit` skill. Never run a bare `git commit` directly. `/session-commit` enforces the session log update, conventional commit format, and co-author trailer.
+- Issue/PR links — Never use a bare `#N` reference alone. Always pair it with the full GitHub
+  URL: `[#333](https://github.com/owner/repo/issues/333)`. This applies in commit messages, PR
+  descriptions, comments, and any agent output. Use `/issues/N` for issues and `/pull/N` for PRs.
+- Awaiting approval — When work is complete but requires human sign-off before closing, apply
+  the `in-review` label and leave a comment on the issue/PR that states: what was done, what
+  the human needs to verify, and what action closes it. Never self-close an issue or PR.
+- Commits — always use the `/session-commit` skill. Never run a bare `git commit` directly.
+  `/session-commit` enforces the session log update, conventional commit format, and co-author
+  trailer.
 
 ## Markdown conventions
 
