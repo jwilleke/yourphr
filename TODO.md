@@ -28,7 +28,7 @@ No open action — all merged, just waiting on scanner re-scans (nothing to do):
 
 - [#250](https://github.com/jwilleke/yourphr/issues/250) Add CMS Blue Button 2.0 as a SMART-on-FHIR sync source — `help wanted` (backend done: CapabilityStatement-driven fetch landed; live import verified end-to-end).
 - [#279](https://github.com/jwilleke/yourphr/issues/279) Blue Button 2.0 — frontend source entry + sandbox end-to-end verification.
-- [#291](https://github.com/jwilleke/yourphr/issues/291) Admin-configured provider catalog (umbrella) → split: [#304](https://github.com/jwilleke/yourphr/issues/304) backend (server-held creds + connect), [#306](https://github.com/jwilleke/yourphr/issues/306) frontend (provider-picker UI, blocked by #304).
+- [#291](https://github.com/jwilleke/yourphr/issues/291) Admin-configured provider catalog (umbrella) → [#304](https://github.com/jwilleke/yourphr/issues/304) backend **done (`in-review`)** — catalog + admin CRUD + credential-free patient connect; now unblocks [#306](https://github.com/jwilleke/yourphr/issues/306) frontend provider-picker UI.
 
 ## 🟡 P2
 
