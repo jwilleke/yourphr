@@ -34,6 +34,7 @@
 
 ## 🟡 P2
 
+- [#300](https://github.com/jwilleke/yourphr/issues/300) Angular surface for Medicare claims & coverage (insurance view) — parked; consumes the #294/#295/#296 endpoints. Under #262.
 - [#277](https://github.com/jwilleke/yourphr/issues/277) Medical History hub page (`/medical-history`) — umbrella for Visits & Notes, Procedures, etc.
 - [#280](https://github.com/jwilleke/yourphr/issues/280) Raw fhir-cards: resolve a referenced resource's display name (e.g. `Medication/{id}`) — `help wanted`.
 - [#287](https://github.com/jwilleke/yourphr/issues/287) Upload/import UI polish — make all supported file types selectable + clearer 'add my data' affordances.
@@ -62,7 +63,6 @@
 
 Unlabeled — awaiting a priority band:
 
-- [#300](https://github.com/jwilleke/yourphr/issues/300) Angular surface for Medicare claims & coverage (insurance view) — parked; consumes the #294/#295/#296 endpoints. Under #262.
 - [#294](https://github.com/jwilleke/yourphr/issues/294) ExplanationOfBenefit (Medicare claims) classifier — **backend done** (classifier + `/claims/classified` + tests); open pending close.
 - [#295](https://github.com/jwilleke/yourphr/issues/295) Coverage (Medicare/insurance) classifier — **backend done** (classifier + `/coverages/classified` + tests); open pending close.
 - [#293](https://github.com/jwilleke/yourphr/issues/293) [BUG] SMART connect fails for Blue Button — patient id required in token, no /Patient fallback — **fixed** (Coverage/EOB fallback shipped); open pending close.
