@@ -32,7 +32,7 @@ No open action — all merged, just waiting on scanner re-scans (nothing to do):
 
 **Import:**
 
-- [#254](https://github.com/jwilleke/yourphr/issues/254) Support C-CDA / CCD document import — `help wanted` (code-complete, pending Metriport sidecar deployment).
+- [#254](https://github.com/jwilleke/yourphr/issues/254) C-CDA / CCD import — **`in-review`**: code complete (FE+BE) + sidecar deployed/enabled. Only remaining is a manual real-PHI validation pass (your sign-off closes it).
 
 ## 🟡 P2
 
