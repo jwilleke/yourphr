@@ -1253,6 +1253,60 @@ func (gr *GormRepository) DeleteSource(ctx context.Context, sourceId string) (in
 	return rowsEffected, results.Error
 }
 
+// ---- Admin-configured provider catalog (#304) -------------------------------------------------
+// Instance-wide (not user-scoped): one admin curates the providers the whole instance can connect to.
+
+func (gr *GormRepository) CreateProviderCatalogEntry(ctx context.Context, entry *models.ProviderCatalogEntry) error {
+	return gr.GormClient.WithContext(ctx).Create(entry).Error
+}
+
+func (gr *GormRepository) GetProviderCatalogEntry(ctx context.Context, id string) (*models.ProviderCatalogEntry, error) {
+	entryUUID, err := uuid.Parse(strings.TrimSpace(id))
+	if err != nil {
+		return nil, fmt.Errorf("invalid provider catalog id: %w", err)
+	}
+	var entry models.ProviderCatalogEntry
+	if err := gr.GormClient.WithContext(ctx).
+		Where(models.ProviderCatalogEntry{ModelBase: models.ModelBase{ID: entryUUID}}).
+		First(&entry).Error; err != nil {
+		return nil, err
+	}
+	entry.HasClientSecret = entry.ClientSecret != ""
+	return &entry, nil
+}
+
+func (gr *GormRepository) ListProviderCatalogEntries(ctx context.Context, enabledOnly bool) ([]models.ProviderCatalogEntry, error) {
+	var entries []models.ProviderCatalogEntry
+	query := gr.GormClient.WithContext(ctx).Order("display ASC")
+	if enabledOnly {
+		query = query.Where("enabled = ?", true)
+	}
+	if err := query.Find(&entries).Error; err != nil {
+		return nil, err
+	}
+	for i := range entries {
+		entries[i].HasClientSecret = entries[i].ClientSecret != ""
+	}
+	return entries, nil
+}
+
+func (gr *GormRepository) UpdateProviderCatalogEntry(ctx context.Context, entry *models.ProviderCatalogEntry) error {
+	// Save persists all columns; the handler is responsible for preserving an existing secret when the
+	// update omits a new one (so an edit never silently blanks the stored client_secret).
+	return gr.GormClient.WithContext(ctx).Save(entry).Error
+}
+
+func (gr *GormRepository) DeleteProviderCatalogEntry(ctx context.Context, id string) (int64, error) {
+	entryUUID, err := uuid.Parse(strings.TrimSpace(id))
+	if err != nil {
+		return 0, fmt.Errorf("invalid provider catalog id: %w", err)
+	}
+	res := gr.GormClient.WithContext(ctx).
+		Where(models.ProviderCatalogEntry{ModelBase: models.ModelBase{ID: entryUUID}}).
+		Delete(&models.ProviderCatalogEntry{})
+	return res.RowsAffected, res.Error
+}
+
 //</editor-fold>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

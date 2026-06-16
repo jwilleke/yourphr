@@ -53,6 +53,13 @@ type DatabaseRepository interface {
 	UpdateSource(ctx context.Context, sourceCreds *models.SourceCredential) error
 	DeleteSource(ctx context.Context, sourceId string) (int64, error)
 
+	// Admin-configured provider catalog (#304). Instance-wide (not per-user).
+	CreateProviderCatalogEntry(ctx context.Context, entry *models.ProviderCatalogEntry) error
+	GetProviderCatalogEntry(ctx context.Context, id string) (*models.ProviderCatalogEntry, error)
+	ListProviderCatalogEntries(ctx context.Context, enabledOnly bool) ([]models.ProviderCatalogEntry, error)
+	UpdateProviderCatalogEntry(ctx context.Context, entry *models.ProviderCatalogEntry) error
+	DeleteProviderCatalogEntry(ctx context.Context, id string) (int64, error)
+
 	CreateGlossaryEntry(ctx context.Context, glossaryEntry *models.Glossary) error
 	GetGlossaryEntry(ctx context.Context, code string, codeSystem string) (*models.Glossary, error)
 

@@ -193,6 +193,17 @@ func (ae *AppEngine) Setup() (*gin.RouterGroup, *gin.Engine) {
 					secure.POST("/source/authorize", handler.AuthorizeSource)
 					secure.POST("/source/connect", handler.ConnectSource)
 					secure.POST("/source/manual", handler.CreateManualSource)
+
+					// Provider catalog (#304): admin curates entries; patients connect by picking one.
+					secure.POST("/provider-catalog", handler.CreateProviderCatalogEntry)
+					secure.GET("/provider-catalog", handler.ListProviderCatalogEntries)
+					secure.GET("/provider-catalog/connectable", handler.ListConnectableProviders)
+					secure.GET("/provider-catalog/:id", handler.GetProviderCatalogEntry)
+					secure.PUT("/provider-catalog/:id", handler.UpdateProviderCatalogEntry)
+					secure.DELETE("/provider-catalog/:id", handler.DeleteProviderCatalogEntry)
+					secure.POST("/provider-catalog/:id/authorize", handler.AuthorizeSourceFromCatalog)
+					secure.POST("/provider-catalog/:id/connect", handler.ConnectSourceFromCatalog)
+
 					secure.GET("/source", handler.ListSource)
 					secure.GET("/source/:sourceId", handler.GetSource)
 					secure.DELETE("/source/:sourceId", handler.DeleteSource)

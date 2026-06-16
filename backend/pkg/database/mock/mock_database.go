@@ -263,6 +263,79 @@ func (mr *MockDatabaseRepositoryMockRecorder) DeleteSource(ctx, sourceId interfa
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteSource", reflect.TypeOf((*MockDatabaseRepository)(nil).DeleteSource), ctx, sourceId)
 }
 
+// CreateProviderCatalogEntry mocks base method.
+func (m *MockDatabaseRepository) CreateProviderCatalogEntry(ctx context.Context, entry *models.ProviderCatalogEntry) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateProviderCatalogEntry", ctx, entry)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CreateProviderCatalogEntry indicates an expected call of CreateProviderCatalogEntry.
+func (mr *MockDatabaseRepositoryMockRecorder) CreateProviderCatalogEntry(ctx, entry interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateProviderCatalogEntry", reflect.TypeOf((*MockDatabaseRepository)(nil).CreateProviderCatalogEntry), ctx, entry)
+}
+
+// GetProviderCatalogEntry mocks base method.
+func (m *MockDatabaseRepository) GetProviderCatalogEntry(ctx context.Context, id string) (*models.ProviderCatalogEntry, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetProviderCatalogEntry", ctx, id)
+	ret0, _ := ret[0].(*models.ProviderCatalogEntry)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetProviderCatalogEntry indicates an expected call of GetProviderCatalogEntry.
+func (mr *MockDatabaseRepositoryMockRecorder) GetProviderCatalogEntry(ctx, id interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProviderCatalogEntry", reflect.TypeOf((*MockDatabaseRepository)(nil).GetProviderCatalogEntry), ctx, id)
+}
+
+// ListProviderCatalogEntries mocks base method.
+func (m *MockDatabaseRepository) ListProviderCatalogEntries(ctx context.Context, enabledOnly bool) ([]models.ProviderCatalogEntry, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListProviderCatalogEntries", ctx, enabledOnly)
+	ret0, _ := ret[0].([]models.ProviderCatalogEntry)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListProviderCatalogEntries indicates an expected call of ListProviderCatalogEntries.
+func (mr *MockDatabaseRepositoryMockRecorder) ListProviderCatalogEntries(ctx, enabledOnly interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListProviderCatalogEntries", reflect.TypeOf((*MockDatabaseRepository)(nil).ListProviderCatalogEntries), ctx, enabledOnly)
+}
+
+// UpdateProviderCatalogEntry mocks base method.
+func (m *MockDatabaseRepository) UpdateProviderCatalogEntry(ctx context.Context, entry *models.ProviderCatalogEntry) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateProviderCatalogEntry", ctx, entry)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateProviderCatalogEntry indicates an expected call of UpdateProviderCatalogEntry.
+func (mr *MockDatabaseRepositoryMockRecorder) UpdateProviderCatalogEntry(ctx, entry interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateProviderCatalogEntry", reflect.TypeOf((*MockDatabaseRepository)(nil).UpdateProviderCatalogEntry), ctx, entry)
+}
+
+// DeleteProviderCatalogEntry mocks base method.
+func (m *MockDatabaseRepository) DeleteProviderCatalogEntry(ctx context.Context, id string) (int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteProviderCatalogEntry", ctx, id)
+	ret0, _ := ret[0].(int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DeleteProviderCatalogEntry indicates an expected call of DeleteProviderCatalogEntry.
+func (mr *MockDatabaseRepositoryMockRecorder) DeleteProviderCatalogEntry(ctx, id interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteProviderCatalogEntry", reflect.TypeOf((*MockDatabaseRepository)(nil).DeleteProviderCatalogEntry), ctx, id)
+}
+
 // FindAllResourceAssociations mocks base method.
 func (m *MockDatabaseRepository) FindAllResourceAssociations(ctx context.Context, source *models.SourceCredential, resourceType, resourceId string) ([]models.RelatedResource, error) {
 	m.ctrl.T.Helper()

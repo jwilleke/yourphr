@@ -256,6 +256,14 @@ func (gr *GormRepository) Migrate() error {
 				)
 			},
 		},
+		{
+			ID: "20260616000000", // admin-configured provider catalog (#304)
+			Migrate: func(tx *gorm.DB) error {
+				return tx.AutoMigrate(
+					&models.ProviderCatalogEntry{},
+				)
+			},
+		},
 	})
 
 	// run when database is empty
