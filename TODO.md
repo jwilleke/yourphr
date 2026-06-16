@@ -4,10 +4,7 @@
 
 ## 🔴 P0 — Security & Critical
 
-No open action — all merged, just waiting on scanner re-scans (nothing to do):
-
-- [#301](https://github.com/jwilleke/yourphr/issues/301) `@angular/*` → 20.3.25 (4 CVEs) — merged, `in-review`, awaiting Dependabot re-scan.
-- Markdown-lint workflow least-privilege `permissions` block added (clears the `actions/missing-workflow-permissions` finding on next scan).
+- None. All security work merged + closed ([#301](https://github.com/jwilleke/yourphr/issues/301) Angular, [#302](https://github.com/jwilleke/yourphr/issues/302) SSRF, [#303](https://github.com/jwilleke/yourphr/issues/303) vite/babel). Code-scanning 0; the four @angular Dependabot alerts auto-clear once GitHub re-indexes the dependency graph (fix verified in `yarn.lock`).
 
 ## 🟠 P1
 
@@ -16,19 +13,11 @@ No open action — all merged, just waiting on scanner re-scans (nothing to do):
 - [#266](https://github.com/jwilleke/yourphr/issues/266) [EPIC] FollowMyHealth/Veradigm EHI classification & patient-legible display — Layer-1 classifiers + provenance + first surfaces shipped. Remaining split out, **blocked by**: [#308](https://github.com/jwilleke/yourphr/issues/308) detail-card legibility (frontend), [#309](https://github.com/jwilleke/yourphr/issues/309) generalize Layer-1 classifiers/resolvers (backend).
 - [#262](https://github.com/jwilleke/yourphr/issues/262) [EPIC] Patient-legible display — the quality bar. Biggest open litmus gap: lab results "normal/high/low" (unissued).
 
-**US Core 9.0.0 Must-Support display gaps ([#249](https://github.com/jwilleke/yourphr/issues/249) tracker → [#136](https://github.com/jwilleke/yourphr/issues/136) epic) — frontend, `help wanted`, bounded:**
-
-- [#281](https://github.com/jwilleke/yourphr/issues/281) "Last updated" row on Condition + Observation cards (`meta.lastUpdated`, shared helper).
-- [#282](https://github.com/jwilleke/yourphr/issues/282) Condition `extension:assertedDate` as its own field.
-- [#283](https://github.com/jwilleke/yourphr/issues/283) MedicationRequest `dispenseRequest` — quantity / refills.
-- [#284](https://github.com/jwilleke/yourphr/issues/284) Observation `specimen` — specimen reference.
-- [#285](https://github.com/jwilleke/yourphr/issues/285) DocumentReference `context.encounter` — encounter in model context.
-
 **Live provider sync (Blue Button thread):**
 
 - [#250](https://github.com/jwilleke/yourphr/issues/250) Add CMS Blue Button 2.0 as a SMART-on-FHIR sync source — `help wanted` (backend done: CapabilityStatement-driven fetch landed; live import verified end-to-end).
 - [#279](https://github.com/jwilleke/yourphr/issues/279) Blue Button 2.0 — frontend source entry + sandbox end-to-end verification.
-- [#291](https://github.com/jwilleke/yourphr/issues/291) Admin-configured provider catalog (umbrella) → [#304](https://github.com/jwilleke/yourphr/issues/304) backend **done (`in-review`)** — catalog + admin CRUD + credential-free patient connect; now unblocks [#306](https://github.com/jwilleke/yourphr/issues/306) frontend provider-picker UI.
+- [#291](https://github.com/jwilleke/yourphr/issues/291) Admin-configured provider catalog (umbrella) → [#304](https://github.com/jwilleke/yourphr/issues/304) backend **done + closed** (catalog + admin CRUD + credential-free connect + seeds); next is [#306](https://github.com/jwilleke/yourphr/issues/306) frontend provider-picker UI (unblocked).
 
 ## 🟡 P2
 
