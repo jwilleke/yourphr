@@ -5,8 +5,8 @@
 ## 🔴 P0 — Security & Critical
 
 - [#301](https://github.com/jwilleke/yourphr/issues/301) Bump `@angular/*` → 20.3.25 — **done, `in-review`** ([538058dd](https://github.com/jwilleke/yourphr/commit/538058dd)); clears the 4 Dependabot Angular CVEs (DA#182/183/184/185) once re-scanned.
-- Code-scanning **CS#23** — `go/request-forgery` **critical**: SSRF in `fasten-sources-stub/clients/smart/capability_fetch.go:138`. No issue yet. Real-risk caveat: the fetch URL is the user's own BYO FHIR base in a single-user self-hosted PHR (attacker == victim) — still worth a guard. Triage.
-- Code-scanning **CS#24** — `js/incomplete-url-substring-sanitization` **high**: in a **test file** (`frontend/e2e/sandbox-connect.spec.ts:206`) — likely a false positive; candidate to dismiss rather than track.
+- [#302](https://github.com/jwilleke/yourphr/issues/302) SSRF guard for user-supplied FHIR base URL (CodeQL CS#23 `go/request-forgery`) — **done, `in-review`** ([18dd7895](https://github.com/jwilleke/yourphr/commit/18dd7895)); `smart/ssrf.go` gates all FHIR-base fetches. CS#23 may persist until CodeQL re-scans (custom sanitizer not modeled).
+- CS#24 (`js/incomplete-url-substring-sanitization`, e2e test file) — **dismissed** as a test-file false positive ("used in tests").
 
 ## 🟠 P1
 
