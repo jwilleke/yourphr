@@ -114,6 +114,8 @@
     "fhirpath/js-yaml": "^3.14.2",
     "cookie": "^0.7.0",
     "@compodoc/compodoc/@compodoc/live-server/send": "^0.19.0",
-    "esbuild": "0.28.1"
+    "esbuild": "0.28.1",
+    "vite": "^7.3.5",
+    "@babel/core": "^7.29.6"
   }
 }
