@@ -46,3 +46,30 @@ func (p *ProviderCatalogEntry) Connectable() ConnectableProvider {
 		BrandLogoUrl: p.BrandLogoUrl,
 	}
 }
+
+// DefaultProviderCatalogEntries are the known-good, NON-SECRET provider templates shipped as a
+// head start: the FHIR base + the exact scopes we've verified, with EMPTY client_id/client_secret
+// and Enabled=false. An admin adds their own bring-your-own client_id (and a client_secret for
+// confidential providers) and flips Enabled — no real credential is ever committed (CLAUDE.md hard
+// rule). Seeded idempotently by Display; deleting one does not bring it back.
+func DefaultProviderCatalogEntries() []ProviderCatalogEntry {
+	return []ProviderCatalogEntry{
+		{
+			// CMS Blue Button 2.0 sandbox — confidential client (the admin must add a client_secret).
+			// Scopes are the exact set the sandbox accepts: NO offline_access / wildcard / fhirUser.
+			Display:            "Medicare — Blue Button 2.0 (Sandbox)",
+			ApiEndpointBaseUrl: "https://sandbox.bluebutton.cms.gov/v2/fhir",
+			Scopes:             "openid profile launch/patient patient/Patient.read patient/Coverage.read patient/ExplanationOfBenefit.read",
+			PlatformType:       sourcesPkg.PlatformTypeEhr,
+			Enabled:            false,
+		},
+		{
+			// Epic public SMART sandbox — public/PKCE client (no client_secret needed).
+			Display:            "Epic (Sandbox)",
+			ApiEndpointBaseUrl: "https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/R4",
+			Scopes:             "launch/patient patient/*.read openid fhirUser offline_access",
+			PlatformType:       sourcesPkg.PlatformTypeEhr,
+			Enabled:            false,
+		},
+	}
+}

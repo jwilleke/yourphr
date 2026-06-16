@@ -264,6 +264,26 @@ func (gr *GormRepository) Migrate() error {
 				)
 			},
 		},
+		{
+			ID: "20260616000001", // seed default (disabled, credential-free) catalog entries: Blue Button, Epic (#304)
+			Migrate: func(tx *gorm.DB) error {
+				for _, entry := range models.DefaultProviderCatalogEntries() {
+					var count int64
+					if err := tx.Model(&models.ProviderCatalogEntry{}).
+						Where("display = ?", entry.Display).Count(&count).Error; err != nil {
+						return err
+					}
+					if count > 0 {
+						continue // already present (admin-created or re-run) — never duplicate
+					}
+					e := entry
+					if err := tx.Create(&e).Error; err != nil {
+						return err
+					}
+				}
+				return nil
+			},
+		},
 	})
 
 	// run when database is empty
