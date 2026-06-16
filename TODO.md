@@ -4,15 +4,10 @@
 
 ## 🔴 P0 — Security & Critical
 
-**Code-scanning: 0 open** ✅
+No open action. Code-scanning: 0 open. Two security bumps are merged and `in-review`, just waiting on Dependabot to re-scan the lockfile (no work to do):
 
-- [#302](https://github.com/jwilleke/yourphr/issues/302) SSRF guard for user-supplied FHIR base URL (CodeQL CS#23) — **DONE, closed** ([18dd7895](https://github.com/jwilleke/yourphr/commit/18dd7895)); `smart/ssrf.go` gates all FHIR-base fetches. CodeQL re-scanned with the guard and still flagged the sink (doesn't model the custom sanitizer) → CS#23 dismissed won't-fix.
-- CS#24 (`js/incomplete-url-substring-sanitization`, e2e test) — **dismissed** (test-file false positive).
-
-**Dependabot: 4 open** — all the Angular cluster, awaiting re-scan:
-
-- [#301](https://github.com/jwilleke/yourphr/issues/301) Bump `@angular/*` → 20.3.25 — **done, `in-review`** ([538058dd](https://github.com/jwilleke/yourphr/commit/538058dd)); DA#182/183/184/185 still open, **awaiting Dependabot re-scan** of the bumped `yarn.lock` to confirm fixed.
-- [#303](https://github.com/jwilleke/yourphr/issues/303) Transitive bumps `vite` 7.3.5 + `@babel/core` 7.29.6 — **done, `in-review`** ([fe826131](https://github.com/jwilleke/yourphr/commit/fe826131)); DA#188/189/186 bumped (await re-scan), DA#187 `js-yaml` **dismissed** (fhirpath 3.x pin; DoS vector unreachable).
+- [#301](https://github.com/jwilleke/yourphr/issues/301) `@angular/*` → 20.3.25 (4 CVEs) — merged, awaiting re-scan.
+- [#303](https://github.com/jwilleke/yourphr/issues/303) `vite` → 7.3.5 + `@babel/core` → 7.29.6 — merged, awaiting re-scan.
 
 ## 🟠 P1
 
