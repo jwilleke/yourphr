@@ -25,6 +25,3 @@ jobs:
             !dist/**
             !CHANGELOG.md
             !LICENSE.md
-            !vendor/**
-            !private/**
-            !frontend/test-results/**
