@@ -1,5 +1,6 @@
 import {Component, OnInit} from '@angular/core';
 import {CommonModule} from '@angular/common';
+import {RouterModule} from '@angular/router';
 import {FastenApiService} from '../../services/fasten-api.service';
 import {ServerLogs} from '../../models/fasten/server-logs';
 import {LoadingSpinnerComponent} from '../../components/loading-spinner/loading-spinner.component';
@@ -9,7 +10,7 @@ import {LoadingSpinnerComponent} from '../../components/loading-spinner/loading-
 // the admin role.
 @Component({
   standalone: true,
-  imports: [CommonModule, LoadingSpinnerComponent],
+  imports: [CommonModule, RouterModule, LoadingSpinnerComponent],
   selector: 'app-admin-dashboard',
   templateUrl: './admin-dashboard.component.html',
   styleUrls: ['./admin-dashboard.component.scss'],

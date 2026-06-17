@@ -1,5 +1,6 @@
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {of, throwError} from 'rxjs';
+import {RouterTestingModule} from '@angular/router/testing';
 
 import {AdminDashboardComponent} from './admin-dashboard.component';
 import {FastenApiService} from '../../services/fasten-api.service';
@@ -14,7 +15,7 @@ describe('AdminDashboardComponent', () => {
     api.getServerLogs.and.returnValue(of({configured: true, path: '/var/log/fasten.log', lines: ['a', 'b']}));
 
     await TestBed.configureTestingModule({
-      imports: [AdminDashboardComponent],
+      imports: [AdminDashboardComponent, RouterTestingModule],
       providers: [{provide: FastenApiService, useValue: api}],
     }).compileComponents();
 
@@ -35,5 +36,13 @@ describe('AdminDashboardComponent', () => {
     component.loadLogs();
     expect(component.logsErrored).toBeTrue();
     expect(component.logsLoading).toBeFalse();
+  });
+
+  // Regression guard: the card buttons are routerLinks; if RouterModule isn't imported they render as
+  // dead <a> with no href and clicking does nothing. Assert the links actually resolve to hrefs.
+  it('renders working router links for the admin cards', () => {
+    const hrefs = Array.from(fixture.nativeElement.querySelectorAll('a[href]')).map((a: any) => a.getAttribute('href'));
+    expect(hrefs).toContain('/sandbox');
+    expect(hrefs).toContain('/admin/provider-catalog');
   });
 });
