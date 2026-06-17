@@ -1,0 +1,85 @@
+<div class="az-content-body">
+  <div class="d-flex justify-content-between align-items-start mg-b-20">
+    <div>
+      <h4 class="mg-b-5"><i class="fas fa-clinic-medical"></i>&nbsp; Provider Catalog</h4>
+      <p class="tx-gray-500 mg-b-0">Providers patients can connect to from the Sources page. They pick one and sign in with their provider account — they never see the <code>client_id</code>/<code>client_secret</code> you enter here. Admin-only.</p>
+    </div>
+    <a routerLink="/admin" class="btn btn-sm btn-outline-secondary"><i class="fas fa-arrow-left mg-r-5"></i> Admin Dashboard</a>
+  </div>
+
+  <div *ngIf="errorMsg" class="alert alert-danger" role="alert"><strong>Error:</strong> {{errorMsg}}</div>
+  <div *ngIf="successMsg" class="alert alert-success" role="alert">{{successMsg}}</div>
+
+  <!-- Create / edit form -->
+  <div class="card mg-b-20" *ngIf="showForm">
+    <div class="card-header"><h6 class="card-title mg-b-0">{{ editingId ? 'Edit provider' : 'Add provider' }}</h6></div>
+    <div class="card-body">
+      <div class="row">
+        <div class="col-md-6 form-group mg-b-15">
+          <label class="form-label" for="pc-display">Display name</label>
+          <input id="pc-display" name="display" type="text" class="form-control" placeholder="Connect Medicare / Blue Button" [(ngModel)]="form.display">
+        </div>
+        <div class="col-md-6 form-group mg-b-15">
+          <label class="form-label" for="pc-url">FHIR base URL</label>
+          <input id="pc-url" name="api_endpoint_base_url" type="url" class="form-control" placeholder="https://sandbox.bluebutton.cms.gov/v2/fhir" [(ngModel)]="form.api_endpoint_base_url">
+        </div>
+      </div>
+      <div class="form-group mg-b-15">
+        <label class="form-label" for="pc-scopes">Scopes</label>
+        <input id="pc-scopes" name="scopes" type="text" class="form-control" placeholder="openid profile launch/patient patient/Patient.read …" [(ngModel)]="form.scopes">
+      </div>
+      <div class="row">
+        <div class="col-md-6 form-group mg-b-15">
+          <label class="form-label" for="pc-client-id">Client ID</label>
+          <input id="pc-client-id" name="client_id" type="text" class="form-control" autocomplete="off" [(ngModel)]="form.client_id">
+        </div>
+        <div class="col-md-6 form-group mg-b-15">
+          <label class="form-label" for="pc-client-secret">Client Secret <small class="tx-gray-500">(confidential providers only)</small></label>
+          <input id="pc-client-secret" name="client_secret" type="password" class="form-control" autocomplete="off"
+                 [placeholder]="editingId ? 'leave blank to keep the stored secret' : 'only for confidential providers (e.g. Blue Button)'" [(ngModel)]="form.client_secret">
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-6 form-group mg-b-15">
+          <label class="form-label" for="pc-logo">Brand logo URL <small class="tx-gray-500">(optional)</small></label>
+          <input id="pc-logo" name="brand_logo_url" type="url" class="form-control" [(ngModel)]="form.brand_logo_url">
+        </div>
+        <div class="col-md-6 form-group mg-b-15 d-flex align-items-end">
+          <div class="custom-control custom-checkbox">
+            <input id="pc-enabled" name="enabled" type="checkbox" class="custom-control-input" [(ngModel)]="form.enabled">
+            <label class="custom-control-label" for="pc-enabled">Enabled (visible to patients on the Sources page)</label>
+          </div>
+        </div>
+      </div>
+      <button type="button" class="btn btn-az-primary mg-r-5" (click)="save()">{{ editingId ? 'Save changes' : 'Add provider' }}</button>
+      <button type="button" class="btn btn-outline-secondary" (click)="cancel()">Cancel</button>
+    </div>
+  </div>
+
+  <button *ngIf="!showForm" type="button" class="btn btn-az-primary mg-b-15" (click)="newEntry()"><i class="fas fa-plus mg-r-5"></i> Add provider</button>
+
+  <app-loading-spinner *ngIf="loading" loadingTitle="Loading providers..."></app-loading-spinner>
+
+  <div *ngIf="!loading && !entries.length" class="alert alert-info">No providers configured yet. Add one above — the seeded Blue Button / Epic templates start disabled until you add a Client ID and enable them.</div>
+
+  <div class="table-responsive" *ngIf="!loading && entries.length">
+    <table class="table table-hover">
+      <thead>
+        <tr><th>Provider</th><th>FHIR base URL</th><th>Client ID</th><th>Secret</th><th>Status</th><th class="text-right">Actions</th></tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let entry of entries">
+          <td>{{ entry.display }}</td>
+          <td class="tx-12 tx-gray-600">{{ entry.api_endpoint_base_url }}</td>
+          <td class="tx-12">{{ entry.client_id || '—' }}</td>
+          <td><span class="badge" [ngClass]="entry.has_client_secret ? 'badge-info' : 'badge-secondary'">{{ entry.has_client_secret ? 'set' : 'none' }}</span></td>
+          <td><span class="badge" [ngClass]="entry.enabled ? 'badge-success' : 'badge-secondary'">{{ entry.enabled ? 'enabled' : 'disabled' }}</span></td>
+          <td class="text-right">
+            <button type="button" class="btn btn-sm btn-outline-az-primary mg-r-5" (click)="editEntry(entry)">Edit</button>
+            <button type="button" class="btn btn-sm btn-outline-danger" (click)="remove(entry)">Delete</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

@@ -32,7 +32,7 @@ import {BackgroundJob, BackgroundJobSyncData} from '../models/fasten/background-
 import {SupportRequest} from '../models/fasten/support-request';
 import {SmartConnectRequest} from '../models/fasten/smart-connect-request';
 import {SmartAuthorizeRequest, SmartAuthorizeResponse} from '../models/fasten/smart-authorize';
-import {ConnectableProvider} from '../models/fasten/provider-catalog';
+import {ConnectableProvider, ProviderCatalogEntry, ProviderCatalogEntryRequest} from '../models/fasten/provider-catalog';
 import {
   List
 } from 'fhir/r4';
@@ -285,6 +285,28 @@ export class FastenApiService {
           return {summary: response.data, source: response.source}
         })
       );
+  }
+
+  // ---- Provider catalog admin CRUD (#310, admin-gated) ------------------------------------------
+  // The backend enforces the admin role on every one of these; the secret is never returned.
+
+  listProviderCatalogEntries(): Observable<ProviderCatalogEntry[]> {
+    return this._httpClient.get<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/provider-catalog`)
+      .pipe(map((response: ResponseWrapper) => (response.data || []) as ProviderCatalogEntry[]));
+  }
+
+  createProviderCatalogEntry(req: ProviderCatalogEntryRequest): Observable<ProviderCatalogEntry> {
+    return this._httpClient.post<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/provider-catalog`, req)
+      .pipe(map((response: ResponseWrapper) => response.data as ProviderCatalogEntry));
+  }
+
+  updateProviderCatalogEntry(id: string, req: ProviderCatalogEntryRequest): Observable<ProviderCatalogEntry> {
+    return this._httpClient.put<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/provider-catalog/${encodeURIComponent(id)}`, req)
+      .pipe(map((response: ResponseWrapper) => response.data as ProviderCatalogEntry));
+  }
+
+  deleteProviderCatalogEntry(id: string): Observable<any> {
+    return this._httpClient.delete<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/provider-catalog/${encodeURIComponent(id)}`);
   }
 
   createManualSource(file: File): Observable<Source> {

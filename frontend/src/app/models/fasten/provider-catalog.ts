@@ -7,3 +7,31 @@ export interface ConnectableProvider {
   display: string;
   brand_logo_url?: string;
 }
+
+// ProviderCatalogEntry is the admin view of a catalog entry. The client_secret is NEVER returned by
+// the backend (json:"-"); `has_client_secret` tells the admin whether one is stored. Mirrors backend
+// models.ProviderCatalogEntry (GET /api/secure/provider-catalog). #310.
+export interface ProviderCatalogEntry {
+  id?: string;
+  display: string;
+  api_endpoint_base_url: string;
+  scopes: string;
+  client_id: string;
+  has_client_secret?: boolean;
+  platform_type?: string;
+  brand_logo_url?: string;
+  enabled: boolean;
+}
+
+// ProviderCatalogEntryRequest is the admin create/update payload. client_secret is write-only: send it
+// to set/replace; omit (empty) on update to keep the stored secret.
+export interface ProviderCatalogEntryRequest {
+  display: string;
+  api_endpoint_base_url: string;
+  scopes: string;
+  client_id: string;
+  client_secret?: string;
+  platform_type?: string;
+  brand_logo_url?: string;
+  enabled: boolean;
+}
