@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"net/http"
@@ -9,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/fastenhealth/fasten-onprem/backend/pkg"
+	"github.com/fastenhealth/fasten-onprem/backend/pkg/applog"
 	mock_config "github.com/fastenhealth/fasten-onprem/backend/pkg/config/mock"
 	"github.com/fastenhealth/fasten-onprem/backend/pkg/database"
 	"github.com/fastenhealth/fasten-onprem/backend/pkg/event_bus"
@@ -24,7 +26,6 @@ type AdminHandlerTestSuite struct {
 	suite.Suite
 	MockCtrl      *gomock.Controller
 	TestDatabase  *os.File
-	LogFile       *os.File
 	AppConfig     *mock_config.MockInterface
 	AppRepository database.DatabaseRepository
 }
@@ -34,9 +35,6 @@ func (suite *AdminHandlerTestSuite) SetupSuite() {
 	dbFile, err := os.CreateTemp("", "admin.*.db")
 	require.NoError(suite.T(), err)
 	suite.TestDatabase = dbFile
-	logFile, err := os.CreateTemp("", "admin.*.log")
-	require.NoError(suite.T(), err)
-	suite.LogFile = logFile
 
 	cfg := mock_config.NewMockInterface(suite.MockCtrl)
 	cfg.EXPECT().GetString("database.location").Return(suite.TestDatabase.Name()).AnyTimes()
@@ -45,7 +43,6 @@ func (suite *AdminHandlerTestSuite) SetupSuite() {
 	cfg.EXPECT().GetString("log.level").Return("INFO").AnyTimes()
 	cfg.EXPECT().GetBool("database.validation_mode").Return(false).AnyTimes()
 	cfg.EXPECT().GetBool("database.encryption.enabled").Return(false).AnyTimes()
-	cfg.EXPECT().GetString("log.file").Return(suite.LogFile.Name()).AnyTimes()
 	suite.AppConfig = cfg
 
 	repo, err := database.NewRepository(cfg, logrus.WithField("test", suite.T().Name()), event_bus.NewNoopEventBusServer())
@@ -58,29 +55,34 @@ func (suite *AdminHandlerTestSuite) SetupSuite() {
 func (suite *AdminHandlerTestSuite) TearDownSuite() {
 	suite.MockCtrl.Finish()
 	os.Remove(suite.TestDatabase.Name())
-	os.Remove(suite.LogFile.Name())
 }
 
-func (suite *AdminHandlerTestSuite) ctxFor(username string, w *httptest.ResponseRecorder) *gin.Context {
+func (suite *AdminHandlerTestSuite) ctxFor(username string, w *httptest.ResponseRecorder, req *http.Request) *gin.Context {
 	ctx, _ := gin.CreateTestContext(w)
 	ctx.Set(pkg.ContextKeyTypeLogger, logrus.WithField("test", suite.T().Name()))
 	ctx.Set(pkg.ContextKeyTypeDatabase, suite.AppRepository)
 	ctx.Set(pkg.ContextKeyTypeConfig, suite.AppConfig)
 	ctx.Set(pkg.ContextKeyTypeAuthUsername, username)
-	ctx.Request = httptest.NewRequest("GET", "/admin/logs", nil)
+	ctx.Request = req
 	return ctx
 }
 
 func (suite *AdminHandlerTestSuite) TestGetServerLogs_NonAdminForbidden() {
 	w := httptest.NewRecorder()
-	GetServerLogs(suite.ctxFor("reg_user", w))
+	GetServerLogs(suite.ctxFor("reg_user", w, httptest.NewRequest("GET", "/admin/logs", nil)))
 	require.Equal(suite.T(), http.StatusForbidden, w.Code)
 }
 
-func (suite *AdminHandlerTestSuite) TestGetServerLogs_AdminReadsTail() {
-	require.NoError(suite.T(), os.WriteFile(suite.LogFile.Name(), []byte("line one\nline two\nline three\n"), 0644))
+func (suite *AdminHandlerTestSuite) TestGetServerLogs_AdminReadsRingBuffer() {
+	// Install the in-memory buffer on a fresh logger and emit some lines.
+	l := logrus.New()
+	l.SetLevel(logrus.InfoLevel)
+	applog.Install(l, 100)
+	l.Info("alpha entry")
+	l.Warn("bravo entry")
+
 	w := httptest.NewRecorder()
-	GetServerLogs(suite.ctxFor("admin_user", w))
+	GetServerLogs(suite.ctxFor("admin_user", w, httptest.NewRequest("GET", "/admin/logs", nil)))
 	require.Equal(suite.T(), http.StatusOK, w.Code)
 
 	var resp struct {
@@ -89,28 +91,60 @@ func (suite *AdminHandlerTestSuite) TestGetServerLogs_AdminReadsTail() {
 	}
 	require.NoError(suite.T(), json.Unmarshal(w.Body.Bytes(), &resp))
 	require.True(suite.T(), resp.Success)
-	require.True(suite.T(), resp.Data.Configured)
-	require.Equal(suite.T(), []string{"line one", "line two", "line three"}, resp.Data.Lines)
+	require.Equal(suite.T(), "info", resp.Data.Level)
+	require.NotEmpty(suite.T(), resp.Data.ValidLevels)
+	require.Contains(suite.T(), resp.Data.Lines, findLine(resp.Data.Lines, "alpha entry"))
+	require.Contains(suite.T(), joinLines(resp.Data.Lines), "bravo entry")
 }
 
-// when log.file is unset, it's not an error — the card just reports "not configured".
-func (suite *AdminHandlerTestSuite) TestGetServerLogs_AdminNotConfigured() {
-	noLogCfg := mock_config.NewMockInterface(suite.MockCtrl)
-	noLogCfg.EXPECT().GetString("log.file").Return("").AnyTimes()
+func (suite *AdminHandlerTestSuite) TestSetLogLevel_AdminChangesLevel() {
+	l := logrus.New()
+	l.SetLevel(logrus.InfoLevel)
+	applog.Install(l, 100)
 
 	w := httptest.NewRecorder()
-	ctx := suite.ctxFor("admin_user", w)
-	ctx.Set(pkg.ContextKeyTypeConfig, noLogCfg)
-	GetServerLogs(ctx)
-	require.Equal(suite.T(), http.StatusOK, w.Code)
+	req := httptest.NewRequest("PUT", "/admin/log-level", bytes.NewBufferString(`{"level":"debug"}`))
+	req.Header.Set("Content-Type", "application/json")
+	SetLogLevel(suite.ctxFor("admin_user", w, req))
 
-	var resp struct {
-		Success bool               `json:"success"`
-		Data    ServerLogsResponse `json:"data"`
+	require.Equal(suite.T(), http.StatusOK, w.Code)
+	require.Equal(suite.T(), "debug", applog.Level())
+}
+
+func (suite *AdminHandlerTestSuite) TestSetLogLevel_RejectsInvalidAndNonAdmin() {
+	l := logrus.New()
+	applog.Install(l, 100)
+
+	// non-admin forbidden
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest("PUT", "/admin/log-level", bytes.NewBufferString(`{"level":"debug"}`))
+	req.Header.Set("Content-Type", "application/json")
+	SetLogLevel(suite.ctxFor("reg_user", w, req))
+	require.Equal(suite.T(), http.StatusForbidden, w.Code)
+
+	// admin + bad level -> 400
+	w = httptest.NewRecorder()
+	req = httptest.NewRequest("PUT", "/admin/log-level", bytes.NewBufferString(`{"level":"nonsense"}`))
+	req.Header.Set("Content-Type", "application/json")
+	SetLogLevel(suite.ctxFor("admin_user", w, req))
+	require.Equal(suite.T(), http.StatusBadRequest, w.Code)
+}
+
+func joinLines(lines []string) string {
+	out := ""
+	for _, l := range lines {
+		out += l + "\n"
 	}
-	require.NoError(suite.T(), json.Unmarshal(w.Body.Bytes(), &resp))
-	require.False(suite.T(), resp.Data.Configured)
-	require.Empty(suite.T(), resp.Data.Lines)
+	return out
+}
+
+func findLine(lines []string, substr string) string {
+	for _, l := range lines {
+		if bytes.Contains([]byte(l), []byte(substr)) {
+			return l
+		}
+	}
+	return ""
 }
 
 func TestAdminHandlerTestSuite(t *testing.T) {

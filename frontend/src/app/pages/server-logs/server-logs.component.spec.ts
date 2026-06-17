@@ -11,8 +11,9 @@ describe('ServerLogsComponent', () => {
   let api: jasmine.SpyObj<FastenApiService>;
 
   beforeEach(async () => {
-    api = jasmine.createSpyObj('FastenApiService', ['getServerLogs']);
-    api.getServerLogs.and.returnValue(of({configured: true, path: '/var/log/fasten.log', lines: ['a', 'b']}));
+    api = jasmine.createSpyObj('FastenApiService', ['getServerLogs', 'setServerLogLevel']);
+    api.getServerLogs.and.returnValue(of({level: 'info', valid_levels: ['trace', 'debug', 'info', 'warn', 'error'], lines: ['a', 'b']}));
+    api.setServerLogLevel.and.returnValue(of({level: 'debug'}));
 
     await TestBed.configureTestingModule({
       imports: [ServerLogsComponent, RouterTestingModule],
@@ -24,12 +25,22 @@ describe('ServerLogsComponent', () => {
     fixture.detectChanges();
   });
 
-  it('loads logs on init and has a back-to-admin link', () => {
+  it('loads logs + level on init and has a back-to-admin link', () => {
     expect(api.getServerLogs).toHaveBeenCalled();
     expect(component.loading).toBeFalse();
+    expect(component.level).toBe('info');
     expect(component.logs?.lines.length).toBe(2);
     const hrefs = Array.from(fixture.nativeElement.querySelectorAll('a[href]')).map((a: any) => a.getAttribute('href'));
     expect(hrefs).toContain('/admin');
+  });
+
+  it('changes the running log level and reloads', () => {
+    // after the change, the reload reflects the new running level (as the server would report)
+    api.getServerLogs.and.returnValue(of({level: 'debug', valid_levels: ['trace', 'debug', 'info', 'warn', 'error'], lines: ['a', 'b', 'c']}));
+    component.onLevelChange('debug');
+    expect(api.setServerLogLevel).toHaveBeenCalledWith('debug');
+    expect(api.getServerLogs).toHaveBeenCalledTimes(2); // init + reload
+    expect(component.level).toBe('debug');
   });
 
   it('flags an error when the logs request fails', () => {
@@ -37,13 +48,5 @@ describe('ServerLogsComponent', () => {
     component.load();
     expect(component.errored).toBeTrue();
     expect(component.loading).toBeFalse();
-  });
-
-  // When log.file is unset the backend reports configured=false — the page explains how to enable it.
-  it('shows the not-configured message when logs are STDOUT-only', () => {
-    api.getServerLogs.and.returnValue(of({configured: false, lines: []}));
-    component.load();
-    fixture.detectChanges();
-    expect(fixture.nativeElement.textContent).toContain('STDOUT only');
   });
 });

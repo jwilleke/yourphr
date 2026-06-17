@@ -233,6 +233,7 @@ func (ae *AppEngine) Setup() (*gin.RouterGroup, *gin.Engine) {
 
 					//admin dashboard (#170) — handlers self-gate on the admin role
 					secure.GET("/admin/logs", handler.GetServerLogs)
+					secure.PUT("/admin/log-level", handler.SetLogLevel)
 
 					secure.POST("/practitioners", handler.CreatePractitioner)
 					secure.PUT("/practitioners/:practitionerId", handler.UpdatePractitioner)

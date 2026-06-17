@@ -197,7 +197,7 @@ export class FastenApiService {
       );
   }
 
-  //admin-only (#170): server logs for the Admin Dashboard
+  //admin-only (#170): server logs (in-memory ring buffer) for the Admin Dashboard
   getServerLogs(): Observable<ServerLogs> {
     return this._httpClient.get<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/admin/logs`)
       .pipe(
@@ -205,6 +205,12 @@ export class FastenApiService {
           return response.data as ServerLogs
         })
       );
+  }
+
+  //admin-only (#170): change the running server log level at runtime (resets to config on restart).
+  setServerLogLevel(level: string): Observable<{ level: string }> {
+    return this._httpClient.put<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/admin/log-level`, { level })
+      .pipe(map((response: ResponseWrapper) => response.data as { level: string }));
   }
 
   createSource(source: Source): Observable<any> {

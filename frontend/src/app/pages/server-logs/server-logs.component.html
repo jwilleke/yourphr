@@ -1,25 +1,30 @@
 <div class="az-content-body">
   <app-admin-back-link></app-admin-back-link>
 
-  <div class="d-flex justify-content-between align-items-start mg-b-20">
+  <div class="d-flex justify-content-between align-items-start mg-b-20 flex-wrap">
     <div>
       <h4 class="mg-b-5"><i class="fas fa-file-alt"></i>&nbsp; Server Logs</h4>
-      <p class="tx-gray-500 mg-b-0">The tail of the server log file. Admin-only — logs can contain sensitive operational detail.</p>
+      <p class="tx-gray-500 mg-b-0">Recent server log lines (kept in memory — always available). Admin-only; logs can contain sensitive operational detail.</p>
     </div>
-    <button class="btn btn-sm btn-outline-secondary" (click)="load()" [disabled]="loading"><i class="fas fa-sync mg-r-5"></i> Refresh</button>
+    <div class="d-flex align-items-center mg-t-5">
+      <label class="form-label mg-b-0 mg-r-10 tx-13" for="log-level">Log level</label>
+      <select id="log-level" class="form-control form-control-sm wd-auto mg-r-10"
+              [ngModel]="level" (ngModelChange)="onLevelChange($event)" [disabled]="levelSaving || loading">
+        <option *ngFor="let lvl of logs?.valid_levels" [value]="lvl">{{ lvl }}</option>
+      </select>
+      <button class="btn btn-sm btn-outline-secondary" (click)="load()" [disabled]="loading"><i class="fas fa-sync mg-r-5"></i> Refresh</button>
+    </div>
   </div>
+
+  <div *ngIf="levelMsg" class="alert alert-info py-2">{{ levelMsg }}</div>
 
   <app-loading-spinner *ngIf="loading" loadingTitle="Loading logs..."></app-loading-spinner>
 
   <div *ngIf="!loading && errored" class="alert alert-danger">Could not load server logs.</div>
 
-  <div *ngIf="!loading && !errored && logs && !logs.configured" class="alert alert-info">
-    Logs are written to STDOUT only. To view them here, set <code>log.file</code> in the server config (or the <code>--log-file</code> flag) and restart.
-  </div>
-
-  <ng-container *ngIf="!loading && !errored && logs?.configured">
-    <p class="tx-gray-500 tx-12 mg-b-5" *ngIf="logs?.path">{{ logs?.path }} · last {{ logs?.lines?.length || 0 }} lines</p>
+  <ng-container *ngIf="!loading && !errored">
+    <p class="tx-gray-500 tx-12 mg-b-5">running level <strong>{{ level }}</strong> · last {{ logs?.lines?.length || 0 }} lines</p>
     <pre *ngIf="logs?.lines?.length" class="admin-logs">{{ logs?.lines?.join('\n') }}</pre>
-    <p *ngIf="!logs?.lines?.length" class="tx-gray-500 mg-b-0">Log file is empty.</p>
+    <p *ngIf="!logs?.lines?.length" class="tx-gray-500 mg-b-0">No log lines captured yet. Activity will appear here as the server logs — lower the level to <code>debug</code> for more detail.</p>
   </ng-container>
 </div>

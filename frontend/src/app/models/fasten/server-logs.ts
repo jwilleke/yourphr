@@ -1,7 +1,8 @@
-// Response from GET /api/secure/admin/logs (admin-only). `configured` is false when the deployment
-// logs to STDOUT only (no log.file set), in which case `lines` is empty.
+// Response from GET /api/secure/admin/logs (admin-only). Logs are kept in an in-memory ring buffer on
+// the server, so recent lines are always available — no log.file, no restart. `level` is the running
+// log level; `valid_levels` are the selectable options for the UI.
 export interface ServerLogs {
-  configured: boolean;
-  path?: string;
+  level: string;
+  valid_levels: string[];
   lines: string[];
 }

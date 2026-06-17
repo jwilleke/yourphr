@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/analogj/go-util/utils"
+	"github.com/fastenhealth/fasten-onprem/backend/pkg/applog"
 	"github.com/fastenhealth/fasten-onprem/backend/pkg/config"
 	"github.com/fastenhealth/fasten-onprem/backend/pkg/database"
 	"github.com/fastenhealth/fasten-onprem/backend/pkg/errors"
@@ -222,6 +223,10 @@ func CreateLogger(appConfig config.Interface) (*logrus.Entry, *os.File, error) {
 	} else {
 		logger.Logger.SetLevel(logrus.InfoLevel)
 	}
+
+	// Keep the last N log lines in memory so the Admin Dashboard can always show recent logs and
+	// change the level at runtime — no log.file, no restart (#170 follow-up).
+	applog.Install(logger.Logger, 500)
 
 	var logFile *os.File
 	var err error
