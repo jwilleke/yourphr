@@ -5,6 +5,7 @@ import { of } from 'rxjs';
 import { PipesModule } from '../../pipes/pipes.module';
 import { FastenApiService } from '../../services/fasten-api.service';
 import { UserListComponent } from './user-list.component';
+import { AdminBackLinkComponent } from '../../components/admin-back-link/admin-back-link.component';
 
 describe('UserListComponent', () => {
   let component: UserListComponent;
@@ -15,7 +16,7 @@ describe('UserListComponent', () => {
     mockedFastenApiService = jasmine.createSpyObj('FastenApiService', { 'getAllUsers': of([{}]) })
     await TestBed.configureTestingModule({
       declarations: [UserListComponent],
-      imports: [PipesModule, RouterTestingModule],
+      imports: [PipesModule, RouterTestingModule, AdminBackLinkComponent],
       providers: [{
         provide: FastenApiService,
         useValue: mockedFastenApiService

@@ -1,10 +1,9 @@
 <div class="az-content-body">
-  <div class="d-flex justify-content-between align-items-start mg-b-20">
-    <div>
-      <h4 class="mg-b-5"><i class="fas fa-clinic-medical"></i>&nbsp; Provider Catalog</h4>
-      <p class="tx-gray-500 mg-b-0">Providers patients can connect to from the Sources page. They pick one and sign in with their provider account — they never see the <code>client_id</code>/<code>client_secret</code> you enter here. Admin-only.</p>
-    </div>
-    <a routerLink="/admin" class="btn btn-sm btn-outline-secondary"><i class="fas fa-arrow-left mg-r-5"></i> Admin Dashboard</a>
+  <app-admin-back-link></app-admin-back-link>
+
+  <div class="mg-b-20">
+    <h4 class="mg-b-5"><i class="fas fa-clinic-medical"></i>&nbsp; Provider Catalog</h4>
+    <p class="tx-gray-500 mg-b-0">Providers patients can connect to from the Sources page. They pick one and sign in with their provider account — they never see the <code>client_id</code>/<code>client_secret</code> you enter here. Admin-only.</p>
   </div>
 
   <div *ngIf="errorMsg" class="alert alert-danger" role="alert"><strong>Error:</strong> {{errorMsg}}</div>

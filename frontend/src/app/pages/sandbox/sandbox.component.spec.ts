@@ -8,6 +8,7 @@ import { HttpClient, provideHttpClient, withInterceptorsFromDi } from '@angular/
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { LoadingSpinnerComponent } from 'src/app/components/loading-spinner/loading-spinner.component';
 import { MedicalSourcesConnectedComponent } from 'src/app/components/medical-sources-connected/medical-sources-connected.component';
+import { AdminBackLinkComponent } from 'src/app/components/admin-back-link/admin-back-link.component';
 import { of } from 'rxjs';
 
 describe('SandboxComponent', () => {
@@ -17,7 +18,7 @@ describe('SandboxComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
     declarations: [SandboxComponent, MedicalSourcesConnectedComponent],
-    imports: [RouterTestingModule, FormsModule, ReactiveFormsModule, LoadingSpinnerComponent],
+    imports: [RouterTestingModule, FormsModule, ReactiveFormsModule, LoadingSpinnerComponent, AdminBackLinkComponent],
     providers: [
         {
             provide: HTTP_CLIENT_TOKEN,

@@ -5,6 +5,7 @@ import {RouterModule} from '@angular/router';
 import {FastenApiService} from '../../services/fasten-api.service';
 import {ProviderCatalogEntry, ProviderCatalogEntryRequest} from '../../models/fasten/provider-catalog';
 import {LoadingSpinnerComponent} from '../../components/loading-spinner/loading-spinner.component';
+import {AdminBackLinkComponent} from '../../components/admin-back-link/admin-back-link.component';
 import {extractErrorFromResponse} from '../../../lib/utils/error_extract';
 
 // Admin Provider Catalog (#310): the admin-only CRUD UI for the connectable-provider catalog that
@@ -13,7 +14,7 @@ import {extractErrorFromResponse} from '../../../lib/utils/error_extract';
 // Dashboard; the route is gated by IsAdminAuthGuard and every backend endpoint self-gates on admin.
 @Component({
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, LoadingSpinnerComponent],
+  imports: [CommonModule, FormsModule, RouterModule, LoadingSpinnerComponent, AdminBackLinkComponent],
   selector: 'app-provider-catalog-admin',
   templateUrl: './provider-catalog-admin.component.html',
 })

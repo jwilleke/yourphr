@@ -1,22 +1,15 @@
 import {ComponentFixture, TestBed} from '@angular/core/testing';
-import {of, throwError} from 'rxjs';
 import {RouterTestingModule} from '@angular/router/testing';
 
 import {AdminDashboardComponent} from './admin-dashboard.component';
-import {FastenApiService} from '../../services/fasten-api.service';
 
 describe('AdminDashboardComponent', () => {
   let component: AdminDashboardComponent;
   let fixture: ComponentFixture<AdminDashboardComponent>;
-  let api: jasmine.SpyObj<FastenApiService>;
 
   beforeEach(async () => {
-    api = jasmine.createSpyObj('FastenApiService', ['getServerLogs']);
-    api.getServerLogs.and.returnValue(of({configured: true, path: '/var/log/fasten.log', lines: ['a', 'b']}));
-
     await TestBed.configureTestingModule({
       imports: [AdminDashboardComponent, RouterTestingModule],
-      providers: [{provide: FastenApiService, useValue: api}],
     }).compileComponents();
 
     fixture = TestBed.createComponent(AdminDashboardComponent);
@@ -24,25 +17,16 @@ describe('AdminDashboardComponent', () => {
     fixture.detectChanges();
   });
 
-  it('creates and loads logs on init', () => {
+  it('should create', () => {
     expect(component).toBeTruthy();
-    expect(api.getServerLogs).toHaveBeenCalled();
-    expect(component.logsLoading).toBeFalse();
-    expect(component.logs?.lines.length).toBe(2);
   });
 
-  it('flags an error when the logs request fails', () => {
-    api.getServerLogs.and.returnValue(throwError(() => new Error('boom')));
-    component.loadLogs();
-    expect(component.logsErrored).toBeTrue();
-    expect(component.logsLoading).toBeFalse();
-  });
-
-  // Regression guard: the card buttons are routerLinks; if RouterModule isn't imported they render as
-  // dead <a> with no href and clicking does nothing. Assert the links actually resolve to hrefs.
-  it('renders working router links for the admin cards', () => {
+  // Regression guard: the cards are routerLinks; without RouterModule they render as dead <a> with no
+  // href (the bug Jim hit). Assert each admin card link resolves to a real href.
+  it('renders working router links for every admin card', () => {
     const hrefs = Array.from(fixture.nativeElement.querySelectorAll('a[href]')).map((a: any) => a.getAttribute('href'));
     expect(hrefs).toContain('/sandbox');
     expect(hrefs).toContain('/admin/provider-catalog');
+    expect(hrefs).toContain('/admin/logs');
   });
 });

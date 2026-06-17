@@ -6,12 +6,13 @@ import { ToastService } from '../../services/toast.service';
 import { ToastNotification, ToastType } from '../../models/fasten/toast';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { AdminBackLinkComponent } from '../../components/admin-back-link/admin-back-link.component';
 
 @Component({
     selector: 'app-user-create',
     templateUrl: './user-create.component.html',
     styleUrls: ['./user-create.component.scss'],
-    imports: [CommonModule, ReactiveFormsModule]
+    imports: [CommonModule, ReactiveFormsModule, AdminBackLinkComponent]
 })
 export class UserCreateComponent implements OnInit {
   userForm: FormGroup;

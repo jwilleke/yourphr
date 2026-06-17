@@ -20,6 +20,7 @@ import { AccountProfileComponent } from './pages/account-profile/account-profile
 import { ProceduresComponent } from './pages/procedures/procedures.component';
 import { AdminDashboardComponent } from './pages/admin-dashboard/admin-dashboard.component';
 import { ProviderCatalogAdminComponent } from './pages/provider-catalog-admin/provider-catalog-admin.component';
+import { ServerLogsComponent } from './pages/server-logs/server-logs.component';
 import { MedicalSourcesComponent } from './pages/medical-sources/medical-sources.component';
 import { SandboxComponent } from './pages/sandbox/sandbox.component';
 import { PatientProfileComponent } from './pages/patient-profile/patient-profile.component';
@@ -73,6 +74,7 @@ const routes: Routes = [
   { path: 'procedures', component: ProceduresComponent, canActivate: [ IsAuthenticatedAuthGuard ] },
   { path: 'admin', component: AdminDashboardComponent, canActivate: [ IsAuthenticatedAuthGuard, IsAdminAuthGuard ] },
   { path: 'admin/provider-catalog', component: ProviderCatalogAdminComponent, canActivate: [ IsAuthenticatedAuthGuard, IsAdminAuthGuard ] },
+  { path: 'admin/logs', component: ServerLogsComponent, canActivate: [ IsAuthenticatedAuthGuard, IsAdminAuthGuard ] },
   { path: 'labs', component: ReportLabsComponent, canActivate: [ IsAuthenticatedAuthGuard ] },
   { path: 'labs/report/:source_id/:resource_type/:resource_id', component: ReportLabsComponent, canActivate: [ IsAuthenticatedAuthGuard ] },
 
