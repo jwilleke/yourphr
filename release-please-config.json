@@ -6,7 +6,7 @@
       "release-type": "simple",
       "package-name": "yourphr",
       "changelog-path": "CHANGELOG.md",
-      "versioning": "always-bump-patch",
+      "versioning": "default",
       "include-v-in-tag": true,
       "include-component-in-tag": false,
       "draft": false,

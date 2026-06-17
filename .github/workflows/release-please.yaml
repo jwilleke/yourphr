@@ -8,11 +8,11 @@ name: release-please
 # Merging that PR creates the git tag (vX.Y.Z) AND a GitHub Release. Nothing is
 # released until you merge the PR, so release cadence is entirely in your hands.
 #
-# Bump policy: `versioning: always-bump-patch` in release-please-config.json means
-# every release is a PATCH bump (e.g. 1.1.3 -> 1.1.4). Cadence is controlled by the
-# manual trigger above (we don't cut a release per fix). A MINOR or MAJOR bump is
-# NOT automatic under this policy — make a commit with a `Release-As: 1.2.0` (or
-# `2.0.0`) footer when you intend a minor/major.
+# Bump policy: `versioning: default` in release-please-config.json — the bump follows the
+# Conventional Commit types since the last release: a `feat:` -> MINOR (1.3.0 -> 1.4.0), a
+# `feat!:` / `BREAKING CHANGE:` -> MAJOR (-> 2.0.0). PATCH bumps are NOT done on their own;
+# only do a patch when explicitly directed via a `Release-As: 1.4.1` footer. Cadence is the
+# manual trigger above, so you cut a release when there's minor/major-worthy work.
 #
 # NOTE (one-time repo setting): Settings -> Actions -> General -> Workflow permissions
 # must have "Allow GitHub Actions to create and approve pull requests" enabled (done),
