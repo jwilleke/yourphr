@@ -4,7 +4,7 @@
 
 ## 🔴 P0 — Security & Critical
 
-- **`hono` 4.12.x — 5 Dependabot alerts** (DA#192 high + DA#190/191/193/194 medium), all fixed by **4.12.25**. **Dependabot PR [#311](https://github.com/jwilleke/yourphr/pull/311) already bumps to 4.12.25** — merging it clears the cluster. `development`-scope, Lambda/Windows-specific (low real-risk for this self-hosted app), but free to take. Code-scanning: 0 open.
+- None actionable. `hono` → 4.12.25 **merged** ([#311](https://github.com/jwilleke/yourphr/pull/311)); the 5 alerts (DA#190–194) auto-clear once GitHub re-indexes the dependency graph (same lag as the Angular cluster). Code-scanning: 0 open.
 
 ## 🟠 P1
 
