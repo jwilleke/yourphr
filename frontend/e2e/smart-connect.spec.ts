@@ -16,7 +16,9 @@ test('SMART connect opens the login popup (window.open) and handles the result',
   const health = trackPageHealth(page);
   await login(page);
 
-  await page.goto('sources');
+  // BYO SMART connect moved off /sources to the admin-only /sandbox page (ab451100); the e2e user is
+  // the first account, which the backend assigns the admin role.
+  await page.goto('sandbox');
   await page.getByRole('button', { name: 'Connect a SMART source' }).click();
 
   const modal = page.locator('.modal-content', { hasText: 'Connect a SMART source' });
