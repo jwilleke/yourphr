@@ -25,6 +25,10 @@ describe('ServerLogsComponent', () => {
     fixture.detectChanges();
   });
 
+  afterEach(() => {
+    component.ngOnDestroy(); // stop the live-tail interval so it doesn't leak between tests
+  });
+
   it('loads logs + level on init and has a back-to-admin link', () => {
     expect(api.getServerLogs).toHaveBeenCalled();
     expect(component.loading).toBeFalse();
@@ -48,5 +52,13 @@ describe('ServerLogsComponent', () => {
     component.load();
     expect(component.errored).toBeTrue();
     expect(component.loading).toBeFalse();
+  });
+
+  it('live tail can be paused and resumed', () => {
+    expect(component.live).toBeTrue();
+    component.toggleLive();
+    expect(component.live).toBeFalse();
+    component.toggleLive();
+    expect(component.live).toBeTrue();
   });
 });

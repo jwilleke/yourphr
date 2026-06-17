@@ -12,6 +12,9 @@
               [ngModel]="level" (ngModelChange)="onLevelChange($event)" [disabled]="levelSaving || loading">
         <option *ngFor="let lvl of logs?.valid_levels" [value]="lvl">{{ lvl }}</option>
       </select>
+      <button class="btn btn-sm mg-r-5" [ngClass]="live ? 'btn-success' : 'btn-outline-secondary'" (click)="toggleLive()">
+        <i class="fas mg-r-5" [ngClass]="live ? 'fa-circle' : 'fa-pause'"></i> {{ live ? 'Live' : 'Paused' }}
+      </button>
       <button class="btn btn-sm btn-outline-secondary" (click)="load()" [disabled]="loading"><i class="fas fa-sync mg-r-5"></i> Refresh</button>
     </div>
   </div>
