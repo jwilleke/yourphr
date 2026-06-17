@@ -47,8 +47,12 @@ jobs:
       - name: Normalize generated CHANGELOG to the markdown rulebook
         if: ${{ steps.release.outputs.prs_created == 'true' }}
         env:
-          RELEASE_BRANCH: ${{ fromJSON(steps.release.outputs.pr).headBranchName }}
+          # Pass the PR JSON as a plain string and parse it in bash. Do NOT use fromJSON() here: on a
+          # release-phase run (PR already merged) outputs.pr is empty and fromJSON('') fails the whole
+          # job at template eval, even though `if` is false.
+          PR_JSON: ${{ steps.release.outputs.pr }}
         run: |
+          RELEASE_BRANCH="$(printf '%s' "$PR_JSON" | jq -r '.headBranchName')"
           git fetch origin "$RELEASE_BRANCH"
           git checkout "$RELEASE_BRANCH"
           npx --yes markdownlint-cli2 --fix CHANGELOG.md || true
