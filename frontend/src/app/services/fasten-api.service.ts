@@ -32,6 +32,7 @@ import {BackgroundJob, BackgroundJobSyncData} from '../models/fasten/background-
 import {SupportRequest} from '../models/fasten/support-request';
 import {SmartConnectRequest} from '../models/fasten/smart-connect-request';
 import {SmartAuthorizeRequest, SmartAuthorizeResponse} from '../models/fasten/smart-authorize';
+import {ConnectableProvider} from '../models/fasten/provider-catalog';
 import {
   List
 } from 'fhir/r4';
@@ -239,6 +240,45 @@ export class FastenApiService {
   // browser never handles tokens. See backend handler.ConnectSource (#51) and the relay (#50).
   connectSource(req: SmartConnectRequest): Observable<any> {
     return this._httpClient.post<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/source/connect`, req)
+      .pipe(
+        map((response: ResponseWrapper) => {
+          // @ts-ignore
+          return {summary: response.data, source: response.source}
+        })
+      );
+  }
+
+  // ---- Provider catalog (#306 / #291) -----------------------------------------------------------
+  // The patient connects by picking an admin-configured provider; client_id/client_secret stay
+  // backend-only and are NEVER sent from or returned to the browser. See backend handler.*Catalog*.
+
+  // listConnectableProviders returns the enabled catalog entries as a credential-free picker
+  // (id + display + logo only).
+  listConnectableProviders(): Observable<ConnectableProvider[]> {
+    return this._httpClient.get<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/provider-catalog/connectable`)
+      .pipe(map((response: ResponseWrapper) => (response.data || []) as ConnectableProvider[]));
+  }
+
+  // authorizeSourceFromCatalog builds the PKCE authorize URL for a catalog entry. The request carries
+  // ONLY redirect_uri — the backend fills client_id/scopes/FHIR base from the catalog server-side.
+  authorizeSourceFromCatalog(catalogId: string, req: { redirect_uri: string }): Observable<SmartAuthorizeResponse> {
+    return this._httpClient.post<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/provider-catalog/${encodeURIComponent(catalogId)}/authorize`, req)
+      .pipe(
+        map((response: any) => {
+          return {
+            authorize_url: response.authorize_url,
+            state: response.state,
+            code_verifier: response.code_verifier,
+            login_wait_seconds: response.login_wait_seconds,
+          } as SmartAuthorizeResponse
+        })
+      );
+  }
+
+  // connectSourceFromCatalog completes the connection for a catalog entry. The request carries NO
+  // client_id/client_secret — the backend resolves them from the catalog and does the token exchange.
+  connectSourceFromCatalog(catalogId: string, req: { state: string, code_verifier: string, redirect_uri: string, display?: string }): Observable<any> {
+    return this._httpClient.post<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/provider-catalog/${encodeURIComponent(catalogId)}/connect`, req)
       .pipe(
         map((response: ResponseWrapper) => {
           // @ts-ignore

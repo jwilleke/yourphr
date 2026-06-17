@@ -19,6 +19,13 @@ import * as _ from 'lodash';
 import {PatientAccessBrand} from '../../models/patient-access-brands';
 import {FormRequestHealthSystemComponent} from '../../components/form-request-health-system/form-request-health-system.component';
 import {extractErrorFromResponse} from '../../../lib/utils/error_extract';
+import {ConnectableProvider} from '../../models/fasten/provider-catalog';
+import {SmartAuthorizeResponse} from '../../models/fasten/smart-authorize';
+
+// Max time to wait for the patient to finish logging in at the provider (relay-poll phase, across
+// retries). A first login can be slow (read consent, pick account, authorize) — allow several
+// minutes. Does NOT bound the data download, which runs inline after login (see source.go).
+const catalogConnectWindowMs = 4 * 60 * 1000 // 4 minutes
 
 export class SourceListItem {
   source?: Source
@@ -73,6 +80,14 @@ export class MedicalSourcesComponent implements OnInit {
   // gates <app-medical-sources-connected> rendering
   showConnectedList = true
 
+  // Provider catalog (#306): the admin-configured providers a patient can pick to connect — no
+  // credentials are ever shown or sent; the backend resolves client_id/secret server-side.
+  connectableProviders: ConnectableProvider[] = []
+  connectableLoading = false
+  connectingProviderId: string | null = null   // the catalog id currently mid-connect (disables its button)
+  connectErrorMsg = ""
+  connectSuccessMsg = ""
+
   constructor(
     private connectGatewayApi: ConnectGatewayService,
     private fastenApi: FastenApiService,
@@ -84,7 +99,95 @@ export class MedicalSourcesComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.loadConnectableProviders()
+  }
 
+  // Loads the patient-facing provider picker (enabled catalog entries; credential-free). A failure
+  // is non-fatal — the page still offers manual upload — so it's logged, not surfaced as an error.
+  private loadConnectableProviders(): void {
+    this.connectableLoading = true
+    this.fastenApi.listConnectableProviders().subscribe(
+      (providers) => { this.connectableProviders = providers || [] },
+      (err) => { console.log("could not load connectable providers", err); this.connectableLoading = false },
+      () => { this.connectableLoading = false },
+    )
+  }
+
+  // Connects an admin-configured provider by id. The patient never sees or sends a client_id/secret:
+  // the backend fills them from the catalog. Mirrors the BYO flow (popup → authorize → poll/exchange)
+  // but with the catalog endpoints. The popup must open synchronously in the click handler or the
+  // browser blocks it.
+  public async connectCatalogProvider(provider: ConnectableProvider): Promise<void> {
+    if (this.connectingProviderId) { return } // guard against double-submit
+    this.connectErrorMsg = ""
+    this.connectSuccessMsg = ""
+
+    const redirectUri = `${environment.relay_endpoint_base}/callback`
+
+    const popup = window.open('', '_blank')
+    if (!popup) {
+      this.connectErrorMsg = 'Your browser blocked the login popup. Please allow popups for this site, then try again.'
+      return
+    }
+    try {
+      popup.document.write('<!doctype html><title>Connecting…</title><p style="font:14px sans-serif;padding:1rem">Preparing secure sign-in…</p>')
+    } catch (_) { /* popup not navigable yet */ }
+
+    this.connectingProviderId = provider.id
+    try {
+      const authorize: SmartAuthorizeResponse = await this.fastenApi
+        .authorizeSourceFromCatalog(provider.id, {redirect_uri: redirectUri}).toPromise()
+
+      if (!authorize?.authorize_url || !authorize?.state || !authorize?.code_verifier) {
+        popup.close()
+        this.connectErrorMsg = 'Could not start the connection: the server did not return a valid sign-in URL.'
+        return
+      }
+      popup.location.href = authorize.authorize_url
+
+      // The backend polls the relay ~30s for the auth code then exchanges + syncs inline. A slow login
+      // can outlast one poll, so retry across the login window. Only the relay-poll timeout is retried
+      // (nothing is created yet, so it's safe); any other error is terminal.
+      const windowMs = (authorize.login_wait_seconds && authorize.login_wait_seconds > 0)
+        ? authorize.login_wait_seconds * 1000
+        : catalogConnectWindowMs
+      const maxAttempts = Math.ceil(windowMs / (30 * 1000))
+      let lastErr: any = null
+      for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        try {
+          await this.fastenApi.connectSourceFromCatalog(provider.id, {
+            state: authorize.state,
+            code_verifier: authorize.code_verifier,
+            redirect_uri: redirectUri,
+            display: provider.display,
+          }).toPromise()
+          lastErr = null
+          break
+        } catch (err) {
+          lastErr = err
+          const msg = extractErrorFromResponse(err) || ''
+          if (!/authorization code from relay|timed out/i.test(msg)) { break } // terminal
+        }
+      }
+
+      if (lastErr) {
+        this.connectErrorMsg = 'Connection failed: ' + (extractErrorFromResponse(lastErr) || 'Unknown Error') + ' Please complete the sign-in in the popup window and try again.'
+        return
+      }
+
+      this.connectSuccessMsg = `Connected to ${provider.display}. Your records are being imported.`
+      this.refreshConnectedList()
+    } catch (err) {
+      this.connectErrorMsg = 'Connection failed: ' + (extractErrorFromResponse(err) || 'Unknown Error')
+    } finally {
+      this.connectingProviderId = null
+    }
+  }
+
+  // Forces <app-medical-sources-connected> to re-render so a freshly connected source shows up.
+  private refreshConnectedList(): void {
+    this.showConnectedList = false
+    setTimeout(() => { this.showConnectedList = true }, 0)
   }
 
 

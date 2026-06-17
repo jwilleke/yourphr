@@ -58,17 +58,41 @@
         </div><!-- col -->
       </div><!-- row -->
 
-      <div class="az-content-label mg-b-5 mg-t-40">Connect a provider</div>
       <!--
-        Placeholder for the patient-facing provider directory (#291): a picker of providers the
-        admin has pre-configured ("Connect Medicare", "Connect MyChart", …) feeding connectHandler,
-        so a patient connects without ever seeing a client_id/secret. Until the backend credential
-        store (#291) lands, there is no catalog to render here. The raw bring-your-own client_id
-        SMART form has moved to the admin-only /sandbox page.
+        Patient-facing provider directory (#306 / #291): a picker of providers the admin has
+        pre-configured. The patient picks one and logs in with their provider account — they never
+        see a client_id/secret (the backend resolves them). The raw bring-your-own client_id SMART
+        form lives on the admin-only /sandbox page.
       -->
-      <p class="mg-b-20 tx-gray-600">
-        Connecting directly to a provider is coming soon. For now, use <strong>Manual Upload</strong> above to import a downloaded records bundle.
-      </p>
+      <div class="az-content-label mg-b-5 mg-t-40">Connect a provider</div>
+
+      <div *ngIf="connectErrorMsg" class="alert alert-danger mt-2" role="alert">
+        <strong>Error:</strong> {{connectErrorMsg}}
+      </div>
+      <div *ngIf="connectSuccessMsg" class="alert alert-success mt-2" role="alert">
+        {{connectSuccessMsg}}
+      </div>
+
+      <ng-container *ngIf="connectableProviders.length; else noProviders">
+        <p class="mg-b-15 tx-gray-600">Pick your provider and sign in with your provider account — you'll never be asked for a client ID or secret.</p>
+        <div class="row">
+          <div class="col-md-6 col-lg-4 mg-b-15" *ngFor="let provider of connectableProviders">
+            <button type="button" class="btn btn-outline-az-primary btn-block d-flex align-items-center justify-content-center"
+                    [disabled]="connectingProviderId"
+                    (click)="connectCatalogProvider(provider)">
+              <img *ngIf="provider.brand_logo_url" [src]="provider.brand_logo_url" alt="" height="20" class="mg-r-10" />
+              <span *ngIf="connectingProviderId === provider.id"><i class="fas fa-spinner fa-spin mg-r-5"></i> Connecting…</span>
+              <span *ngIf="connectingProviderId !== provider.id"><i class="fas fa-plug mg-r-5"></i> {{provider.display}}</span>
+            </button>
+          </div>
+        </div>
+      </ng-container>
+
+      <ng-template #noProviders>
+        <p class="mg-b-20 tx-gray-600" *ngIf="!connectableLoading">
+          No connectable providers are configured yet. For now, use <strong>Manual Upload</strong> above to import a downloaded records bundle. (An administrator can add providers from the Sandbox page.)
+        </p>
+      </ng-template>
 
     </div><!-- az-content-body -->
   </div><!-- container -->
