@@ -90,8 +90,11 @@ func LoggerMiddleware(logger *logrus.Entry) gin.HandlerFunc {
 				entry.Info(msg)
 			}
 		}
-		if strings.Contains(path, "/api/") {
-			//only debug log request/response from api endpoint.
+		// Debug-log request/response bodies for API endpoints — EXCEPT the admin logs endpoints. Their
+		// responses contain the in-memory log buffer itself, so logging them feeds the buffer back into
+		// itself: at debug, the live-tail poll of /admin/logs grows the newest line exponentially and
+		// OOM-kills the backend (#170). Never body-log the log endpoints.
+		if strings.Contains(path, "/api/") && !isLogEndpoint(path) {
 			if len(reqBody) > 0 {
 				entry.WithField("bodyType", "request").Debugln(reqBody) // Print request body
 			}
@@ -110,6 +113,12 @@ type responseBodyLogWriter struct {
 func (w responseBodyLogWriter) Write(b []byte) (int, error) {
 	w.body.Write(b)
 	return w.ResponseWriter.Write(b)
+}
+
+// isLogEndpoint reports whether the path is one of the admin server-log endpoints, whose responses
+// contain the log buffer — body-logging them would feed the buffer into itself (see LoggerMiddleware).
+func isLogEndpoint(path string) bool {
+	return strings.Contains(path, "/admin/logs") || strings.Contains(path, "/admin/log-level")
 }
 
 // Request Logging
