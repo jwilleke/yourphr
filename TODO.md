@@ -15,6 +15,7 @@
 **Sandbox/production IA split (this session) — `in-review`:**
 
 - [#330](https://github.com/jwilleke/yourphr/issues/330) `/sandbox` self-contained · [#331](https://github.com/jwilleke/yourphr/issues/331) Environment on connected sources · [#332](https://github.com/jwilleke/yourphr/issues/332) filter `/sandbox` vs `/sources` — all **`in-review`** (shipped v1.3.0-25).
+- [#337](https://github.com/jwilleke/yourphr/issues/337) [BUG] SSE sync events dropped ("Room not found") — import progress never clears (tile-open already mitigated; indicator fix pending).
 
 **Patients add their own records:**
 
