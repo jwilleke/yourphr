@@ -10,7 +10,12 @@
 
 **Provider catalog ([#291](https://github.com/jwilleke/yourphr/issues/291) umbrella) — vertical complete, awaiting sign-off:**
 
-- [#291](https://github.com/jwilleke/yourphr/issues/291) umbrella: backend [#304](https://github.com/jwilleke/yourphr/issues/304) ✅ closed · patient picker [#306](https://github.com/jwilleke/yourphr/issues/306) **`in-review`** · admin CRUD [#310](https://github.com/jwilleke/yourphr/issues/310) **`in-review`**. All admin functions now consolidated under `/admin`.
+- [#291](https://github.com/jwilleke/yourphr/issues/291) umbrella **`in-review`**: backend [#304](https://github.com/jwilleke/yourphr/issues/304) ✅ closed · patient picker [#306](https://github.com/jwilleke/yourphr/issues/306) **`in-review`** · admin CRUD [#310](https://github.com/jwilleke/yourphr/issues/310) **`in-review`**. Production/sandbox split shipped: `/sandbox` is now one-click connect with server-side (env/SOPS) creds — none typed or exposed. All admin functions consolidated under `/admin`.
+
+**Patients add their own records:**
+
+- [#313](https://github.com/jwilleke/yourphr/issues/313) patients able to add records to their own PHR (`smart-on-fhir`).
+- [#315](https://github.com/jwilleke/yourphr/issues/315) `/medical-history` Layout (`good first issue`).
 
 **Patient-legible display ([#262](https://github.com/jwilleke/yourphr/issues/262) / [#266](https://github.com/jwilleke/yourphr/issues/266)):**
 
@@ -37,4 +42,4 @@
 
 ## ❓ Needs triage
 
-- None — every open issue carries a priority label.
+- [#314](https://github.com/jwilleke/yourphr/issues/314) Wearable Device Integration for Vitals, Activity & PGHD — no priority label yet.
