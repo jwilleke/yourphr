@@ -2,7 +2,7 @@
 
 <div *ngIf="!loading else isLoadingTemplate" class="row">
   <app-medical-sources-card class="col-sm-3 mg-b-20 px-3"
-                            *ngFor="let sourceData of connectedSourceList"
+                            *ngFor="let sourceData of visibleSourceList"
                             [sourceInfo]="sourceData"
                             [status]="status[sourceData.source?.id] || status[sourceData.brand?.id]"
                             (onClick)="openModal(contentModalRef, $event)"

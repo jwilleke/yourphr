@@ -24,6 +24,11 @@ import {extractErrorFromResponse, replaceErrors} from '../../../lib/utils/error_
     standalone: false
 })
 export class MedicalSourcesConnectedComponent implements OnInit {
+  // environment, when set, limits the connected sources shown to that environment ("sandbox" on the
+  // /sandbox page, "production" on /sources) so the two surfaces don't show the same tiles (#332).
+  // Unset = show everything. A source with no environment counts as production.
+  @Input() environment?: string
+
   loading = false
   status: Record<string, undefined | "token" | "authorize" | "failed"> = {}
 
@@ -42,6 +47,13 @@ export class MedicalSourcesConnectedComponent implements OnInit {
     private location: Location,
     private eventBusService: EventBusService,
   ) { }
+
+  // visibleSourceList applies the optional environment filter (#332). A source with no environment is
+  // treated as production. When no filter is set, everything is shown.
+  get visibleSourceList(): SourceListItem[] {
+    if (!this.environment) { return this.connectedSourceList }
+    return this.connectedSourceList.filter(item => (item.source?.environment || 'production') === this.environment)
+  }
 
   ngOnInit(): void {
     this.loading = true

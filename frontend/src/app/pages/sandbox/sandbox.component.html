@@ -61,9 +61,9 @@
         Waiting for you to complete login in the popup window, then importing records…
       </p>
 
-      <h2 class="az-content-title mg-t-40">Imported sources</h2>
-      <p class="mg-b-20">Sources connected here import into the same record as the Sources page — useful for verifying a sandbox connect end-to-end.</p>
-      <app-medical-sources-connected *ngIf="showConnectedList"></app-medical-sources-connected>
+      <h2 class="az-content-title mg-t-40">Connected Sources</h2>
+      <p class="mg-b-20">The sandbox sources you've connected here. Click a tile to Sync, Download, or Explore its records. (Production sources live on the <a routerLink="/sources">Sources</a> page.)</p>
+      <app-medical-sources-connected *ngIf="showConnectedList" environment="sandbox"></app-medical-sources-connected>
 
     </div><!-- az-content-body -->
   </div><!-- container -->

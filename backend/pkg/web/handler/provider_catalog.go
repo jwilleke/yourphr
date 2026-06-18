@@ -398,6 +398,7 @@ func ConnectSourceFromCatalog(c *gin.Context) {
 	sourceCred := models.SourceCredential{
 		PlatformType:       entry.PlatformType,
 		EndpointID:         entry.ID, // tie the connected source back to its catalog provider
+		Environment:        environmentOrDefault(entry.Environment), // sandbox vs production, from the catalog entry (#331)
 		Display:            display,
 		ApiEndpointBaseUrl: entry.ApiEndpointBaseUrl,
 		ClientId:           entry.ClientId,

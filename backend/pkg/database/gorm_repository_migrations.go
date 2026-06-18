@@ -302,6 +302,21 @@ func (gr *GormRepository) Migrate() error {
 				return nil
 			},
 		},
+		{
+			ID: "20260619000000", // add environment (production/sandbox) to connected sources (#331)
+			Migrate: func(tx *gorm.DB) error {
+				if err := tx.AutoMigrate(&models.SourceCredential{}); err != nil {
+					return err
+				}
+				// Backfill: existing sources default to production, but any source connected through a
+				// sandbox catalog entry (matched by endpoint_id) is a sandbox source — tag it so so it
+				// shows on /sandbox, not /sources.
+				return tx.Exec(
+					"UPDATE source_credentials SET environment = ? WHERE endpoint_id IN (SELECT id FROM provider_catalog_entries WHERE environment = ?)",
+					models.ProviderEnvironmentSandbox, models.ProviderEnvironmentSandbox,
+				).Error
+			},
+		},
 	})
 
 	// run when database is empty

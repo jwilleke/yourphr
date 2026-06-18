@@ -28,7 +28,10 @@ type SourceCredential struct {
 	EndpointID uuid.UUID `json:"endpoint_id" gorm:"uniqueIndex:idx_user_source_patient"`
 
 	//New Fields
-	Display           string                             `json:"display"`
+	Display string `json:"display"`
+	// Environment marks a connected source as "sandbox" (admin testing) or "production" (real patient
+	// data), so /sandbox and /sources can show their own without commingling (#331). Default production.
+	Environment       string                             `json:"environment" gorm:"index;default:production"`
 	LighthouseEnvType sourcesPkg.FastenLighthouseEnvType `json:"lighthouse_env_type"`
 	BrandID           uuid.UUID                          `json:"brand_id"`
 	PortalID          uuid.UUID                          `json:"portal_id"`
