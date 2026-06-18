@@ -65,8 +65,11 @@ type SandboxProviderSeed struct {
 	Display            string
 	ApiEndpointBaseUrl string
 	Scopes             string
-	ClientIDEnv        string // env var holding the client_id
+	ClientIDEnv        string // env var holding the client_id ("" when ClientIDLiteral is used)
 	ClientSecretEnv    string // env var holding the client_secret ("" for public/PKCE providers)
+	// ClientIDLiteral is a fixed, non-secret client_id for OPEN sandboxes that accept any value (e.g.
+	// SMART Health IT). When set, the provider is always seeded without needing an env var.
+	ClientIDLiteral string
 }
 
 // SandboxProviderSeeds lists the test sandboxes whose credentials are supplied via env. Only those with
@@ -86,6 +89,28 @@ func SandboxProviderSeeds() []SandboxProviderSeed {
 			Scopes:             "launch/patient patient/*.read openid fhirUser offline_access",
 			ClientIDEnv:        "YOURPHR_SANDBOX_EPIC_CLIENT_ID",
 			ClientSecretEnv:    "", // public/PKCE
+		},
+		{
+			Display:            "Oracle Health / Cerner (Sandbox)",
+			ApiEndpointBaseUrl: "https://fhir-myrecord.sandboxcerner.com/r4/ec2458f2-1e24-41c8-b71b-0e701af7583d",
+			Scopes:             "launch/patient openid fhirUser offline_access patient/*.read",
+			ClientIDEnv:        "YOURPHR_SANDBOX_ORACLE_CLIENT_ID",
+			ClientSecretEnv:    "", // public/PKCE
+		},
+		{
+			Display:            "athenahealth (Sandbox)",
+			ApiEndpointBaseUrl: "https://api.preview.platform.athenahealth.com/fhir/r4",
+			Scopes:             "launch/patient patient/*.read openid fhirUser offline_access",
+			ClientIDEnv:        "YOURPHR_SANDBOX_ATHENA_CLIENT_ID",
+			ClientSecretEnv:    "YOURPHR_SANDBOX_ATHENA_CLIENT_SECRET", // confidential
+		},
+		{
+			// Open public launcher — accepts any client_id, no registration/secret. Always seeded.
+			// The /sim/<base64> segment is required ({"launch_type":"patient-standalone"}).
+			Display:            "SMART Health IT (Sandbox)",
+			ApiEndpointBaseUrl: "https://launch.smarthealthit.org/v/r4/sim/eyJsYXVuY2hfdHlwZSI6InBhdGllbnQtc3RhbmRhbG9uZSJ9/fhir",
+			Scopes:             "launch/patient patient/*.read openid fhirUser offline_access",
+			ClientIDLiteral:    "my-client-id",
 		},
 	}
 }
