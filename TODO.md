@@ -10,7 +10,11 @@
 
 **Provider catalog ([#291](https://github.com/jwilleke/yourphr/issues/291) umbrella) — vertical complete, awaiting sign-off:**
 
-- [#291](https://github.com/jwilleke/yourphr/issues/291) umbrella **`in-review`**: backend [#304](https://github.com/jwilleke/yourphr/issues/304) ✅ closed · patient picker [#306](https://github.com/jwilleke/yourphr/issues/306) **`in-review`** · admin CRUD [#310](https://github.com/jwilleke/yourphr/issues/310) **`in-review`**. Production/sandbox split shipped: `/sandbox` is now one-click connect with server-side (env/SOPS) creds — none typed or exposed. All admin functions consolidated under `/admin`.
+- [#291](https://github.com/jwilleke/yourphr/issues/291) umbrella **`in-review`**: backend [#304](https://github.com/jwilleke/yourphr/issues/304) ✅ closed · patient picker [#306](https://github.com/jwilleke/yourphr/issues/306) **`in-review`** · admin CRUD [#310](https://github.com/jwilleke/yourphr/issues/310) **`in-review`**. Production/sandbox split shipped: `/sandbox` is one-click connect with server-side (env/SOPS) creds; 5 sandboxes wired (Blue Button ✅, Epic ✅, SMART Health IT ✅, athenahealth 🟡 onboarding-gated, Oracle/Cerner ⛔ persona). Catalog admin grouped by environment (secret hidden, status shown).
+
+**Sandbox/production IA split (this session) — `in-review`:**
+
+- [#330](https://github.com/jwilleke/yourphr/issues/330) `/sandbox` self-contained · [#331](https://github.com/jwilleke/yourphr/issues/331) Environment on connected sources · [#332](https://github.com/jwilleke/yourphr/issues/332) filter `/sandbox` vs `/sources` — all **`in-review`** (shipped v1.3.0-25).
 
 **Patients add their own records:**
 
@@ -35,6 +39,7 @@
 - [#277](https://github.com/jwilleke/yourphr/issues/277) Medical History hub · [#287](https://github.com/jwilleke/yourphr/issues/287) upload UI polish · [#289](https://github.com/jwilleke/yourphr/issues/289) allergy tiles dead-end · [#290](https://github.com/jwilleke/yourphr/issues/290) "No Known Allergies" count.
 - [#280](https://github.com/jwilleke/yourphr/issues/280) fhir-card referenced display name · [#252](https://github.com/jwilleke/yourphr/issues/252) harden re-import dedup · [#288](https://github.com/jwilleke/yourphr/issues/288) [ARCH] `fasten-sources-stub` future · [#241](https://github.com/jwilleke/yourphr/issues/241) release-please PAT.
 - [#244](https://github.com/jwilleke/yourphr/issues/244) [EPIC] per-profile dashboards · [#256](https://github.com/jwilleke/yourphr/issues/256) sharing PHR · [#251](https://github.com/jwilleke/yourphr/issues/251) Apple Health list · [#20](https://github.com/jwilleke/yourphr/issues/20) [EPIC] SMART live sync · [#53](https://github.com/jwilleke/yourphr/issues/53) Veradigm (`blocked`) · [#14](https://github.com/jwilleke/yourphr/issues/14) User Profile Update.
+- [#333](https://github.com/jwilleke/yourphr/issues/333) [EPIC] Explore export options → [#334](https://github.com/jwilleke/yourphr/issues/334) Save Report · [#335](https://github.com/jwilleke/yourphr/issues/335) Export to PDF · [#336](https://github.com/jwilleke/yourphr/issues/336) Send to Email.
 
 ## ⏸ Deferred
 
