@@ -402,9 +402,52 @@ export class MedicalSourcesConnectedComponent implements OnInit {
         const toastNotification = new ToastNotification()
         toastNotification.type = ToastType.Error
         toastNotification.message = `An error occurred while updating source (${source.display}): ${extractErrorFromResponse(err)}`
+        // Keep sync errors on screen (don't auto-hide) and link to the full details so the message can
+        // actually be read/copied — Epic $everything failures were vanishing before they could be seen.
+        toastNotification.autohide = false
+        toastNotification.link = {text: "View Details", url: `/background-jobs`}
         this.toastService.show(toastNotification)
-        console.log(err)
+        console.error("source sync failed", err)
 
+      }
+    )
+  }
+
+  // sourceExportHandler downloads every record retrieved for this source as a FHIR Bundle (.json).
+  // "Your medical records, immediately and in your hands." The browser saves the file; the user can
+  // drop it into sample-data/. The filename comes from the server's Content-Disposition header.
+  public sourceExportHandler(source: Source) {
+    if (!source?.id) { return }
+    this.modalService.dismissAll()
+    this.fastenApi.exportSource(source.id).subscribe(
+      (resp) => {
+        const blob = resp.body
+        if (!blob) { return }
+        const disposition = resp.headers.get('Content-Disposition') || ''
+        const match = /filename=([^;]+)/i.exec(disposition)
+        const filename = (match && match[1].trim().replace(/^"|"$/g, '')) || `yourphr-${source.display || 'source'}.json`
+
+        const url = window.URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = filename
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        window.URL.revokeObjectURL(url)
+
+        const toastNotification = new ToastNotification()
+        toastNotification.type = ToastType.Success
+        toastNotification.message = `Exported records from ${source.display} as ${filename}`
+        this.toastService.show(toastNotification)
+      },
+      (err) => {
+        const toastNotification = new ToastNotification()
+        toastNotification.type = ToastType.Error
+        toastNotification.message = `Could not export ${source.display}: ${extractErrorFromResponse(err)}`
+        toastNotification.autohide = false
+        this.toastService.show(toastNotification)
+        console.error("source export failed", err)
       }
     )
   }

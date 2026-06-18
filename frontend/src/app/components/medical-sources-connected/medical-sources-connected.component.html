@@ -21,6 +21,7 @@
     <p>Existing connections can be "Synced", "Reconnected" or "Deleted"</p>
     <ul>
       <li><p><strong>Sync</strong> - Download all resources from this healthcare provider, storing them securely in YourPHR</p></li>
+      <li><p><strong>Download</strong> - Export every record retrieved from this provider as a FHIR Bundle (.json) — your records, in your hands</p></li>
       <li><p><strong>Reconnect</strong> - If your healthcare connection has expired, you can use this button to reconnect</p></li>
       <li><p><strong>Delete</strong> - Delete all resources for this healthcare provider. This will ONLY effect data stored in YourPHR</p></li>
     </ul>
@@ -51,6 +52,7 @@
       </button>
       <div ngbDropdownMenu aria-labelledby="dropdownManual">
         <button *ngIf="modalSelectedSourceListItem?.source?.platform_type != 'manual'" ngbDropdownItem (click)="sourceSyncHandler(modalSelectedSourceListItem?.source)" type="button" class="btn btn-indigo">Sync</button>
+        <button ngbDropdownItem (click)="sourceExportHandler(modalSelectedSourceListItem?.source)" type="button" class="btn btn-indigo">Download</button>
         <button *ngIf="modalSelectedSourceListItem?.source?.platform_type != 'manual'" ngbDropdownItem (click)="sourceReconnectHandler(modalSelectedSourceListItem)" type="button" class="btn btn-danger">Reconnect</button>
         <button  ngbDropdownItem (click)="sourceDeleteHandler()" type="button" class="btn btn-danger">Delete</button>
       </div>

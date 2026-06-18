@@ -1,6 +1,6 @@
 import {Inject, Injectable} from '@angular/core';
 import { Practitioner } from 'src/app/models/fasten/practitioner';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpResponse } from '@angular/common/http';
 import {Observable, of} from 'rxjs';
 import { Router } from '@angular/router';
 import {map} from 'rxjs/operators';
@@ -387,6 +387,14 @@ export class FastenApiService {
           return response.data as SourceSummary
         })
       );
+  }
+
+  // exportSource downloads all of a source's stored resources as a FHIR Bundle. Returns the full
+  // HttpResponse<Blob> so the caller can read the server's Content-Disposition filename. The
+  // auth-interceptor still attaches the JWT, so this works against the secure endpoint.
+  exportSource(sourceId: string): Observable<HttpResponse<Blob>> {
+    return this._httpClient.get(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/source/${sourceId}/export`,
+      {responseType: 'blob', observe: 'response'});
   }
 
   deleteSource(sourceId: string): Observable<number> {
