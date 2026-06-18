@@ -1308,20 +1308,38 @@ func (gr *GormRepository) DeleteProviderCatalogEntry(ctx context.Context, id str
 }
 
 func (gr *GormRepository) UpsertProviderCatalogEntryByDisplay(ctx context.Context, entry *models.ProviderCatalogEntry) error {
-	// Update the entry with this Display if it exists, else create it. Assign the credential/config
-	// columns explicitly so a re-seed refreshes them (env may have changed).
-	return gr.GormClient.WithContext(ctx).
-		Where(models.ProviderCatalogEntry{Display: entry.Display}).
-		Assign(map[string]interface{}{
-			"environment":           entry.Environment,
-			"api_endpoint_base_url": entry.ApiEndpointBaseUrl,
-			"scopes":                entry.Scopes,
-			"platform_type":         entry.PlatformType,
-			"client_id":             entry.ClientId,
-			"client_secret":         entry.ClientSecret,
-			"enabled":               entry.Enabled,
-		}).
-		FirstOrCreate(entry).Error
+	// Provision-only, NEVER clobber: the env seed runs on every startup, but an admin can edit a
+	// sandbox entry in the catalog UI and those edits must persist across restarts (#291). So:
+	//   - no row with this Display      -> create it from env (initial provisioning),
+	//   - row exists with EMPTY client_id (e.g. the credential-free migration seed) -> fill creds +
+	//     config from env and enable it (first-time provisioning),
+	//   - row exists WITH a client_id   -> leave it untouched (the admin owns it now).
+	db := gr.GormClient.WithContext(ctx)
+	var existing models.ProviderCatalogEntry
+	err := db.Where("display = ?", entry.Display).First(&existing).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return db.Create(entry).Error
+	}
+	if err != nil {
+		return err
+	}
+	if strings.TrimSpace(existing.ClientId) != "" {
+		// Already provisioned and possibly admin-edited — preserve it.
+		*entry = existing
+		return nil
+	}
+	existing.Environment = entry.Environment
+	existing.ApiEndpointBaseUrl = entry.ApiEndpointBaseUrl
+	existing.Scopes = entry.Scopes
+	existing.PlatformType = entry.PlatformType
+	existing.ClientId = entry.ClientId
+	existing.ClientSecret = entry.ClientSecret
+	existing.Enabled = entry.Enabled
+	if err := db.Save(&existing).Error; err != nil {
+		return err
+	}
+	*entry = existing
+	return nil
 }
 
 //</editor-fold>

@@ -14,6 +14,8 @@ export interface ConnectableProvider {
 export interface ProviderCatalogEntry {
   id?: string;
   display: string;
+  // "production" (patient-facing /sources) or "sandbox" (admin-only /sandbox testing). #291
+  environment?: string;
   api_endpoint_base_url: string;
   scopes: string;
   client_id: string;
@@ -27,6 +29,7 @@ export interface ProviderCatalogEntry {
 // to set/replace; omit (empty) on update to keep the stored secret.
 export interface ProviderCatalogEntryRequest {
   display: string;
+  environment?: string;
   api_endpoint_base_url: string;
   scopes: string;
   client_id: string;

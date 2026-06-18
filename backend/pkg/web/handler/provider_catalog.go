@@ -27,6 +27,7 @@ import (
 // out): omitting it on update preserves the stored secret.
 type providerCatalogRequest struct {
 	Display            string `json:"display"`
+	Environment        string `json:"environment"`
 	ApiEndpointBaseUrl string `json:"api_endpoint_base_url"`
 	Scopes             string `json:"scopes"`
 	ClientId           string `json:"client_id"`
@@ -34,6 +35,15 @@ type providerCatalogRequest struct {
 	PlatformType       string `json:"platform_type"`
 	BrandLogoUrl       string `json:"brand_logo_url"`
 	Enabled            bool   `json:"enabled"`
+}
+
+// environmentOrDefault normalizes the environment field; anything other than "sandbox" is production
+// (so an omitted/unknown value is safely patient-facing only when explicitly production).
+func environmentOrDefault(env string) string {
+	if strings.TrimSpace(env) == models.ProviderEnvironmentSandbox {
+		return models.ProviderEnvironmentSandbox
+	}
+	return models.ProviderEnvironmentProduction
 }
 
 // requireAdmin returns the current user only when it has the admin role; otherwise it writes a 403/500
@@ -79,6 +89,7 @@ func CreateProviderCatalogEntry(c *gin.Context) {
 
 	entry := models.ProviderCatalogEntry{
 		Display:            strings.TrimSpace(req.Display),
+		Environment:        environmentOrDefault(req.Environment),
 		ApiEndpointBaseUrl: strings.TrimSpace(req.ApiEndpointBaseUrl),
 		Scopes:             strings.TrimSpace(req.Scopes),
 		ClientId:           strings.TrimSpace(req.ClientId),
@@ -161,6 +172,9 @@ func UpdateProviderCatalogEntry(c *gin.Context) {
 	}
 	if strings.TrimSpace(req.PlatformType) != "" {
 		existing.PlatformType = platformTypeOrDefault(req.PlatformType)
+	}
+	if strings.TrimSpace(req.Environment) != "" {
+		existing.Environment = environmentOrDefault(req.Environment)
 	}
 	existing.Scopes = strings.TrimSpace(req.Scopes)
 	existing.BrandLogoUrl = strings.TrimSpace(req.BrandLogoUrl)

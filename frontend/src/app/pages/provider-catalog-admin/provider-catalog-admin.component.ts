@@ -36,7 +36,7 @@ export class ProviderCatalogAdminComponent implements OnInit {
   }
 
   private blankForm(): ProviderCatalogEntryRequest {
-    return {display: '', api_endpoint_base_url: '', scopes: '', client_id: '', client_secret: '', platform_type: 'ehr', brand_logo_url: '', enabled: false};
+    return {display: '', environment: 'production', api_endpoint_base_url: '', scopes: '', client_id: '', client_secret: '', platform_type: 'ehr', brand_logo_url: '', enabled: false};
   }
 
   load(): void {
@@ -61,6 +61,7 @@ export class ProviderCatalogAdminComponent implements OnInit {
     // client_secret is intentionally blank — it is never returned; leaving it empty preserves the stored one.
     this.form = {
       display: entry.display,
+      environment: entry.environment || 'production',
       api_endpoint_base_url: entry.api_endpoint_base_url,
       scopes: entry.scopes,
       client_id: entry.client_id,

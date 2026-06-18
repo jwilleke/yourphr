@@ -19,7 +19,8 @@
       </div>
 
       <h2 class="az-content-title mg-t-20">Sandbox sources</h2>
-      <p class="mg-b-20">Connect a configured sandbox provider. You log in at the provider in a popup window; YourPHR never sees the password or tokens, and the sandbox credentials never leave the server.</p>
+      <p class="mg-b-10">Connect a configured sandbox provider. You log in at the provider in a popup window; YourPHR never sees the password or tokens, and the sandbox credentials never leave the server.</p>
+      <p class="mg-b-20 tx-gray-600">Need to change a base URL, scopes, or client ID? Edit the entry in the <a routerLink="/admin/provider-catalog">Provider Catalog</a> (admin-only). Your edits persist across restarts.</p>
 
       <div *ngIf="errorMsg" class="alert alert-danger" role="alert">{{errorMsg}}</div>
       <div *ngIf="successMsg" class="alert alert-success" role="alert">{{successMsg}}</div>

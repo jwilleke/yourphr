@@ -3,7 +3,7 @@
 
   <div class="mg-b-20">
     <h4 class="mg-b-5"><i class="fas fa-clinic-medical"></i>&nbsp; Provider Catalog</h4>
-    <p class="tx-gray-500 mg-b-0">Providers patients can connect to from the Sources page. They pick one and sign in with their provider account — they never see the <code>client_id</code>/<code>client_secret</code> you enter here. Admin-only.</p>
+    <p class="tx-gray-500 mg-b-0"><strong>Production</strong> entries are what patients connect to from the Sources page; <strong>sandbox</strong> entries are admin-only test providers shown on the <a routerLink="/sandbox">Sandbox</a> page. Either way, users never see the <code>client_id</code>/<code>client_secret</code> you enter here. Sandbox entries are first provisioned from the server secret, but any edit you make here persists across restarts. Admin-only.</p>
   </div>
 
   <div *ngIf="errorMsg" class="alert alert-danger" role="alert"><strong>Error:</strong> {{errorMsg}}</div>
@@ -23,9 +23,19 @@
           <input id="pc-url" name="api_endpoint_base_url" type="url" class="form-control" placeholder="https://sandbox.bluebutton.cms.gov/v2/fhir" [(ngModel)]="form.api_endpoint_base_url">
         </div>
       </div>
-      <div class="form-group mg-b-15">
-        <label class="form-label" for="pc-scopes">Scopes</label>
-        <input id="pc-scopes" name="scopes" type="text" class="form-control" placeholder="openid profile launch/patient patient/Patient.read …" [(ngModel)]="form.scopes">
+      <div class="row">
+        <div class="col-md-6 form-group mg-b-15">
+          <label class="form-label" for="pc-environment">Environment</label>
+          <select id="pc-environment" name="environment" class="form-control" [(ngModel)]="form.environment">
+            <option value="production">Production — patient-facing (Sources page)</option>
+            <option value="sandbox">Sandbox — admin-only testing (/sandbox)</option>
+          </select>
+          <small class="tx-gray-500">Sandbox entries are hidden from patients and only shown on the admin Sandbox page.</small>
+        </div>
+        <div class="col-md-6 form-group mg-b-15">
+          <label class="form-label" for="pc-scopes">Scopes</label>
+          <input id="pc-scopes" name="scopes" type="text" class="form-control" placeholder="openid profile launch/patient patient/Patient.read …" [(ngModel)]="form.scopes">
+        </div>
       </div>
       <div class="row">
         <div class="col-md-6 form-group mg-b-15">
@@ -64,11 +74,12 @@
   <div class="table-responsive" *ngIf="!loading && entries.length">
     <table class="table table-hover">
       <thead>
-        <tr><th>Provider</th><th>FHIR base URL</th><th>Client ID</th><th>Secret</th><th>Status</th><th class="text-right">Actions</th></tr>
+        <tr><th>Provider</th><th>Environment</th><th>FHIR base URL</th><th>Client ID</th><th>Secret</th><th>Status</th><th class="text-right">Actions</th></tr>
       </thead>
       <tbody>
         <tr *ngFor="let entry of entries">
           <td>{{ entry.display }}</td>
+          <td><span class="badge" [ngClass]="entry.environment === 'sandbox' ? 'badge-warning' : 'badge-info'">{{ entry.environment === 'sandbox' ? 'sandbox' : 'production' }}</span></td>
           <td class="tx-12 tx-gray-600">{{ entry.api_endpoint_base_url }}</td>
           <td class="tx-12">{{ entry.client_id || '—' }}</td>
           <td><span class="badge" [ngClass]="entry.has_client_secret ? 'badge-info' : 'badge-secondary'">{{ entry.has_client_secret ? 'set' : 'none' }}</span></td>
