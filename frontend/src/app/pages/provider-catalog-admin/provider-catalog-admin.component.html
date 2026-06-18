@@ -69,27 +69,39 @@
 
   <app-loading-spinner *ngIf="loading" loadingTitle="Loading providers..."></app-loading-spinner>
 
-  <div *ngIf="!loading && !entries.length" class="alert alert-info">No providers configured yet. Add one above — the seeded Blue Button / Epic templates start disabled until you add a Client ID and enable them.</div>
+  <div *ngIf="!loading && !entries.length" class="alert alert-info">No providers configured yet. Add one above — the seeded sandbox templates start disabled until you add a Client ID and enable them.</div>
 
-  <div class="table-responsive" *ngIf="!loading && entries.length">
-    <table class="table table-hover">
-      <thead>
-        <tr><th>Provider</th><th>Environment</th><th>FHIR base URL</th><th>Client ID</th><th>Secret</th><th>Status</th><th class="text-right">Actions</th></tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let entry of entries">
-          <td>{{ entry.display }}</td>
-          <td><span class="badge" [ngClass]="entry.environment === 'sandbox' ? 'badge-warning' : 'badge-info'">{{ entry.environment === 'sandbox' ? 'sandbox' : 'production' }}</span></td>
-          <td class="tx-12 tx-gray-600">{{ entry.api_endpoint_base_url }}</td>
-          <td class="tx-12">{{ entry.client_id || '—' }}</td>
-          <td><span class="badge" [ngClass]="entry.has_client_secret ? 'badge-info' : 'badge-secondary'">{{ entry.has_client_secret ? 'set' : 'none' }}</span></td>
-          <td><span class="badge" [ngClass]="entry.enabled ? 'badge-success' : 'badge-secondary'">{{ entry.enabled ? 'enabled' : 'disabled' }}</span></td>
-          <td class="text-right">
-            <button type="button" class="btn btn-sm btn-outline-az-primary mg-r-5" (click)="editEntry(entry)">Edit</button>
-            <button type="button" class="btn btn-sm btn-outline-danger" (click)="remove(entry)">Delete</button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
+  <!-- Production and Sandbox shown as separate groups. The secret is never displayed (only whether the
+       provider is enabled — its Status); the credential stays server-side. -->
+  <ng-container *ngIf="!loading && entries.length">
+    <div *ngFor="let group of environmentGroups" class="mg-b-30">
+      <h5 class="mg-b-2">
+        {{ group.label }}
+        <span class="badge" [ngClass]="group.env === 'sandbox' ? 'badge-warning' : 'badge-info'">{{ group.entries.length }}</span>
+      </h5>
+      <p class="tx-gray-500 tx-12 mg-b-10">{{ group.hint }}</p>
+
+      <div *ngIf="!group.entries.length" class="tx-gray-500 tx-13 mg-b-10">— none —</div>
+
+      <div class="table-responsive" *ngIf="group.entries.length">
+        <table class="table table-hover">
+          <thead>
+            <tr><th>Provider</th><th>FHIR base URL</th><th>Client ID</th><th>Status</th><th class="text-right">Actions</th></tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let entry of group.entries">
+              <td>{{ entry.display }}</td>
+              <td class="tx-12 tx-gray-600">{{ entry.api_endpoint_base_url }}</td>
+              <td class="tx-12">{{ entry.client_id || '—' }}</td>
+              <td><span class="badge" [ngClass]="entry.enabled ? 'badge-success' : 'badge-secondary'">{{ entry.enabled ? 'enabled' : 'disabled' }}</span></td>
+              <td class="text-right">
+                <button type="button" class="btn btn-sm btn-outline-az-primary mg-r-5" (click)="editEntry(entry)">Edit</button>
+                <button type="button" class="btn btn-sm btn-outline-danger" (click)="remove(entry)">Delete</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </ng-container>
 </div>

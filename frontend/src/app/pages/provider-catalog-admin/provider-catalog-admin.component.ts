@@ -35,6 +35,23 @@ export class ProviderCatalogAdminComponent implements OnInit {
     this.load();
   }
 
+  // environmentGroups splits the catalog into Production (patient-facing) and Sandbox (admin testing)
+  // so the admin sees them separately. An empty/unknown environment counts as production.
+  get environmentGroups() {
+    return [
+      {
+        label: 'Production', env: 'production',
+        hint: 'Patient-facing — these appear on the Sources page.',
+        entries: this.entries.filter(e => (e.environment || 'production') !== 'sandbox'),
+      },
+      {
+        label: 'Sandbox', env: 'sandbox',
+        hint: 'Admin-only test providers — these appear on the Sandbox page.',
+        entries: this.entries.filter(e => e.environment === 'sandbox'),
+      },
+    ];
+  }
+
   private blankForm(): ProviderCatalogEntryRequest {
     return {display: '', environment: 'production', api_endpoint_base_url: '', scopes: '', client_id: '', client_secret: '', platform_type: 'ehr', brand_logo_url: '', enabled: false};
   }
