@@ -37,7 +37,13 @@ Record credentials in `private/secrets.md` (gitignored).
 
 ## Status
 
-🟡 Registered — `client_id` + `client_secret` obtained 2026-06-15 (in `private/secrets.md`). Remaining before a connect: confirm the **site-specific FHIR base URL** from the portal, clear any approval gate, and have the relay online. It's a **confidential** client, so the YourPHR connect form needs **both** the `client_id` and `client_secret` (same as Blue Button).
+🟡 **Auth works; record access gated (live test 2026-06-18).** Wired into `/sandbox` with base `https://api.preview.platform.athenahealth.com/fhir/r4` and the confidential `client_id`/`client_secret`. The SMART flow + PKCE + the **patient login succeed** — the patient (e.g. *Jake Medlock, DOB Jan 28 1952*) authenticates and the popup reaches athenahealth's consent screen. It then stops at:
+
+> "Could not confirm access to additional health records. Please check again later."
+
+That is athenahealth's **patient record-sharing / app-onboarding gate**, not a YourPHR bug (the OAuth flow, creds, scopes, and `aud` are all correct). To clear it: finish app onboarding/approval in the Developer Portal so the app may pull patient records in preview, and/or use a test patient that has linked records (the docs also cite `athenainterop@aol.com`). "Please check again later" can also be literal provisioning lag.
+
+Confirmed working values: base `https://api.preview.platform.athenahealth.com/fhir/r4`; test patient `phrtest_preview@mailinator.com` / `Password1`. It's a **confidential** client (id + secret, both server-side).
 
 ## See also
 

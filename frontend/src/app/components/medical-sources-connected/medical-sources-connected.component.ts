@@ -386,15 +386,12 @@ export class MedicalSourcesConnectedComponent implements OnInit {
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   public openModal(contentModalRef, sourceListItem: SourceListItem) {
-    const brandId = sourceListItem?.source?.brand_id || sourceListItem?.brand?.id
-
-
-    if(
-      (this.status[brandId] && this.status[brandId] != 'failed') //if this source type is currently "loading" dont open the modal window
-      || !sourceListItem.source //if there's no connected source, dont open the modal window
-      || (this.status[sourceListItem?.source?.id] && this.status[sourceListItem?.source?.id] != 'failed') //if this source type is currently "loading" dont open the modal window
-    ){
-      //if this source is currently "loading" dont open the modal window
+    // Only block opening when there is NOTHING to manage yet (no connected source — i.e. a connect is
+    // still in its initial popup/authorize phase). Once a source exists, ALWAYS allow the modal so the
+    // user can Explore / Sync / Download / Delete it — previously a stale "loading" status (the source
+    // sync indicator that never clears when SSE progress events are missed) left connected tiles
+    // permanently un-openable. See the event-bus "Room not found" issue.
+    if(!sourceListItem.source){
       return
     }
 

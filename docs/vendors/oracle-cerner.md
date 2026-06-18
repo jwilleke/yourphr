@@ -64,7 +64,12 @@ curl -s "https://fhir-myrecord.sandboxcerner.com/r4/ec2458f2-1e24-41c8-b71b-0e70
 
 ## Status
 
-🟡 Registered, `client_id` obtained, discovery verified — **ready to connect** once the relay is online and the R4 API product is subscribed.
+⛔ **Blocked on persona/tenant (live test 2026-06-18).** Registered + `client_id` obtained, but the end-to-end connect fails:
+
+- `fhir-myrecord.sandboxcerner.com/r4/ec2458f2-…` → Cerner rejects with **`unknown-tenant`** (the common sandbox tenant is not provisioned on that patient host, despite the 2026-06-15 discovery pre-flight returning 200 — discovery 200 ≠ authorize accepts).
+- `fhir-ehr-code.cerner.com/r4/ec2458f2-…` → tenant recognized, but the discovery authorize endpoint is **provider** persona, and our `client_id` is registered as a **patient** app → **`client-persona-mismatch`** (`urn:cerner:error:authorization-server:oauth2:grant:client-persona-mismatch`).
+
+Cerner advertises a single authorize endpoint per FHIR base via `.well-known/smart-configuration`, and YourPHR's SMART client follows it — so it can't force `/personas/patient/`. **Resolution options:** (a) register/use a **Provider** app + provider login against `fhir-ehr-code`; (b) add an optional **authorize-endpoint override** to the provider catalog so a Cerner patient app can target `.../personas/patient/authorize` directly; or (c) defer Cerner — Blue Button + Epic already deliver patient records. The authoritative base URL for a given app is whatever **code Console** shows for it.
 
 ## See also
 
