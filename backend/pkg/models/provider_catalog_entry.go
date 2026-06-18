@@ -2,15 +2,26 @@ package models
 
 import sourcesPkg "github.com/fastenhealth/fasten-sources/pkg"
 
-// ProviderCatalogEntry is an admin-configured connectable source. It is the self-hosted replacement
-// for the upstream Fasten/Lighthouse provider catalog (EPIC #20 / #288): an admin registers a provider app
-// once (FHIR base, scopes, client_id, optional client_secret), and patients connect by picking it —
-// without ever seeing or handling credentials. See docs/provider-catalog/README.md (#304 / #291).
+// Provider environments. Production entries are patient-facing (shown on /sources); sandbox entries are
+// admin-only test providers (shown on /sandbox) and never reach patients.
+const (
+	ProviderEnvironmentProduction = "production"
+	ProviderEnvironmentSandbox    = "sandbox"
+)
+
+// ProviderCatalogEntry is an admin-configured connectable source — the self-hosted replacement for the
+// upstream Fasten/Lighthouse provider catalog (EPIC #20 / #288). An admin registers a provider once
+// (FHIR base, scopes, client_id, optional client_secret); users connect by picking it, without ever
+// seeing or handling credentials. `Environment` separates production (patient-facing) from sandbox
+// (admin testing). See docs/provider-catalog/README.md (#304 / #291).
 type ProviderCatalogEntry struct {
 	ModelBase
 
-	// Display is the patient-facing button label, e.g. "Connect Medicare / Blue Button". Unique.
+	// Display is the user-facing button label, e.g. "Connect Medicare / Blue Button". Unique.
 	Display string `json:"display" gorm:"uniqueIndex"`
+
+	// Environment: "production" (patient-facing /sources) or "sandbox" (admin-only /sandbox).
+	Environment string `json:"environment" gorm:"index;default:production"`
 
 	ApiEndpointBaseUrl string                  `json:"api_endpoint_base_url"`
 	Scopes             string                  `json:"scopes"`
@@ -31,14 +42,14 @@ type ProviderCatalogEntry struct {
 	HasClientSecret bool `json:"has_client_secret" gorm:"-"`
 }
 
-// Connectable is the patient-facing projection: enough to render a picker, with no credentials.
+// ConnectableProvider is the user-facing projection: enough to render a picker, with no credentials.
 type ConnectableProvider struct {
 	ID           string `json:"id"`
 	Display      string `json:"display"`
 	BrandLogoUrl string `json:"brand_logo_url"`
 }
 
-// Connectable returns the credential-free projection of an entry for the patient picker.
+// Connectable returns the credential-free projection of an entry for the picker.
 func (p *ProviderCatalogEntry) Connectable() ConnectableProvider {
 	return ConnectableProvider{
 		ID:           p.ID.String(),
@@ -47,29 +58,53 @@ func (p *ProviderCatalogEntry) Connectable() ConnectableProvider {
 	}
 }
 
-// DefaultProviderCatalogEntries are the known-good, NON-SECRET provider templates shipped as a
-// head start: the FHIR base + the exact scopes we've verified, with EMPTY client_id/client_secret
-// and Enabled=false. An admin adds their own bring-your-own client_id (and a client_secret for
-// confidential providers) and flips Enabled — no real credential is ever committed (CLAUDE.md hard
-// rule). Seeded idempotently by Display; deleting one does not bring it back.
-func DefaultProviderCatalogEntries() []ProviderCatalogEntry {
-	return []ProviderCatalogEntry{
+// SandboxProviderSeed is a known test sandbox: its public config plus the ENV VAR NAMES that supply its
+// credentials. The actual client_id/secret come from env (a k8s Secret), never hardcoded or typed in
+// the UI — so the /sandbox buttons connect with zero typing and the secret never reaches the browser.
+type SandboxProviderSeed struct {
+	Display            string
+	ApiEndpointBaseUrl string
+	Scopes             string
+	ClientIDEnv        string // env var holding the client_id
+	ClientSecretEnv    string // env var holding the client_secret ("" for public/PKCE providers)
+}
+
+// SandboxProviderSeeds lists the test sandboxes whose credentials are supplied via env. Only those with
+// a non-empty client_id env value are seeded at startup (see the sandbox seeding in the web package).
+func SandboxProviderSeeds() []SandboxProviderSeed {
+	return []SandboxProviderSeed{
 		{
-			// CMS Blue Button 2.0 sandbox — confidential client (the admin must add a client_secret).
-			// Scopes are the exact set the sandbox accepts: NO offline_access / wildcard / fhirUser.
 			Display:            "Medicare — Blue Button 2.0 (Sandbox)",
 			ApiEndpointBaseUrl: "https://sandbox.bluebutton.cms.gov/v2/fhir",
 			Scopes:             "openid profile launch/patient patient/Patient.read patient/Coverage.read patient/ExplanationOfBenefit.read",
-			PlatformType:       sourcesPkg.PlatformTypeEhr,
-			Enabled:            false,
+			ClientIDEnv:        "YOURPHR_SANDBOX_BLUEBUTTON_CLIENT_ID",
+			ClientSecretEnv:    "YOURPHR_SANDBOX_BLUEBUTTON_CLIENT_SECRET",
 		},
 		{
-			// Epic public SMART sandbox — public/PKCE client (no client_secret needed).
 			Display:            "Epic (Sandbox)",
 			ApiEndpointBaseUrl: "https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/R4",
 			Scopes:             "launch/patient patient/*.read openid fhirUser offline_access",
-			PlatformType:       sourcesPkg.PlatformTypeEhr,
-			Enabled:            false,
+			ClientIDEnv:        "YOURPHR_SANDBOX_EPIC_CLIENT_ID",
+			ClientSecretEnv:    "", // public/PKCE
 		},
 	}
+}
+
+// DefaultProviderCatalogEntries are the no-credential sandbox templates seeded by an early migration.
+// Kept for that migration's historical behavior; the live credentials now come from the env-based
+// sandbox seeding (SandboxProviderSeeds), which upserts these by Display and fills the creds. Marked
+// sandbox so they never appear to patients.
+func DefaultProviderCatalogEntries() []ProviderCatalogEntry {
+	out := []ProviderCatalogEntry{}
+	for _, s := range SandboxProviderSeeds() {
+		out = append(out, ProviderCatalogEntry{
+			Display:            s.Display,
+			Environment:        ProviderEnvironmentSandbox,
+			ApiEndpointBaseUrl: s.ApiEndpointBaseUrl,
+			Scopes:             s.Scopes,
+			PlatformType:       sourcesPkg.PlatformTypeEhr,
+			Enabled:            false,
+		})
+	}
+	return out
 }

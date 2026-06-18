@@ -59,6 +59,9 @@ type DatabaseRepository interface {
 	ListProviderCatalogEntries(ctx context.Context, enabledOnly bool) ([]models.ProviderCatalogEntry, error)
 	UpdateProviderCatalogEntry(ctx context.Context, entry *models.ProviderCatalogEntry) error
 	DeleteProviderCatalogEntry(ctx context.Context, id string) (int64, error)
+	// UpsertProviderCatalogEntryByDisplay creates the entry or updates the existing one with the same
+	// Display (used by the env-based sandbox seeding). #291
+	UpsertProviderCatalogEntryByDisplay(ctx context.Context, entry *models.ProviderCatalogEntry) error
 
 	CreateGlossaryEntry(ctx context.Context, glossaryEntry *models.Glossary) error
 	GetGlossaryEntry(ctx context.Context, code string, codeSystem string) (*models.Glossary, error)

@@ -284,6 +284,24 @@ func (gr *GormRepository) Migrate() error {
 				return nil
 			},
 		},
+		{
+			ID: "20260618000000", // add environment (production/sandbox) to provider catalog; mark seeded sandboxes (#291)
+			Migrate: func(tx *gorm.DB) error {
+				if err := tx.AutoMigrate(&models.ProviderCatalogEntry{}); err != nil {
+					return err
+				}
+				// Existing seeded entries (created before the column) default to production; they are
+				// test sandboxes, so move them to the sandbox environment (never shown to patients).
+				for _, s := range models.SandboxProviderSeeds() {
+					if err := tx.Model(&models.ProviderCatalogEntry{}).
+						Where("display = ?", s.Display).
+						Update("environment", models.ProviderEnvironmentSandbox).Error; err != nil {
+						return err
+					}
+				}
+				return nil
+			},
+		},
 	})
 
 	// run when database is empty

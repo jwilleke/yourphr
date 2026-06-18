@@ -207,6 +207,37 @@ func ListConnectableProviders(c *gin.Context) {
 	}
 	out := make([]models.ConnectableProvider, 0, len(entries))
 	for i := range entries {
+		// Patient-facing: production entries only. Sandbox/test providers never appear here. An empty
+		// environment (legacy rows from before the column) is treated as production for back-compat.
+		if entries[i].Environment == models.ProviderEnvironmentSandbox {
+			continue
+		}
+		out = append(out, entries[i].Connectable())
+	}
+	c.JSON(http.StatusOK, gin.H{"success": true, "data": out})
+}
+
+// ListSandboxProviders (admin) returns the configured sandbox providers for the /sandbox admin page as a
+// credential-free picker: id + display + logo only. These are the env-seeded test sandboxes; the admin
+// connects with one click and the client_id/secret never leave the backend (#291).
+func ListSandboxProviders(c *gin.Context) {
+	if !requireAdmin(c) {
+		return
+	}
+	logger := c.MustGet(pkg.ContextKeyTypeLogger).(*logrus.Entry)
+	databaseRepo := c.MustGet(pkg.ContextKeyTypeDatabase).(database.DatabaseRepository)
+
+	entries, err := databaseRepo.ListProviderCatalogEntries(c, true)
+	if err != nil {
+		logger.Errorf("error listing sandbox providers: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": err.Error()})
+		return
+	}
+	out := make([]models.ConnectableProvider, 0, len(entries))
+	for i := range entries {
+		if entries[i].Environment != models.ProviderEnvironmentSandbox {
+			continue
+		}
 		out = append(out, entries[i].Connectable())
 	}
 	c.JSON(http.StatusOK, gin.H{"success": true, "data": out})

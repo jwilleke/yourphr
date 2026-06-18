@@ -336,6 +336,20 @@ func (mr *MockDatabaseRepositoryMockRecorder) DeleteProviderCatalogEntry(ctx, id
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteProviderCatalogEntry", reflect.TypeOf((*MockDatabaseRepository)(nil).DeleteProviderCatalogEntry), ctx, id)
 }
 
+// UpsertProviderCatalogEntryByDisplay mocks base method.
+func (m *MockDatabaseRepository) UpsertProviderCatalogEntryByDisplay(ctx context.Context, entry *models.ProviderCatalogEntry) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpsertProviderCatalogEntryByDisplay", ctx, entry)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpsertProviderCatalogEntryByDisplay indicates an expected call of UpsertProviderCatalogEntryByDisplay.
+func (mr *MockDatabaseRepositoryMockRecorder) UpsertProviderCatalogEntryByDisplay(ctx, entry interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertProviderCatalogEntryByDisplay", reflect.TypeOf((*MockDatabaseRepository)(nil).UpsertProviderCatalogEntryByDisplay), ctx, entry)
+}
+
 // FindAllResourceAssociations mocks base method.
 func (m *MockDatabaseRepository) FindAllResourceAssociations(ctx context.Context, source *models.SourceCredential, resourceType, resourceId string) ([]models.RelatedResource, error) {
 	m.ctrl.T.Helper()

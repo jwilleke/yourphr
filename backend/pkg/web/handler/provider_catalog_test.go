@@ -102,13 +102,22 @@ func TestProviderCatalog_ConnectableIsCredentialFree(t *testing.T) {
 	entry := models.ProviderCatalogEntry{
 		ModelBase:    models.ModelBase{ID: uuid.New()},
 		Display:      "Connect Medicare / Blue Button",
+		Environment:  models.ProviderEnvironmentProduction,
 		ClientId:     "leaky-client-id",
 		ClientSecret: "leaky-secret",
 		BrandLogoUrl: "https://logo",
 		Enabled:      true,
 	}
+	// A sandbox (admin-only) entry must NOT appear in the patient-facing list.
+	sandbox := models.ProviderCatalogEntry{
+		ModelBase:   models.ModelBase{ID: uuid.New()},
+		Display:     "Epic (Sandbox)",
+		Environment: models.ProviderEnvironmentSandbox,
+		ClientId:    "sandbox-client-id",
+		Enabled:     true,
+	}
 	// enabledOnly must be true for the patient-facing list.
-	mockDB.EXPECT().ListProviderCatalogEntries(gomock.Any(), true).Return([]models.ProviderCatalogEntry{entry}, nil)
+	mockDB.EXPECT().ListProviderCatalogEntries(gomock.Any(), true).Return([]models.ProviderCatalogEntry{entry, sandbox}, nil)
 
 	c, w := catalogContext(t, mockDB, http.MethodGet, "/provider-catalog/connectable", nil)
 	handler.ListConnectableProviders(c)
@@ -118,6 +127,51 @@ func TestProviderCatalog_ConnectableIsCredentialFree(t *testing.T) {
 	assert.Contains(t, body, "Connect Medicare / Blue Button")
 	assert.NotContains(t, body, "leaky-client-id")
 	assert.NotContains(t, body, "leaky-secret")
+	assert.NotContains(t, body, "Epic (Sandbox)", "sandbox providers must never appear in the patient list")
+}
+
+// The admin sandbox list returns only sandbox entries, credential-free, and refuses non-admins.
+func TestProviderCatalog_SandboxListAdminOnlyAndFiltered(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	// Non-admin is refused (403); no DB read happens.
+	t.Run("non-admin refused", func(t *testing.T) {
+		mockCtrl := gomock.NewController(t)
+		defer mockCtrl.Finish()
+		mockDB := mock_database.NewMockDatabaseRepository(mockCtrl)
+		mockDB.EXPECT().GetCurrentUser(gomock.Any()).Return(plainUser(), nil)
+
+		c, w := catalogContext(t, mockDB, http.MethodGet, "/provider-catalog/sandbox", nil)
+		handler.ListSandboxProviders(c)
+		assert.Equal(t, http.StatusForbidden, w.Code)
+	})
+
+	t.Run("admin gets sandbox only", func(t *testing.T) {
+		mockCtrl := gomock.NewController(t)
+		defer mockCtrl.Finish()
+		mockDB := mock_database.NewMockDatabaseRepository(mockCtrl)
+		mockDB.EXPECT().GetCurrentUser(gomock.Any()).Return(adminUser(), nil)
+
+		prod := models.ProviderCatalogEntry{
+			ModelBase: models.ModelBase{ID: uuid.New()}, Display: "Medicare Production",
+			Environment: models.ProviderEnvironmentProduction, Enabled: true,
+		}
+		sandbox := models.ProviderCatalogEntry{
+			ModelBase: models.ModelBase{ID: uuid.New()}, Display: "Epic (Sandbox)",
+			Environment: models.ProviderEnvironmentSandbox, ClientId: "sandbox-cid", ClientSecret: "sandbox-secret", Enabled: true,
+		}
+		mockDB.EXPECT().ListProviderCatalogEntries(gomock.Any(), true).Return([]models.ProviderCatalogEntry{prod, sandbox}, nil)
+
+		c, w := catalogContext(t, mockDB, http.MethodGet, "/provider-catalog/sandbox", nil)
+		handler.ListSandboxProviders(c)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+		body := w.Body.String()
+		assert.Contains(t, body, "Epic (Sandbox)")
+		assert.NotContains(t, body, "Medicare Production", "production entries must not appear in the sandbox list")
+		assert.NotContains(t, body, "sandbox-cid")
+		assert.NotContains(t, body, "sandbox-secret")
+	})
 }
 
 // Updating with an empty client_secret preserves the stored secret (never silently blanks it).
@@ -161,6 +215,7 @@ func TestProviderCatalog_RoutesRegisterWithoutPanic(t *testing.T) {
 		g.POST("/provider-catalog", handler.CreateProviderCatalogEntry)
 		g.GET("/provider-catalog", handler.ListProviderCatalogEntries)
 		g.GET("/provider-catalog/connectable", handler.ListConnectableProviders)
+		g.GET("/provider-catalog/sandbox", handler.ListSandboxProviders)
 		g.GET("/provider-catalog/:id", handler.GetProviderCatalogEntry)
 		g.PUT("/provider-catalog/:id", handler.UpdateProviderCatalogEntry)
 		g.DELETE("/provider-catalog/:id", handler.DeleteProviderCatalogEntry)

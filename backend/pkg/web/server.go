@@ -198,6 +198,7 @@ func (ae *AppEngine) Setup() (*gin.RouterGroup, *gin.Engine) {
 					secure.POST("/provider-catalog", handler.CreateProviderCatalogEntry)
 					secure.GET("/provider-catalog", handler.ListProviderCatalogEntries)
 					secure.GET("/provider-catalog/connectable", handler.ListConnectableProviders)
+					secure.GET("/provider-catalog/sandbox", handler.ListSandboxProviders)
 					secure.GET("/provider-catalog/:id", handler.GetProviderCatalogEntry)
 					secure.PUT("/provider-catalog/:id", handler.UpdateProviderCatalogEntry)
 					secure.DELETE("/provider-catalog/:id", handler.DeleteProviderCatalogEntry)
@@ -536,6 +537,11 @@ func (ae *AppEngine) initializeDatabase() error {
 		return fmt.Errorf("failed to initialize database repository: %w", err)
 	}
 	ae.deviceRepo = dbRepo
+
+	// Seed/refresh the admin-only sandbox providers from env (a k8s Secret), so the /sandbox buttons
+	// connect with zero typing and the client_secret never reaches the browser (#291). Sandboxes with
+	// no client_id configured in this deployment are skipped.
+	database.SeedSandboxProviders(context.Background(), dbRepo, ae.Logger, os.Getenv)
 
 	return nil
 }

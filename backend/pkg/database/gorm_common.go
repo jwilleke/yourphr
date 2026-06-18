@@ -1307,6 +1307,23 @@ func (gr *GormRepository) DeleteProviderCatalogEntry(ctx context.Context, id str
 	return res.RowsAffected, res.Error
 }
 
+func (gr *GormRepository) UpsertProviderCatalogEntryByDisplay(ctx context.Context, entry *models.ProviderCatalogEntry) error {
+	// Update the entry with this Display if it exists, else create it. Assign the credential/config
+	// columns explicitly so a re-seed refreshes them (env may have changed).
+	return gr.GormClient.WithContext(ctx).
+		Where(models.ProviderCatalogEntry{Display: entry.Display}).
+		Assign(map[string]interface{}{
+			"environment":           entry.Environment,
+			"api_endpoint_base_url": entry.ApiEndpointBaseUrl,
+			"scopes":                entry.Scopes,
+			"platform_type":         entry.PlatformType,
+			"client_id":             entry.ClientId,
+			"client_secret":         entry.ClientSecret,
+			"enabled":               entry.Enabled,
+		}).
+		FirstOrCreate(entry).Error
+}
+
 //</editor-fold>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
