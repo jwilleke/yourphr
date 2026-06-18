@@ -233,13 +233,15 @@ func (c Config) fetchByCapability(ctx context.Context, ep Endpoints, tok *oauth2
 			for next != "" {
 				body, link, gerr := getBundlePage(ctx, httpClient, next)
 				if gerr != nil {
-					// A server can advertise a resource type in its CapabilityStatement yet refuse it for
-					// this token/patient — e.g. Epic returns 403 for AdverseEvent when the granted scopes
-					// don't cover it, and some servers 404 a type with no data. One inaccessible type must
-					// NOT fail the whole import: skip it and keep fetching the rest. Any other error stays
-					// fatal. (#250 — Epic/Blue Button non-uniform resource access.)
+					// A server can advertise a resource type in its CapabilityStatement yet refuse our
+					// search for it. Epic does this several ways: 403 for AdverseEvent (scope not granted),
+					// 400 for CarePlan ("this resource requires a category for searching"), 404 for a type
+					// with no data, 422 for an unprocessable search. One inaccessible type must NOT fail the
+					// whole import — skip it and keep fetching the rest. Only 401 (auth itself is broken, so
+					// every remaining type would fail too) and non-HTTP errors (e.g. network) stay fatal.
+					// (#250 — Epic/Blue Button non-uniform resource access.)
 					var hse *httpStatusError
-					if errors.As(gerr, &hse) && (hse.StatusCode == http.StatusForbidden || hse.StatusCode == http.StatusNotFound) {
+					if errors.As(gerr, &hse) && hse.StatusCode != http.StatusUnauthorized {
 						break // stop paging this type; continue with the next resource type
 					}
 					return pages, nil, fmt.Errorf("fetching %s: %w", r.Type, gerr)
