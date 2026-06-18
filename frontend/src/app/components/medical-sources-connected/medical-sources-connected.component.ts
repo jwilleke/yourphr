@@ -61,7 +61,11 @@ export class MedicalSourcesConnectedComponent implements OnInit {
         .subscribe((connectedBrand) => {
           for(const ndx in connectedSources){
             console.log(connectedSources[ndx])
-            this.connectedSourceList.push({source: connectedSources[ndx], brand: connectedBrand[ndx]})
+            const listItem: SourceListItem = {source: connectedSources[ndx], brand: connectedBrand[ndx]}
+            this.connectedSourceList.push(listItem)
+            // Resolve the patient's display name so the tile can show whose records these are
+            // (e.g. "Camila Lopez") instead of just the provider icon. Best-effort: failures are ignored.
+            this.loadPatientName(listItem)
             // Re-show the in-progress/failed indicator when returning to the page mid-sync. Key by
             // source.id (the template checks status[source.id] first) AND brand_id — manual sources
             // (e.g. an uploaded bundle still importing) have no brand_id, so keying only by brand_id
@@ -350,6 +354,32 @@ export class MedicalSourcesConnectedComponent implements OnInit {
     return now + 300;
   }
 
+
+  // loadPatientName resolves the source's Patient resource and attaches the display name to the tile
+  // (e.g. "Camila Lopez"), so the connected card shows whose records these are. Best-effort.
+  private loadPatientName(item: SourceListItem): void {
+    const source = item.source
+    if (!source?.id || !source?.patient) { return }
+    this.fastenApi.getResourceBySourceId(source.id, source.patient).subscribe(
+      (resource: any) => {
+        const name = this.extractPatientName(resource?.resource_raw)
+        if (name) { item.patientName = name }
+      },
+      () => { /* best-effort — no name is fine */ }
+    )
+  }
+
+  // extractPatientName pulls a human-readable name from a FHIR Patient resource (HumanName): prefer
+  // the official name's text, else assemble given + family. Returns "" when none is available.
+  private extractPatientName(raw: any): string {
+    if (typeof raw === 'string') { try { raw = JSON.parse(raw) } catch { return '' } }
+    const names = raw?.name
+    if (!Array.isArray(names) || names.length === 0) { return '' }
+    const n = names.find((x: any) => x?.use === 'official') || names[0]
+    if (n?.text) { return n.text }
+    const given = Array.isArray(n?.given) ? n.given.join(' ') : (n?.given || '')
+    return [given, n?.family].filter(Boolean).join(' ').trim()
+  }
 
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Modal Window Functions

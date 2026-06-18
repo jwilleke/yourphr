@@ -40,4 +40,10 @@ export class MedicalSourcesCardComponent implements OnInit {
     return "Unknown"
   }
 
+  // getConnectedDate formats when this source was connected (e.g. "Jun 18, 2026") for the tile.
+  getConnectedDate(sourceItem: SourceListItem): string {
+    const createdAt = sourceItem?.source?.created_at
+    return createdAt ? moment(createdAt).format('MMM DD, YYYY') : ''
+  }
+
 }

@@ -12,8 +12,14 @@
     </div>
   </div>
   <div class="card-footer text-center p-1" style="width:100%">
-    <small class="tx-gray-700">
+    <small class="tx-gray-700 d-block tx-medium">
       {{getSourceDisplayName(sourceInfo)}}
+    </small>
+    <small *ngIf="sourceInfo?.patientName" class="tx-gray-600 d-block">
+      <i class="fas fa-user fa-xs mg-r-3"></i>{{sourceInfo?.patientName}}
+    </small>
+    <small *ngIf="sourceInfo?.source?.created_at" class="tx-gray-500 d-block tx-11">
+      Connected {{getConnectedDate(sourceInfo)}}
     </small>
     <ng-container *ngIf="sourceInfo?.searchHighlights?.length > 0">
       <br/>

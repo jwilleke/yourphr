@@ -31,6 +31,8 @@ export class SourceListItem {
   source?: Source
   brand: ConnectGatewayBrandListDisplayItem | PatientAccessBrand
   searchHighlights?: string[]
+  // Resolved patient display name for this source (e.g. "Camila Lopez"), shown on the connected tile.
+  patientName?: string
 }
 
 @Component({
