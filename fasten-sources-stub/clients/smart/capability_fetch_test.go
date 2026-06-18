@@ -64,6 +64,47 @@ func TestFetchPatientData_BlueButtonStyle_SearchFallback(t *testing.T) {
 	}
 }
 
+// Epic advertises a resource type (AdverseEvent) but returns 403 for it when the granted scopes don't
+// cover it. One forbidden type must NOT fail the whole import — it is skipped and the rest still load.
+func TestFetchPatientData_SkipsForbiddenResourceType(t *testing.T) {
+	const meta = `{"resourceType":"CapabilityStatement","rest":[{"resource":[
+		{"type":"Patient","interaction":[{"code":"read"}],"searchParam":[{"name":"_id"}]},
+		{"type":"AdverseEvent","interaction":[{"code":"search-type"}],"searchParam":[{"name":"patient"}]},
+		{"type":"Observation","interaction":[{"code":"search-type"}],"searchParam":[{"name":"patient"}]},
+		{"type":"Immunization","interaction":[{"code":"search-type"}],"searchParam":[{"name":"patient"}]}
+	]}]}`
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/fhir+json")
+		switch r.URL.Path {
+		case "/metadata":
+			fmt.Fprint(w, meta)
+		case "/Patient/p1":
+			fmt.Fprint(w, `{"resourceType":"Patient","id":"p1"}`)
+		case "/AdverseEvent":
+			w.WriteHeader(http.StatusForbidden) // scope not granted — Epic returns 403
+			fmt.Fprint(w, `{"resourceType":"OperationOutcome"}`)
+		case "/Immunization":
+			w.WriteHeader(http.StatusNotFound) // some servers 404 a type with no data
+		case "/Observation":
+			fmt.Fprint(w, `{"resourceType":"Bundle","entry":[{"resource":{"resourceType":"Observation","id":"o1"}}]}`)
+		default:
+			t.Errorf("unexpected path %s", r.URL.Path)
+		}
+	}))
+	defer srv.Close()
+
+	cfg := Config{FHIRBaseURL: srv.URL, AllowInternalHosts: true, ClientID: "c", HTTPClient: srv.Client()}
+	pages, _, err := cfg.FetchPatientData(context.Background(), Endpoints{Token: srv.URL + "/token"}, freshToken(), "p1")
+	if err != nil {
+		t.Fatalf("FetchPatientData must not fail on a forbidden resource type: %v", err)
+	}
+	// Patient + Observation succeed; AdverseEvent (403) and Immunization (404) are skipped.
+	if len(pages) != 2 {
+		t.Fatalf("expected 2 pages (Patient + Observation), got %d", len(pages))
+	}
+}
+
 // A CapabilityStatement that DOES advertise Patient/$everything routes to $everything (one call).
 func TestFetchPatientData_EverythingSupported_UsesEverything(t *testing.T) {
 	const meta = `{"resourceType":"CapabilityStatement","rest":[{"resource":[

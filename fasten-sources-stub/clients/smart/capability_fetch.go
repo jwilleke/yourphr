@@ -3,6 +3,7 @@ package smart
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -232,6 +233,15 @@ func (c Config) fetchByCapability(ctx context.Context, ep Endpoints, tok *oauth2
 			for next != "" {
 				body, link, gerr := getBundlePage(ctx, httpClient, next)
 				if gerr != nil {
+					// A server can advertise a resource type in its CapabilityStatement yet refuse it for
+					// this token/patient — e.g. Epic returns 403 for AdverseEvent when the granted scopes
+					// don't cover it, and some servers 404 a type with no data. One inaccessible type must
+					// NOT fail the whole import: skip it and keep fetching the rest. Any other error stays
+					// fatal. (#250 — Epic/Blue Button non-uniform resource access.)
+					var hse *httpStatusError
+					if errors.As(gerr, &hse) && (hse.StatusCode == http.StatusForbidden || hse.StatusCode == http.StatusNotFound) {
+						break // stop paging this type; continue with the next resource type
+					}
 					return pages, nil, fmt.Errorf("fetching %s: %w", r.Type, gerr)
 				}
 				pages = append(pages, body)

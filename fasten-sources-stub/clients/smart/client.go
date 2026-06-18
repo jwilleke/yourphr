@@ -189,9 +189,20 @@ func getBundlePage(ctx context.Context, client *http.Client, url string) (body [
 		return nil, "", err
 	}
 	if resp.StatusCode != http.StatusOK {
-		return nil, "", fmt.Errorf("fetch HTTP %d: %s", resp.StatusCode, truncate(body, 500))
+		return nil, "", &httpStatusError{StatusCode: resp.StatusCode, Body: truncate(body, 500)}
 	}
 	return body, nextBundleLink(body), nil
+}
+
+// httpStatusError is a non-2xx FHIR fetch response, carrying the status so callers can decide whether
+// it's fatal or skippable (e.g. a per-resource-type 403/404 should be skipped, not fail the import).
+type httpStatusError struct {
+	StatusCode int
+	Body       string
+}
+
+func (e *httpStatusError) Error() string {
+	return fmt.Sprintf("fetch HTTP %d: %s", e.StatusCode, e.Body)
 }
 
 // nextBundleLink returns the Bundle.link entry with relation "next", or "" if none.
