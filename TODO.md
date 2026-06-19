@@ -28,6 +28,7 @@
 
 - [#337](https://github.com/jwilleke/yourphr/issues/337) [BUG] SSE sync events dropped ("Room not found") — import progress never clears.
 - [#333](https://github.com/jwilleke/yourphr/issues/333) [EPIC] Explore export options → [#334](https://github.com/jwilleke/yourphr/issues/334) Save Report · [#335](https://github.com/jwilleke/yourphr/issues/335) Export to PDF · [#336](https://github.com/jwilleke/yourphr/issues/336) Send to Email.
+- **Sandbox provider onboarding ([#291](https://github.com/jwilleke/yourphr/issues/291) follow-ups):** [#338](https://github.com/jwilleke/yourphr/issues/338) Oracle/Cerner client-persona-mismatch (re-register as Patient app) · [#339](https://github.com/jwilleke/yourphr/issues/339) athenahealth Developer-Portal onboarding (`blocked`).
 - [#300](https://github.com/jwilleke/yourphr/issues/300) Angular surface for Medicare claims & coverage (consumes the shipped #294/#295/#296 endpoints).
 - [#305](https://github.com/jwilleke/yourphr/issues/305) Manual records backend · [#307](https://github.com/jwilleke/yourphr/issues/307) frontend forms (under [#253](https://github.com/jwilleke/yourphr/issues/253) EPIC).
 - [#277](https://github.com/jwilleke/yourphr/issues/277) Medical History hub · [#287](https://github.com/jwilleke/yourphr/issues/287) upload UI polish · [#289](https://github.com/jwilleke/yourphr/issues/289) allergy tiles dead-end · [#290](https://github.com/jwilleke/yourphr/issues/290) "No Known Allergies" count.
