@@ -167,6 +167,84 @@ func TestFetchPatientData_EverythingSupported_UsesEverything(t *testing.T) {
 	}
 }
 
+// A server that advertises Patient/$everything but then ERRORS on it must NOT fail the import — it
+// degrades to a per-resource search built from the same CapabilityStatement (#341). Cerner is the
+// real example: $everything is advertised but unusable for a patient-standalone token.
+func TestFetchPatientData_EverythingFailsFallsBackToPerResource(t *testing.T) {
+	const meta = `{"resourceType":"CapabilityStatement","rest":[{"resource":[
+		{"type":"Patient","operation":[{"name":"everything"}],"interaction":[{"code":"read"}],"searchParam":[{"name":"_id"}]},
+		{"type":"Condition","interaction":[{"code":"search-type"}],"searchParam":[{"name":"patient"}]}
+	]}]}`
+	var triedEverything, triedPerResource bool
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/fhir+json")
+		switch r.URL.Path {
+		case "/metadata":
+			fmt.Fprint(w, meta)
+		case "/Patient/p1/$everything":
+			triedEverything = true
+			w.WriteHeader(http.StatusBadRequest) // $everything not usable for this patient
+			fmt.Fprint(w, `{"resourceType":"OperationOutcome"}`)
+		case "/Patient/p1":
+			triedPerResource = true
+			fmt.Fprint(w, `{"resourceType":"Patient","id":"p1"}`)
+		case "/Condition":
+			fmt.Fprint(w, `{"resourceType":"Bundle","entry":[{"resource":{"resourceType":"Condition","id":"c1"}}]}`)
+		default:
+			t.Errorf("unexpected path %s", r.URL.Path)
+		}
+	}))
+	defer srv.Close()
+
+	cfg := Config{FHIRBaseURL: srv.URL, AllowInternalHosts: true, ClientID: "c", HTTPClient: srv.Client()}
+	pages, _, err := cfg.FetchPatientData(context.Background(), Endpoints{Token: srv.URL + "/token"}, freshToken(), "p1")
+	if err != nil {
+		t.Fatalf("a failed $everything must fall back, not fail the import: %v", err)
+	}
+	if !triedEverything || !triedPerResource {
+		t.Fatalf("expected $everything tried then per-resource fallback (everything=%v perResource=%v)", triedEverything, triedPerResource)
+	}
+	if len(pages) != 2 { // Patient + Condition
+		t.Fatalf("expected 2 pages from the fallback, got %d", len(pages))
+	}
+}
+
+// When the CapabilityStatement can't be read AND $everything fails, degrade to the default
+// patient-compartment search so we still import what we can rather than fail fully empty (#341).
+func TestFetchPatientData_MetadataUnreadable_UsesDefaultCompartment(t *testing.T) {
+	var gotCondition bool
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/fhir+json")
+		switch r.URL.Path {
+		case "/metadata":
+			w.WriteHeader(http.StatusInternalServerError) // capability unreadable
+		case "/Patient/p1/$everything":
+			w.WriteHeader(http.StatusNotFound) // not supported either
+		case "/Patient/p1":
+			fmt.Fprint(w, `{"resourceType":"Patient","id":"p1"}`)
+		case "/Condition":
+			gotCondition = true
+			fmt.Fprint(w, `{"resourceType":"Bundle","entry":[{"resource":{"resourceType":"Condition","id":"c1"}}]}`)
+		default:
+			// every other default-compartment type returns an empty bundle (no data) — fine
+			fmt.Fprint(w, `{"resourceType":"Bundle","entry":[]}`)
+		}
+	}))
+	defer srv.Close()
+
+	cfg := Config{FHIRBaseURL: srv.URL, AllowInternalHosts: true, ClientID: "c", HTTPClient: srv.Client()}
+	pages, _, err := cfg.FetchPatientData(context.Background(), Endpoints{Token: srv.URL + "/token"}, freshToken(), "p1")
+	if err != nil {
+		t.Fatalf("metadata-unreadable + $everything-fail must degrade to defaults, not fail: %v", err)
+	}
+	if !gotCondition {
+		t.Fatal("expected the default compartment search to query Condition")
+	}
+	if len(pages) == 0 {
+		t.Fatal("expected the default compartment search to import at least Patient + Condition")
+	}
+}
+
 // Per-resource search follows Bundle "next" pagination.
 func TestFetchByCapability_FollowsPagination(t *testing.T) {
 	var srv *httptest.Server

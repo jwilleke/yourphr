@@ -45,16 +45,48 @@ var patientCompartmentParams = map[string][]string{
 // patient-compartment clinical resources link via "patient" or "subject".
 var defaultPatientParams = []string{"patient", "subject"}
 
-// FetchPatientData fetches all of a patient's data, choosing the strategy from the server's
-// CapabilityStatement: Patient/$everything when supported, otherwise a per-resource search across the
-// patient compartment. If the CapabilityStatement cannot be read, it falls back to $everything so
-// existing $everything-capable providers are unaffected.
+// FetchPatientData fetches all of a patient's data, choosing a strategy from the server's
+// CapabilityStatement and DEGRADING GRACEFULLY so one failing strategy never produces a silent empty
+// import (#341):
+//   - capability readable + advertises Patient/$everything: use $everything; if it errors (anything
+//     but 401), fall back to a per-resource compartment search built from the capability;
+//   - capability readable, no $everything: per-resource search from the capability;
+//   - capability unreadable: try $everything, else fall back to a default US-Core patient-compartment
+//     search so we still import what we can.
+//
+// A 401 stays fatal everywhere — auth itself is broken, so every strategy would fail too.
 func (c Config) FetchPatientData(ctx context.Context, ep Endpoints, tok *oauth2.Token, patientID string) (pages [][]byte, refreshed *oauth2.Token, err error) {
 	cap, cerr := c.fetchCapability(ctx, ep, tok)
-	if cerr != nil || cap.supportsPatientEverything() {
-		return c.FetchEverything(ctx, ep, tok, patientID)
+
+	if cerr == nil && cap.supportsPatientEverything() {
+		pgs, refr, eerr := c.FetchEverything(ctx, ep, tok, patientID)
+		if eerr == nil {
+			c.logf("smart sync: Patient/$everything succeeded (%d page(s))", len(pgs))
+			return pgs, refr, nil
+		}
+		if isUnauthorized(eerr) {
+			return nil, nil, eerr
+		}
+		c.logf("smart sync: Patient/$everything failed (%v) — falling back to per-resource search", eerr)
+		return c.fetchSearches(ctx, ep, tok, patientID, searchesFromCapability(cap))
 	}
-	return c.fetchByCapability(ctx, ep, tok, patientID, cap)
+
+	if cerr != nil {
+		c.logf("smart sync: CapabilityStatement unreadable (%v) — trying Patient/$everything", cerr)
+		pgs, refr, eerr := c.FetchEverything(ctx, ep, tok, patientID)
+		if eerr == nil {
+			c.logf("smart sync: Patient/$everything succeeded (%d page(s))", len(pgs))
+			return pgs, refr, nil
+		}
+		if isUnauthorized(eerr) {
+			return nil, nil, eerr
+		}
+		c.logf("smart sync: $everything failed (%v) — using default patient-compartment search", eerr)
+		return c.fetchSearches(ctx, ep, tok, patientID, defaultPatientCompartment)
+	}
+
+	c.logf("smart sync: no Patient/$everything — per-resource search across the patient compartment")
+	return c.fetchSearches(ctx, ep, tok, patientID, searchesFromCapability(cap))
 }
 
 // patientRef parses just enough of a FHIR resource (bare or as a Bundle entry) to find a Patient:
@@ -206,10 +238,64 @@ func (cs capabilityStatement) supportsPatientEverything() bool {
 	return false
 }
 
-// fetchByCapability fetches the patient's data per resource type the server advertises: Patient is
-// read by id; every other type is searched by its patient-linking param. Resources with no usable
-// patient link are skipped (never guessed). Pagination follows Bundle "next" links.
-func (c Config) fetchByCapability(ctx context.Context, ep Endpoints, tok *oauth2.Token, patientID string, cs capabilityStatement) (pages [][]byte, refreshed *oauth2.Token, err error) {
+// resourceSearch is one resource type to fetch and the search param linking it to a Patient. An empty
+// Param means "read the resource by id" (used for Patient itself).
+type resourceSearch struct {
+	Type  string
+	Param string
+}
+
+// defaultPatientCompartment is the resource set tried when the server's CapabilityStatement cannot be
+// read — the common US-Core patient-compartment clinical resources, linked by "patient". It lets a
+// metadata hiccup degrade to a best-effort per-resource import instead of failing fully empty (#341).
+var defaultPatientCompartment = []resourceSearch{
+	{Type: "Patient"},
+	{Type: "AllergyIntolerance", Param: "patient"},
+	{Type: "CarePlan", Param: "patient"},
+	{Type: "CareTeam", Param: "patient"},
+	{Type: "Condition", Param: "patient"},
+	{Type: "Device", Param: "patient"},
+	{Type: "DiagnosticReport", Param: "patient"},
+	{Type: "DocumentReference", Param: "patient"},
+	{Type: "Encounter", Param: "patient"},
+	{Type: "Goal", Param: "patient"},
+	{Type: "Immunization", Param: "patient"},
+	{Type: "MedicationRequest", Param: "patient"},
+	{Type: "Observation", Param: "patient"},
+	{Type: "Procedure", Param: "patient"},
+	{Type: "Provenance", Param: "patient"},
+}
+
+// searchesFromCapability builds the per-resource search plan from a CapabilityStatement: Patient is
+// read by id; every other advertised type is searched by its patient-linking param when the server
+// advertises one (else skipped — never guessed).
+func searchesFromCapability(cs capabilityStatement) []resourceSearch {
+	var out []resourceSearch
+	for _, rest := range cs.Rest {
+		for _, r := range rest.Resource {
+			if r.Type == "Patient" {
+				out = append(out, resourceSearch{Type: "Patient"})
+				continue
+			}
+			if param := patientParamFor(r.Type, r.SearchParam); param != "" {
+				out = append(out, resourceSearch{Type: r.Type, Param: param})
+			}
+		}
+	}
+	return out
+}
+
+// isUnauthorized reports whether err is an HTTP 401 — auth itself is broken, so no fallback would help.
+func isUnauthorized(err error) bool {
+	var hse *httpStatusError
+	return errors.As(err, &hse) && hse.StatusCode == http.StatusUnauthorized
+}
+
+// fetchSearches runs a per-resource patient-compartment fetch over the given plan: Patient is read by
+// id, every other type is searched by its patient param, following Bundle "next" pagination. A type
+// the server advertises but then refuses (400/403/404/422/…) is SKIPPED so one inaccessible type never
+// fails the whole import; only 401 (auth broken) and non-HTTP errors are fatal (#250 / #341).
+func (c Config) fetchSearches(ctx context.Context, ep Endpoints, tok *oauth2.Token, patientID string, searches []resourceSearch) (pages [][]byte, refreshed *oauth2.Token, err error) {
 	const pageCap = 1000
 	base, err := c.safeBaseURL()
 	if err != nil {
@@ -219,39 +305,34 @@ func (c Config) fetchByCapability(ctx context.Context, ep Endpoints, tok *oauth2
 	ts := c.oauth2Config(ep).TokenSource(ctx, tok)
 	httpClient := oauth2.NewClient(ctx, ts)
 
-	for _, rest := range cs.Rest {
-		for _, r := range rest.Resource {
-			var next string
-			if r.Type == "Patient" {
-				next = fmt.Sprintf("%s/Patient/%s", base, url.PathEscape(patientID))
-			} else if param := patientParamFor(r.Type, r.SearchParam); param != "" {
-				next = fmt.Sprintf("%s/%s?%s=%s", base, r.Type, param, url.QueryEscape(patientID))
-			} else {
-				continue // no usable patient link for this resource — skip rather than guess
-			}
+	for _, s := range searches {
+		var next string
+		if s.Param == "" {
+			next = fmt.Sprintf("%s/%s/%s", base, s.Type, url.PathEscape(patientID))
+		} else {
+			next = fmt.Sprintf("%s/%s?%s=%s", base, s.Type, s.Param, url.QueryEscape(patientID))
+		}
 
-			for next != "" {
-				body, link, gerr := getBundlePage(ctx, httpClient, next)
-				if gerr != nil {
-					// A server can advertise a resource type in its CapabilityStatement yet refuse our
-					// search for it. Epic does this several ways: 403 for AdverseEvent (scope not granted),
-					// 400 for CarePlan ("this resource requires a category for searching"), 404 for a type
-					// with no data, 422 for an unprocessable search. One inaccessible type must NOT fail the
-					// whole import — skip it and keep fetching the rest. Only 401 (auth itself is broken, so
-					// every remaining type would fail too) and non-HTTP errors (e.g. network) stay fatal.
-					// (#250 — Epic/Blue Button non-uniform resource access.)
-					var hse *httpStatusError
-					if errors.As(gerr, &hse) && hse.StatusCode != http.StatusUnauthorized {
-						break // stop paging this type; continue with the next resource type
-					}
-					return pages, nil, fmt.Errorf("fetching %s: %w", r.Type, gerr)
+		fetched := 0
+		for next != "" {
+			body, link, gerr := getBundlePage(ctx, httpClient, next)
+			if gerr != nil {
+				var hse *httpStatusError
+				if errors.As(gerr, &hse) && hse.StatusCode != http.StatusUnauthorized {
+					c.logf("smart sync: %s skipped (%v)", s.Type, gerr)
+					break // stop paging this type; continue with the next
 				}
-				pages = append(pages, body)
-				next = link
-				if len(pages) >= pageCap {
-					return pages, nil, fmt.Errorf("aborting capability fetch: exceeded %d pages", pageCap)
-				}
+				return pages, nil, fmt.Errorf("fetching %s: %w", s.Type, gerr)
 			}
+			pages = append(pages, body)
+			fetched++
+			next = link
+			if len(pages) >= pageCap {
+				return pages, nil, fmt.Errorf("aborting capability fetch: exceeded %d pages", pageCap)
+			}
+		}
+		if fetched > 0 {
+			c.logf("smart sync: %s fetched %d page(s)", s.Type, fetched)
 		}
 	}
 

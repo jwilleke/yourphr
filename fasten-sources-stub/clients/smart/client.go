@@ -40,6 +40,18 @@ type Config struct {
 	// AllowInternalHosts disables the SSRF host guard (loopback/private/link-local/metadata).
 	// Set ONLY by tests that talk to httptest servers on 127.0.0.1 — never in production.
 	AllowInternalHosts bool
+
+	// Logf, when set, receives human-readable sync diagnostics — the fetch strategy chosen, each
+	// resource's result, and any fallbacks — so an empty/partial import is explainable from the logs.
+	// Optional; nil disables logging. The factory wires it from the source's logrus entry (#341 / #337).
+	Logf func(format string, args ...any)
+}
+
+// logf emits a diagnostic line when a Logf hook is configured (no-op otherwise).
+func (c Config) logf(format string, args ...any) {
+	if c.Logf != nil {
+		c.Logf(format, args...)
+	}
 }
 
 // Endpoints holds the SMART authorize/token endpoints from .well-known/smart-configuration.

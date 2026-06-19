@@ -29,6 +29,13 @@ func newSmartClient(ctx context.Context, logger *logrus.Entry, cred models.Sourc
 			ClientID:     cred.GetClientId(),
 			ClientSecret: cred.GetClientSecret(), // confidential client when set; "" = public/PKCE (#286)
 			Scopes:       cred.GetScopes(),
+			// Surface the fetch strategy + per-resource results in the sync logs so empty/partial
+			// imports are diagnosable instead of silent (#341 / #337).
+			Logf: func(format string, args ...any) {
+				if logger != nil {
+					logger.Infof(format, args...)
+				}
+			},
 		},
 	}
 }
