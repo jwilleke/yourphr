@@ -45,11 +45,11 @@
                 <img *ngIf="provider.brand_logo_url" [src]="provider.brand_logo_url" alt="" width="32" height="32" class="mg-r-10">
                 <span class="tx-medium">{{provider.display}}</span>
               </div>
-              <button type="button" class="btn btn-az-primary"
+              <button type="button" class="btn btn-az-primary" aria-label="Connect"
                       (click)="connectSandboxProvider(provider)"
                       [disabled]="connectingProviderId">
                 <span *ngIf="connectingProviderId === provider.id" class="spinner-border spinner-border-sm mg-r-5" role="status" aria-hidden="true"></span>
-                <i *ngIf="connectingProviderId !== provider.id" class="fas fa-plug mg-r-5"></i>
+                <i *ngIf="connectingProviderId !== provider.id" class="fas fa-plug mg-r-5" aria-hidden="true"></i>
                 Connect
               </button>
             </div>
