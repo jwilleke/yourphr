@@ -37,7 +37,7 @@ Record credentials in `private/secrets.md` (gitignored).
 
 ## Status
 
-🟡 **Auth works; record access gated (live test 2026-06-18).** Wired into `/sandbox` with base `https://api.preview.platform.athenahealth.com/fhir/r4` and the confidential `client_id`/`client_secret`. The SMART flow + PKCE + the **patient login succeed** — the patient (e.g. *Jake Medlock, DOB Jan 28 1952*) authenticates and the popup reaches athenahealth's consent screen. It then stops at:
+🟡 **Auth works; record access gated (live test 2026-06-18).** Wired into `/sandbox` with base `https://api.preview.platform.athenahealth.com/fhir/r4` and the confidential `client_id`/`client_secret`. The SMART flow + PKCE + the **patient login succeed** — the patient (e.g. _Jake Medlock, DOB Jan 28 1952_) authenticates and the popup reaches athenahealth's consent screen. It then stops at:
 
 > "Could not confirm access to additional health records. Please check again later."
 
