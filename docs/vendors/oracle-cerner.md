@@ -64,24 +64,29 @@ curl -s "https://fhir-myrecord.sandboxcerner.com/r4/ec2458f2-1e24-41c8-b71b-0e70
 
 ## Status
 
-⛔ **Blocked on app provisioning, NOT persona routing** ([#338](https://github.com/jwilleke/yourphr/issues/338); re-diagnosed 2026-06-19). The base URL, persona, and YourPHR's SMART flow are all **correct** — the registered app simply isn't entitled to the sandbox tenant yet.
+⛔ **Blocked on a SMART v1/v2 mismatch** ([#338](https://github.com/jwilleke/yourphr/issues/338); proven 2026-06-19). The app is a correctly-registered **Patient / Public / R4-subscribed** app — the only problem is the SMART protocol version.
 
-Verified by direct probing (read-only, no relay) of tenant `ec2458f2-1e24-41c8-b71b-0e701af7583d`:
+Proven by probing tenant `ec2458f2-1e24-41c8-b71b-0e701af7583d` with our app `c330e3c6` (read-only, no relay):
 
-- **The tenant is valid and active.** `fhir-open.sandboxcerner.com/r4/ec2458f2-…/metadata` → **200**, `CapabilityStatement`, `fhirVersion 4.0.1`, `status active`.
-- **Discovery is correct and patient-appropriate.** `fhir-myrecord` (patient host) `.well-known/smart-configuration` advertises `authorization_endpoint = .../personas/**patient**/authorize` with `context-standalone-patient` + `client-public`. (`fhir-ehr-code` is the **provider** host — don't use it; its discovery returns `personas/provider/authorize`, which is the only reason an earlier test saw `client-persona-mismatch`.)
-- **But our app gets `unknown-tenant` on BOTH personas.** A standalone authorize against the **patient** endpoint with our `client_id` + this tenant 303-redirects to `…/errors/…:grant:**unknown-tenant**…?persona=patient&client=c330e3c6-…&tenant=ec2458f2-…`. The same `unknown-tenant` on the patient persona (where there is no persona mismatch) proves this is **not** a persona problem — the **registered app is not provisioned/entitled to this tenant**.
+| Authorize endpoint | Result |
+|---|---|
+| `…/profiles/**smart-v2**/personas/patient/authorize` | ✅ reaches login — no error (with and without `offline_access`) |
+| `…/profiles/**smart-v1**/personas/patient/authorize` | ❌ 303 → `…:grant:**unknown-tenant**` |
 
-**Root cause (high confidence):** the app's **FHIR R4 API-product subscription was never completed** — see *Trap 2* above; the code Console app summary showed **FHIR Version `-`**. Without the "Oracle Health FHIR APIs for Millennium: FHIR R4, All" subscription, the app is not associated with the sandbox tenant → `unknown-tenant`.
+- The code Console app summary shows **SMART Version = SMART v2** and **Products = "Oracle Health FHIR APIs for Millennium: FHIR R4, All"** (so the *Trap 2* subscription **is** done — that earlier theory was wrong).
+- But Cerner's sandbox `.well-known/smart-configuration` on `fhir-myrecord` advertises the **smart-v1** `authorization_endpoint`, and YourPHR's SMART client follows discovery. A **v2-registered app on the v1 endpoint** is rejected as `unknown-tenant`.
+- The live failure additionally showed `authorization.cerner.com / personas/**provider**/authorize` (`client-persona-mismatch`) — that means the **deployed catalog entry's base URL was admin-edited to the provider host** (`fhir-ehr-code.cerner.com`). The committed seed is the correct patient host (`fhir-myrecord`), but the startup upsert is provision-only and never clobbers an admin-edited row (see `UpsertProviderCatalogEntryByDisplay`), so that stale base URL persists on that instance.
 
-**Fix (human task in code Console — no YourPHR code change):**
+**Fix — two independent things:**
 
-1. Open app `c330e3c6-…` (Application ID `865ab3c7-…`) in <https://code-console.cerner.com/>.
-2. **Subscribe it to "Oracle Health FHIR APIs for Millennium: FHIR R4, All"** (*Trap 2*). Confirm the app summary's **FHIR Version now shows `R4`** (not `-`).
-3. Confirm the app's **persona/type is Patient** and its tenant/base URL matches `fhir-myrecord…/r4/ec2458f2-…` (code Console is authoritative — if it shows a different tenant for the app, update `YOURPHR_SANDBOX_ORACLE_CLIENT_ID`'s base URL in `SandboxProviderSeeds()` to match).
-4. Re-run the patient authorize probe; success = it reaches the patient login (`nancysmart` / `Cerner01`) instead of `unknown-tenant`.
+1. **Resolve the v1/v2 mismatch (root cause).** Either:
+   - **(a, simplest, no code)** Re-register / change the code Console app to **SMART v1** so it matches the endpoint discovery advertises — then YourPHR's discovery-driven flow works unchanged; **or**
+   - **(b)** Keep the v2 app and add an optional per-entry **SMART-version / authorize-endpoint override** to the provider catalog so YourPHR targets `…/profiles/smart-v2/…` for this entry (code change).
+2. **Correct the deployed Oracle entry's base URL** back to `https://fhir-myrecord.sandboxcerner.com/r4/ec2458f2-1e24-41c8-b71b-0e701af7583d` — edit it in the admin catalog UI, or delete the row so startup re-seeds it from the (correct) seed.
 
-No authorize-endpoint override and no provider app are needed — those earlier "options" were based on testing the wrong (provider) host. YourPHR's seeded `fhir-myrecord` base + discovery already yield the correct patient flow.
+Also minor: code Console **Type of Access = Online**, but our scope set requests `offline_access` (refresh token). Set it to **Offline** if you want refresh, or drop `offline_access` from the seed scopes. (Not the blocker — the v2 endpoint accepted both.)
+
+Re-test success = the patient login (`nancysmart` / `Cerner01`) instead of `unknown-tenant` / `client-persona-mismatch`.
 
 ## See also
 
