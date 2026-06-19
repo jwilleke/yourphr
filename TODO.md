@@ -12,9 +12,9 @@
 
 - [#291](https://github.com/jwilleke/yourphr/issues/291) umbrella **`in-review`**: backend [#304](https://github.com/jwilleke/yourphr/issues/304) ✅ closed · patient picker [#306](https://github.com/jwilleke/yourphr/issues/306) **`in-review`** · admin CRUD [#310](https://github.com/jwilleke/yourphr/issues/310) **`in-review`**. Production/sandbox split shipped: `/sandbox` is one-click connect with server-side (env/SOPS) creds; 5 sandboxes wired (Blue Button ✅, Epic ✅, SMART Health IT ✅, athenahealth 🟡 onboarding-gated, Oracle/Cerner ⛔ persona). Catalog admin grouped by environment (secret hidden, status shown).
 
-**Sandbox/production IA split (this session) — `in-review`:**
+**Sandbox/production IA split (this session):**
 
-- [#330](https://github.com/jwilleke/yourphr/issues/330) `/sandbox` self-contained · [#331](https://github.com/jwilleke/yourphr/issues/331) Environment on connected sources · [#332](https://github.com/jwilleke/yourphr/issues/332) filter `/sandbox` vs `/sources` — all **`in-review`** (shipped v1.3.0-25).
+- ✅ [#330](https://github.com/jwilleke/yourphr/issues/330) `/sandbox` self-contained · [#331](https://github.com/jwilleke/yourphr/issues/331) Environment on connected sources · [#332](https://github.com/jwilleke/yourphr/issues/332) filter `/sandbox` vs `/sources` — **closed**, verified live on v1.3.0-25.
 - [#337](https://github.com/jwilleke/yourphr/issues/337) [BUG] SSE sync events dropped ("Room not found") — import progress never clears (tile-open already mitigated; indicator fix pending).
 
 **Patients add their own records:**
