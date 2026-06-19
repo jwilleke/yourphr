@@ -72,12 +72,12 @@ Verified by direct probing (read-only, no relay) of tenant `ec2458f2-1e24-41c8-b
 - **Discovery is correct and patient-appropriate.** `fhir-myrecord` (patient host) `.well-known/smart-configuration` advertises `authorization_endpoint = .../personas/**patient**/authorize` with `context-standalone-patient` + `client-public`. (`fhir-ehr-code` is the **provider** host — don't use it; its discovery returns `personas/provider/authorize`, which is the only reason an earlier test saw `client-persona-mismatch`.)
 - **But our app gets `unknown-tenant` on BOTH personas.** A standalone authorize against the **patient** endpoint with our `client_id` + this tenant 303-redirects to `…/errors/…:grant:**unknown-tenant**…?persona=patient&client=c330e3c6-…&tenant=ec2458f2-…`. The same `unknown-tenant` on the patient persona (where there is no persona mismatch) proves this is **not** a persona problem — the **registered app is not provisioned/entitled to this tenant**.
 
-**Root cause (high confidence):** the app's **FHIR R4 API-product subscription was never completed** — see _Trap 2_ above; the code Console app summary showed **FHIR Version `-`**. Without the "Oracle Health FHIR APIs for Millennium: FHIR R4, All" subscription, the app is not associated with the sandbox tenant → `unknown-tenant`.
+**Root cause (high confidence):** the app's **FHIR R4 API-product subscription was never completed** — see *Trap 2* above; the code Console app summary showed **FHIR Version `-`**. Without the "Oracle Health FHIR APIs for Millennium: FHIR R4, All" subscription, the app is not associated with the sandbox tenant → `unknown-tenant`.
 
 **Fix (human task in code Console — no YourPHR code change):**
 
 1. Open app `c330e3c6-…` (Application ID `865ab3c7-…`) in <https://code-console.cerner.com/>.
-2. **Subscribe it to "Oracle Health FHIR APIs for Millennium: FHIR R4, All"** (_Trap 2_). Confirm the app summary's **FHIR Version now shows `R4`** (not `-`).
+2. **Subscribe it to "Oracle Health FHIR APIs for Millennium: FHIR R4, All"** (*Trap 2*). Confirm the app summary's **FHIR Version now shows `R4`** (not `-`).
 3. Confirm the app's **persona/type is Patient** and its tenant/base URL matches `fhir-myrecord…/r4/ec2458f2-…` (code Console is authoritative — if it shows a different tenant for the app, update `YOURPHR_SANDBOX_ORACLE_CLIENT_ID`'s base URL in `SandboxProviderSeeds()` to match).
 4. Re-run the patient authorize probe; success = it reaches the patient login (`nancysmart` / `Cerner01`) instead of `unknown-tenant`.
 
