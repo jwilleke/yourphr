@@ -64,7 +64,16 @@ curl -s "https://fhir-myrecord.sandboxcerner.com/r4/ec2458f2-1e24-41c8-b71b-0e70
 
 ## Status
 
-🟡 **Open — strong lead found; pending a real browser login to confirm end-to-end** ([#338](https://github.com/jwilleke/yourphr/issues/338); 2026-06-19). The working patient authorize endpoint exists but **is not advertised by any Cerner discovery document** — so YourPHR can't reach it via standard discovery.
+🟢 **End-to-end VALIDATED (manually)** ([#338](https://github.com/jwilleke/yourphr/issues/338); 2026-06-19). A browser login as `nancysmart` against the lead URL completed: Cerner issued a `code` → `relay.nerdsbythehour.com/callback?code=…&state=manualtest338` (relay showed "Connected"). Redeeming that code at the token endpoint returned `invalid_grant / token:**code-invalid-or-expired**` — i.e. the request was **well-formed** (correct token endpoint, client, redirect_uri, and a PKCE verifier that matched the challenge); only the ~60 s-expired code was rejected. So both the authorize *and* token endpoints accept our (v2-registered) app on the **smart-v1** profile; the only reason a manual token capture failed is timing, which YourPHR's automated relay-poll/exchange avoids.
+
+**The working endpoint is not advertised by any Cerner discovery document**, so YourPHR needs a per-entry **authorize-endpoint (persona) override** to reach it. Confirmed working configuration:
+
+| Field | Value |
+|---|---|
+| FHIR base / `aud` | `https://fhir-ehr.cerner.com/r4/ec2458f2-1e24-41c8-b71b-0e701af7583d` |
+| authorize (OVERRIDE — not discoverable) | `https://authorization.cerner.com/tenants/ec2458f2-…/protocols/oauth2/profiles/smart-v1/personas/patient/authorize` |
+| token (from discovery — works as-is) | `https://authorization.cerner.com/tenants/ec2458f2-…/hosts/fhir-ehr.cerner.com/protocols/oauth2/profiles/smart-v1/token` |
+| client | `c330e3c6-…` (public / PKCE, no secret) |
 
 > **Superseded diagnoses (all wrong — do not trust earlier notes):** (1) wrong persona registration; (2) unfinished R4 subscription (*Trap 2*) — it **is** subscribed; (3) "SMART v1/v2 mismatch + override to a smart-v2 endpoint" — **the smart-v2 endpoint returns 404, it does not exist**; (4) "wrong tenant, probably defer". Each was based on an incomplete probe. Keep only the verified matrix below.
 
