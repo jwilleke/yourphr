@@ -19,8 +19,15 @@ jobs:
       - name: Lint markdown
         uses: DavidAnson/markdownlint-cli2-action@v19
         with:
+          # Canonical exclusion set — keep identical to development.yaml's markdownlint step.
+          # vendor/ + dist/ are gitignored build/vendor artifacts (absent in CI, present locally);
+          # LICENSE.md is legal text and CHANGELOG.md is release-please-generated — none hand-edited.
           globs: |
             **/*.md
-            !node_modules/**
-            !dist/**
+            !**/node_modules/**
+            !vendor/**
+            !**/dist/**
+            !**/test-results/**
+            !**/storybook-static/**
             !LICENSE.md
+            !CHANGELOG.md
