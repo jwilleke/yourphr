@@ -122,7 +122,11 @@ func TestFetchEverythingPagination(t *testing.T) {
 	ep := Endpoints{Token: srv.URL + "/token"}
 	tok := &oauth2.Token{AccessToken: "test-token", Expiry: time.Now().Add(time.Hour)}
 
-	pages, refreshed, err := cfg.FetchEverything(context.Background(), ep, tok, "p1")
+	var pages [][]byte
+	refreshed, err := cfg.FetchEverything(context.Background(), ep, tok, "p1", func(p []byte) error {
+		pages = append(pages, p)
+		return nil
+	})
 	if err != nil {
 		t.Fatalf("FetchEverything: %v", err)
 	}

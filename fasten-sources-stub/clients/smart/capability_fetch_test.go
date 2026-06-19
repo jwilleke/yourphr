@@ -17,6 +17,17 @@ func freshToken() *oauth2.Token {
 	return &oauth2.Token{AccessToken: "test-access", Expiry: time.Now().Add(time.Hour)}
 }
 
+// collectPages runs FetchPatientData and gathers the pages streamed through the onPage callback, so the
+// existing (pages, refreshed, err) assertions keep working after the streaming refactor (#341).
+func collectPages(cfg Config, ep Endpoints, patientID string) ([][]byte, *oauth2.Token, error) {
+	var pages [][]byte
+	refreshed, err := cfg.FetchPatientData(context.Background(), ep, freshToken(), patientID, func(p []byte) error {
+		pages = append(pages, p)
+		return nil
+	})
+	return pages, refreshed, err
+}
+
 // A CapabilityStatement WITHOUT Patient/$everything (Blue Button 2.0-shaped) routes to a per-resource
 // compartment search: Patient read by id, Coverage by beneficiary, ExplanationOfBenefit by patient.
 func TestFetchPatientData_BlueButtonStyle_SearchFallback(t *testing.T) {
@@ -49,7 +60,7 @@ func TestFetchPatientData_BlueButtonStyle_SearchFallback(t *testing.T) {
 	defer srv.Close()
 
 	cfg := Config{FHIRBaseURL: srv.URL, AllowInternalHosts: true, ClientID: "c", HTTPClient: srv.Client()}
-	pages, _, err := cfg.FetchPatientData(context.Background(), Endpoints{Token: srv.URL + "/token"}, freshToken(), "bene123")
+	pages, _, err := collectPages(cfg, Endpoints{Token: srv.URL + "/token"}, "bene123")
 	if err != nil {
 		t.Fatalf("FetchPatientData: %v", err)
 	}
@@ -100,7 +111,7 @@ func TestFetchPatientData_SkipsInaccessibleResourceTypes(t *testing.T) {
 	defer srv.Close()
 
 	cfg := Config{FHIRBaseURL: srv.URL, AllowInternalHosts: true, ClientID: "c", HTTPClient: srv.Client()}
-	pages, _, err := cfg.FetchPatientData(context.Background(), Endpoints{Token: srv.URL + "/token"}, freshToken(), "p1")
+	pages, _, err := collectPages(cfg, Endpoints{Token: srv.URL + "/token"}, "p1")
 	if err != nil {
 		t.Fatalf("FetchPatientData must not fail on an inaccessible resource type: %v", err)
 	}
@@ -132,7 +143,7 @@ func TestFetchPatientData_UnauthorizedIsFatal(t *testing.T) {
 	defer srv.Close()
 
 	cfg := Config{FHIRBaseURL: srv.URL, AllowInternalHosts: true, ClientID: "c", HTTPClient: srv.Client()}
-	if _, _, err := cfg.FetchPatientData(context.Background(), Endpoints{Token: srv.URL + "/token"}, freshToken(), "p1"); err == nil {
+	if _, _, err := collectPages(cfg, Endpoints{Token: srv.URL + "/token"}, "p1"); err == nil {
 		t.Fatal("expected a 401 during fetch to be fatal, got nil error")
 	}
 }
@@ -159,7 +170,7 @@ func TestFetchPatientData_EverythingSupported_UsesEverything(t *testing.T) {
 	defer srv.Close()
 
 	cfg := Config{FHIRBaseURL: srv.URL, AllowInternalHosts: true, ClientID: "c", HTTPClient: srv.Client()}
-	if _, _, err := cfg.FetchPatientData(context.Background(), Endpoints{Token: srv.URL + "/token"}, freshToken(), "p1"); err != nil {
+	if _, _, err := collectPages(cfg, Endpoints{Token: srv.URL + "/token"}, "p1"); err != nil {
 		t.Fatalf("FetchPatientData: %v", err)
 	}
 	if !hitEverything {
@@ -197,7 +208,7 @@ func TestFetchPatientData_EverythingFailsFallsBackToPerResource(t *testing.T) {
 	defer srv.Close()
 
 	cfg := Config{FHIRBaseURL: srv.URL, AllowInternalHosts: true, ClientID: "c", HTTPClient: srv.Client()}
-	pages, _, err := cfg.FetchPatientData(context.Background(), Endpoints{Token: srv.URL + "/token"}, freshToken(), "p1")
+	pages, _, err := collectPages(cfg, Endpoints{Token: srv.URL + "/token"}, "p1")
 	if err != nil {
 		t.Fatalf("a failed $everything must fall back, not fail the import: %v", err)
 	}
@@ -233,7 +244,7 @@ func TestFetchPatientData_MetadataUnreadable_UsesDefaultCompartment(t *testing.T
 	defer srv.Close()
 
 	cfg := Config{FHIRBaseURL: srv.URL, AllowInternalHosts: true, ClientID: "c", HTTPClient: srv.Client()}
-	pages, _, err := cfg.FetchPatientData(context.Background(), Endpoints{Token: srv.URL + "/token"}, freshToken(), "p1")
+	pages, _, err := collectPages(cfg, Endpoints{Token: srv.URL + "/token"}, "p1")
 	if err != nil {
 		t.Fatalf("metadata-unreadable + $everything-fail must degrade to defaults, not fail: %v", err)
 	}
@@ -242,6 +253,84 @@ func TestFetchPatientData_MetadataUnreadable_UsesDefaultCompartment(t *testing.T
 	}
 	if len(pages) == 0 {
 		t.Fatal("expected the default compartment search to import at least Patient + Condition")
+	}
+}
+
+// A transient 504 on a resource is RETRIED, not immediately skipped — the second attempt succeeds and
+// the resource imports (#341, Cerner's flaky gateway timeouts).
+func TestFetchPatientData_RetriesTransient504(t *testing.T) {
+	const meta = `{"resourceType":"CapabilityStatement","rest":[{"resource":[
+		{"type":"Patient","interaction":[{"code":"read"}],"searchParam":[{"name":"_id"}]},
+		{"type":"Condition","interaction":[{"code":"search-type"}],"searchParam":[{"name":"patient"}]}
+	]}]}`
+	var conditionAttempts int
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/fhir+json")
+		switch r.URL.Path {
+		case "/metadata":
+			fmt.Fprint(w, meta)
+		case "/Patient/p1":
+			fmt.Fprint(w, `{"resourceType":"Patient","id":"p1"}`)
+		case "/Condition":
+			conditionAttempts++
+			if conditionAttempts == 1 {
+				w.WriteHeader(http.StatusGatewayTimeout) // transient 504 on the first attempt
+				fmt.Fprint(w, `{"code":504,"message":"Gateway Timeout"}`)
+				return
+			}
+			fmt.Fprint(w, `{"resourceType":"Bundle","entry":[{"resource":{"resourceType":"Condition","id":"c1"}}]}`)
+		default:
+			t.Errorf("unexpected path %s", r.URL.Path)
+		}
+	}))
+	defer srv.Close()
+
+	cfg := Config{FHIRBaseURL: srv.URL, AllowInternalHosts: true, ClientID: "c", HTTPClient: srv.Client()}
+	pages, _, err := collectPages(cfg, Endpoints{Token: srv.URL + "/token"}, "p1")
+	if err != nil {
+		t.Fatalf("FetchPatientData: %v", err)
+	}
+	if conditionAttempts < 2 {
+		t.Fatalf("expected Condition to be retried after a 504, got %d attempt(s)", conditionAttempts)
+	}
+	if len(pages) != 2 { // Patient + Condition (recovered on retry)
+		t.Fatalf("expected 2 pages (Patient + retried Condition), got %d", len(pages))
+	}
+}
+
+// Pages stream as they arrive, so a later FATAL error (401) keeps everything already delivered — the
+// import is incremental, not all-or-nothing (#341).
+func TestFetchPatientData_StreamsPagesBeforeFatalError(t *testing.T) {
+	const meta = `{"resourceType":"CapabilityStatement","rest":[{"resource":[
+		{"type":"Patient","interaction":[{"code":"read"}],"searchParam":[{"name":"_id"}]},
+		{"type":"Condition","interaction":[{"code":"search-type"}],"searchParam":[{"name":"patient"}]}
+	]}]}`
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/fhir+json")
+		switch r.URL.Path {
+		case "/metadata":
+			fmt.Fprint(w, meta)
+		case "/Patient/p1":
+			fmt.Fprint(w, `{"resourceType":"Patient","id":"p1"}`)
+		case "/Condition":
+			w.WriteHeader(http.StatusUnauthorized) // token died mid-import → fatal
+		default:
+			t.Errorf("unexpected path %s", r.URL.Path)
+		}
+	}))
+	defer srv.Close()
+
+	cfg := Config{FHIRBaseURL: srv.URL, AllowInternalHosts: true, ClientID: "c", HTTPClient: srv.Client()}
+	var streamed [][]byte
+	_, err := cfg.FetchPatientData(context.Background(), Endpoints{Token: srv.URL + "/token"}, freshToken(), "p1", func(p []byte) error {
+		streamed = append(streamed, p)
+		return nil
+	})
+	if err == nil {
+		t.Fatal("expected the mid-import 401 to be fatal")
+	}
+	if len(streamed) != 1 || !strings.Contains(string(streamed[0]), "Patient") {
+		t.Fatalf("expected the Patient page to have streamed BEFORE the fatal 401 (incremental), got %d page(s)", len(streamed))
 	}
 }
 
@@ -266,7 +355,7 @@ func TestFetchByCapability_FollowsPagination(t *testing.T) {
 	defer srv.Close()
 
 	cfg := Config{FHIRBaseURL: srv.URL, AllowInternalHosts: true, ClientID: "c", HTTPClient: srv.Client()}
-	pages, _, err := cfg.FetchPatientData(context.Background(), Endpoints{Token: srv.URL + "/token"}, freshToken(), "p1")
+	pages, _, err := collectPages(cfg, Endpoints{Token: srv.URL + "/token"}, "p1")
 	if err != nil {
 		t.Fatalf("FetchPatientData: %v", err)
 	}

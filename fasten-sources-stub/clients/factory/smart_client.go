@@ -68,22 +68,16 @@ func (c *smartClient) SyncAll(db models.DatabaseRepository) (models.UpsertSummar
 	}
 	// FetchPatientData picks the strategy from the server's CapabilityStatement: Patient/$everything
 	// when supported, else a per-resource search across the patient compartment (e.g. CMS Blue Button
-	// 2.0, which has no $everything) — see clients/smart capability_fetch.go (#250).
-	pages, refreshed, err := c.cfg.FetchPatientData(c.ctx, ep, tok, c.cred.GetPatientId())
-	if err != nil {
-		return summary, fmt.Errorf("fetching patient data failed: %w", err)
-	}
-	if refreshed != nil {
-		c.cred.SetTokens(refreshed.AccessToken, refreshed.RefreshToken, refreshed.Expiry.Unix())
-	}
-
-	for _, page := range pages {
+	// 2.0, which has no $everything) — see clients/smart capability_fetch.go (#250). Pages are upserted
+	// INCREMENTALLY as they arrive (the onPage callback), so a later hang/timeout/error keeps everything
+	// already stored instead of discarding a whole buffered fetch (#341).
+	onPage := func(page []byte) error {
 		resources, perr := extractResources(page)
 		if perr != nil {
 			if c.logger != nil {
 				c.logger.Warnf("skipping unparseable fetch page: %v", perr)
 			}
-			continue
+			return nil // one bad page must not abort the whole sync
 		}
 		for _, raw := range resources {
 			var header struct {
@@ -108,6 +102,17 @@ func (c *smartClient) SyncAll(db models.DatabaseRepository) (models.UpsertSummar
 			summary.TotalResources++
 			summary.UpdatedResources = append(summary.UpdatedResources, fmt.Sprintf("%s/%s", header.ResourceType, header.ID))
 		}
+		return nil
+	}
+
+	refreshed, err := c.cfg.FetchPatientData(c.ctx, ep, tok, c.cred.GetPatientId(), onPage)
+	if refreshed != nil { // persist a renewed token even if the fetch later errored
+		c.cred.SetTokens(refreshed.AccessToken, refreshed.RefreshToken, refreshed.Expiry.Unix())
+	}
+	if err != nil {
+		// Whatever was fetched before the error is already stored (incremental upsert) — keep it and
+		// surface the error so the partial sync is visible.
+		return summary, fmt.Errorf("fetching patient data failed after importing %d resource(s): %w", summary.TotalResources, err)
 	}
 	return summary, nil
 }

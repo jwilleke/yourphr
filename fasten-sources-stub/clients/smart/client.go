@@ -17,10 +17,13 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
+	"time"
 
 	"golang.org/x/oauth2"
 )
@@ -60,12 +63,23 @@ type Endpoints struct {
 	Token         string `json:"token_endpoint"`
 }
 
+// defaultFetchTimeout bounds a single FHIR request (connect + headers + full body read). It sits past
+// Cerner's own ~60s gateway timeout, so a legitimately slow response still completes — but a HUNG
+// request fails fast instead of blocking the whole import forever (the default http.Client has no
+// timeout). #341.
+const defaultFetchTimeout = 90 * time.Second
+
 func (c Config) httpClient() *http.Client {
 	if c.HTTPClient != nil {
 		return c.HTTPClient
 	}
-	return http.DefaultClient
+	return &http.Client{Timeout: defaultFetchTimeout}
 }
+
+// PageFunc receives each fetched FHIR page (a Bundle or bare resource) as it arrives, so the caller can
+// upsert incrementally — a later hang/timeout/error then keeps everything already stored, instead of
+// discarding a whole buffered fetch. Returning an error aborts the fetch. #341.
+type PageFunc func(page []byte) error
 
 // Discover fetches and parses {FHIRBaseURL}/.well-known/smart-configuration.
 func (c Config) Discover(ctx context.Context) (Endpoints, error) {
@@ -155,34 +169,74 @@ func (c Config) Refresh(ctx context.Context, ep Endpoints, refreshToken string) 
 // and follows Bundle pagination (link relation "next"), returning each page's raw bytes. The
 // token is auto-refreshed if expired; if a refresh occurred, the returned token is non-nil and
 // the caller should persist it. The pageCap guards against runaway pagination.
-func (c Config) FetchEverything(ctx context.Context, ep Endpoints, tok *oauth2.Token, patientID string) (pages [][]byte, refreshed *oauth2.Token, err error) {
+func (c Config) FetchEverything(ctx context.Context, ep Endpoints, tok *oauth2.Token, patientID string, onPage PageFunc) (refreshed *oauth2.Token, err error) {
 	const pageCap = 1000
 	base, err := c.safeBaseURL()
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	ctx = context.WithValue(ctx, oauth2.HTTPClient, c.httpClient())
 	ts := c.oauth2Config(ep).TokenSource(ctx, tok)
+	// Surface a refreshed token on EVERY exit (incl. errors) so the caller persists it even when the
+	// fetch aborts partway — important now that imports are incremental (#341).
+	defer func() {
+		if t, terr := ts.Token(); terr == nil && t.AccessToken != tok.AccessToken {
+			refreshed = t
+		}
+	}()
 	httpClient := oauth2.NewClient(ctx, ts)
 
 	next := fmt.Sprintf("%s/Patient/%s/$everything", base, url.PathEscape(patientID))
+	count := 0
 	for next != "" {
-		body, link, gerr := getBundlePage(ctx, httpClient, next)
+		body, link, gerr := getBundlePageRetry(ctx, httpClient, next)
 		if gerr != nil {
-			return pages, nil, gerr
+			return refreshed, gerr
 		}
-		pages = append(pages, body)
+		if perr := onPage(body); perr != nil {
+			return refreshed, perr
+		}
+		count++
 		next = link
-		if len(pages) >= pageCap {
-			return pages, nil, fmt.Errorf("aborting $everything: exceeded %d pages", pageCap)
+		if count >= pageCap {
+			return refreshed, fmt.Errorf("aborting $everything: exceeded %d pages", pageCap)
 		}
 	}
+	return refreshed, nil
+}
 
-	// Surface a refreshed token (if any) so the caller can persist it.
-	if t, terr := ts.Token(); terr == nil && t.AccessToken != tok.AccessToken {
-		refreshed = t
+// getBundlePageRetry wraps getBundlePage with a small retry for TRANSIENT failures — gateway 5xx
+// (502/503/504, which Cerner's sandbox returns intermittently) and client timeouts. Up to 3 attempts
+// with linear backoff; non-transient errors (4xx, parse) return immediately; context cancellation ends
+// the loop. #341 (flaky CareTeam/Condition 504s).
+func getBundlePageRetry(ctx context.Context, client *http.Client, reqURL string) (body []byte, nextLink string, err error) {
+	const maxAttempts = 3
+	for attempt := 1; ; attempt++ {
+		body, nextLink, err = getBundlePage(ctx, client, reqURL)
+		if err == nil || attempt >= maxAttempts || !isRetryable(err) {
+			return body, nextLink, err
+		}
+		select {
+		case <-ctx.Done():
+			return nil, "", ctx.Err()
+		case <-time.After(time.Duration(attempt) * 2 * time.Second):
+		}
 	}
-	return pages, refreshed, nil
+}
+
+// isRetryable reports whether err is a transient fetch failure worth retrying: a gateway 5xx or a
+// client-side timeout. 4xx and parse errors are not retried.
+func isRetryable(err error) bool {
+	var hse *httpStatusError
+	if errors.As(err, &hse) {
+		switch hse.StatusCode {
+		case http.StatusBadGateway, http.StatusServiceUnavailable, http.StatusGatewayTimeout:
+			return true
+		}
+		return false
+	}
+	var nerr net.Error
+	return errors.As(err, &nerr) && nerr.Timeout()
 }
 
 func getBundlePage(ctx context.Context, client *http.Client, url string) (body []byte, nextLink string, err error) {

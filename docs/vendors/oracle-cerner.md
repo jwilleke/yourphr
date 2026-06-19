@@ -36,6 +36,7 @@ CernerCare **account creation** asks for an **Organization (Client Number)** —
    | **Scopes** | `launch/patient openid fhirUser offline_access patient/*.read` |
    | **Terms of Use URL** | `https://yourphr.org/terms` |
    | **Privacy Policy URL** | `https://yourphr.org/privacy` |
+   | SMART discovery URL | `https://fhir-ehr.cerner.com/r4/ec2458f2-1e24-41c8-b71b-0e701af7583d/.well-known/smart-configuration` |
 
 4. **Register** → the console shows your **`client_id`** (and an Application ID). Save both to `private/secrets.md`.
 
@@ -74,9 +75,19 @@ curl -s "https://fhir-myrecord.sandboxcerner.com/r4/ec2458f2-1e24-41c8-b71b-0e70
 | authorize (OVERRIDE — not discoverable) | `https://authorization.cerner.com/tenants/ec2458f2-…/protocols/oauth2/profiles/smart-v1/personas/patient/authorize` |
 | token (from discovery — works as-is) | `https://authorization.cerner.com/tenants/ec2458f2-…/hosts/fhir-ehr.cerner.com/protocols/oauth2/profiles/smart-v1/token` |
 | client | `c330e3c6-…` (public / PKCE, no secret) |
-| scopes | **SMART v2 `.rs`** (e.g. `patient/*.rs`) — **NOT** v1 `.read` |
+| scopes | **SMART v2 `.rs`, ENUMERATED per resource** — NOT v1 `.read`, and NOT the `*.rs` wildcard |
+| code Console access type | **Offline** (required — see below) |
 
-**Scopes must be SMART v2 `.rs`, not v1 `.read`.** The app is registered SMART v2, and Cerner **silently drops** v1 `.read` scopes for a v2 client — the connect succeeds but the token comes back with only `fhirUser launch/patient openid` (no read scopes), so every FHIR fetch 403s and **nothing imports**. Verified live: with `patient/Patient.rs patient/Observation.rs patient/Condition.rs` the token is granted those scopes and `GET /Patient/12724066` → 200 (nancysmart), `/Observation` & `/Condition` searches → 200; with the `.read` equivalents, `/Observation` → 403 and `/Patient` → 404. The seed uses `patient/*.rs`. (Note: `offline_access` is also dropped because the code Console app is **Type of Access = Online** — sync works but won't get a refresh token until the app is set to Offline.)
+**Two scope traps, both confirmed live:**
+
+1. **Use SMART v2 `.rs`, not v1 `.read`.** The app is registered SMART v2, and Cerner **silently drops** v1 `.read` scopes for a v2 client — the connect succeeds but the token comes back with only `fhirUser launch/patient openid` (no read scopes), so every FHIR fetch 403s and nothing imports.
+2. **Enumerate the resources; the `patient/*.rs` wildcard is dropped whole** (same as `*.read`). Specific `.rs` scopes ARE granted per resource. The seed lists `patient/Patient.rs patient/AllergyIntolerance.rs … patient/Provenance.rs`. Resources you don't list 403 with `insufficient_scope` and are skipped — add more `patient/<Resource>.rs` for a fuller record (e.g. `patient/Coverage.rs` for insurance).
+
+Verified: with specific `.rs`, `GET /Patient/12724066` → 200 (nancysmart) and `/Observation` & `/Condition` searches → 200; with `.read` (or the `*` wildcard), reads 403.
+
+**Set the code Console app to Type of Access = Offline.** As "Online" it gets **no refresh token**, so the access token expires mid-import on a large/slow patient and the sync fails. Offline yields a refresh token; YourPHR renews it automatically as the import runs.
+
+**Import resilience ([#341](https://github.com/jwilleke/yourphr/issues/341)).** Cerner's sandbox is slow and flaky — large searches (e.g. Condition, ~3,377 for nancysmart) intermittently return **504 Gateway Timeout**, and some requests **hang**. YourPHR's SMART client handles this: a **90 s per-request timeout** (a hung fetch fails fast), **retry of transient 5xx/timeouts**, **incremental upsert** (each page stored as it arrives, so a later failure keeps what landed), and graceful **skip** of any resource that still fails — with a `smart sync:` log line per resource (`fetched N page(s)` / `skipped (…)`). One bad resource type never fails the whole import.
 
 > **Superseded diagnoses (all wrong — do not trust earlier notes):** (1) wrong persona registration; (2) unfinished R4 subscription (*Trap 2*) — it **is** subscribed; (3) "SMART v1/v2 mismatch + override to a smart-v2 endpoint" — **the smart-v2 endpoint returns 404, it does not exist**; (4) "wrong tenant, probably defer". Each was based on an incomplete probe. Keep only the verified matrix below.
 
@@ -117,6 +128,23 @@ If it issues a code, the persona-override path is worth building. If it 404s/err
 ### Also, regardless
 
 Correct the deployed entry's base URL off `fhir-ehr-code.cerner.com` (admin UI edit, or delete the row to re-seed) — `UpsertProviderCatalogEntryByDisplay` is provision-only and won't overwrite an admin-edited row.
+
+## Conformance
+
+The SMART App Launch specification allows broad scopes like patient/*.read, and many examples in the IG and other EHRs support them.
+Cerner (Oracle Health) chose not to implement wildcard scopes. Their sandbox (and production) only accepts the exact individual scopes they publish. This is documented behavior, not a bug.
+
+From their own docs and multiple developer reports:
+
+- Wildcards (patient/*.read, patient/*) are not supported.
+- You must list every resource explicitly (e.g. patient/Observation.rs, patient/Condition.rs, etc.).
+- The server will return invalid_scope or silently ignore unsupported scopes.
+
+This is conformant because:
+
+- They advertise exactly what they support in /.well-known/smart-configuration.
+- The spec does not mandate that every server must accept wildcards.
+- They provide a complete list of supported scopes in their official documentation.
 
 ## See also
 
