@@ -1335,6 +1335,7 @@ func (gr *GormRepository) UpsertProviderCatalogEntryByDisplay(ctx context.Contex
 	existing.ClientId = entry.ClientId
 	existing.ClientSecret = entry.ClientSecret
 	existing.Enabled = entry.Enabled
+	existing.AuthorizeUrlOverride = entry.AuthorizeUrlOverride
 	if err := db.Save(&existing).Error; err != nil {
 		return err
 	}

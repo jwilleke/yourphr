@@ -33,14 +33,15 @@ func SeedSandboxProviders(ctx context.Context, repo DatabaseRepository, logger *
 			secret = strings.TrimSpace(getenv(s.ClientSecretEnv))
 		}
 		entry := models.ProviderCatalogEntry{
-			Display:            s.Display,
-			Environment:        models.ProviderEnvironmentSandbox,
-			ApiEndpointBaseUrl: s.ApiEndpointBaseUrl,
-			Scopes:             s.Scopes,
-			PlatformType:       sourcesPkg.PlatformTypeEhr,
-			ClientId:           clientID,
-			ClientSecret:       secret,
-			Enabled:            true,
+			Display:              s.Display,
+			Environment:          models.ProviderEnvironmentSandbox,
+			ApiEndpointBaseUrl:   s.ApiEndpointBaseUrl,
+			Scopes:               s.Scopes,
+			PlatformType:         sourcesPkg.PlatformTypeEhr,
+			ClientId:             clientID,
+			ClientSecret:         secret,
+			Enabled:              true,
+			AuthorizeUrlOverride: s.AuthorizeUrlOverride,
 		}
 		if err := repo.UpsertProviderCatalogEntryByDisplay(ctx, &entry); err != nil {
 			if logger != nil {

@@ -32,9 +32,10 @@ type providerCatalogRequest struct {
 	Scopes             string `json:"scopes"`
 	ClientId           string `json:"client_id"`
 	ClientSecret       string `json:"client_secret"`
-	PlatformType       string `json:"platform_type"`
-	BrandLogoUrl       string `json:"brand_logo_url"`
-	Enabled            bool   `json:"enabled"`
+	PlatformType         string `json:"platform_type"`
+	BrandLogoUrl         string `json:"brand_logo_url"`
+	Enabled              bool   `json:"enabled"`
+	AuthorizeUrlOverride string `json:"authorize_url_override"`
 }
 
 // environmentOrDefault normalizes the environment field; anything other than "sandbox" is production
@@ -94,9 +95,10 @@ func CreateProviderCatalogEntry(c *gin.Context) {
 		Scopes:             strings.TrimSpace(req.Scopes),
 		ClientId:           strings.TrimSpace(req.ClientId),
 		ClientSecret:       req.ClientSecret,
-		PlatformType:       platformTypeOrDefault(req.PlatformType),
-		BrandLogoUrl:       strings.TrimSpace(req.BrandLogoUrl),
-		Enabled:            req.Enabled,
+		PlatformType:         platformTypeOrDefault(req.PlatformType),
+		BrandLogoUrl:         strings.TrimSpace(req.BrandLogoUrl),
+		Enabled:              req.Enabled,
+		AuthorizeUrlOverride: strings.TrimSpace(req.AuthorizeUrlOverride),
 	}
 	if err := databaseRepo.CreateProviderCatalogEntry(c, &entry); err != nil {
 		logger.Errorf("error creating provider catalog entry: %v", err)
@@ -179,6 +181,7 @@ func UpdateProviderCatalogEntry(c *gin.Context) {
 	existing.Scopes = strings.TrimSpace(req.Scopes)
 	existing.BrandLogoUrl = strings.TrimSpace(req.BrandLogoUrl)
 	existing.Enabled = req.Enabled
+	existing.AuthorizeUrlOverride = strings.TrimSpace(req.AuthorizeUrlOverride)
 	// Only overwrite the secret when a new one is supplied; empty input preserves the stored secret.
 	if req.ClientSecret != "" {
 		existing.ClientSecret = req.ClientSecret
@@ -299,6 +302,14 @@ func AuthorizeSourceFromCatalog(c *gin.Context) {
 		logger.Errorln(err)
 		c.JSON(http.StatusBadGateway, gin.H{"success": false, "error": fmt.Sprintf("SMART discovery failed: %s", err)})
 		return
+	}
+	// Some servers don't advertise the authorize endpoint our app must use (e.g. Cerner's patient-
+	// persona authorize is undiscoverable — discovery only names the provider persona). When the entry
+	// pins one, use it instead of the discovered authorization_endpoint. Token endpoint stays from
+	// discovery (it's host-, not persona-, scoped). See docs/vendors/oracle-cerner.md (#338).
+	if ovr := strings.TrimSpace(entry.AuthorizeUrlOverride); ovr != "" {
+		logger.Infof("provider-catalog: using authorize_url override for %q", entry.Display)
+		ep.Authorization = ovr
 	}
 	verifier, err := smart.GenerateVerifier()
 	if err != nil {

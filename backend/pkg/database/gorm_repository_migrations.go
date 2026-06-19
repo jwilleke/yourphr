@@ -317,6 +317,32 @@ func (gr *GormRepository) Migrate() error {
 				).Error
 			},
 		},
+		{
+			ID: "20260619000001", // add authorize_url_override; fix Cerner patient authorize endpoint (#338)
+			Migrate: func(tx *gorm.DB) error {
+				if err := tx.AutoMigrate(&models.ProviderCatalogEntry{}); err != nil {
+					return err
+				}
+				// The Cerner patient authorize endpoint is not discoverable, and the entry's base URL may
+				// have been hand-edited to the provider host on existing instances. The provision-only
+				// upsert won't correct a row that already has a client_id, so re-pin base URL + authorize
+				// override here from the canonical seed for any sandbox that defines an override (#338).
+				for _, s := range models.SandboxProviderSeeds() {
+					if s.AuthorizeUrlOverride == "" {
+						continue
+					}
+					if err := tx.Model(&models.ProviderCatalogEntry{}).
+						Where("display = ?", s.Display).
+						Updates(map[string]interface{}{
+							"api_endpoint_base_url": s.ApiEndpointBaseUrl,
+							"authorize_url_override": s.AuthorizeUrlOverride,
+						}).Error; err != nil {
+						return err
+					}
+				}
+				return nil
+			},
+		},
 	})
 
 	// run when database is empty

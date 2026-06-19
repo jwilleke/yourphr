@@ -24,6 +24,13 @@
         </div>
       </div>
       <div class="row">
+        <div class="col-12 form-group mg-b-15">
+          <label class="form-label" for="pc-authz-override">Authorize URL override <span class="tx-gray-500">(optional, advanced)</span></label>
+          <input id="pc-authz-override" name="authorize_url_override" type="url" class="form-control" placeholder="Leave blank — only needed when the server's discovery doesn't advertise the right authorize endpoint" [(ngModel)]="form.authorize_url_override">
+          <small class="tx-gray-500">Pins the authorize endpoint instead of using <code>.well-known/smart-configuration</code>. The token endpoint still comes from discovery. Rarely needed.</small>
+        </div>
+      </div>
+      <div class="row">
         <div class="col-md-6 form-group mg-b-15">
           <label class="form-label" for="pc-environment">Environment</label>
           <select id="pc-environment" name="environment" class="form-control" [(ngModel)]="form.environment">

@@ -23,6 +23,9 @@ export interface ProviderCatalogEntry {
   platform_type?: string;
   brand_logo_url?: string;
   enabled: boolean;
+  // Optional: pins the authorize endpoint when the server's discovery can't advertise the one our app
+  // must use (e.g. Cerner's patient-persona authorize is undiscoverable). Usually empty. #338
+  authorize_url_override?: string;
 }
 
 // ProviderCatalogEntryRequest is the admin create/update payload. client_secret is write-only: send it
@@ -37,4 +40,5 @@ export interface ProviderCatalogEntryRequest {
   platform_type?: string;
   brand_logo_url?: string;
   enabled: boolean;
+  authorize_url_override?: string;
 }

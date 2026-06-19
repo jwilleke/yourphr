@@ -53,7 +53,7 @@ export class ProviderCatalogAdminComponent implements OnInit {
   }
 
   private blankForm(): ProviderCatalogEntryRequest {
-    return {display: '', environment: 'production', api_endpoint_base_url: '', scopes: '', client_id: '', client_secret: '', platform_type: 'ehr', brand_logo_url: '', enabled: false};
+    return {display: '', environment: 'production', api_endpoint_base_url: '', scopes: '', client_id: '', client_secret: '', platform_type: 'ehr', brand_logo_url: '', enabled: false, authorize_url_override: ''};
   }
 
   load(): void {
@@ -86,6 +86,7 @@ export class ProviderCatalogAdminComponent implements OnInit {
       platform_type: entry.platform_type || 'ehr',
       brand_logo_url: entry.brand_logo_url || '',
       enabled: entry.enabled,
+      authorize_url_override: entry.authorize_url_override || '',
     };
     this.errorMsg = '';
     this.successMsg = '';

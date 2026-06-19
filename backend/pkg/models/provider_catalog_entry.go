@@ -40,6 +40,13 @@ type ProviderCatalogEntry struct {
 	// HasClientSecret is a computed, non-persisted flag so the admin UI can show "confidential" without
 	// the secret value ever leaving the backend. Populated on read; never stored.
 	HasClientSecret bool `json:"has_client_secret" gorm:"-"`
+
+	// AuthorizeUrlOverride, when set, REPLACES the discovered authorization_endpoint for this entry.
+	// Escape hatch for servers whose .well-known/smart-configuration does not advertise the authorize
+	// endpoint our app must use — e.g. Cerner publishes only the provider-persona authorize endpoint,
+	// so the patient-persona one is undiscoverable (#338). The token endpoint still comes from
+	// discovery. Not a secret (it's a public URL); shown to admins.
+	AuthorizeUrlOverride string `json:"authorize_url_override"`
 }
 
 // ConnectableProvider is the user-facing projection: enough to render a picker, with no credentials.
@@ -70,6 +77,9 @@ type SandboxProviderSeed struct {
 	// ClientIDLiteral is a fixed, non-secret client_id for OPEN sandboxes that accept any value (e.g.
 	// SMART Health IT). When set, the provider is always seeded without needing an env var.
 	ClientIDLiteral string
+	// AuthorizeUrlOverride pins the authorize endpoint when the server's discovery cannot advertise the
+	// one our app must use (#338). Empty for normal, fully-discoverable providers.
+	AuthorizeUrlOverride string
 }
 
 // SandboxProviderSeeds lists the test sandboxes whose credentials are supplied via env. Only those with
@@ -91,11 +101,16 @@ func SandboxProviderSeeds() []SandboxProviderSeed {
 			ClientSecretEnv:    "", // public/PKCE
 		},
 		{
-			Display:            "Oracle Health / Cerner (Sandbox)",
-			ApiEndpointBaseUrl: "https://fhir-myrecord.sandboxcerner.com/r4/ec2458f2-1e24-41c8-b71b-0e701af7583d",
-			Scopes:             "launch/patient openid fhirUser offline_access patient/*.read",
-			ClientIDEnv:        "YOURPHR_SANDBOX_ORACLE_CLIENT_ID",
-			ClientSecretEnv:    "", // public/PKCE
+			// Base/aud is the EHR host (the authz that actually knows the sandbox tenant); the patient
+			// authorize endpoint is NOT discoverable (discovery only advertises the provider persona),
+			// so we pin it via AuthorizeUrlOverride. Token endpoint still comes from discovery. Validated
+			// end-to-end against the nancysmart sandbox patient (#338).
+			Display:              "Oracle Health / Cerner (Sandbox)",
+			ApiEndpointBaseUrl:   "https://fhir-ehr.cerner.com/r4/ec2458f2-1e24-41c8-b71b-0e701af7583d",
+			Scopes:               "launch/patient openid fhirUser offline_access patient/*.read",
+			ClientIDEnv:          "YOURPHR_SANDBOX_ORACLE_CLIENT_ID",
+			ClientSecretEnv:      "", // public/PKCE
+			AuthorizeUrlOverride: "https://authorization.cerner.com/tenants/ec2458f2-1e24-41c8-b71b-0e701af7583d/protocols/oauth2/profiles/smart-v1/personas/patient/authorize",
 		},
 		{
 			Display:            "athenahealth (Sandbox)",
@@ -123,12 +138,13 @@ func DefaultProviderCatalogEntries() []ProviderCatalogEntry {
 	out := []ProviderCatalogEntry{}
 	for _, s := range SandboxProviderSeeds() {
 		out = append(out, ProviderCatalogEntry{
-			Display:            s.Display,
-			Environment:        ProviderEnvironmentSandbox,
-			ApiEndpointBaseUrl: s.ApiEndpointBaseUrl,
-			Scopes:             s.Scopes,
-			PlatformType:       sourcesPkg.PlatformTypeEhr,
-			Enabled:            false,
+			Display:              s.Display,
+			Environment:          ProviderEnvironmentSandbox,
+			ApiEndpointBaseUrl:   s.ApiEndpointBaseUrl,
+			Scopes:               s.Scopes,
+			PlatformType:         sourcesPkg.PlatformTypeEhr,
+			Enabled:              false,
+			AuthorizeUrlOverride: s.AuthorizeUrlOverride,
 		})
 	}
 	return out
