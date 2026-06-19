@@ -9,5 +9,6 @@
   "[markdown]": {
     "editor.wordWrap": "on",
     "rewrap.wrappingColumn": 0
-  }
+  },
+  "makefile.configureOnOpen": false
 }
