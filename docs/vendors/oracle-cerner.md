@@ -64,44 +64,47 @@ curl -s "https://fhir-myrecord.sandboxcerner.com/r4/ec2458f2-1e24-41c8-b71b-0e70
 
 ## Status
 
-⛔ **Blocked on a SMART v1/v2 mismatch** ([#338](https://github.com/jwilleke/yourphr/issues/338); proven 2026-06-19). The app is a correctly-registered **Patient / Public / R4-subscribed** app — the only problem is the SMART protocol version.
+🟡 **Open — strong lead found; pending a real browser login to confirm end-to-end** ([#338](https://github.com/jwilleke/yourphr/issues/338); 2026-06-19). The working patient authorize endpoint exists but **is not advertised by any Cerner discovery document** — so YourPHR can't reach it via standard discovery.
 
-Proven by probing tenant `ec2458f2-1e24-41c8-b71b-0e701af7583d` with our app `c330e3c6` (read-only, no relay):
+> **Superseded diagnoses (all wrong — do not trust earlier notes):** (1) wrong persona registration; (2) unfinished R4 subscription (*Trap 2*) — it **is** subscribed; (3) "SMART v1/v2 mismatch + override to a smart-v2 endpoint" — **the smart-v2 endpoint returns 404, it does not exist**; (4) "wrong tenant, probably defer". Each was based on an incomplete probe. Keep only the verified matrix below.
 
-| Authorize endpoint | Result |
+### Verified by probing (read-only; a bare `200` is **not** proof of a completed login — confirm in a browser)
+
+| Authorize combination (smart-v1) | Result |
 |---|---|
-| `…/profiles/**smart-v2**/personas/patient/authorize` | ✅ reaches login — no error (with and without `offline_access`) |
-| `…/profiles/**smart-v1**/personas/patient/authorize` | ❌ 303 → `…:grant:**unknown-tenant**` |
+| `authorization.cerner.com` + `personas/patient`, `aud=fhir-ehr.cerner.com/r4/{t}` | ✅ **200, Cerner auth SPA, no error redirect** — the lead |
+| `authorization.cerner.com` + `personas/provider` | `client-persona-mismatch` (this is the live deployed failure) |
+| `authorization.sandboxcerner.com` + `personas/patient` | `unknown-tenant` — **and a bogus client_id gets the identical error**, so this authz host just doesn't serve tenant `ec2458f2` |
+| any `…/profiles/smart-v2/…` (any host/persona) | **404 — no smart-v2 endpoint exists anywhere** |
 
-- The code Console app summary shows **SMART Version = SMART v2** and **Products = "Oracle Health FHIR APIs for Millennium: FHIR R4, All"** (so the *Trap 2* subscription **is** done — that earlier theory was wrong).
-- A **v2-registered app on the v1 endpoint** is rejected as `unknown-tenant`, and YourPHR's SMART client lands on the v1 endpoint because that is the one discovery names (see below).
-- The live failure additionally showed `authorization.cerner.com / personas/**provider**/authorize` (`client-persona-mismatch`) — that means the **deployed catalog entry's base URL was admin-edited to the provider host** (`fhir-ehr-code.cerner.com`). The committed seed is the correct patient host (`fhir-myrecord`), but the startup upsert is provision-only and never clobbers an admin-edited row (see `UpsertProviderCatalogEntryByDisplay`), so that stale base URL persists on that instance.
+Discovery by FHIR base (what each host *advertises*):
 
-### How Cerner versions its endpoints (the actual mechanism)
+- `fhir-ehr.cerner.com` / `fhir-ehr-code.cerner.com` → `authorization.cerner.com/…/personas/**provider**/authorize` (tenant-aware authz, **wrong persona**)
+- `fhir-myrecord.sandboxcerner.com` → `authorization.sandboxcerner.com/…/personas/**patient**/authorize` (**right persona, but the authz that doesn't know the tenant**)
 
-Cerner serves **separate authorize endpoints per SMART version** under the same FHIR base, and the **SMART version is a property of the registered app** — each app must use the `…/profiles/smart-v{1,2}/…` endpoint matching its registration. Both endpoints exist for our tenant (probing reached login on v2, `unknown-tenant` on v1).
+**The trap:** the tenant-aware authz (`authorization.cerner.com`) only advertises the *provider* persona; the host that advertises the *patient* persona points at an authz that doesn't have the tenant. The working URL only exists by hand-combining "tenant-aware authz + patient persona" — which no discovery document publishes.
 
-**Beware two different "v2" axes that share a label** — conflating them sends you down the wrong path:
+### On the v2 registration
 
-| Axis | Where it appears | Meaning | Our case |
-|---|---|---|---|
-| **Scope grammar** | `permission-v1` / `permission-v2` capability | which scope *syntax* the server accepts (`patient/Observation.read` vs granular `patient/Observation.rs` / `.cruds`) | both supported — **not** our problem |
-| **Endpoint profile** | `/profiles/smart-v1/` vs `/profiles/smart-v2/` in the endpoint URL path, bound to the app's registered SMART Version | which physical authorize/token endpoint the app must use | our app is **v2-registered**; only **v1** URLs are published → blocked |
+The code Console app is **SMART v2**, but Cerner exposes **only smart-v1** endpoints (v2 = 404 everywhere). The v1 patient endpoint on `authorization.cerner.com` did **not** reject our v2 app at the authorize step (200, no error) — but whether the *token exchange* completes for a v2-registered app on a v1 endpoint is **unconfirmed** without a real login.
 
-So `permission-v2` only means "this server accepts v2-style scopes" — it is **not** a pointer to a v2 endpoint. Its `.well-known/smart-configuration` for `fhir-myrecord` publishes **only `smart-v1` URLs for every endpoint** (verified — `authorization_endpoint`, `token_endpoint`, and `revocation_endpoint` are all `…/profiles/smart-v1/…`); there is **no `smart-v2` URL anywhere in the document**. The v2 endpoints exist but are undiscoverable.
+### Implication for YourPHR
 
-This is where Cerner departs from the usual model: standard SMART expects a **single** `authorization_endpoint` with the version negotiated via scopes + capabilities (exactly what `permission-v2` is for). Cerner instead **physically splits the endpoints per app-version** and publishes only the v1 set — so a spec-correct, discovery-following client (like YourPHR) is steered to v1, which then rejects the v2-registered app with `unknown-tenant`. The discovery doc isn't malformed; it just can't express "use the endpoint matching your app's version," and a v2 app must learn its endpoint out-of-band.
+The working endpoint is **not discoverable**, so YourPHR's discovery-following flow will always land on the provider persona (mismatch). To use it, a per-entry **authorize-endpoint override** (persona, not version) would be needed: seed base/`aud` = `https://fhir-ehr.cerner.com/r4/{tenant}`, take discovery's provider authorize, then override the authorize endpoint to the `…/personas/patient/authorize` variant. (The token endpoint is host-based, not persona-split, so it likely needs no override.)
 
-**Fix — two independent things:**
+### Confirm before building anything (no code)
 
-1. **Resolve the v1/v2 mismatch (root cause).** Either:
-   - **(a)** Re-register / change the code Console app to **SMART v1** to match the endpoint discovery names — zero YourPHR change, but a **deliberate downgrade** off the modern profile (and `permission-v2` shows the server supports v2), so this is only worth it as a throwaway sandbox validation; **or**
-   - **(b, preferred)** Keep the v2 app and add an optional per-entry **`authorize_url` override** to the provider catalog: when set, YourPHR uses it instead of the discovered `authorization_endpoint`. For Cerner, point it at the `…/profiles/smart-v2/…` URL. This is a general escape hatch for any server whose discovery under-describes its endpoints — not Cerner-specific. (Production Oracle/Cerner may advertise v2 directly, in which case no override is needed there — this is partly sandbox scaffolding.)
-2. **Correct the deployed Oracle entry's base URL** back to `https://fhir-myrecord.sandboxcerner.com/r4/ec2458f2-1e24-41c8-b71b-0e701af7583d` — edit it in the admin catalog UI, or delete the row so startup re-seeds it from the (correct) seed.
+Open the lead URL in a browser, log in as `nancysmart` / `Cerner01`, and confirm it returns to `https://relay.nerdsbythehour.com/callback?code=…`:
 
-Also minor: code Console **Type of Access = Online**, but our scope set requests `offline_access` (refresh token). Set it to **Offline** if you want refresh, or drop `offline_access` from the seed scopes. (Not the blocker — the v2 endpoint accepted both.)
+```
+https://authorization.cerner.com/tenants/ec2458f2-1e24-41c8-b71b-0e701af7583d/protocols/oauth2/profiles/smart-v1/personas/patient/authorize?response_type=code&client_id=c330e3c6-3ebe-49f3-a3a3-52dd7764d745&redirect_uri=https://relay.nerdsbythehour.com/callback&scope=launch/patient%20offline_access%20openid%20fhirUser%20patient/Patient.read&aud=https://fhir-ehr.cerner.com/r4/ec2458f2-1e24-41c8-b71b-0e701af7583d&state=manualtest&code_challenge=PLACEHOLDER&code_challenge_method=S256
+```
 
-Re-test success = the patient login (`nancysmart` / `Cerner01`) instead of `unknown-tenant` / `client-persona-mismatch`.
+If it issues a code, the persona-override path is worth building. If it 404s/errors after login, Cerner sandbox patient-standalone for this tenant is genuinely unsupported → defer (Blue Button + Epic already validate the pipeline).
+
+### Also, regardless
+
+Correct the deployed entry's base URL off `fhir-ehr-code.cerner.com` (admin UI edit, or delete the row to re-seed) — `UpsertProviderCatalogEntryByDisplay` is provision-only and won't overwrite an admin-edited row.
 
 ## See also
 
