@@ -1,5 +1,19 @@
 # TODO
 
+<!-- RESUME:START -->
+## ▶ Resume here — 2026-06-18
+
+- Last worked on: Sandbox/production IA split — wired all 5 sandboxes (Blue Button/Epic/SMART Health IT ✅, athenahealth 🟡, Oracle/Cerner ⛔), grouped the catalog by environment, split connected sources by environment (`/sandbox` vs `/sources`), fixed the Epic tile-open. #330/#331/#332 closed & verified live on v1.3.0-25.
+- Branch / state: `main`, clean, all pushed.
+- Running / in-flight: CI building the last commits (markdown-lint fix `1458728d` + CodeQL) — non-blocking. No dev servers / background agents.
+- Parked / half-done: none this session. (Two PRE-EXISTING stashes from other branches — `wip-118-phase2b`, `feat/smart-connect-frontend` — not from this session.)
+- Next steps:
+  - [#337](https://github.com/jwilleke/yourphr/issues/337) SSE "Room not found" — make import progress actually clear (deeper fix; tile-open already mitigated).
+  - [#333](https://github.com/jwilleke/yourphr/issues/333) Explore export options → [#334](https://github.com/jwilleke/yourphr/issues/334)/[#335](https://github.com/jwilleke/yourphr/issues/335)/[#336](https://github.com/jwilleke/yourphr/issues/336) (Save Report / PDF / Email).
+  - 5 open Dependabot PRs ([#325](https://github.com/jwilleke/yourphr/pull/325)–[#329](https://github.com/jwilleke/yourphr/pull/329)) awaiting review.
+- Blockers / significant notes: athenahealth = vendor Developer-Portal onboarding gate; Oracle/Cerner = patient-persona mismatch (provider-app, authorize-override, or defer) — both external, see `docs/vendors/`.
+<!-- RESUME:END -->
+
 > Generated from live GitHub state — ranked by priority label. Do not hand-edit. The `▶ Resume here` pointer is written by `/wrap` at session end.
 
 ## 🔴 P0 — Security & Critical
