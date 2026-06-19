@@ -17,6 +17,10 @@ import (
 // those, we read the server's CapabilityStatement and fetch each patient-compartment resource by
 // search instead. Servers that do advertise $everything keep using it (one efficient call).
 
+// maxFetchPages bounds total pagination across a per-resource import so a runaway "next" chain can't
+// loop forever.
+const maxFetchPages = 1000
+
 type capNamed struct {
 	Name string `json:"name"`
 }
@@ -296,7 +300,6 @@ func isUnauthorized(err error) bool {
 // the server advertises but then refuses (400/403/404/422/…) is SKIPPED so one inaccessible type never
 // fails the whole import; only 401 (auth broken) and non-HTTP errors are fatal (#250 / #341).
 func (c Config) fetchSearches(ctx context.Context, ep Endpoints, tok *oauth2.Token, patientID string, searches []resourceSearch, onPage PageFunc) (refreshed *oauth2.Token, err error) {
-	const pageCap = 1000
 	base, err := c.safeBaseURL()
 	if err != nil {
 		return nil, err
@@ -313,41 +316,75 @@ func (c Config) fetchSearches(ctx context.Context, ep Endpoints, tok *oauth2.Tok
 	httpClient := oauth2.NewClient(ctx, ts)
 
 	total := 0
+	// First pass: ONE attempt per resource — a slow/flaky resource must not block the rest. Resources
+	// that fail transiently (5xx/timeout) are deferred to a single retry pass at the end, rather than
+	// retried inline (which serialized ~3 min of 504s before the next resource even started). #341.
+	var deferred []resourceSearch
 	for _, s := range searches {
-		var next string
-		if s.Param == "" {
-			next = fmt.Sprintf("%s/%s/%s", base, s.Type, url.PathEscape(patientID))
-		} else {
-			next = fmt.Sprintf("%s/%s?%s=%s", base, s.Type, s.Param, url.QueryEscape(patientID))
+		gerr := c.fetchOneResource(ctx, httpClient, base, patientID, s, onPage, &total)
+		if gerr == nil {
+			continue
 		}
-
-		fetched := 0
-		for next != "" {
-			body, link, gerr := getBundlePageRetry(ctx, httpClient, next)
-			if gerr != nil {
-				var hse *httpStatusError
-				if errors.As(gerr, &hse) && hse.StatusCode != http.StatusUnauthorized {
-					c.logf("smart sync: %s skipped (%v)", s.Type, gerr)
-					break // stop paging this type; continue with the next
-				}
-				return refreshed, fmt.Errorf("fetching %s: %w", s.Type, gerr)
-			}
-			if perr := onPage(body); perr != nil {
-				return refreshed, perr
-			}
-			fetched++
-			total++
-			next = link
-			if total >= pageCap {
-				return refreshed, fmt.Errorf("aborting capability fetch: exceeded %d pages", pageCap)
-			}
+		switch {
+		case isUnauthorized(gerr):
+			return refreshed, fmt.Errorf("fetching %s: %w", s.Type, gerr) // auth broken — every type would fail
+		case isRetryable(gerr):
+			c.logf("smart sync: %s deferred for retry (%v)", s.Type, gerr)
+			deferred = append(deferred, s)
+		default:
+			c.logf("smart sync: %s skipped (%v)", s.Type, gerr) // 4xx etc. — won't change on retry
 		}
-		if fetched > 0 {
-			c.logf("smart sync: %s fetched %d page(s)", s.Type, fetched)
+		if total >= maxFetchPages {
+			return refreshed, fmt.Errorf("aborting capability fetch: exceeded %d pages", maxFetchPages)
 		}
 	}
 
+	// Retry pass: a single final attempt at the deferred (transiently-failed) resources, now that the
+	// rest are imported and the slow ones have had time to settle.
+	for _, s := range deferred {
+		gerr := c.fetchOneResource(ctx, httpClient, base, patientID, s, onPage, &total)
+		if gerr == nil {
+			continue
+		}
+		if isUnauthorized(gerr) {
+			return refreshed, fmt.Errorf("fetching %s: %w", s.Type, gerr)
+		}
+		c.logf("smart sync: %s skipped after retry (%v)", s.Type, gerr)
+	}
+
 	return refreshed, nil
+}
+
+// fetchOneResource fetches all pages of a single resource (Patient by id, else searched by its patient
+// param), streaming each page to onPage. It does NOT retry — the caller's two-pass loop owns retries.
+// Returns the first failing page's error (the caller classifies it skip/defer/fatal).
+func (c Config) fetchOneResource(ctx context.Context, httpClient *http.Client, base, patientID string, s resourceSearch, onPage PageFunc, total *int) error {
+	var next string
+	if s.Param == "" {
+		next = fmt.Sprintf("%s/%s/%s", base, s.Type, url.PathEscape(patientID))
+	} else {
+		next = fmt.Sprintf("%s/%s?%s=%s", base, s.Type, s.Param, url.QueryEscape(patientID))
+	}
+	pages := 0
+	for next != "" {
+		body, link, gerr := getBundlePage(ctx, httpClient, next)
+		if gerr != nil {
+			return gerr
+		}
+		if perr := onPage(body); perr != nil {
+			return perr
+		}
+		pages++
+		*total++
+		next = link
+		if *total >= maxFetchPages {
+			return fmt.Errorf("aborting capability fetch: exceeded %d pages", maxFetchPages)
+		}
+	}
+	if pages > 0 {
+		c.logf("smart sync: %s fetched %d page(s)", s.Type, pages)
+	}
+	return nil
 }
 
 // patientParamFor returns the search param linking resourceType to a Patient — chosen from the known

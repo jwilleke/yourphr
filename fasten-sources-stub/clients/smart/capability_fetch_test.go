@@ -298,6 +298,58 @@ func TestFetchPatientData_RetriesTransient504(t *testing.T) {
 	}
 }
 
+// A transiently-failed resource is retried AFTER the rest (deferred to a second pass), not inline — so
+// a slow/flaky resource never blocks the others. Here CareTeam 504s first, gets deferred, and is only
+// re-attempted after Condition (which sorts later) has already been fetched (#341).
+func TestFetchPatientData_DefersRetryToEnd(t *testing.T) {
+	const meta = `{"resourceType":"CapabilityStatement","rest":[{"resource":[
+		{"type":"Patient","interaction":[{"code":"read"}],"searchParam":[{"name":"_id"}]},
+		{"type":"CareTeam","interaction":[{"code":"search-type"}],"searchParam":[{"name":"patient"}]},
+		{"type":"Condition","interaction":[{"code":"search-type"}],"searchParam":[{"name":"patient"}]}
+	]}]}`
+	var order []string
+	var careTeamAttempts int
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/fhir+json")
+		switch r.URL.Path {
+		case "/metadata":
+			fmt.Fprint(w, meta)
+		case "/Patient/p1":
+			order = append(order, "Patient")
+			fmt.Fprint(w, `{"resourceType":"Patient","id":"p1"}`)
+		case "/CareTeam":
+			careTeamAttempts++
+			order = append(order, fmt.Sprintf("CareTeam#%d", careTeamAttempts))
+			if careTeamAttempts == 1 {
+				w.WriteHeader(http.StatusGatewayTimeout) // 504 first time -> deferred
+				fmt.Fprint(w, `{"code":504}`)
+				return
+			}
+			fmt.Fprint(w, `{"resourceType":"Bundle","entry":[{"resource":{"resourceType":"CareTeam","id":"ct1"}}]}`)
+		case "/Condition":
+			order = append(order, "Condition")
+			fmt.Fprint(w, `{"resourceType":"Bundle","entry":[{"resource":{"resourceType":"Condition","id":"c1"}}]}`)
+		default:
+			t.Errorf("unexpected path %s", r.URL.Path)
+		}
+	}))
+	defer srv.Close()
+
+	cfg := Config{FHIRBaseURL: srv.URL, AllowInternalHosts: true, ClientID: "c", HTTPClient: srv.Client()}
+	pages, _, err := collectPages(cfg, Endpoints{Token: srv.URL + "/token"}, "p1")
+	if err != nil {
+		t.Fatalf("FetchPatientData: %v", err)
+	}
+	if len(pages) != 3 { // Patient + Condition + CareTeam (on retry)
+		t.Fatalf("expected 3 pages, got %d", len(pages))
+	}
+	// Deferral proof: Condition (pass 1) must be queried BEFORE the CareTeam retry (pass 2).
+	want := []string{"Patient", "CareTeam#1", "Condition", "CareTeam#2"}
+	if strings.Join(order, ",") != strings.Join(want, ",") {
+		t.Errorf("request order = %v, want %v (CareTeam retry should be deferred to after Condition)", order, want)
+	}
+}
+
 // Pages stream as they arrive, so a later FATAL error (401) keeps everything already delivered — the
 // import is incremental, not all-or-nothing (#341).
 func TestFetchPatientData_StreamsPagesBeforeFatalError(t *testing.T) {

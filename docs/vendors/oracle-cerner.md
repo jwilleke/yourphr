@@ -87,7 +87,14 @@ Verified: with specific `.rs`, `GET /Patient/12724066` → 200 (nancysmart) and 
 
 **Set the code Console app to Type of Access = Offline.** As "Online" it gets **no refresh token**, so the access token expires mid-import on a large/slow patient and the sync fails. Offline yields a refresh token; YourPHR renews it automatically as the import runs.
 
-**Import resilience ([#341](https://github.com/jwilleke/yourphr/issues/341)).** Cerner's sandbox is slow and flaky — large searches (e.g. Condition, ~3,377 for nancysmart) intermittently return **504 Gateway Timeout**, and some requests **hang**. YourPHR's SMART client handles this: a **90 s per-request timeout** (a hung fetch fails fast), **retry of transient 5xx/timeouts**, **incremental upsert** (each page stored as it arrives, so a later failure keeps what landed), and graceful **skip** of any resource that still fails — with a `smart sync:` log line per resource (`fetched N page(s)` / `skipped (…)`). One bad resource type never fails the whole import.
+**Import resilience ([#341](https://github.com/jwilleke/yourphr/issues/341)).** Cerner's sandbox is slow and flaky — large searches (e.g. Condition, ~3,377 for nancysmart) intermittently return **504 Gateway Timeout** (~57 s each), and some requests **hang**. YourPHR's SMART client handles this:
+
+- **90 s per-request timeout** — a hung fetch fails fast instead of blocking the import forever.
+- **Two-pass fetch** — tries each resource once, then re-attempts the transiently-failed ones in a single **deferred retry pass at the end**. A slow/flaky resource never blocks the others (the old inline retry serialized ~3 min of 504s before the next resource even started).
+- **Incremental upsert** — each page is stored as it arrives, so a later hang/timeout/fatal-401 keeps everything already imported.
+- **Graceful skip** — a resource that still fails (e.g. a persistent 504, or a 403 for an unrequested scope) is skipped, not fatal.
+
+Every resource logs a `smart sync:` line (`fetched N page(s)`, `deferred for retry (…)`, `skipped (…)`), so an import is fully explainable from the logs. One bad resource type never fails the whole import.
 
 > **Superseded diagnoses (all wrong — do not trust earlier notes):** (1) wrong persona registration; (2) unfinished R4 subscription (*Trap 2*) — it **is** subscribed; (3) "SMART v1/v2 mismatch + override to a smart-v2 endpoint" — **the smart-v2 endpoint returns 404, it does not exist**; (4) "wrong tenant, probably defer". Each was based on an incomplete probe. Keep only the verified matrix below.
 

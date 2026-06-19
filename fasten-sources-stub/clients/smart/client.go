@@ -210,7 +210,7 @@ func (c Config) FetchEverything(ctx context.Context, ep Endpoints, tok *oauth2.T
 // with linear backoff; non-transient errors (4xx, parse) return immediately; context cancellation ends
 // the loop. #341 (flaky CareTeam/Condition 504s).
 func getBundlePageRetry(ctx context.Context, client *http.Client, reqURL string) (body []byte, nextLink string, err error) {
-	const maxAttempts = 3
+	const maxAttempts = 2 // one retry — a transient blip recovers; a persistent failure isn't worth more waiting
 	for attempt := 1; ; attempt++ {
 		body, nextLink, err = getBundlePage(ctx, client, reqURL)
 		if err == nil || attempt >= maxAttempts || !isRetryable(err) {
