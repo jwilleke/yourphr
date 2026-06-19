@@ -22,6 +22,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type GormRepository struct {
@@ -690,23 +691,24 @@ func (gr *GormRepository) AddResourceAssociation(ctx context.Context, source *mo
 		return err
 	}
 
-	err = gr.GormClient.WithContext(ctx).Table("related_resources").Create(map[string]interface{}{
-		"resource_base_user_id":                 source.UserID,
-		"resource_base_source_id":               source.ID,
-		"resource_base_source_resource_type":    resourceType,
-		"resource_base_source_resource_id":      resourceId,
-		"related_resource_user_id":              relatedSource.UserID,
-		"related_resource_source_id":            relatedSource.ID,
-		"related_resource_source_resource_type": relatedResourceType,
-		"related_resource_source_resource_id":   relatedResourceId,
-	}).Error
-	uniqueConstraintError := errors.New("UNIQUE constraint failed")
-	if err != nil {
-		if strings.HasPrefix(err.Error(), uniqueConstraintError.Error()) {
-			gr.Logger.Warnf("Ignoring an error when creating a related_resource association for %s/%s: %v", resourceType, resourceId, err)
-			//we can safely ignore this error
-			return nil
-		}
+	// The same association is re-attempted on every re-sync (and across the two-pass fetch), so a
+	// duplicate is EXPECTED and harmless — INSERT ... ON CONFLICT DO NOTHING makes it a quiet no-op
+	// instead of a UNIQUE-constraint error that GORM logs and we warn on (noisy, alarming). #341.
+	err = gr.GormClient.WithContext(ctx).Table("related_resources").
+		Clauses(clause.OnConflict{DoNothing: true}).
+		Create(map[string]interface{}{
+			"resource_base_user_id":                 source.UserID,
+			"resource_base_source_id":               source.ID,
+			"resource_base_source_resource_type":    resourceType,
+			"resource_base_source_resource_id":      resourceId,
+			"related_resource_user_id":              relatedSource.UserID,
+			"related_resource_source_id":            relatedSource.ID,
+			"related_resource_source_resource_type": relatedResourceType,
+			"related_resource_source_resource_id":   relatedResourceId,
+		}).Error
+	// Belt-and-suspenders: if a backend ever ignores the ON CONFLICT clause, still treat a duplicate as success.
+	if err != nil && strings.HasPrefix(err.Error(), "UNIQUE constraint failed") {
+		return nil
 	}
 	return err
 }
