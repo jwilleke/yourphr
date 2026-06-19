@@ -29,14 +29,15 @@ CernerCare **account creation** asks for an **Organization (Client Number)** —
    |---|---|
    | **App Name** | YourPHR |
    | **App Type** | Patient |
+   | **Type of Access** | **Offline** ← REQUIRED (issues a refresh token; "Online" has none and a long import dies when the access token expires — see Status) |
+   | **SMART Version** | SMART v2 (so request `.rs` scopes, not `.read` — see Status) |
    | **Client Type** | Public (PKCE — no secret) |
    | **FHIR Spec** | R4 |
    | **SMART Launch URI** | *(blank — standalone, not EHR launch)* |
    | **Redirect URI** | `https://relay.nerdsbythehour.com/callback` |
-   | **Scopes** | `launch/patient openid fhirUser offline_access patient/*.read` |
+   | **Scopes / resource access** | enumerate the patient resources you want (`Patient`, `Condition`, `Observation`, …); YourPHR requests them as v2 `patient/<Resource>.rs`. **NOT** `patient/*.read` and **NOT** the `*.rs` wildcard — see Status. |
    | **Terms of Use URL** | `https://yourphr.org/terms` |
    | **Privacy Policy URL** | `https://yourphr.org/privacy` |
-   | SMART discovery URL | `https://fhir-ehr.cerner.com/r4/ec2458f2-1e24-41c8-b71b-0e701af7583d/.well-known/smart-configuration` |
 
 4. **Register** → the console shows your **`client_id`** (and an Application ID). Save both to `private/secrets.md`.
 
@@ -46,22 +47,17 @@ After registering, the app's **FHIR Version may show `-`** and FHIR calls fail. 
 
 ## Connect values
 
+> The authoritative, end-to-end-verified configuration is in the **[Status](#status)** section below. In short: base/`aud` = **`fhir-ehr.cerner.com`** (NOT `fhir-myrecord` — its authz doesn't know the sandbox tenant), authorize = a pinned **patient-persona override** (not discoverable), scopes = enumerated v2 **`.rs`**, access type = **Offline**. The catalog seed (`SandboxProviderSeeds()`) already carries all of this.
+
 | Field | Value |
 |---|---|
-| **FHIR base URL** | `https://fhir-myrecord.sandboxcerner.com/r4/ec2458f2-1e24-41c8-b71b-0e701af7583d` |
+| **FHIR base / `aud`** | `https://fhir-ehr.cerner.com/r4/ec2458f2-1e24-41c8-b71b-0e701af7583d` |
 | **Client ID** | from registration (in `private/secrets.md`) |
-| **Client Secret** | *(blank)* |
-| **Scopes** | `launch/patient openid fhirUser offline_access patient/*.read` |
+| **Client Secret** | *(blank — public/PKCE)* |
+| **authorize** | OVERRIDE → `…/profiles/smart-v1/personas/patient/authorize` (see Status — not discoverable) |
+| **Scopes** | enumerated v2 `patient/<Resource>.rs` (see Status) |
 
-Use **`fhir-myrecord`** (patient persona). `fhir-ehr` is the *provider* (EHR-launch) persona — don't use it for YourPHR. `fhir-open` is the unauth endpoint (no SMART config).
-
-## Discovery pre-flight (verified 2026-06-15, no relay needed)
-
-```bash
-curl -s "https://fhir-myrecord.sandboxcerner.com/r4/ec2458f2-1e24-41c8-b71b-0e701af7583d/.well-known/smart-configuration" | python3 -m json.tool
-```
-
-→ **200**, patient-persona authorize endpoint, PKCE `S256`, capabilities include `launch-standalone` + `client-public` + `context-standalone-patient` + `permission-offline`. YourPHR's standalone-patient / public-PKCE / offline flow is fully supported.
+(`fhir-myrecord.sandboxcerner.com` looks like the patient host but its authorization server returns `unknown-tenant` for this tenant; `fhir-open` is the unauth endpoint. Neither works for our connect — see the probing matrix in Status.)
 
 ## Status
 
@@ -152,6 +148,15 @@ This is conformant because:
 - They advertise exactly what they support in /.well-known/smart-configuration.
 - The spec does not mandate that every server must accept wildcards.
 - They provide a complete list of supported scopes in their official documentation.
+
+## Cerner/Oracle Health Millennium
+
+In the FHIR/PHR aggregator world open-source importers, and commercial tools, Cerner/Oracle Health Millennium consistently ranks as one of the flakiest and slowest major platforms to integrate against during development and testing. Epic sandboxes are generally much more consistent and faster. Many developers describe Cerner sandboxes as having:
+
+- Frequent 504 Gateway Timeouts (exactly like you're seeing)
+- Inconsistent behavior across resources (some work fine, others like CareTeam randomly 504 even when small)
+- Long internal timeouts (~57s in your case matches what others report)
+- Update Sandbox-specific load issues that don't reflect real customer instances
 
 ## See also
 
