@@ -1,19 +1,5 @@
 # TODO
 
-<!-- RESUME:START -->
-## ▶ Resume here — 2026-06-18
-
-- Last worked on: Sandbox/production IA split — wired all 5 sandboxes (Blue Button/Epic/SMART Health IT ✅, athenahealth 🟡, Oracle/Cerner ⛔), grouped the catalog by environment, split connected sources by environment (`/sandbox` vs `/sources`), fixed the Epic tile-open. #330/#331/#332 closed & verified live on v1.3.0-25.
-- Branch / state: `main`, clean, all pushed.
-- Running / in-flight: CI building the last commits (markdown-lint fix `1458728d` + CodeQL) — non-blocking. No dev servers / background agents.
-- Parked / half-done: none this session. (Two PRE-EXISTING stashes from other branches — `wip-118-phase2b`, `feat/smart-connect-frontend` — not from this session.)
-- Next steps:
-  - [#337](https://github.com/jwilleke/yourphr/issues/337) SSE "Room not found" — make import progress actually clear (deeper fix; tile-open already mitigated).
-  - [#333](https://github.com/jwilleke/yourphr/issues/333) Explore export options → [#334](https://github.com/jwilleke/yourphr/issues/334)/[#335](https://github.com/jwilleke/yourphr/issues/335)/[#336](https://github.com/jwilleke/yourphr/issues/336) (Save Report / PDF / Email).
-  - 5 open Dependabot PRs ([#325](https://github.com/jwilleke/yourphr/pull/325)–[#329](https://github.com/jwilleke/yourphr/pull/329)) awaiting review.
-- Blockers / significant notes: athenahealth = vendor Developer-Portal onboarding gate; Oracle/Cerner = patient-persona mismatch (provider-app, authorize-override, or defer) — both external, see `docs/vendors/`.
-<!-- RESUME:END -->
-
 > Generated from live GitHub state — ranked by priority label. Do not hand-edit. The `▶ Resume here` pointer is written by `/wrap` at session end.
 
 ## 🔴 P0 — Security & Critical
@@ -22,25 +8,16 @@
 
 ## 🟠 P1
 
-**Provider catalog ([#291](https://github.com/jwilleke/yourphr/issues/291) umbrella) — vertical complete, awaiting sign-off:**
+**Patient-legible display ([#262](https://github.com/jwilleke/yourphr/issues/262)):**
 
-- [#291](https://github.com/jwilleke/yourphr/issues/291) umbrella **`in-review`**: backend [#304](https://github.com/jwilleke/yourphr/issues/304) ✅ closed · patient picker [#306](https://github.com/jwilleke/yourphr/issues/306) **`in-review`** · admin CRUD [#310](https://github.com/jwilleke/yourphr/issues/310) **`in-review`**. Production/sandbox split shipped: `/sandbox` is one-click connect with server-side (env/SOPS) creds; 5 sandboxes wired (Blue Button ✅, Epic ✅, SMART Health IT ✅, athenahealth 🟡 onboarding-gated, Oracle/Cerner ⛔ persona). Catalog admin grouped by environment (secret hidden, status shown).
-
-**Sandbox/production IA split (this session):**
-
-- ✅ [#330](https://github.com/jwilleke/yourphr/issues/330) `/sandbox` self-contained · [#331](https://github.com/jwilleke/yourphr/issues/331) Environment on connected sources · [#332](https://github.com/jwilleke/yourphr/issues/332) filter `/sandbox` vs `/sources` — **closed**, verified live on v1.3.0-25.
-- [#337](https://github.com/jwilleke/yourphr/issues/337) [BUG] SSE sync events dropped ("Room not found") — import progress never clears (tile-open already mitigated; indicator fix pending).
+- [#262](https://github.com/jwilleke/yourphr/issues/262) [EPIC] Patient-legible display — quality bar; biggest gap: lab results "normal/high/low".
+- [#308](https://github.com/jwilleke/yourphr/issues/308) EHI Phase 3 — legible detail cards across all resource types (frontend).
+- [#309](https://github.com/jwilleke/yourphr/issues/309) EHI Phase 4 — generalize Layer-1 classifiers/resolvers (backend).
 
 **Patients add their own records:**
 
 - [#313](https://github.com/jwilleke/yourphr/issues/313) patients able to add records to their own PHR (`smart-on-fhir`).
 - [#315](https://github.com/jwilleke/yourphr/issues/315) `/medical-history` Layout (`good first issue`).
-
-**Patient-legible display ([#262](https://github.com/jwilleke/yourphr/issues/262) / [#266](https://github.com/jwilleke/yourphr/issues/266)):**
-
-- [#262](https://github.com/jwilleke/yourphr/issues/262) [EPIC] Patient-legible display — quality bar; biggest gap: lab results "normal/high/low".
-- [#308](https://github.com/jwilleke/yourphr/issues/308) EHI Phase 3 — legible detail cards across all resource types (frontend).
-- [#309](https://github.com/jwilleke/yourphr/issues/309) EHI Phase 4 — generalize Layer-1 classifiers/resolvers (backend).
 
 **Live provider sync (Blue Button):**
 
@@ -49,12 +26,13 @@
 
 ## 🟡 P2
 
+- [#337](https://github.com/jwilleke/yourphr/issues/337) [BUG] SSE sync events dropped ("Room not found") — import progress never clears.
+- [#333](https://github.com/jwilleke/yourphr/issues/333) [EPIC] Explore export options → [#334](https://github.com/jwilleke/yourphr/issues/334) Save Report · [#335](https://github.com/jwilleke/yourphr/issues/335) Export to PDF · [#336](https://github.com/jwilleke/yourphr/issues/336) Send to Email.
 - [#300](https://github.com/jwilleke/yourphr/issues/300) Angular surface for Medicare claims & coverage (consumes the shipped #294/#295/#296 endpoints).
-- [#305](https://github.com/jwilleke/yourphr/issues/305) Manual records backend · [#307](https://github.com/jwilleke/yourphr/issues/307) frontend forms (under [#253](https://github.com/jwilleke/yourphr/issues/253)).
+- [#305](https://github.com/jwilleke/yourphr/issues/305) Manual records backend · [#307](https://github.com/jwilleke/yourphr/issues/307) frontend forms (under [#253](https://github.com/jwilleke/yourphr/issues/253) EPIC).
 - [#277](https://github.com/jwilleke/yourphr/issues/277) Medical History hub · [#287](https://github.com/jwilleke/yourphr/issues/287) upload UI polish · [#289](https://github.com/jwilleke/yourphr/issues/289) allergy tiles dead-end · [#290](https://github.com/jwilleke/yourphr/issues/290) "No Known Allergies" count.
 - [#280](https://github.com/jwilleke/yourphr/issues/280) fhir-card referenced display name · [#252](https://github.com/jwilleke/yourphr/issues/252) harden re-import dedup · [#288](https://github.com/jwilleke/yourphr/issues/288) [ARCH] `fasten-sources-stub` future · [#241](https://github.com/jwilleke/yourphr/issues/241) release-please PAT.
 - [#244](https://github.com/jwilleke/yourphr/issues/244) [EPIC] per-profile dashboards · [#256](https://github.com/jwilleke/yourphr/issues/256) sharing PHR · [#251](https://github.com/jwilleke/yourphr/issues/251) Apple Health list · [#20](https://github.com/jwilleke/yourphr/issues/20) [EPIC] SMART live sync · [#53](https://github.com/jwilleke/yourphr/issues/53) Veradigm (`blocked`) · [#14](https://github.com/jwilleke/yourphr/issues/14) User Profile Update.
-- [#333](https://github.com/jwilleke/yourphr/issues/333) [EPIC] Explore export options → [#334](https://github.com/jwilleke/yourphr/issues/334) Save Report · [#335](https://github.com/jwilleke/yourphr/issues/335) Export to PDF · [#336](https://github.com/jwilleke/yourphr/issues/336) Send to Email.
 
 ## ⏸ Deferred
 
