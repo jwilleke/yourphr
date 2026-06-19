@@ -74,14 +74,25 @@ Proven by probing tenant `ec2458f2-1e24-41c8-b71b-0e701af7583d` with our app `c3
 | `…/profiles/**smart-v1**/personas/patient/authorize` | ❌ 303 → `…:grant:**unknown-tenant**` |
 
 - The code Console app summary shows **SMART Version = SMART v2** and **Products = "Oracle Health FHIR APIs for Millennium: FHIR R4, All"** (so the *Trap 2* subscription **is** done — that earlier theory was wrong).
-- But Cerner's sandbox `.well-known/smart-configuration` on `fhir-myrecord` advertises the **smart-v1** `authorization_endpoint`, and YourPHR's SMART client follows discovery. A **v2-registered app on the v1 endpoint** is rejected as `unknown-tenant`.
+- A **v2-registered app on the v1 endpoint** is rejected as `unknown-tenant`, and YourPHR's SMART client lands on the v1 endpoint because that is the one discovery names (see below).
 - The live failure additionally showed `authorization.cerner.com / personas/**provider**/authorize` (`client-persona-mismatch`) — that means the **deployed catalog entry's base URL was admin-edited to the provider host** (`fhir-ehr-code.cerner.com`). The committed seed is the correct patient host (`fhir-myrecord`), but the startup upsert is provision-only and never clobbers an admin-edited row (see `UpsertProviderCatalogEntryByDisplay`), so that stale base URL persists on that instance.
+
+### How Cerner versions its endpoints (the actual mechanism)
+
+Cerner serves **separate authorize endpoints per SMART version** under the same FHIR base, and the **SMART version is a property of the registered app** — each app must use the `…/profiles/smart-v{1,2}/…` endpoint matching its registration. Both endpoints exist for our tenant (probing reached login on v2, `unknown-tenant` on v1).
+
+Its `.well-known/smart-configuration` for `fhir-myrecord` reports:
+
+- `capabilities` includes **both `permission-v1` and `permission-v2`** → the server **does support v2** scope grammar (this is not a "v1-only" tenant).
+- but the single `authorization_endpoint` it publishes is the **smart-v1** URL.
+
+This is **not strictly non-conformant** — SMART App Launch defines `authorization_endpoint` as a single value, and Cerner fills it with v1. The gap is that a **v2 app cannot discover its (v2) authorize endpoint from this document** — it has to be known out-of-band. So a spec-correct, discovery-following client (like YourPHR) is steered to v1, which then rejects the v2 app. The mismatch is real; the discovery doc is just under-descriptive for Cerner's versioned-endpoint model, not malformed.
 
 **Fix — two independent things:**
 
 1. **Resolve the v1/v2 mismatch (root cause).** Either:
-   - **(a, simplest, no code)** Re-register / change the code Console app to **SMART v1** so it matches the endpoint discovery advertises — then YourPHR's discovery-driven flow works unchanged; **or**
-   - **(b)** Keep the v2 app and add an optional per-entry **SMART-version / authorize-endpoint override** to the provider catalog so YourPHR targets `…/profiles/smart-v2/…` for this entry (code change).
+   - **(a)** Re-register / change the code Console app to **SMART v1** to match the endpoint discovery names — zero YourPHR change, but a **deliberate downgrade** off the modern profile (and `permission-v2` shows the server supports v2), so this is only worth it as a throwaway sandbox validation; **or**
+   - **(b, preferred)** Keep the v2 app and add an optional per-entry **`authorize_url` override** to the provider catalog: when set, YourPHR uses it instead of the discovered `authorization_endpoint`. For Cerner, point it at the `…/profiles/smart-v2/…` URL. This is a general escape hatch for any server whose discovery under-describes its endpoints — not Cerner-specific. (Production Oracle/Cerner may advertise v2 directly, in which case no override is needed there — this is partly sandbox scaffolding.)
 2. **Correct the deployed Oracle entry's base URL** back to `https://fhir-myrecord.sandboxcerner.com/r4/ec2458f2-1e24-41c8-b71b-0e701af7583d` — edit it in the admin catalog UI, or delete the row so startup re-seeds it from the (correct) seed.
 
 Also minor: code Console **Type of Access = Online**, but our scope set requests `offline_access` (refresh token). Set it to **Offline** if you want refresh, or drop `offline_access` from the seed scopes. (Not the blocker — the v2 endpoint accepted both.)
