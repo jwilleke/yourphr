@@ -6,6 +6,17 @@ services:
     environment:
       - HOST_IP=${IP}
       - HOST_PORT=${PORT}
+      # Optional one-click sandbox providers (#291). The backend seeds the /sandbox
+      # provider catalog from these on startup; any whose CLIENT_ID is unset is skipped
+      # (open sandboxes like SMART Health IT need nothing here). The client_secret is held
+      # server-side and never sent to the browser. Set the values you have — e.g. via an
+      # `env_file:` of real creds, gitignored — and uncomment. See docs/deployment/README.md.
+      # - YOURPHR_SANDBOX_BLUEBUTTON_CLIENT_ID=${YOURPHR_SANDBOX_BLUEBUTTON_CLIENT_ID:-}
+      # - YOURPHR_SANDBOX_BLUEBUTTON_CLIENT_SECRET=${YOURPHR_SANDBOX_BLUEBUTTON_CLIENT_SECRET:-}
+      # - YOURPHR_SANDBOX_EPIC_CLIENT_ID=${YOURPHR_SANDBOX_EPIC_CLIENT_ID:-}            # public/PKCE — no secret
+      # - YOURPHR_SANDBOX_ORACLE_CLIENT_ID=${YOURPHR_SANDBOX_ORACLE_CLIENT_ID:-}        # public/PKCE — no secret
+      # - YOURPHR_SANDBOX_ATHENA_CLIENT_ID=${YOURPHR_SANDBOX_ATHENA_CLIENT_ID:-}
+      # - YOURPHR_SANDBOX_ATHENA_CLIENT_SECRET=${YOURPHR_SANDBOX_ATHENA_CLIENT_SECRET:-}
     ports:
       - "${PORT:-9090}:8080"
     volumes:

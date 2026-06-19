@@ -74,7 +74,7 @@ Sandbox is enough to build and prove the connection. For **real** Medicare data,
 - **Confidential client** (the `client_secret`) — [#286](https://github.com/jwilleke/yourphr/issues/286).
 - **No `$everything`** — Blue Button exposes only Patient/Coverage/ExplanationOfBenefit and no operations, so YourPHR fetches per-resource via the CapabilityStatement-driven path — [#250](https://github.com/jwilleke/yourphr/issues/250).
 - **Connect-form Client Secret field** — [#279](https://github.com/jwilleke/yourphr/issues/279).
-- **OAuth relay** — the redirect callback; default `relay.nerdsbythehour.com`, overridable via `YOURPHR_RELAY_URL` (see [`deployment.md`](deployment.md)).
+- **OAuth relay** — the redirect callback; default `relay.nerdsbythehour.com`, overridable via `YOURPHR_RELAY_URL` (see [`deployment/README.md`](deployment/README.md)).
 
 ## Future — no more of this (the Source Catalog)
 

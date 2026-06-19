@@ -191,7 +191,7 @@ Expect HTTP 200 JSON with `authorization_endpoint`, `token_endpoint`, and `code_
 
 ## Relay & config
 
-All SMART connects route the provider redirect through the **relay** (`https://relay.nerdsbythehour.com/callback`); the redirect URI you register with each provider must match it exactly. Override with `YOURPHR_RELAY_URL` (in-cluster the backend polls `http://yourphr-relay.yourphr.svc.cluster.local:8080`). See [`deployment.md`](deployment.md) and [`FHIR/fhir-testing.md`](FHIR/fhir-testing.md).
+All SMART connects route the provider redirect through the **relay** (`https://relay.nerdsbythehour.com/callback`); the redirect URI you register with each provider must match it exactly. Override with `YOURPHR_RELAY_URL` (in-cluster the backend polls `http://yourphr-relay.yourphr.svc.cluster.local:8080`). See [`deployment/README.md`](deployment/README.md) and [`FHIR/fhir-testing.md`](FHIR/fhir-testing.md).
 
 ## Automated tests (Playwright)
 
