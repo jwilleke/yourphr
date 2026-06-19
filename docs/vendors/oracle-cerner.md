@@ -74,6 +74,9 @@ curl -s "https://fhir-myrecord.sandboxcerner.com/r4/ec2458f2-1e24-41c8-b71b-0e70
 | authorize (OVERRIDE — not discoverable) | `https://authorization.cerner.com/tenants/ec2458f2-…/protocols/oauth2/profiles/smart-v1/personas/patient/authorize` |
 | token (from discovery — works as-is) | `https://authorization.cerner.com/tenants/ec2458f2-…/hosts/fhir-ehr.cerner.com/protocols/oauth2/profiles/smart-v1/token` |
 | client | `c330e3c6-…` (public / PKCE, no secret) |
+| scopes | **SMART v2 `.rs`** (e.g. `patient/*.rs`) — **NOT** v1 `.read` |
+
+**Scopes must be SMART v2 `.rs`, not v1 `.read`.** The app is registered SMART v2, and Cerner **silently drops** v1 `.read` scopes for a v2 client — the connect succeeds but the token comes back with only `fhirUser launch/patient openid` (no read scopes), so every FHIR fetch 403s and **nothing imports**. Verified live: with `patient/Patient.rs patient/Observation.rs patient/Condition.rs` the token is granted those scopes and `GET /Patient/12724066` → 200 (nancysmart), `/Observation` & `/Condition` searches → 200; with the `.read` equivalents, `/Observation` → 403 and `/Patient` → 404. The seed uses `patient/*.rs`. (Note: `offline_access` is also dropped because the code Console app is **Type of Access = Online** — sync works but won't get a refresh token until the app is set to Offline.)
 
 > **Superseded diagnoses (all wrong — do not trust earlier notes):** (1) wrong persona registration; (2) unfinished R4 subscription (*Trap 2*) — it **is** subscribed; (3) "SMART v1/v2 mismatch + override to a smart-v2 endpoint" — **the smart-v2 endpoint returns 404, it does not exist**; (4) "wrong tenant, probably defer". Each was based on an incomplete probe. Keep only the verified matrix below.
 
