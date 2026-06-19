@@ -8,8 +8,12 @@ import (
 // The shipped defaults carry the known non-secret config but NO credentials, and start disabled.
 func TestDefaultProviderCatalogEntries_NoCredentials(t *testing.T) {
 	entries := DefaultProviderCatalogEntries()
-	if len(entries) != 2 {
-		t.Fatalf("expected 2 default entries, got %d", len(entries))
+	// One default entry per sandbox seed — derive the count so adding a sandbox doesn't break this.
+	if want := len(SandboxProviderSeeds()); len(entries) != want {
+		t.Fatalf("expected %d default entries (one per sandbox seed), got %d", want, len(entries))
+	}
+	if len(entries) == 0 {
+		t.Fatal("expected at least one default entry")
 	}
 	for _, e := range entries {
 		if e.ClientId != "" || e.ClientSecret != "" {
