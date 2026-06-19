@@ -105,13 +105,19 @@ func SandboxProviderSeeds() []SandboxProviderSeed {
 			// authorize endpoint is NOT discoverable (discovery only advertises the provider persona),
 			// so we pin it via AuthorizeUrlOverride. Token endpoint still comes from discovery. Validated
 			// end-to-end against the nancysmart sandbox patient (#338).
-			// SMART v2 app: Cerner SILENTLY DROPS v1 `.read` scopes for a v2-registered client, leaving a
-			// token with no read access (every FHIR fetch 403s -> empty import). Use v2 `.rs` (read+search)
-			// scope syntax. Verified: with `.rs`, Patient/Observation/Condition read 200 for nancysmart;
-			// with `.read` they 403/404 (#338).
-			Display:              "Oracle Health / Cerner (Sandbox)",
-			ApiEndpointBaseUrl:   "https://fhir-ehr.cerner.com/r4/ec2458f2-1e24-41c8-b71b-0e701af7583d",
-			Scopes:               "launch/patient openid fhirUser offline_access patient/*.rs",
+			// SMART v2 app: Cerner SILENTLY DROPS v1 `.read` scopes for a v2-registered client (token comes
+			// back with no read access -> every FHIR fetch 403s -> empty import). Must use v2 `.rs`
+			// (read+search) syntax. Also ENUMERATE the resources rather than `patient/*.rs`: Cerner drops
+			// the wildcard whole (same as it dropped `*.read`), but grants specific `.rs` scopes per
+			// resource. Verified: specific `.rs` -> Patient/Observation/Condition read 200 for nancysmart;
+			// `.read` (and, by inference, the `*` wildcard) -> 403/404 (#338).
+			Display:            "Oracle Health / Cerner (Sandbox)",
+			ApiEndpointBaseUrl: "https://fhir-ehr.cerner.com/r4/ec2458f2-1e24-41c8-b71b-0e701af7583d",
+			Scopes: "launch/patient openid fhirUser offline_access " +
+				"patient/Patient.rs patient/AllergyIntolerance.rs patient/CarePlan.rs patient/CareTeam.rs " +
+				"patient/Condition.rs patient/Device.rs patient/DiagnosticReport.rs patient/DocumentReference.rs " +
+				"patient/Encounter.rs patient/Goal.rs patient/Immunization.rs patient/MedicationRequest.rs " +
+				"patient/Observation.rs patient/Procedure.rs patient/Provenance.rs",
 			ClientIDEnv:          "YOURPHR_SANDBOX_ORACLE_CLIENT_ID",
 			ClientSecretEnv:      "", // public/PKCE
 			AuthorizeUrlOverride: "https://authorization.cerner.com/tenants/ec2458f2-1e24-41c8-b71b-0e701af7583d/protocols/oauth2/profiles/smart-v1/personas/patient/authorize",

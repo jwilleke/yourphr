@@ -334,7 +334,7 @@ func (gr *GormRepository) Migrate() error {
 					if err := tx.Model(&models.ProviderCatalogEntry{}).
 						Where("display = ?", s.Display).
 						Updates(map[string]interface{}{
-							"api_endpoint_base_url": s.ApiEndpointBaseUrl,
+							"api_endpoint_base_url":  s.ApiEndpointBaseUrl,
 							"authorize_url_override": s.AuthorizeUrlOverride,
 						}).Error; err != nil {
 						return err
@@ -349,6 +349,24 @@ func (gr *GormRepository) Migrate() error {
 				// A SMART v2 app drops v1 `.read` scopes -> no read access -> empty import. The seed now
 				// uses `.rs`; the provision-only upsert won't update an already-provisioned row, so push
 				// the corrected scopes here for any sandbox that pins an authorize override (Cerner).
+				for _, s := range models.SandboxProviderSeeds() {
+					if s.AuthorizeUrlOverride == "" {
+						continue
+					}
+					if err := tx.Model(&models.ProviderCatalogEntry{}).
+						Where("display = ?", s.Display).
+						Update("scopes", s.Scopes).Error; err != nil {
+						return err
+					}
+				}
+				return nil
+			},
+		},
+		{
+			ID: "20260619000003", // Cerner: enumerate .rs scopes; the `*.rs` wildcard is dropped whole (#338)
+			Migrate: func(tx *gorm.DB) error {
+				// migration ...002 pushed `patient/*.rs`, but Cerner drops the wildcard whole (same as
+				// `*.read`) -> still no read scopes. The seed now enumerates the resources; re-push.
 				for _, s := range models.SandboxProviderSeeds() {
 					if s.AuthorizeUrlOverride == "" {
 						continue
