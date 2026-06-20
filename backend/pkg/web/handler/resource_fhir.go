@@ -121,7 +121,9 @@ func GetResourceFhir(c *gin.Context) {
 		return
 	}
 
-	attachProvenance(c, logger, databaseRepo, []*models.ResourceBase{wrappedResourceModel})
+	single := []*models.ResourceBase{wrappedResourceModel}
+	attachProvenance(c, logger, databaseRepo, single)
+	attachClassification(c, logger, databaseRepo, single) // legible synthesized view-model for the detail card (#308)
 
 	c.JSON(http.StatusOK, gin.H{"success": true, "data": wrappedResourceModel})
 }
