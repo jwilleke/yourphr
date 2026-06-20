@@ -12,7 +12,6 @@
 - [#351](https://github.com/jwilleke/yourphr/issues/351) [FEATURE] /medical-history — group & filter by Date (default), Condition, Provider, Place, Type.
 - [#315](https://github.com/jwilleke/yourphr/issues/315) [FEATURE] /medical-history — readability polish (labels, microcopy, a11y, pagination context).
 - [#313](https://github.com/jwilleke/yourphr/issues/313) [FEATURE] patients able to add records to their own PHR.
-- [#308](https://github.com/jwilleke/yourphr/issues/308) [FEATURE] EHI display Phase 3 — legible detail cards across all resource types (consumes the #309 classifiers).
 - [#262](https://github.com/jwilleke/yourphr/issues/262) [EPIC] Patient-legible display — health info a normal person can actually use.
 
 ## 🟡 P2
@@ -42,7 +41,7 @@
 - [#252](https://github.com/jwilleke/yourphr/issues/252) [FEATURE] Harden re-import dedup: guard idempotent upserts against stale overwrites.
 - [#251](https://github.com/jwilleke/yourphr/issues/251) [FEATURE] Explore Apple Health's supported-institution list as a provider-catalog / FHIR-endpoint source.
 - [#244](https://github.com/jwilleke/yourphr/issues/244) [EPIC] Per-profile dashboard widgets (US Core display end-state).
-- [#241](https://github.com/jwilleke/yourphr/issues/241) [chore] release-please: authenticate with a PAT / GitHub App token.
+- [#241](https://github.com/jwilleke/yourphr/issues/241) [chore] release-please: add RELEASE_PAT secret so release PRs + tags trigger CI (workflow wired; blocked on the secret).
 - [#53](https://github.com/jwilleke/yourphr/issues/53) [SMART] Veradigm/FollowMyHealth registration + end-to-end integration (blocked).
 - [#20](https://github.com/jwilleke/yourphr/issues/20) [EPIC] SMART on FHIR — live provider sync.
 - [#14](https://github.com/jwilleke/yourphr/issues/14) [FEATURE] User Profile Update.
@@ -56,5 +55,5 @@
 
 ## ❓ Needs triage
 
-- [#354](https://github.com/jwilleke/yourphr/issues/354) [FEATURE] Integrate assets from HL7 FHIR GitHub organization (fhir-test-cases, fhir-codegen, etc.) — no priority label yet.
+- [#354](https://github.com/jwilleke/yourphr/issues/354) [FEATURE] Integrate assets from HL7 FHIR GitHub org (fhir-test-cases, fhir-codegen) — no priority label yet.
 - [#314](https://github.com/jwilleke/yourphr/issues/314) [FEATURE] Wearable Device Integration for Vitals, Activity & PGHD — no priority label yet.
