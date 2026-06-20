@@ -1,0 +1,40 @@
+[
+  {
+    "resourceType": "Procedure",
+    "id": "completed-surgical",
+    "status": "completed",
+    "category": { "text": "Surgical procedure" },
+    "code": { "text": "Appendectomy", "coding": [{ "system": "http://snomed.info/sct", "code": "80146002", "display": "Appendectomy" }] },
+    "performedDateTime": "2021-06-12",
+    "bodySite": [{ "text": "Appendix structure" }],
+    "reasonCode": [{ "text": "Acute appendicitis" }],
+    "outcome": { "text": "Successful" },
+    "performer": [{ "actor": { "reference": "Practitioner/dr-1" } }],
+    "encounter": { "reference": "Encounter/enc-1" }
+  },
+  {
+    "resourceType": "Procedure",
+    "id": "stopped",
+    "status": "stopped",
+    "code": { "text": "Colonoscopy" },
+    "statusReason": { "text": "Poor bowel prep" }
+  },
+  {
+    "resourceType": "Procedure",
+    "id": "self-reported",
+    "status": "completed",
+    "code": { "text": "Wisdom tooth removal" },
+    "asserter": { "reference": "Patient/pat-1" }
+  },
+  {
+    "resourceType": "Procedure",
+    "id": "unknown-status",
+    "code": { "text": "Physical therapy" }
+  },
+  {
+    "resourceType": "Procedure",
+    "id": "mistake",
+    "status": "entered-in-error",
+    "code": { "text": "Should be dropped" }
+  }
+]
