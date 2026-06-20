@@ -8,7 +8,6 @@
 
 ## 🟠 P1
 
-- [#349](https://github.com/jwilleke/yourphr/issues/349) [FEATURE] Frontend: open/render stored Binary documents (DocumentReference/DiagnosticReport attachments).
 - [#315](https://github.com/jwilleke/yourphr/issues/315) [FEATURE] /medical-history Layout.
 - [#313](https://github.com/jwilleke/yourphr/issues/313) [FEATURE] patients able to add records to their own PHR.
 - [#309](https://github.com/jwilleke/yourphr/issues/309) [FEATURE] EHI display Phase 4 — generalize Layer-1 classifiers/resolvers to remaining resource types.
@@ -20,11 +19,11 @@
 ## 🟡 P2
 
 - [#345](https://github.com/jwilleke/yourphr/issues/345) [security] http-proxy-middleware (webpack-dev-server tree) — blocked on upstream hpm 3.x (GHSA-64mm-vxmg-q3vj).
+- [#348](https://github.com/jwilleke/yourphr/issues/348) [FEATURE] Binary import: skip already-stored documents on re-sync (cross-sync existence check).
 - [#343](https://github.com/jwilleke/yourphr/issues/343) [FEATURE] Add remaining higher-signal Cerner scopes (first cut Coverage/MedicationDispense/MedicationAdministration/ServiceRequest/Specimen done).
 - [#340](https://github.com/jwilleke/yourphr/issues/340) [FEATURE] Provider logos on Connected Sources.
 - [#339](https://github.com/jwilleke/yourphr/issues/339) [FEATURE] athenahealth sandbox — complete Developer-Portal onboarding (blocked).
 - [#337](https://github.com/jwilleke/yourphr/issues/337) [BUG] SSE sync events dropped ("Room not found") — import progress never clears.
-- [#348](https://github.com/jwilleke/yourphr/issues/348) [FEATURE] Binary import: skip already-stored documents on re-sync (cross-sync existence check).
 - [#333](https://github.com/jwilleke/yourphr/issues/333) [EPIC] Explore — record export options (Save Report, PDF, Email).
 - [#334](https://github.com/jwilleke/yourphr/issues/334) [FEATURE] Explore — Save Report.
 - [#335](https://github.com/jwilleke/yourphr/issues/335) [FEATURE] Explore — Export to PDF.
@@ -42,7 +41,6 @@
 - [#253](https://github.com/jwilleke/yourphr/issues/253) [EPIC] Support manual data entry and user-created records.
 - [#252](https://github.com/jwilleke/yourphr/issues/252) [FEATURE] Harden re-import dedup: guard idempotent upserts against stale overwrites.
 - [#251](https://github.com/jwilleke/yourphr/issues/251) [FEATURE] Explore Apple Health's supported-institution list as a provider-catalog / FHIR-endpoint source.
-- [#347](https://github.com/jwilleke/yourphr/issues/347) [FEATURE] Move per-provider config to an embedded JSON catalog (typed loader, single source of truth).
 - [#244](https://github.com/jwilleke/yourphr/issues/244) [EPIC] Per-profile dashboard widgets (US Core display end-state).
 - [#241](https://github.com/jwilleke/yourphr/issues/241) [chore] release-please: authenticate with a PAT / GitHub App token.
 - [#53](https://github.com/jwilleke/yourphr/issues/53) [SMART] Veradigm/FollowMyHealth registration + end-to-end integration (blocked).
