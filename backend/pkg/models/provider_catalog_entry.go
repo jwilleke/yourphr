@@ -115,7 +115,7 @@ func SandboxProviderSeeds() []SandboxProviderSeed {
 			ApiEndpointBaseUrl: "https://fhir-ehr.cerner.com/r4/ec2458f2-1e24-41c8-b71b-0e701af7583d",
 			Scopes: "launch/patient openid fhirUser offline_access " +
 				"patient/Patient.rs patient/AllergyIntolerance.rs patient/CarePlan.rs patient/CareTeam.rs " +
-				"patient/Condition.rs patient/Device.rs patient/DiagnosticReport.rs patient/DocumentReference.rs " +
+				"patient/Binary.rs patient/Condition.rs patient/Device.rs patient/DiagnosticReport.rs patient/DocumentReference.rs " +
 				"patient/Encounter.rs patient/Goal.rs patient/Immunization.rs patient/MedicationRequest.rs " +
 				"patient/Observation.rs patient/Procedure.rs patient/Provenance.rs",
 			ClientIDEnv:          "YOURPHR_SANDBOX_ORACLE_CLIENT_ID",
