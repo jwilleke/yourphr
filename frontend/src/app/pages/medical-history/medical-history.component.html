@@ -2,55 +2,54 @@
   <div class="container">
     <div class="az-content-body">
 
-      <!-- Header Row -->
-      <report-header [reportHeaderTitle]="'Medical History'" [reportHeaderSubTitle]="'Organized by conditions, describes the scope and breadth of medical care'"></report-header>
+      <!-- Header (subtitle corrected from the old "organized by conditions" — #315/#358) -->
+      <report-header
+        [reportHeaderTitle]="'Medical History'"
+        [reportHeaderSubTitle]="'Your visits and records — choose how to group them: by date, condition, provider or place.'">
+      </report-header>
 
-      <ng-container [ngTemplateOutlet]="loading ? isLoadingTemplate : (encounters.length == 0) ? emptyReport : report"></ng-container>
+      <ng-container [ngTemplateOutlet]="loading ? isLoadingTemplate : (rows.length === 0 ? emptyReport : report)"></ng-container>
 
       <ng-template #report>
 
-        <!-- Editor Button -->
-        <div class="row mt-5 mb-3">
-          <div class="col-12">
+        <!-- Group-by selector + honest total -->
+        <div class="d-flex flex-wrap align-items-center justify-content-between mt-4 mb-3">
+          <div class="btn-group" role="group" aria-label="Group medical history by">
+            <button *ngFor="let d of dimensions" type="button"
+                    class="btn btn-sm" [ngClass]="dimension === d.key ? 'btn-indigo' : 'btn-outline-indigo'"
+                    (click)="setDimension(d.key)">
+              {{ d.label }}
+            </button>
+          </div>
+          <span class="tx-gray-500 tx-13">{{ total }} record{{ total === 1 ? '' : 's' }} across {{ groups.length }} {{ dimension === 'date' ? 'dates' : (dimension + 's') }}</span>
+        </div>
 
-            <div [hidden]="true" class="alert alert-warning" role="alert">
-              <strong>Warning!</strong> YourPHR has detected medical Encounters that are not associated with a Condition.
-              They are grouped under the "Unassigned" section below.
-              <br/>
-              You can re-organize your conditions & encounters by using the <a class="alert-link cursor-pointer">report editor</a>
+        <div class="row">
+          <!-- Master rail -->
+          <div class="col-md-4 col-lg-3 mg-b-20">
+            <div class="list-group">
+              <button *ngFor="let g of groups" type="button"
+                      class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+                      [class.active]="g.key === selectedKey"
+                      [class.tx-gray-500]="g.isUnknown"
+                      (click)="selectGroup(g.key)">
+                <span class="text-truncate mg-r-10">{{ g.label }}</span>
+                <span class="badge rounded-pill" [ngClass]="g.key === selectedKey ? 'bg-light tx-gray-700' : 'bg-secondary'">{{ g.count }}</span>
+              </button>
             </div>
           </div>
-        </div>
 
-        <!-- Conditions Title -->
-        <div class="row mt-5 mb-3">
-          <div class="col-6">
-            <h1 class="az-dashboard-title">Condition</h1>
-          </div>
-          <div class="col-6">
-            <a class="float-end btn btn-outline-indigo" routerLink="/resource/create">Add Condition</a>
-          </div>
-        </div>
-
-        <!-- Condition List -->
-        <ul class="timeline">
-          <li *ngFor="let encounter of encounters">
-            <app-report-medical-history-timeline-panel [resourceFhir]="encounter" ></app-report-medical-history-timeline-panel>
-          </li>
-        </ul>
-
-
-        <!-- Pagination -->
-        <div class="row">
-          <div class="col-12 d-flex justify-content-center flex-nowrap">
-            <ngb-pagination
-              [collectionSize]="allEncountersIds.length"
-              [(page)]="currentPage"
-              [pageSize]="pageSize"
-              [maxSize]="15"
-              (pageChange)="pageChange()"
-            >
-            </ngb-pagination>
+          <!-- Detail pane: selected group's records by date -->
+          <div class="col-md-8 col-lg-9">
+            <div *ngIf="!selectedGroup" class="tx-gray-500 pd-20">Select a group to view its records.</div>
+            <div *ngFor="let bucket of detailBuckets" class="mg-b-20">
+              <h6 class="az-content-label tx-gray-600 mg-b-10">{{ bucket.date ? (bucket.date | date) : 'Undated' }}</h6>
+              <ul class="timeline">
+                <li *ngFor="let row of bucket.rows">
+                  <app-report-medical-history-timeline-panel [resourceFhir]="resourceFor(row)"></app-report-medical-history-timeline-panel>
+                </li>
+              </ul>
+            </div>
           </div>
         </div>
 
@@ -61,15 +60,11 @@
           <div class="modal-body tx-center pd-y-20 pd-x-20">
             <h4 class="tx-purple mg-b-20">No Medical History Found!</h4>
             <p class="mg-b-20 mg-x-20">
-              YourPHR was unable determine your medical history using your connected sources. You may need to connect another source to import your medical history.
-            </p>
-            <p class="mg-b-20 mg-x-20">
-              Click below to add a new healthcare provider to YourPHR.
+              YourPHR was unable to determine your medical history from your connected sources. You may need to connect another source to import your medical history.
             </p>
             <button [routerLink]="'/sources'" type="button" class="btn btn-purple pd-x-25">Add Source</button>
             <button [routerLink]="'/resource/create'" type="button" class="btn btn-purple mg-l-10 pd-x-25">Add Condition</button>
-
-          </div><!-- modal-body -->
+          </div>
         </div>
       </ng-template>
 
