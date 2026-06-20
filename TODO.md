@@ -8,14 +8,12 @@
 
 ## 🟠 P1
 
+- [#355](https://github.com/jwilleke/yourphr/issues/355) [FEATURE] Dynamic Client Registration (DCR).
 - [#351](https://github.com/jwilleke/yourphr/issues/351) [FEATURE] /medical-history — group & filter by Date (default), Condition, Provider, Place, Type.
 - [#315](https://github.com/jwilleke/yourphr/issues/315) [FEATURE] /medical-history — readability polish (labels, microcopy, a11y, pagination context).
 - [#313](https://github.com/jwilleke/yourphr/issues/313) [FEATURE] patients able to add records to their own PHR.
-- [#309](https://github.com/jwilleke/yourphr/issues/309) [FEATURE] EHI display Phase 4 — generalize Layer-1 classifiers/resolvers to remaining resource types.
-- [#308](https://github.com/jwilleke/yourphr/issues/308) [FEATURE] EHI display Phase 3 — legible detail cards across all resource types.
-- [#279](https://github.com/jwilleke/yourphr/issues/279) [FEATURE] Blue Button 2.0 — frontend source entry + sandbox end-to-end verification.
+- [#308](https://github.com/jwilleke/yourphr/issues/308) [FEATURE] EHI display Phase 3 — legible detail cards across all resource types (consumes the #309 classifiers).
 - [#262](https://github.com/jwilleke/yourphr/issues/262) [EPIC] Patient-legible display — health info a normal person can actually use.
-- [#250](https://github.com/jwilleke/yourphr/issues/250) [FEATURE] Add CMS Blue Button 2.0 as a SMART-on-FHIR sync source (low-friction first provider).
 
 ## 🟡 P2
 
@@ -58,4 +56,5 @@
 
 ## ❓ Needs triage
 
+- [#354](https://github.com/jwilleke/yourphr/issues/354) [FEATURE] Integrate assets from HL7 FHIR GitHub organization (fhir-test-cases, fhir-codegen, etc.) — no priority label yet.
 - [#314](https://github.com/jwilleke/yourphr/issues/314) [FEATURE] Wearable Device Integration for Vitals, Activity & PGHD — no priority label yet.
