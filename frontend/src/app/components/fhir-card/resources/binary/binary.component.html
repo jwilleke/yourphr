@@ -8,7 +8,16 @@
 
 
 
-<ng-container *ngIf="!loading" [ngTemplateOutlet]="
+<div *ngIf="!loading && loadError" class="alert alert-warning" role="alert">
+  This document could not be retrieved. It may not have been downloaded yet, or was too large to store.
+  <span *ngIf="attachmentModel?.contentType"> ({{attachmentModel?.contentType}})</span>
+</div>
+
+<div *ngIf="!loading && !loadError && hasContent" class="d-flex justify-content-end mg-b-10">
+  <button type="button" class="btn btn-sm btn-outline-secondary" (click)="download()">Download</button>
+</div>
+
+<ng-container *ngIf="!loading && !loadError" [ngTemplateOutlet]="
   displayModel?.content_type == 'application/pdf' ? showPdf :
   displayModel?.content_type == 'text/markdown' ? showMarkdown :
   displayModel?.content_type == 'text/plain' ? showText :
