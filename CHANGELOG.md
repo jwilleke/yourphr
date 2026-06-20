@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.4.0](https://github.com/jwilleke/yourphr/compare/v1.3.0...v1.4.0) (2026-06-20)
+
+### Features
+
+- **display:** patient-legible detail cards — shared "Reported by" provenance + synthesized state/verification/category summary, rendered for every classifier-backed type ([#308](https://github.com/jwilleke/yourphr/issues/308))
+- **display:** Layer-1 classifiers for AllergyIntolerance, Immunization, Procedure, DiagnosticReport, Encounter, CarePlan — legible state/verification/category synthesis ([#309](https://github.com/jwilleke/yourphr/issues/309))
+- **provenance:** generic resolver now resolves `performer` (Procedure/Immunization/DiagnosticReport/Observation), attached on every read ([#309](https://github.com/jwilleke/yourphr/issues/309))
+- **smart:** follow DocumentReference/DiagnosticReport → Binary on import so document bytes are retrievable ([#342](https://github.com/jwilleke/yourphr/issues/342))
+- **frontend:** open/render + download stored Binary documents; graceful "unavailable" state ([#349](https://github.com/jwilleke/yourphr/issues/349))
+- **sources:** Oracle Health / Cerner sandbox working — enumerated v2 `.rs` scopes incl. Binary + higher-signal types ([#338](https://github.com/jwilleke/yourphr/issues/338), [#343](https://github.com/jwilleke/yourphr/issues/343))
+- **sources:** CMS Blue Button 2.0 SMART source incl. confidential-client support; end-to-end verified ([#250](https://github.com/jwilleke/yourphr/issues/250), [#279](https://github.com/jwilleke/yourphr/issues/279))
+- **sources:** split connected sources into Sandbox vs Production; admin-editable catalog ([#291](https://github.com/jwilleke/yourphr/issues/291), [#330](https://github.com/jwilleke/yourphr/issues/330))
+
+### Bug Fixes
+
+- **smart:** import-engine resilience — timeout, retry, two-pass fetch, incremental upsert, graceful degradation ([#341](https://github.com/jwilleke/yourphr/issues/341))
+- **security:** bump undici to 6.27.0 and frontend build-tooling deps for Dependabot alerts ([#350](https://github.com/jwilleke/yourphr/issues/350), [#344](https://github.com/jwilleke/yourphr/issues/344))
+
 ## [1.3.0](https://github.com/jwilleke/yourphr/compare/v1.2.0...v1.3.0) (2026-06-17)
 
 ### Features
