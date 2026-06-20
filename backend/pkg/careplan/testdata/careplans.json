@@ -1,0 +1,41 @@
+[
+  {
+    "resourceType": "CarePlan",
+    "id": "active-plan",
+    "status": "active",
+    "intent": "plan",
+    "category": [{ "text": "Assessment and plan of treatment" }],
+    "title": "Diabetes management",
+    "description": "Monitor blood glucose; metformin daily",
+    "period": { "start": "2023-01-01" },
+    "author": { "reference": "Practitioner/dr-1" },
+    "addresses": [{ "reference": "Condition/c1" }],
+    "goal": [{ "reference": "Goal/g1" }, { "reference": "Goal/g2" }]
+  },
+  {
+    "resourceType": "CarePlan",
+    "id": "revoked",
+    "status": "revoked",
+    "intent": "order",
+    "title": "Old physical therapy plan"
+  },
+  {
+    "resourceType": "CarePlan",
+    "id": "self-authored",
+    "status": "active",
+    "intent": "plan",
+    "description": "My personal exercise plan",
+    "author": { "reference": "Patient/pat-1" }
+  },
+  {
+    "resourceType": "CarePlan",
+    "id": "no-status",
+    "title": "Unclear plan"
+  },
+  {
+    "resourceType": "CarePlan",
+    "id": "mistake",
+    "status": "entered-in-error",
+    "title": "Should be dropped"
+  }
+]

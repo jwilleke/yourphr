@@ -1,0 +1,37 @@
+[
+  {
+    "resourceType": "Encounter",
+    "id": "office-finished",
+    "status": "finished",
+    "class": { "system": "http://terminology.hl7.org/CodeSystem/v3-ActCode", "code": "AMB", "display": "ambulatory" },
+    "type": [{ "text": "Annual wellness visit" }],
+    "participant": [{ "individual": { "reference": "Practitioner/dr-1" } }],
+    "period": { "start": "2023-03-10T09:00:00Z", "end": "2023-03-10T09:30:00Z" },
+    "reasonCode": [{ "text": "Routine checkup" }],
+    "serviceProvider": { "reference": "Organization/org-1" }
+  },
+  {
+    "resourceType": "Encounter",
+    "id": "inpatient",
+    "status": "in-progress",
+    "class": { "code": "IMP", "display": "inpatient encounter" },
+    "hospitalization": { "dischargeDisposition": { "text": "Home" } }
+  },
+  {
+    "resourceType": "Encounter",
+    "id": "telehealth-planned",
+    "status": "planned",
+    "class": { "code": "VR" }
+  },
+  {
+    "resourceType": "Encounter",
+    "id": "no-class",
+    "status": "finished"
+  },
+  {
+    "resourceType": "Encounter",
+    "id": "mistake",
+    "status": "entered-in-error",
+    "class": { "code": "AMB" }
+  }
+]

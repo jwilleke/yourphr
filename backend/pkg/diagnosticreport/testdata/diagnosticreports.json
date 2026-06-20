@@ -1,0 +1,33 @@
+[
+  {
+    "resourceType": "DiagnosticReport",
+    "id": "final-lab",
+    "status": "final",
+    "category": [{ "coding": [{ "system": "http://terminology.hl7.org/CodeSystem/v2-0074", "code": "LAB", "display": "Laboratory" }] }],
+    "code": { "text": "Complete blood count", "coding": [{ "system": "http://loinc.org", "code": "58410-2", "display": "CBC panel" }] },
+    "effectiveDateTime": "2022-05-01",
+    "issued": "2022-05-02T08:00:00Z",
+    "performer": [{ "reference": "Organization/org-1", "display": "Acme Labs" }],
+    "result": [{ "reference": "Observation/o1" }, { "reference": "Observation/o2" }],
+    "conclusion": "Within normal limits"
+  },
+  {
+    "resourceType": "DiagnosticReport",
+    "id": "imaging-prelim",
+    "status": "preliminary",
+    "category": [{ "coding": [{ "system": "http://terminology.hl7.org/CodeSystem/v2-0074", "code": "RAD" }] }],
+    "code": { "text": "Chest X-ray" }
+  },
+  {
+    "resourceType": "DiagnosticReport",
+    "id": "no-category",
+    "status": "final",
+    "code": { "text": "Misc report" }
+  },
+  {
+    "resourceType": "DiagnosticReport",
+    "id": "mistake",
+    "status": "entered-in-error",
+    "code": { "text": "Should be dropped" }
+  }
+]
