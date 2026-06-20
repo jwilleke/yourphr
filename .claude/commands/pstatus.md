@@ -50,7 +50,15 @@ has served its purpose, so regenerating a bands-only `TODO.md` here is expected:
 - `⏸ Deferred`
 - `❓ Needs triage` (count + titles)
 
-Each line: `- #<num> <title>`.
+**One issue per line — never bundle multiple issues onto one bullet.** Each line starts with the
+full GitHub link and reads:
+
+```
+- [#<num>](https://github.com/{owner}/{repo}/issues/<num>) <title>
+```
+
+No grouping headers that pack several `#NN` refs into a single bullet, no comma-separated runs of
+issues — each issue gets its own line, every reference is a full `[#NN](link)` (never a bare `#NN`).
 
 ### Step 5: Brief the user
 
