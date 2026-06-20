@@ -16,7 +16,7 @@ Every FHIR sandbox / test server YourPHR can connect to, in one place — with t
 | **CMS Blue Button 2.0** | **confidential** (secret) | sandbox app | per-resource (no `$everything`) | ✅ **verified working** (2026-06-14) | [`medicare-bluebutton.md`](medicare-bluebutton.md) |
 | **Epic** | public (PKCE) | BYO `client_id` | `$everything` | 🧪 used earlier | [`vendors/epic-sandbox.md`](vendors/epic-sandbox.md) |
 | **Veradigm / FollowMyHealth (test)** | public (PKCE) | Veradigm app | per-resource | ⛔ **blocked** (`unauthorized_client`, ticket #17849) | [`FHIR/fhir-testing.md`](FHIR/fhir-testing.md) |
-| **Oracle Health (Cerner)** | public (PKCE) | code Console app (issues client_id) | `$everything` | 🟡 registered; ready to connect | [`vendors/oracle-cerner.md`](vendors/oracle-cerner.md) |
+| **Oracle Health (Cerner)** | public (PKCE) | code Console app (issues client_id) | per-resource search | ✅ **works** — imports records (pinned patient-authorize override + enumerated v2 `.rs` + Offline app) | [`vendors/oracle-cerner.md`](vendors/oracle-cerner.md) |
 | **athenahealth** | **confidential** (secret) | Developer Portal app (gated) | per-resource | 🟡 registered; creds obtained | [`vendors/athenahealth.md`](vendors/athenahealth.md) |
 | **Raw FHIR servers** (HAPI, etc.) | — (no SMART login) | none | — | reference only (no connect flow) | this doc |
 
@@ -107,19 +107,18 @@ The near-term primary target ([#53](https://github.com/jwilleke/yourphr/issues/5
 
 ## 5. Oracle Health (Cerner) — Millennium sandbox
 
-- **Status:** 🟡 Registered — app created + `client_id` obtained 2026-06-15; **ready to connect** (not yet run).
-- **Credentials:** ✅ **have** the CernerCare account + the registered app's **Application ID** and **`client_id`** (public/PKCE) — values in `private/secrets.md`. The code Console _issued_ the client_id; no "Oracle CID" was supplied (the org/Client-Number prompts were from the CernerCare profile, not app registration).
-- **Tracking issue:** _none yet_
-- **Next:** in code Console, **subscribe the app to the "Oracle Health FHIR APIs for Millennium: FHIR R4, All" API product** (grants R4 — fixes the FHIR Version `-`), then connect in YourPHR with the sandbox base URL below + the `client_id` from `private/secrets.md`.
+- **Status:** ✅ **Works** — connects and imports records ([#338](https://github.com/jwilleke/yourphr/issues/338), verified 2026-06-20). The hardest sandbox; see the full guide below.
+- **Credentials:** CernerCare account + the registered app's **Application ID** and **`client_id`** (public/PKCE) in `private/secrets.md`. The code Console _issued_ the client_id; no "Oracle CID" was supplied.
+- **The four obstacles (all solved):** (1) patient authorize endpoint is **not discoverable** → pinned per-entry override; (2) app is SMART v2 but only **smart-v1** endpoints exist; (3) scopes must be **enumerated v2 `.rs`** (Cerner drops `.read` and the wildcard); (4) app must be **Offline** for a refresh token. **Full writeup, registration steps, conformance + data-shape notes: [`vendors/oracle-cerner.md`](vendors/oracle-cerner.md).**
 
 Cerner Millennium's public sandbox; YourPHR connects as a **patient-access** SMART app.
 
 | Field | Value |
 |---|---|
-| **FHIR base URL** | sandbox pattern `https://fhir-myrecord.sandboxcerner.com/r4/{tenant}` (patient access). Provider/EHR-launch is `fhir-ehr.sandboxcerner.com`; an **open / no-auth** POC endpoint is `fhir-open.sandboxcerner.com`. The common public sandbox tenant is `ec2458f2-1e24-41c8-b71b-0e701af7583d` — **confirm the exact Service Root URL in code Console.** |
+| **FHIR base URL** | **`https://fhir-ehr.cerner.com/r4/{tenant}`** (the tenant-aware host) — NOT `fhir-myrecord.sandboxcerner.com` (its authz returns `unknown-tenant`). The public sandbox tenant is `ec2458f2-1e24-41c8-b71b-0e701af7583d`. See the guide for the authorize-endpoint override. |
 | **Client ID** | register a SMART app in the **Oracle Health code Console** (needs a free CernerCare account). The admin **Sandbox testing** page (`/sandbox`) has a **"Use Oracle (Cerner)"** button that prefills the base + scopes. |
 | **Client Secret** | _(blank — public/PKCE for patient apps)_ |
-| **Scopes** | standard SMART patient scopes; supports `$everything` |
+| **Scopes** | enumerated v2 `patient/<Resource>.rs` (NOT `.read`, NOT a wildcard — see guide) |
 
 **Registered app (code Console, 2026-06-15)** — the non-secret config we enter; the issued `client_id` goes in `private/secrets.md`:
 

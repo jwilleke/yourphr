@@ -1,164 +1,156 @@
-# Oracle Health (Cerner) — code Console registration
+# Oracle Health (Cerner) — patient access integration guide
 
-How to register a **patient-access SMART app** for the **Cerner Millennium** sandbox and get a `client_id`. Cerner is more gated than Epic, and the registration has two real traps (the org / Client-Number prompt, and the API-product subscription) — both documented below.
+A field guide to connecting a **patient-access SMART-on-FHIR app** to **Oracle Health / Cerner Millennium**, written from a working YourPHR integration ([#338](https://github.com/jwilleke/yourphr/issues/338)). It covers app registration, the connection challenges we hit and how we solved them, Cerner's conformance/scope quirks, and the shape of the data you actually get back.
 
-**Register at:** <https://code-console.cerner.com/> — the developer **code Console** (free CernerCare account; it issues the `client_id`).
+> **Difficulty: high.** Cerner is the most involved of the major patient-access platforms we've integrated — appreciably harder than Epic or CMS Blue Button. The auth flow has a non-obvious endpoint trap, the scope handling is strict and version-sensitive, and the sandbox is slow and flaky. Budget real time. None of it is impossible; all of it is documented below.
 
-## What you need
+## At a glance — the working configuration
 
-| Item | How |
-|---|---|
-| **CernerCare account** | free; created on first use of the code Console |
-| **`client_id`** | **issued by the code Console** when you register an app — you do NOT supply one |
-| **Client Secret** | none — register as a **Public (PKCE)** client |
-| **FHIR R4 access** | subscribe the app to the **"Oracle Health FHIR APIs for Millennium: FHIR R4, All"** API product |
-
-Credential values go in `private/secrets.md` (gitignored), never the committed docs.
-
-## Trap 1 — the "Organization (Client Number)" prompt
-
-CernerCare **account creation** asks for an **Organization (Client Number)** — a search that must match a real Cerner customer org. That ties the *account* to a Cerner client; it is **not** part of app registration. If you're asked for an "Oracle CID" just to register an app, you're on the **wrong portal** (Oracle's enterprise console). The developer **code Console** issues the `client_id` itself.
-
-## Steps
-
-1. Go to the **code Console**: <https://code-console.cerner.com/>
-2. Sign in (create the free **CernerCare** account on first use).
-3. **+ New App** → register with:
-
-   | Setting | Value |
-   |---|---|
-   | **App Name** | YourPHR |
-   | **App Type** | Patient |
-   | **Type of Access** | **Offline** ← REQUIRED (issues a refresh token; "Online" has none and a long import dies when the access token expires — see Status) |
-   | **SMART Version** | SMART v2 (so request `.rs` scopes, not `.read` — see Status) |
-   | **Client Type** | Public (PKCE — no secret) |
-   | **FHIR Spec** | R4 |
-   | **SMART Launch URI** | *(blank — standalone, not EHR launch)* |
-   | **Redirect URI** | `https://relay.nerdsbythehour.com/callback` |
-   | **Scopes / resource access** | enumerate the patient resources you want (`Patient`, `Condition`, `Observation`, …); YourPHR requests them as v2 `patient/<Resource>.rs`. **NOT** `patient/*.read` and **NOT** the `*.rs` wildcard — see Status. |
-   | **Terms of Use URL** | `https://yourphr.org/terms` |
-   | **Privacy Policy URL** | `https://yourphr.org/privacy` |
-
-4. **Register** → the console shows your **`client_id`** (and an Application ID). Save both to `private/secrets.md`.
-
-## Trap 2 — subscribe to the FHIR R4 API product
-
-After registering, the app's **FHIR Version may show `-`** and FHIR calls fail. Fix: **subscribe the app to "Oracle Health FHIR APIs for Millennium: FHIR R4, All"** — that grants R4 access.
-
-## Connect values
-
-> The authoritative, end-to-end-verified configuration is in the **[Status](#status)** section below. In short: base/`aud` = **`fhir-ehr.cerner.com`** (NOT `fhir-myrecord` — its authz doesn't know the sandbox tenant), authorize = a pinned **patient-persona override** (not discoverable), scopes = enumerated v2 **`.rs`**, access type = **Offline**. The catalog seed (`SandboxProviderSeeds()`) already carries all of this.
+The values that took the longest to find. YourPHR's catalog seed (`SandboxProviderSeeds()`) already encodes all of this; substitute your own `client_id`/tenant.
 
 | Field | Value |
 |---|---|
-| **FHIR base / `aud`** | `https://fhir-ehr.cerner.com/r4/ec2458f2-1e24-41c8-b71b-0e701af7583d` |
-| **Client ID** | from registration (in `private/secrets.md`) |
-| **Client Secret** | *(blank — public/PKCE)* |
-| **authorize** | OVERRIDE → `…/profiles/smart-v1/personas/patient/authorize` (see Status — not discoverable) |
-| **Scopes** | enumerated v2 `patient/<Resource>.rs` (see Status) |
+| FHIR base / `aud` | `https://fhir-ehr.cerner.com/r4/{tenant}` |
+| Authorize endpoint | `https://authorization.cerner.com/tenants/{tenant}/protocols/oauth2/profiles/smart-v1/personas/patient/authorize` — **pinned override, NOT discoverable** (see Challenge 1) |
+| Token endpoint | `https://authorization.cerner.com/tenants/{tenant}/hosts/fhir-ehr.cerner.com/protocols/oauth2/profiles/smart-v1/token` — taken from discovery, works as-is |
+| Client type | **Public** (PKCE `S256`, no secret) |
+| Scopes | **SMART v2 `.rs`, enumerated per resource** — NOT v1 `.read`, NOT the `*.rs` wildcard (see Challenge 3) |
+| App access type | **Offline** — required for a refresh token (see Challenge 4) |
+| Sandbox tenant | `ec2458f2-1e24-41c8-b71b-0e701af7583d` (the public Cerner sandbox tenant) |
+| Sandbox test patient | `nancysmart` / `Cerner01` |
 
-(`fhir-myrecord.sandboxcerner.com` looks like the patient host but its authorization server returns `unknown-tenant` for this tenant; `fhir-open` is the unauth endpoint. Neither works for our connect — see the probing matrix in Status.)
+## Part 1 — Register the app
 
-## Status
+Register at the developer **code Console**: <https://code-console.cerner.com/>. A free **CernerCare** account is created on first use; the console issues your `client_id` (you do not supply one). No client secret — register as a **Public (PKCE)** client. Keep all credential values in a gitignored store (`private/secrets.md`), never in committed docs.
 
-🟢 **End-to-end VALIDATED (manually)** ([#338](https://github.com/jwilleke/yourphr/issues/338); 2026-06-19). A browser login as `nancysmart` against the lead URL completed: Cerner issued a `code` → `relay.nerdsbythehour.com/callback?code=…&state=manualtest338` (relay showed "Connected"). Redeeming that code at the token endpoint returned `invalid_grant / token:**code-invalid-or-expired**` — i.e. the request was **well-formed** (correct token endpoint, client, redirect_uri, and a PKCE verifier that matched the challenge); only the ~60 s-expired code was rejected. So both the authorize *and* token endpoints accept our (v2-registered) app on the **smart-v1** profile; the only reason a manual token capture failed is timing, which YourPHR's automated relay-poll/exchange avoids.
+### App settings
 
-**The working endpoint is not advertised by any Cerner discovery document**, so YourPHR needs a per-entry **authorize-endpoint (persona) override** to reach it. Confirmed working configuration:
+| Setting | Value | Notes |
+|---|---|---|
+| App Name | YourPHR | |
+| App Type | **Patient** | not Provider — see Challenge 1 |
+| Type of Access | **Offline** | **required** — "Online" yields no refresh token (Challenge 4) |
+| SMART Version | SMART v2 | request `.rs` scopes, not `.read` (Challenge 3) |
+| Client Type | **Public (PKCE)** | no secret |
+| FHIR Spec | R4 | |
+| SMART Launch URI | *(blank)* | standalone, not EHR launch |
+| Redirect URI | your relay/callback URL (e.g. `https://relay.nerdsbythehour.com/callback`) | must match exactly |
+| Resource access / scopes | enumerate each patient resource you want (`Patient`, `Condition`, `Observation`, …) | NOT a wildcard (Challenge 3) |
+| Terms / Privacy URLs | `https://yourphr.org/terms`, `https://yourphr.org/privacy` | |
 
-| Field | Value |
-|---|---|
-| FHIR base / `aud` | `https://fhir-ehr.cerner.com/r4/ec2458f2-1e24-41c8-b71b-0e701af7583d` |
-| authorize (OVERRIDE — not discoverable) | `https://authorization.cerner.com/tenants/ec2458f2-…/protocols/oauth2/profiles/smart-v1/personas/patient/authorize` |
-| token (from discovery — works as-is) | `https://authorization.cerner.com/tenants/ec2458f2-…/hosts/fhir-ehr.cerner.com/protocols/oauth2/profiles/smart-v1/token` |
-| client | `c330e3c6-…` (public / PKCE, no secret) |
-| scopes | **SMART v2 `.rs`, ENUMERATED per resource** — NOT v1 `.read`, and NOT the `*.rs` wildcard |
-| code Console access type | **Offline** (required — see below) |
+On **Register**, save the `client_id` and Application ID.
 
-**Two scope traps, both confirmed live:**
+### Two registration traps
 
-1. **Use SMART v2 `.rs`, not v1 `.read`.** The app is registered SMART v2, and Cerner **silently drops** v1 `.read` scopes for a v2 client — the connect succeeds but the token comes back with only `fhirUser launch/patient openid` (no read scopes), so every FHIR fetch 403s and nothing imports.
-2. **Enumerate the resources; the `patient/*.rs` wildcard is dropped whole** (same as `*.read`). Specific `.rs` scopes ARE granted per resource. The seed lists `patient/Patient.rs patient/AllergyIntolerance.rs … patient/Provenance.rs`. Resources you don't list 403 with `insufficient_scope` and are skipped — add more `patient/<Resource>.rs` for a fuller record (e.g. `patient/Coverage.rs` for insurance).
+1. **The "Organization (Client Number)" prompt.** CernerCare *account* creation asks for an Organization (Client Number) that must match a real Cerner customer org — this ties your account to a client and is **not** part of app registration. If a portal asks for an "Oracle CID" just to register an app, you are on the **wrong portal** (Oracle's enterprise console); the developer code Console issues the `client_id` itself.
+2. **Subscribe to the FHIR R4 API product.** After registering, the app's FHIR Version may show `-` and FHIR calls fail until you **subscribe the app to "Oracle Health FHIR APIs for Millennium: FHIR R4, All."** That subscription grants R4 access.
 
-Verified: with specific `.rs`, `GET /Patient/12724066` → 200 (nancysmart) and `/Observation` & `/Condition` searches → 200; with `.read` (or the `*` wildcard), reads 403.
+## Part 2 — The connection challenges
 
-**Set the code Console app to Type of Access = Offline.** As "Online" it gets **no refresh token**, so the access token expires mid-import on a large/slow patient and the sync fails. Offline yields a refresh token; YourPHR renews it automatically as the import runs.
+Four distinct obstacles, in the order you'll hit them. Each is *symptom → cause → fix*.
 
-**Import resilience ([#341](https://github.com/jwilleke/yourphr/issues/341)).** Cerner's sandbox is slow and flaky — large searches (e.g. Condition, ~3,377 for nancysmart) intermittently return **504 Gateway Timeout** (~57 s each), and some requests **hang**. YourPHR's SMART client handles this:
+### Challenge 1 — the patient authorize endpoint is not discoverable
 
-- **90 s per-request timeout** — a hung fetch fails fast instead of blocking the import forever.
-- **Two-pass fetch** — tries each resource once, then re-attempts the transiently-failed ones in a single **deferred retry pass at the end**. A slow/flaky resource never blocks the others (the old inline retry serialized ~3 min of 504s before the next resource even started).
-- **Incremental upsert** — each page is stored as it arrives, so a later hang/timeout/fatal-401 keeps everything already imported.
-- **Graceful skip** — a resource that still fails (e.g. a persistent 504, or a 403 for an unrequested scope) is skipped, not fatal.
+**Symptom:** Following `.well-known/smart-configuration` for the FHIR base lands you on a **provider**-persona authorize endpoint, which rejects a patient app with `client-persona-mismatch`.
 
-Every resource logs a `smart sync:` line (`fetched N page(s)`, `deferred for retry (…)`, `skipped (…)`), so an import is fully explainable from the logs. One bad resource type never fails the whole import.
+**Cause:** Cerner splits authorization by *persona* (patient vs provider) **and** by host, and the two don't line up in discovery:
 
-> **Superseded diagnoses (all wrong — do not trust earlier notes):** (1) wrong persona registration; (2) unfinished R4 subscription (*Trap 2*) — it **is** subscribed; (3) "SMART v1/v2 mismatch + override to a smart-v2 endpoint" — **the smart-v2 endpoint returns 404, it does not exist**; (4) "wrong tenant, probably defer". Each was based on an incomplete probe. Keep only the verified matrix below.
+- `fhir-ehr.cerner.com` (the host that knows the sandbox tenant) advertises `authorization.cerner.com/…/personas/**provider**/authorize`.
+- `fhir-myrecord.sandboxcerner.com` (the patient-looking host) advertises `authorization.sandboxcerner.com/…/personas/**patient**/authorize` — but **that authz server returns `unknown-tenant`** for the sandbox tenant (a bogus `client_id` gets the same error, proving it's tenant-level, not app-level).
 
-### Verified by probing (read-only; a bare `200` is **not** proof of a completed login — confirm in a browser)
+The working patient endpoint exists only by **hand-combining** "tenant-aware authz host (`authorization.cerner.com`) + patient persona path" — a URL **no discovery document publishes**.
+
+**Fix:** Pin the patient authorize endpoint explicitly instead of trusting discovery. YourPHR adds an optional per-catalog-entry `AuthorizeUrlOverride`; the token endpoint is host-based (not persona-split) and is still taken from discovery.
+
+### Challenge 2 — the app is SMART v2, but only smart-v1 endpoints exist
+
+**Symptom:** Constructing the obvious `…/profiles/smart-v2/…` authorize/token URLs returns **404**.
+
+**Cause:** Cerner registers the app as SMART **v2**, but the sandbox exposes **only `smart-v1` endpoints** — every published endpoint (`authorization_endpoint`, `token_endpoint`, `revocation_endpoint`) is `…/profiles/smart-v1/…`; there is no `smart-v2` URL anywhere. A v2-registered app authorizes and exchanges tokens fine on the **v1** endpoints. Don't confuse this *endpoint-profile* version with the *scope-grammar* version below — they are independent (the discovery doc advertises both `permission-v1` and `permission-v2` capabilities, which is about scope syntax, not endpoints).
+
+**Fix:** Use the `smart-v1` endpoints (as in the config table). No v2 endpoint to target.
+
+### Challenge 3 — scopes: `.read` is silently dropped, and the wildcard doesn't work
+
+This is the one that produces a successful connect with **zero data**, so it's the most deceptive.
+
+**Symptom:** Connect succeeds, token issues, but **nothing imports** — every FHIR fetch returns `403 insufficient_scope` (`no_scope_for_resource_path`). Inspecting the granted token shows only `fhirUser launch/patient openid` — all clinical read scopes were dropped.
+
+**Cause, two parts:**
+
+1. **`.read` vs `.rs`.** The app is SMART v2, and Cerner **silently drops** SMART v1 `.read` scopes for a v2 client. You must request **v2 `.rs`** (read+search) scope syntax (`patient/Observation.rs`, not `patient/Observation.read`).
+2. **No wildcards.** Cerner drops the `patient/*.rs` wildcard **whole** (same as it drops `*.read`), leaving no read scopes. You must **enumerate every resource** (`patient/Patient.rs patient/Condition.rs patient/Observation.rs …`). Specific `.rs` scopes are granted per resource; resources you don't list return `403 insufficient_scope` and are simply skipped.
+
+**Fix:** Request enumerated v2 `.rs` scopes. **Verified:** with specific `.rs`, `GET /Patient/{id}` and `/Observation?patient=` / `/Condition?patient=` return 200; with `.read` or the `*` wildcard, reads 403. See [Conformance](#conformance-and-scope-notes) — this is documented Cerner behavior, not a bug.
+
+### Challenge 4 — "Online" access type gives no refresh token, so long imports die
+
+**Symptom:** The import starts, fetches several resource types, then **fails partway** with a 401 — and (before resilience work) discarded everything.
+
+**Cause:** A code Console app set to **Type of Access = Online** is issued **no refresh token** (`offline_access` is dropped from the grant). Cerner access tokens are short-lived, so a large/slow patient import outlives the token and the next fetch 401s.
+
+**Fix:** Set the code Console app to **Type of Access = Offline**. It then issues a refresh token, and the client renews it automatically mid-import.
+
+## Conformance and scope notes
+
+Cerner's strictness is **spec-conformant**, just less permissive than some EHRs — worth understanding so you design to it rather than fight it:
+
+- The SMART App Launch spec **permits** broad scopes like `patient/*.read`, and many IG examples and other EHRs accept them — but the spec **does not require** a server to.
+- Cerner chose **not to implement wildcard scopes**. The sandbox *and production* accept only the exact individual scopes they publish, and advertise precisely what they support in `.well-known/smart-configuration` and their docs. Unsupported scopes are returned as `invalid_scope` or silently ignored.
+- Practical rule: **enumerate explicitly**, request only resources you'll use, and treat any resource you didn't scope as a graceful skip (it will 403).
+
+The full list of scopes Cerner advertises for this tenant is captured in [`oracle-cerner.json`](./oracle-cerner.json) (`scopes_supported`).
+
+## Reliability — expect a slow, flaky sandbox
+
+Cerner/Oracle Health Millennium is consistently reported (open-source aggregators and commercial tools alike) as one of the **flakiest and slowest** major platforms to develop against. Epic sandboxes are markedly more consistent. What we observed, and what others report:
+
+- **Frequent 504 Gateway Timeouts** (~57 s each — Cerner's internal timeout).
+- **Inconsistent per-resource behavior** — some resources return fine; others (even small ones like CareTeam) randomly 504.
+- **Sandbox-specific load issues** that don't reflect real customer instances — so this is largely a *sandbox* problem; production endpoints are expected to behave better.
+
+YourPHR's SMART client is built to survive this ([#341](https://github.com/jwilleke/yourphr/issues/341)):
+
+- **90 s per-request timeout** — a hung request fails fast rather than blocking the whole import.
+- **Two-pass fetch** — try each resource once, then retry the transiently-failed ones in a single deferred pass at the end, so a slow resource never blocks the others.
+- **Incremental upsert** — each page is stored as it arrives; a later failure keeps everything already imported.
+- **Graceful skip** — a persistent failure (504, or a 403 for an unrequested scope) skips that resource, never the whole import.
+- **Per-resource logging** — every resource emits a `smart sync:` line (`fetched N page(s)` / `deferred for retry (…)` / `skipped (…)`), so an import is fully explainable from the logs.
+
+## Data shape — what you actually get back
+
+From a real sandbox import (test patient `nancysmart`, 2,299 resources). Useful for setting expectations and planning the display layer:
+
+| Resource | Count | Notes |
+|---|---|---|
+| DocumentReference | 2149 | metadata only — see below |
+| AllergyIntolerance | 120 | |
+| DiagnosticReport | 15 | mostly document-style, not discrete results |
+| CarePlan | 14 | includes full `text.div` narrative |
+| Device | 1 | |
+
+Key quirks for a patient-facing display:
+
+- **No `meta.profile` on any resource.** Nothing asserts US-Core conformance — **do not branch display logic on profile**; drive it off resource shape and fall back gracefully.
+- **DocumentReferences are metadata stubs.** Every `content.attachment` is a **`Binary` URL** (`…/Binary/…`), not inline data, and the documents themselves are a **separate authenticated fetch** — so a list of 2,149 titles has nothing to open until you follow the Binary links (tracked: [#342](https://github.com/jwilleke/yourphr/issues/342)). ContentTypes: ~1622 PDF, 488 text, 25 XML, 14 HTML.
+- **No discrete lab/vital values.** `Observation` wasn't in our scope set (so 403-skipped), and DiagnosticReports are document-style (`presentedForm` Binary), not discrete `result[]`. Add `patient/Observation.rs` for values (tracked: [#343](https://github.com/jwilleke/yourphr/issues/343)).
+- **Human-readable text is reliably present.** `type`/`code` carry `.text` or a coding `.display` across the board — so display rarely needs code translation.
+- **Mixed coding systems.** Standard (LOINC, SNOMED, RxNorm, HL7) appear alongside Cerner-proprietary systems (`fhir.cerner.com/ceuuid`, `…/codeSet/{n}`) and a `…/StructureDefinition/precision` extension. Harmless because text is present — but any code-based logic must ignore unknown systems.
+- **Present-but-absent fields.** Some codes are text-only with an empty `coding[]`; `data-absent-reason` / `v3-NullFlavor` appear. Render these as "unknown," never blank.
+
+## Reference — authorize probing matrix
+
+Read-only probes that established the working path (a bare HTTP `200` is **not** proof of a completed login — confirm in a browser):
 
 | Authorize combination (smart-v1) | Result |
 |---|---|
-| `authorization.cerner.com` + `personas/patient`, `aud=fhir-ehr.cerner.com/r4/{t}` | ✅ **200, Cerner auth SPA, no error redirect** — the lead |
-| `authorization.cerner.com` + `personas/provider` | `client-persona-mismatch` (this is the live deployed failure) |
-| `authorization.sandboxcerner.com` + `personas/patient` | `unknown-tenant` — **and a bogus client_id gets the identical error**, so this authz host just doesn't serve tenant `ec2458f2` |
-| any `…/profiles/smart-v2/…` (any host/persona) | **404 — no smart-v2 endpoint exists anywhere** |
-
-Discovery by FHIR base (what each host *advertises*):
-
-- `fhir-ehr.cerner.com` / `fhir-ehr-code.cerner.com` → `authorization.cerner.com/…/personas/**provider**/authorize` (tenant-aware authz, **wrong persona**)
-- `fhir-myrecord.sandboxcerner.com` → `authorization.sandboxcerner.com/…/personas/**patient**/authorize` (**right persona, but the authz that doesn't know the tenant**)
-
-**The trap:** the tenant-aware authz (`authorization.cerner.com`) only advertises the *provider* persona; the host that advertises the *patient* persona points at an authz that doesn't have the tenant. The working URL only exists by hand-combining "tenant-aware authz + patient persona" — which no discovery document publishes.
-
-### On the v2 registration
-
-The code Console app is **SMART v2**, but Cerner exposes **only smart-v1** endpoints (v2 = 404 everywhere). The v1 patient endpoint on `authorization.cerner.com` did **not** reject our v2 app at the authorize step (200, no error) — but whether the *token exchange* completes for a v2-registered app on a v1 endpoint is **unconfirmed** without a real login.
-
-### Implication for YourPHR
-
-The working endpoint is **not discoverable**, so YourPHR's discovery-following flow will always land on the provider persona (mismatch). To use it, a per-entry **authorize-endpoint override** (persona, not version) would be needed: seed base/`aud` = `https://fhir-ehr.cerner.com/r4/{tenant}`, take discovery's provider authorize, then override the authorize endpoint to the `…/personas/patient/authorize` variant. (The token endpoint is host-based, not persona-split, so it likely needs no override.)
-
-### Confirm before building anything (no code)
-
-Open the lead URL in a browser, log in as `nancysmart` / `Cerner01`, and confirm it returns to `https://relay.nerdsbythehour.com/callback?code=…`:
-
-```
-https://authorization.cerner.com/tenants/ec2458f2-1e24-41c8-b71b-0e701af7583d/protocols/oauth2/profiles/smart-v1/personas/patient/authorize?response_type=code&client_id=c330e3c6-3ebe-49f3-a3a3-52dd7764d745&redirect_uri=https://relay.nerdsbythehour.com/callback&scope=launch/patient%20offline_access%20openid%20fhirUser%20patient/Patient.read&aud=https://fhir-ehr.cerner.com/r4/ec2458f2-1e24-41c8-b71b-0e701af7583d&state=manualtest&code_challenge=PLACEHOLDER&code_challenge_method=S256
-```
-
-If it issues a code, the persona-override path is worth building. If it 404s/errors after login, Cerner sandbox patient-standalone for this tenant is genuinely unsupported → defer (Blue Button + Epic already validate the pipeline).
-
-### Also, regardless
-
-Correct the deployed entry's base URL off `fhir-ehr-code.cerner.com` (admin UI edit, or delete the row to re-seed) — `UpsertProviderCatalogEntryByDisplay` is provision-only and won't overwrite an admin-edited row.
-
-## Conformance
-
-The SMART App Launch specification allows broad scopes like patient/*.read, and many examples in the IG and other EHRs support them.
-Cerner (Oracle Health) chose not to implement wildcard scopes. Their sandbox (and production) only accepts the exact individual scopes they publish. This is documented behavior, not a bug.
-
-From their own docs and multiple developer reports:
-
-- Wildcards (patient/*.read, patient/*) are not supported.
-- You must list every resource explicitly (e.g. patient/Observation.rs, patient/Condition.rs, etc.).
-- The server will return invalid_scope or silently ignore unsupported scopes.
-
-This is conformant because:
-
-- They advertise exactly what they support in /.well-known/smart-configuration.
-- The spec does not mandate that every server must accept wildcards.
-- They provide a complete list of supported scopes in their official documentation.
-
-## Cerner/Oracle Health Millennium
-
-In the FHIR/PHR aggregator world open-source importers, and commercial tools, Cerner/Oracle Health Millennium consistently ranks as one of the flakiest and slowest major platforms to integrate against during development and testing. Epic sandboxes are generally much more consistent and faster. Many developers describe Cerner sandboxes as having:
-
-- Frequent 504 Gateway Timeouts (exactly like you're seeing)
-- Inconsistent behavior across resources (some work fine, others like CareTeam randomly 504 even when small)
-- Long internal timeouts (~57s in your case matches what others report)
-- Update Sandbox-specific load issues that don't reflect real customer instances
+| `authorization.cerner.com` + `personas/patient`, `aud=fhir-ehr.cerner.com/r4/{tenant}` | ✅ reaches the Cerner login — **the working path** |
+| `authorization.cerner.com` + `personas/provider` | `client-persona-mismatch` |
+| `authorization.sandboxcerner.com` + `personas/patient` | `unknown-tenant` (identical for a bogus `client_id` → tenant-level) |
+| any `…/profiles/smart-v2/…` (any host/persona) | `404` — no smart-v2 endpoint exists |
 
 ## See also
 
-- Index: [`../test-sandboxes.md`](../test-sandboxes.md)
+- Sandbox index: [`../test-sandboxes.md`](../test-sandboxes.md)
+- Cerner discovery document (scopes + endpoints): [`oracle-cerner.json`](./oracle-cerner.json)
 - Oracle docs: [Build & Test SMART on FHIR Apps](https://docs.oracle.com/en/industries/health/millennium-platform-apis/build-smart-on-fhir-apps/) · [SMART App Provisioning](https://docs.oracle.com/en/industries/health/millennium-platform-apis/smart-app-provisioning/)
