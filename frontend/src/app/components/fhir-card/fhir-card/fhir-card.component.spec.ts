@@ -2,6 +2,8 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { FhirCardComponent } from './fhir-card.component';
 import {FhirCardOutletDirective} from './fhir-card-outlet.directive';
+import {ReportedByComponent} from '../common/reported-by/reported-by.component';
+import {ClassifiedSummaryComponent} from '../common/classified-summary/classified-summary.component';
 
 describe('FhirResourceComponent', () => {
   let component: FhirCardComponent;
@@ -10,6 +12,7 @@ describe('FhirResourceComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       declarations: [ FhirCardComponent, FhirCardOutletDirective ],
+      imports: [ ReportedByComponent, ClassifiedSummaryComponent ], // standalone host children
     })
     .compileComponents();
 
@@ -28,7 +31,7 @@ describe('FhirResourceComponent', () => {
     component.ngOnChanges({} as any);
     fixture.detectChanges();
     const el: HTMLElement = fixture.nativeElement;
-    expect(el.querySelector('.fhir-card-provenance')?.textContent).toContain('Source: FollowMyHealth');
+    expect(el.querySelector('.fhir-ui-reported-by')?.textContent).toContain('Source: FollowMyHealth');
   });
 
   it('shows no provenance line when the model has none', () => {
@@ -36,6 +39,15 @@ describe('FhirResourceComponent', () => {
     component.ngOnChanges({} as any);
     fixture.detectChanges();
     const el: HTMLElement = fixture.nativeElement;
-    expect(el.querySelector('.fhir-card-provenance')).toBeNull();
+    expect(el.querySelector('.fhir-ui-reported-by')).toBeNull();
+  });
+
+  it('renders the classified summary badges when the model carries a classification', () => {
+    component.displayModel = {classified: {state: 'Active', verification: 'Confirmed'}} as any;
+    component.ngOnChanges({} as any);
+    fixture.detectChanges();
+    const text = (fixture.nativeElement as HTMLElement).textContent || '';
+    expect(text).toContain('Active');
+    expect(text).toContain('Confirmed');
   });
 });

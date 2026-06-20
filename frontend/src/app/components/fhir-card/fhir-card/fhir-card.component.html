@@ -1,4 +1,4 @@
+<!-- Layer-1 synthesized legibility (state/verification/category) — classifier-backed types only (#308) -->
+<fhir-ui-classified-summary [classified]="displayModel?.classified"></fhir-ui-classified-summary>
 <ng-template fhirCardOutlet></ng-template>
-<div *ngIf="displayModel?.provenance as prov" class="fhir-card-provenance" title="Who said this">
-  <i class="fas fa-circle-info mg-r-3"></i>{{ prov.display }}
-</div>
+<fhir-ui-reported-by [provenance]="displayModel?.provenance"></fhir-ui-reported-by>

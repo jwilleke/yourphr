@@ -6,4 +6,5 @@ export interface Provenance {
   kind: string;     // practitioner | self-reported | organization | provenance | source
   display: string;
   level: number;    // ladder rung the answer came from (1 strongest)
+  recorded?: string; // USCDI Author Time Stamp the record stated ("" when none); never fabricated
 }

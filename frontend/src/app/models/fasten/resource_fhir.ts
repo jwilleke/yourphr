@@ -1,4 +1,5 @@
 import {Provenance} from './provenance';
+import {Classified} from './classified';
 
 export class ResourceFhir {
   user_id?: string
@@ -14,6 +15,7 @@ export class ResourceFhir {
   sort_date: Date = null
 
   provenance?: Provenance  // "who said this" — resolved on the generic read path (#271)
+  classified?: Classified  // Layer-1 synthesized view-model — attached on the read path (#308/#309)
 
   constructor(object?: any) {
     return Object.assign(this, object)

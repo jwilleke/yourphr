@@ -1,0 +1,7 @@
+<div *ngIf="hasAny" class="fhir-ui-classified-summary mg-b-10">
+  <span *ngIf="classified?.state" class="badge bg-primary mg-r-5" title="Status">{{ classified?.state }}</span>
+  <span *ngIf="classified?.verification" class="badge bg-info mg-r-5" title="Verification">{{ classified?.verification }}</span>
+  <span *ngIf="classified?.category" class="badge bg-secondary mg-r-5" title="Category">{{ classified?.category }}</span>
+  <span *ngIf="classified?.source" class="badge bg-secondary mg-r-5" title="Source">{{ classified?.source }}</span>
+  <span *ngIf="classified?.selfReported" class="badge bg-light tx-gray-700 mg-r-5" title="Reported by the patient">Self-reported</span>
+</div>

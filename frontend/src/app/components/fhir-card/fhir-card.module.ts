@@ -32,6 +32,8 @@ import { RtfComponent } from './datatypes/rtf/rtf.component';
 import { ObservationBarChartComponent } from './common/observation-bar-chart/observation-bar-chart.component';
 import { ObservationTableComponent } from './common/observation-table/observation-table.component';
 import { ObservationVisualizationComponent } from './common/observation-visualization/observation-visualization.component';
+import { ReportedByComponent } from './common/reported-by/reported-by.component';
+import { ClassifiedSummaryComponent } from './common/classified-summary/classified-summary.component';
 
 
 
@@ -40,6 +42,8 @@ import { ObservationVisualizationComponent } from './common/observation-visualiz
     //common
     CommonModule,
     BadgeComponent,
+    ReportedByComponent,
+    ClassifiedSummaryComponent,
     ObservationBarChartComponent,
     ObservationTableComponent,
     ObservationVisualizationComponent,

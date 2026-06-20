@@ -208,6 +208,7 @@ export function fhirModelFactory(
   resourceModel.sort_title = fhirResourceWrapper.sort_title
   resourceModel.sort_date = fhirResourceWrapper.sort_date
   resourceModel.provenance = fhirResourceWrapper.provenance  // "who said this" (#271), when the API supplies it
+  resourceModel.classified = fhirResourceWrapper.classified  // Layer-1 synthesized view-model (#308/#309), when supplied
 
   return resourceModel
 }
