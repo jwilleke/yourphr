@@ -1,0 +1,44 @@
+[
+  {
+    "resourceType": "Immunization",
+    "id": "provider-completed",
+    "status": "completed",
+    "vaccineCode": { "text": "Influenza, seasonal", "coding": [{ "system": "http://hl7.org/fhir/sid/cvx", "code": "140", "display": "Influenza, seasonal, injectable" }] },
+    "occurrenceDateTime": "2023-10-05",
+    "recorded": "2023-10-05",
+    "primarySource": true,
+    "manufacturer": { "display": "Acme Vaccines" },
+    "lotNumber": "AAJN11K",
+    "expirationDate": "2024-08-15",
+    "performer": [{ "function": { "text": "AP" }, "actor": { "reference": "Practitioner/dr-1" } }]
+  },
+  {
+    "resourceType": "Immunization",
+    "id": "reported-secondary",
+    "status": "completed",
+    "vaccineCode": { "text": "Tetanus" },
+    "occurrenceString": "Childhood",
+    "primarySource": false,
+    "reportOrigin": { "text": "Patient recall" }
+  },
+  {
+    "resourceType": "Immunization",
+    "id": "not-done",
+    "status": "not-done",
+    "vaccineCode": { "text": "COVID-19" },
+    "statusReason": { "text": "Patient declined" },
+    "primarySource": true
+  },
+  {
+    "resourceType": "Immunization",
+    "id": "no-primarysource",
+    "status": "completed",
+    "vaccineCode": { "text": "Hepatitis B" }
+  },
+  {
+    "resourceType": "Immunization",
+    "id": "mistake",
+    "status": "entered-in-error",
+    "vaccineCode": { "text": "Should be dropped" }
+  }
+]
