@@ -117,7 +117,11 @@ func SandboxProviderSeeds() []SandboxProviderSeed {
 				"patient/Patient.rs patient/AllergyIntolerance.rs patient/CarePlan.rs patient/CareTeam.rs " +
 				"patient/Binary.rs patient/Condition.rs patient/Device.rs patient/DiagnosticReport.rs patient/DocumentReference.rs " +
 				"patient/Encounter.rs patient/Goal.rs patient/Immunization.rs patient/MedicationRequest.rs " +
-				"patient/Observation.rs patient/Procedure.rs patient/Provenance.rs",
+				"patient/Observation.rs patient/Procedure.rs patient/Provenance.rs " +
+				// First cut of higher-signal types beyond the original 15 (#343): insurance, fuller
+				// medication history, orders, and specimens. All in Cerner's scopes_supported.
+				"patient/Coverage.rs patient/MedicationDispense.rs patient/MedicationAdministration.rs " +
+				"patient/ServiceRequest.rs patient/Specimen.rs",
 			ClientIDEnv:          "YOURPHR_SANDBOX_ORACLE_CLIENT_ID",
 			ClientSecretEnv:      "", // public/PKCE
 			AuthorizeUrlOverride: "https://authorization.cerner.com/tenants/ec2458f2-1e24-41c8-b71b-0e701af7583d/protocols/oauth2/profiles/smart-v1/personas/patient/authorize",

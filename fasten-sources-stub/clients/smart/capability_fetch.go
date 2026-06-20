@@ -268,6 +268,11 @@ var defaultPatientCompartment = []resourceSearch{
 	{Type: "Observation", Param: "patient"},
 	{Type: "Procedure", Param: "patient"},
 	{Type: "Provenance", Param: "patient"},
+	{Type: "Coverage", Param: "patient"},
+	{Type: "MedicationDispense", Param: "patient"},
+	{Type: "MedicationAdministration", Param: "patient"},
+	{Type: "ServiceRequest", Param: "patient"},
+	{Type: "Specimen", Param: "patient"},
 }
 
 // searchesFromCapability builds the per-resource search plan from a CapabilityStatement: Patient is
