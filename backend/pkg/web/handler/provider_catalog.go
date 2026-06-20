@@ -26,12 +26,12 @@ import (
 // providerCatalogRequest is the admin create/update payload. ClientSecret is write-only (json in, never
 // out): omitting it on update preserves the stored secret.
 type providerCatalogRequest struct {
-	Display            string `json:"display"`
-	Environment        string `json:"environment"`
-	ApiEndpointBaseUrl string `json:"api_endpoint_base_url"`
-	Scopes             string `json:"scopes"`
-	ClientId           string `json:"client_id"`
-	ClientSecret       string `json:"client_secret"`
+	Display              string `json:"display"`
+	Environment          string `json:"environment"`
+	ApiEndpointBaseUrl   string `json:"api_endpoint_base_url"`
+	Scopes               string `json:"scopes"`
+	ClientId             string `json:"client_id"`
+	ClientSecret         string `json:"client_secret"`
 	PlatformType         string `json:"platform_type"`
 	BrandLogoUrl         string `json:"brand_logo_url"`
 	Enabled              bool   `json:"enabled"`
@@ -89,12 +89,12 @@ func CreateProviderCatalogEntry(c *gin.Context) {
 	}
 
 	entry := models.ProviderCatalogEntry{
-		Display:            strings.TrimSpace(req.Display),
-		Environment:        environmentOrDefault(req.Environment),
-		ApiEndpointBaseUrl: strings.TrimSpace(req.ApiEndpointBaseUrl),
-		Scopes:             strings.TrimSpace(req.Scopes),
-		ClientId:           strings.TrimSpace(req.ClientId),
-		ClientSecret:       req.ClientSecret,
+		Display:              strings.TrimSpace(req.Display),
+		Environment:          environmentOrDefault(req.Environment),
+		ApiEndpointBaseUrl:   strings.TrimSpace(req.ApiEndpointBaseUrl),
+		Scopes:               strings.TrimSpace(req.Scopes),
+		ClientId:             strings.TrimSpace(req.ClientId),
+		ClientSecret:         req.ClientSecret,
 		PlatformType:         platformTypeOrDefault(req.PlatformType),
 		BrandLogoUrl:         strings.TrimSpace(req.BrandLogoUrl),
 		Enabled:              req.Enabled,
@@ -408,7 +408,7 @@ func ConnectSourceFromCatalog(c *gin.Context) {
 	}
 	sourceCred := models.SourceCredential{
 		PlatformType:       entry.PlatformType,
-		EndpointID:         entry.ID, // tie the connected source back to its catalog provider
+		EndpointID:         entry.ID,                                // tie the connected source back to its catalog provider
 		Environment:        environmentOrDefault(entry.Environment), // sandbox vs production, from the catalog entry (#331)
 		Display:            display,
 		ApiEndpointBaseUrl: entry.ApiEndpointBaseUrl,

@@ -23,17 +23,17 @@ type AppEngineInterface interface {
 
 // EncryptionKeyHandler holds dependencies for encryption key-related operations
 type EncryptionKeyHandler struct {
-	AppConfig   config.Interface
-	Logger      *logrus.Entry
-	AppEngine   AppEngineInterface
+	AppConfig config.Interface
+	Logger    *logrus.Entry
+	AppEngine AppEngineInterface
 }
 
 // NewEncryptionKeyHandler creates a new EncryptionKeyHandler
 func NewEncryptionKeyHandler(appConfig config.Interface, logger *logrus.Entry, appEngine AppEngineInterface) *EncryptionKeyHandler {
 	return &EncryptionKeyHandler{
-		AppConfig:   appConfig,
-		Logger:      logger,
-		AppEngine:   appEngine,
+		AppConfig: appConfig,
+		Logger:    logger,
+		AppEngine: appEngine,
 	}
 }
 
@@ -83,7 +83,7 @@ func (h *EncryptionKeyHandler) ValidateEncryptionKey(c *gin.Context) {
 	}
 
 	h.Logger.Info(payload.EncryptionKey)
-	
+
 	if payload.EncryptionKey == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "encryption key is required"})
 		return
