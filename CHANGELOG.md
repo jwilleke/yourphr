@@ -2,11 +2,10 @@
 
 ## [1.5.0](https://github.com/jwilleke/yourphr/compare/v1.4.0...v1.5.0) (2026-06-20)
 
-
 ### Features
 
-* **medical-history:** master-detail group/filter shell ([#358](https://github.com/jwilleke/yourphr/issues/358)) ([7d855a0](https://github.com/jwilleke/yourphr/commit/7d855a0cfa046799df020c7c447b1db5bb106480))
-* **medical-history:** pure grouping logic for the group/filter view ([#351](https://github.com/jwilleke/yourphr/issues/351)) ([64f65a1](https://github.com/jwilleke/yourphr/commit/64f65a1616a4ca34b5273b6771b6e77d80a2f293))
+- **medical-history:** master-detail group/filter shell ([#358](https://github.com/jwilleke/yourphr/issues/358)) ([7d855a0](https://github.com/jwilleke/yourphr/commit/7d855a0cfa046799df020c7c447b1db5bb106480))
+- **medical-history:** pure grouping logic for the group/filter view ([#351](https://github.com/jwilleke/yourphr/issues/351)) ([64f65a1](https://github.com/jwilleke/yourphr/commit/64f65a1616a4ca34b5273b6771b6e77d80a2f293))
 
 ## [1.4.0](https://github.com/jwilleke/yourphr/compare/v1.3.0...v1.4.0) (2026-06-20)
 
