@@ -12,15 +12,15 @@ name: release-please
 # `feat!:` / `BREAKING CHANGE:` -> MAJOR (-> 2.0.0), `fix:` -> PATCH. docs/chore/etc. do not bump, so
 # after a release with only docs/chore commits no release PR is opened (nothing to release).
 #
-# TOKEN (#241): the steps use ${{ secrets.RELEASE_PLEASE_TOKEN }} when present, else fall back to the
+# TOKEN (#241): the steps use ${{ secrets.RELEASE_PAT }} when present, else fall back to the
 # default GITHUB_TOKEN. The fallback WORKS, but events it creates (the release PR, the tag/Release) do
 # NOT trigger other workflows — GitHub blocks Actions-token events from starting more Actions. So with
 # only GITHUB_TOKEN the release PR shows no checks and the published Release does not fire ci.yaml's
 # `release: [published]`. To make PRs + tags trigger CI, create a token and add it as the
-# RELEASE_PLEASE_TOKEN repo secret (one-time, maintainer-only):
+# RELEASE_PAT repo secret (one-time, maintainer-only):
 #   - PAT (classic): scopes `repo` + `workflow`; or fine-grained: Contents + Pull requests = Read/write.
 #   - or a GitHub App installation token. Then add it at:
-#     Settings -> Secrets and variables -> Actions -> New repository secret named RELEASE_PLEASE_TOKEN.
+#     Settings -> Secrets and variables -> Actions -> New repository secret named RELEASE_PAT.
 #   No workflow change is needed afterwards — it is picked up automatically.
 #
 # One-time repo setting: Settings -> Actions -> General -> Workflow permissions ->
@@ -43,12 +43,12 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          token: ${{ secrets.RELEASE_PLEASE_TOKEN || secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.RELEASE_PAT || secrets.GITHUB_TOKEN }}
 
       - uses: googleapis/release-please-action@v5
         id: release
         with:
-          token: ${{ secrets.RELEASE_PLEASE_TOKEN || secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.RELEASE_PAT || secrets.GITHUB_TOKEN }}
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
 
