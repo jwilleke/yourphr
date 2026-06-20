@@ -1,16 +1,16 @@
 # TODO
 
 <!-- RESUME:START -->
-## ▶ Resume here — 2026-06-19
+## ▶ Resume here — 2026-06-20
 
-- Last worked on: brought the **Cerner/Oracle sandbox live end-to-end** ([#338](https://github.com/jwilleke/yourphr/issues/338)) and hardened the **import engine** ([#341](https://github.com/jwilleke/yourphr/issues/341)). Connect = patient-persona authorize **override** + base `fhir-ehr.cerner.com` + **enumerated v2 `.rs`** scopes + code Console app set to **Offline**. Engine now has a 90s request timeout, **two-pass deferred retry**, **incremental upsert**, per-resource `smart sync:` logging, and idempotent `related_resources` insert.
-- Branch / state: `main`, clean, all pushed (HEAD `ff81208c`).
-- Running / in-flight: CI (CI / Docker / CodeQL) building `ff81208c` — non-blocking. The `main-338` image (two-pass retry + log-noise fix) deploys via Flux. No dev servers / background agents.
-- Parked / half-done: none this session. (Two PRE-EXISTING stashes — `wip-118-phase2b`, `feat/smart-connect-frontend` — not from this session.)
+- Last worked on: **Cerner/Oracle sandbox VERIFIED importing real data** ([#338](https://github.com/jwilleke/yourphr/issues/338)) on the deployed instance — AllergyIntolerance 120, CarePlan 14, Device 1, DiagnosticReport 15, **DocumentReference 2149**. Connect = patient-persona authorize **override** + base `fhir-ehr.cerner.com` + **enumerated v2 `.rs`** scopes + code Console app **Offline**. Import engine ([#341](https://github.com/jwilleke/yourphr/issues/341)) hardened: 90s timeout, **two-pass deferred retry**, **incremental upsert**, per-resource `smart sync:` logging, idempotent `related_resources` insert.
+- Branch / state: `main`, clean, all pushed (HEAD `33376481`). CI green (CI / Markdown / Docker / CodeQL).
+- Running / in-flight: none. (Two PRE-EXISTING stashes — `wip-118-phase2b`, `feat/smart-connect-frontend` — not from this session.)
+- Parked / half-done: none.
 - Next steps:
-  - Once `main-338` is live, **reconnect Cerner** to confirm the two-pass retry + quiet logs (data already imports on `8b513527`).
-  - [#341](https://github.com/jwilleke/yourphr/issues/341) + [#338](https://github.com/jwilleke/yourphr/issues/338) are `in-review` — operator sign-off after that reconnect.
-  - Optional follow-ups: add `patient/Coverage.rs` etc. (more Cerner resources); [#340](https://github.com/jwilleke/yourphr/issues/340) logos; [#337](https://github.com/jwilleke/yourphr/issues/337) UI completion/record-count indicator; batch the import upserts (GORM perf for large patients).
+  - [#338](https://github.com/jwilleke/yourphr/issues/338) + [#341](https://github.com/jwilleke/yourphr/issues/341) data import is operator-verified — **close them** (or keep #341 in-review for the two-pass retry confirmation on `main-338`).
+  - Add `patient/Coverage.rs` (+ other unrequested resources) to the Cerner seed for a fuller record — currently 403-skipped.
+  - [#340](https://github.com/jwilleke/yourphr/issues/340) provider logos · [#337](https://github.com/jwilleke/yourphr/issues/337) UI completion/record-count indicator · batch import upserts (GORM perf for large patients like the 2149 DocumentReferences).
 - Blockers / significant notes: Cerner sandbox is inherently slow/flaky (~57s 504s) — sandbox-specific, not fixable. Cerner code Console app MUST be **Offline** access + **SMART v2 `.rs` enumerated** scopes (it drops `.read` and the `*.rs` wildcard).
 <!-- RESUME:END -->
 
