@@ -1,0 +1,47 @@
+[
+  {
+    "resourceType": "AllergyIntolerance",
+    "id": "confirmed-active",
+    "clinicalStatus": { "coding": [{ "system": "http://terminology.hl7.org/CodeSystem/allergyintolerance-clinical", "code": "active" }] },
+    "verificationStatus": { "coding": [{ "system": "http://terminology.hl7.org/CodeSystem/allergyintolerance-verification", "code": "confirmed" }] },
+    "type": "allergy",
+    "category": ["medication"],
+    "criticality": "high",
+    "code": { "text": "Penicillin", "coding": [{ "system": "http://www.nlm.nih.gov/research/umls/rxnorm", "code": "7980", "display": "Penicillin" }] },
+    "recorder": { "reference": "Practitioner/dr-1" },
+    "recordedDate": "2018-04-02",
+    "reaction": [
+      { "manifestation": [{ "text": "Anaphylaxis" }], "severity": "severe" },
+      { "manifestation": [{ "coding": [{ "display": "Hives" }] }], "severity": "moderate" }
+    ]
+  },
+  {
+    "resourceType": "AllergyIntolerance",
+    "id": "self-reported-unconfirmed",
+    "clinicalStatus": { "coding": [{ "code": "active" }] },
+    "verificationStatus": { "coding": [{ "code": "unconfirmed" }] },
+    "type": "intolerance",
+    "category": ["food"],
+    "code": { "text": "Peanuts" },
+    "asserter": { "reference": "Patient/pat-1" },
+    "recordedDate": "2020-01-10"
+  },
+  {
+    "resourceType": "AllergyIntolerance",
+    "id": "refuted",
+    "clinicalStatus": { "coding": [{ "code": "inactive" }] },
+    "verificationStatus": { "coding": [{ "code": "refuted" }] },
+    "code": { "text": "Latex" }
+  },
+  {
+    "resourceType": "AllergyIntolerance",
+    "id": "no-status",
+    "code": { "text": "Shellfish" }
+  },
+  {
+    "resourceType": "AllergyIntolerance",
+    "id": "mistake",
+    "verificationStatus": { "coding": [{ "code": "entered-in-error" }] },
+    "code": { "text": "Should be dropped" }
+  }
+]
