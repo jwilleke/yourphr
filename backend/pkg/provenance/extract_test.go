@@ -43,6 +43,40 @@ func TestExtractRequest(t *testing.T) {
 	}
 }
 
+// performer is the "who" for performed/administered records, in two FHIR shapes.
+func TestExtractRequest_Performer(t *testing.T) {
+	// Procedure: BackboneElement performer[].actor.
+	req := ExtractRequest(json.RawMessage(`{"resourceType":"Procedure","performer":[{"actor":{"reference":"Practitioner/dr-1"}}],"performedDateTime":"2022-02-02"}`), "Procedure", "proc1", "FollowMyHealth")
+	if len(req.Authors) != 1 || req.Authors[0].Reference != "Practitioner/dr-1" {
+		t.Errorf("procedure authors = %+v, want one Practitioner from performer.actor", req.Authors)
+	}
+
+	// DiagnosticReport: plain reference array performer[].
+	req = ExtractRequest(json.RawMessage(`{"resourceType":"DiagnosticReport","performer":[{"reference":"Organization/org-1","display":"Lab Co"}],"issued":"2022-03-03T00:00:00Z"}`), "DiagnosticReport", "dr1", "FollowMyHealth")
+	if len(req.Authors) != 1 || req.Authors[0].Reference != "Organization/org-1" || req.Authors[0].Display != "Lab Co" {
+		t.Errorf("diagnosticreport authors = %+v, want one Organization from performer[]", req.Authors)
+	}
+	if req.AuthoredTime != "2022-03-03T00:00:00Z" {
+		t.Errorf("diagnosticreport authoredTime = %q, want issued", req.AuthoredTime)
+	}
+
+	// Immunization: performer[].actor alongside a function code (which we ignore).
+	req = ExtractRequest(json.RawMessage(`{"resourceType":"Immunization","performer":[{"function":{"text":"AP"},"actor":{"reference":"Practitioner/dr-1","display":"Dr X"}}]}`), "Immunization", "imm1", "FollowMyHealth")
+	if len(req.Authors) != 1 || req.Authors[0].Reference != "Practitioner/dr-1" {
+		t.Errorf("immunization authors = %+v, want one Practitioner from performer.actor", req.Authors)
+	}
+}
+
+// End-to-end: a Procedure's performer.actor resolves to the named clinician through the ladder.
+func TestExtractRequest_PerformerEndToEnd(t *testing.T) {
+	s := NewResourceSet(testResources())
+	req := ExtractRequest(json.RawMessage(`{"resourceType":"Procedure","performer":[{"actor":{"reference":"Practitioner/dr-1"}}]}`), "Procedure", "proc1", "FollowMyHealth")
+	p := s.ResolveProvenance(req)
+	if p.Kind != KindPractitioner || p.Display != "Dr. Jane Synthetic" {
+		t.Errorf("procedure performer provenance = %+v, want practitioner / Dr. Jane Synthetic", p)
+	}
+}
+
 // End-to-end: ExtractRequest feeds ResolveProvenance and resolves a named author + time.
 func TestExtractRequest_EndToEnd(t *testing.T) {
 	s := NewResourceSet(testResources())

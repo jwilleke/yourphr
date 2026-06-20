@@ -8,8 +8,13 @@ import "encoding/json"
 // simply skipped, so it never fabricates an author or a time.
 //
 // Author priority mirrors the bespoke wirings: asserter → recorder → requester → informationSource →
-// author[]. A Patient reference among these resolves to "Self-reported" in the ladder. Author time is
-// the first present of recordedDate / authoredOn / dateAsserted / issued / recorded / date.
+// performer → author[]. A Patient reference among these resolves to "Self-reported" in the ladder.
+// Author time is the first present of recordedDate / authoredOn / dateAsserted / issued / recorded / date.
+//
+// The resolved Provenance this feeds (attached to every resource on the read path, see handler
+// attachProvenance) is the ONE source of "who" for the whole app: the detail cards' "Reported by"
+// (#308) and the /medical-history group-by-Provider/Place dimension (#351) both read it — neither
+// should re-extract performers/authors itself.
 func ExtractRequest(raw json.RawMessage, targetType, targetID, sourceLabel string) Request {
 	var r struct {
 		Asserter          *Reference  `json:"asserter"`
@@ -18,6 +23,15 @@ func ExtractRequest(raw json.RawMessage, targetType, targetID, sourceLabel strin
 		InformationSource *Reference  `json:"informationSource"`
 		Author            []Reference `json:"author"`
 		Encounter         *Reference  `json:"encounter"`
+
+		// performer covers two FHIR shapes: a plain reference array (DiagnosticReport, Observation)
+		// and a BackboneElement carrying an `actor` (Procedure, Immunization, MedicationAdministration).
+		// Both are captured per element below — it is the "who" for performed/administered records.
+		Performer []struct {
+			Reference string     `json:"reference"`
+			Display   string     `json:"display"`
+			Actor     *Reference `json:"actor"`
+		} `json:"performer"`
 
 		RecordedDate string `json:"recordedDate"`
 		AuthoredOn   string `json:"authoredOn"`
@@ -32,6 +46,13 @@ func ExtractRequest(raw json.RawMessage, targetType, targetID, sourceLabel strin
 	for _, ref := range []*Reference{r.Asserter, r.Recorder, r.Requester, r.InformationSource} {
 		if ref != nil && ref.Reference != "" {
 			authors = append(authors, *ref)
+		}
+	}
+	for _, p := range r.Performer {
+		if p.Actor != nil && p.Actor.Reference != "" {
+			authors = append(authors, *p.Actor) // BackboneElement.performer[].actor
+		} else if p.Reference != "" {
+			authors = append(authors, Reference{Reference: p.Reference, Display: p.Display}) // plain reference
 		}
 	}
 	for _, a := range r.Author {
