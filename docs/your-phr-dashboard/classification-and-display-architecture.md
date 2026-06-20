@@ -81,14 +81,14 @@ A future **patient comment** ("quit smoking 2024-03") writes an `abatement` thro
 
 ### Provenance resolver ("who said this?")
 
-USCDI names Provenance as a data class; its floor is **Author + Author Time Stamp**. A generic resolver (works for any resource type) walks the chain and reports the best level it found, **labeled**, never fabricating an author:
+USCDI names Provenance as a data class; its floor is **Author + Author Time Stamp**. A generic resolver (`backend/pkg/provenance`, works for any resource type) walks the chain and reports the best level it found, **labeled**, never fabricating an author:
 
-1. `asserter` → fall back to `recorder` (lead with `asserter` = "who said it"). Resolves to a named `Practitioner`, or to the Patient → display **"Self-reported"**.
-2. `Condition.encounter` → `Encounter.serviceProvider` / participant. *(Not present on FollowMyHealth `Condition`s, but valid for other resource types and vendors.)*
+1. Author references, in priority order: `asserter` → `recorder` → `requester` → `informationSource` → **`performer`** → `author[]`. Resolves to a named `Practitioner`/`Organization` (following `PractitionerRole`), or to the Patient/RelatedPerson → display **"Self-reported"**. `performer` covers both shapes — a plain `performer[]` reference (DiagnosticReport, Observation) and a BackboneElement `performer[].actor` (Procedure, Immunization) — so performed/administered records resolve "who did it" (#309).
+2. `encounter` → `Encounter.serviceProvider` / participant. *(Not present on FollowMyHealth `Condition`s, but valid for other resource types and vendors.)*
 3. A `Provenance` resource targeting the record. *(FollowMyHealth EHI exports contain none; Epic/Cerner do.)*
 4. **Floor:** the import source/connection → *"Source: FollowMyHealth"*. Never invent an originating clinic.
 
-This shares plumbing with reference resolution (#264) — solve once.
+`provenance.ExtractRequest` builds this query from any resource's raw JSON (one call works for all ~70 types). It shares plumbing with reference resolution (#264) — solve once. The resolved `Provenance` is attached to **every** resource on the generic read path (handler `attachProvenance` → `ResourceBase.Provenance`), so it is the single source of "who" for the whole app: the detail-card "Reported by" (#308) and the `/medical-history` group-by-Provider/Place dimension (#351) both read it — neither re-extracts authors itself.
 
 ### Reference resolution quirks
 
@@ -106,6 +106,29 @@ Naive resolution searches for the whole `patientId_encounterId` blob as an id an
 - Surface `Condition.note[]` — free-text notes are often richer than the coded display and are valuable to the patient.
 - Distinguish **Started** (`onset[x]`), **Recorded** (`recordedDate`), and **Ended** (`abatement[x]`) — do not conflate them.
 - Codes are for clinicians: show **standard** terminology only (ICD/SNOMED/LOINC). FollowMyHealth also emits a proprietary `fhir.followmyhealth.com/id/translation` code system whose code is an internal UUID — display its `display` text but never the UUID as a "code".
+
+### Layer-1 classifier inventory
+
+Each clinical type has a pure, stateless package under `backend/pkg/<type>` exposing a `Classify`/`Reconcile`/`Recognize` function (no DB, no HTTP; fixture-tested) and a compute-on-request endpoint. All synthesize a legible state/category from explicit signals only (absent → empty/Unknown, never inferred), drop `entered-in-error`, and resolve provenance via the shared resolver above.
+
+| Resource | Package | Endpoint | Synthesizes |
+|---|---|---|---|
+| Condition | `condition` | `/conditions/classified` | category (problem/SDOH/health-concern) + tier + state |
+| Medication* | `medication` | `/medications/reconciled` | reconciled "current medications" + state (deduped) |
+| Observation (vitals) | `observation` | `/vitals/recognized` | vital-sign LOINC display + unit validation |
+| DocumentReference | `document` | `/documents/classified` | clinical-document vs activity/wearable note |
+| Coverage | `coverage` | `/coverages/classified` | plain plan name + display period |
+| ExplanationOfBenefit | `explanationofbenefit` | `/claims/classified` | plain claim category + costs (as stated) |
+| AllergyIntolerance | `allergyintolerance` | `/allergies/classified` | verification (Confirmed/Presumed/Unconfirmed/Refuted) + state + reactions |
+| Immunization | `immunization` | `/immunizations/classified` | state + `primarySource` attribution (Recorded-by-provider/Reported) |
+| Procedure | `procedure` | `/procedures/classified` | state (Completed/NotDone/Stopped/…) + body sites + outcome |
+| DiagnosticReport | `diagnosticreport` | `/diagnostic-reports/classified` | state + service category (Laboratory/Imaging/Pathology) |
+| Encounter | `encounter` | `/encounters/classified` | state + class category (Office visit/Inpatient/Emergency/Telehealth/…) |
+| CarePlan | `careplan` | `/care-plans/classified` | state (Active/Draft/Revoked/…) + intent/category |
+
+\* Medication rolls up MedicationRequest/Statement/Dispense/Medication into one row per drug (the only classifier that dedups; the rest emit one row per input).
+
+Out of scope (raw rendering acceptable — no vendor non-conformance signal): Device, Goal, ServiceRequest, CareTeam.
 
 ## Layer 2 — Display mapper (source-agnostic)
 

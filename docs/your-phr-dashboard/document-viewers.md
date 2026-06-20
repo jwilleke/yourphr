@@ -37,6 +37,10 @@ All viewer components live under `frontend/src/app/components/fhir-card/datatype
 
 Attachments render on the **resource-detail page** (`/explore/:source_id/resource/:resource_id`), where the card is shown with `showDetails=false`. In list/summary views attachments are intentionally not rendered (a "details" link routes to the detail page) to keep lists light. A `DocumentReference`/`DiagnosticReport` with multiple attachments shows them as tabs.
 
+## Related
+
+This doc covers rendering the **document bytes** (`Binary`). Making the surrounding *resource* legible — plain names, states, "Reported by" provenance, etc. — is the separate two-layer classification system in [`classification-and-display-architecture.md`](./classification-and-display-architecture.md). A `DiagnosticReport`, for example, has both: its `presentedForm` documents render here, while its status/category/provenance are synthesized by the `diagnosticreport` Layer-1 classifier.
+
 ## Notes / limitations
 
 - The PDF and HTML viewers use `DomSanitizer.bypassSecurityTrust*`. Documents come from external providers, so a hardening pass on sanitization is worth doing (the HTML viewer carries a TODO).
