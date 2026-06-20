@@ -230,6 +230,45 @@ func extractFHIRReferences(raw json.RawMessage) []string {
 	return refs
 }
 
+// extractAttachmentURLs returns the attachment URLs (those WITHOUT inline base64 data) from a
+// DocumentReference's content[] or a DiagnosticReport's presentedForm[]. These point to Binary
+// resources holding the actual document bytes, which the #342 second pass follows. An attachment that
+// already carries inline `data` needs no fetch and is skipped.
+func extractAttachmentURLs(resourceType string, raw json.RawMessage) []string {
+	type attachment struct {
+		URL  string `json:"url"`
+		Data string `json:"data"`
+	}
+	var urls []string
+	switch resourceType {
+	case "DocumentReference":
+		var dr struct {
+			Content []struct {
+				Attachment attachment `json:"attachment"`
+			} `json:"content"`
+		}
+		if json.Unmarshal(raw, &dr) == nil {
+			for _, ct := range dr.Content {
+				if ct.Attachment.URL != "" && ct.Attachment.Data == "" {
+					urls = append(urls, ct.Attachment.URL)
+				}
+			}
+		}
+	case "DiagnosticReport":
+		var dr struct {
+			PresentedForm []attachment `json:"presentedForm"`
+		}
+		if json.Unmarshal(raw, &dr) == nil {
+			for _, pf := range dr.PresentedForm {
+				if pf.URL != "" && pf.Data == "" {
+					urls = append(urls, pf.URL)
+				}
+			}
+		}
+	}
+	return urls
+}
+
 func extractPatientIdFromBytes(data []byte) string {
 	resources, _ := extractResources(data)
 	for _, raw := range resources {
