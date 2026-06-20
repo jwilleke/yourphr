@@ -4,12 +4,12 @@
 
 ## 🔴 P0 — Security & Critical
 
-- None open. (Security [#345](https://github.com/jwilleke/yourphr/issues/345) is graded P2 — dev-only, blocked on upstream — listed under P2.)
+- None open. (Security [#345](https://github.com/jwilleke/yourphr/issues/345) is graded P2 — dev-only, blocked on upstream — listed under P2. The one open Dependabot alert, http-proxy-middleware #197, is tracked there.)
 
 ## 🟠 P1
 
 - [#355](https://github.com/jwilleke/yourphr/issues/355) [FEATURE] Dynamic Client Registration (DCR).
-- [#351](https://github.com/jwilleke/yourphr/issues/351) [EPIC] /medical-history — group & filter (Date/Condition/Provider/Place/Type); shell shipped, #359 remains.
+- [#351](https://github.com/jwilleke/yourphr/issues/351) [EPIC] /medical-history — group & filter (shell shipped; #359 remains).
 - [#313](https://github.com/jwilleke/yourphr/issues/313) [FEATURE] patients able to add records to their own PHR.
 - [#262](https://github.com/jwilleke/yourphr/issues/262) [EPIC] Patient-legible display — health info a normal person can actually use.
 
@@ -17,6 +17,7 @@
 
 - [#345](https://github.com/jwilleke/yourphr/issues/345) [security] http-proxy-middleware (webpack-dev-server tree) — blocked on upstream hpm 3.x (GHSA-64mm-vxmg-q3vj).
 - [#359](https://github.com/jwilleke/yourphr/issues/359) [FEATURE] medical-history: Condition master from /conditions/classified + Type + classified on graph rows.
+- [#354](https://github.com/jwilleke/yourphr/issues/354) [FEATURE] Integrate assets from HL7 FHIR GitHub org (fhir-test-cases, fhir-codegen).
 - [#353](https://github.com/jwilleke/yourphr/issues/353) [FEATURE] Patient private notes on records (persist + indicator).
 - [#352](https://github.com/jwilleke/yourphr/issues/352) [FEATURE] Patient-friendly Body Diagram / Body Map View.
 - [#348](https://github.com/jwilleke/yourphr/issues/348) [FEATURE] Binary import: skip already-stored documents on re-sync (cross-sync existence check).
@@ -41,7 +42,6 @@
 - [#252](https://github.com/jwilleke/yourphr/issues/252) [FEATURE] Harden re-import dedup: guard idempotent upserts against stale overwrites.
 - [#251](https://github.com/jwilleke/yourphr/issues/251) [FEATURE] Explore Apple Health's supported-institution list as a provider-catalog / FHIR-endpoint source.
 - [#244](https://github.com/jwilleke/yourphr/issues/244) [EPIC] Per-profile dashboard widgets (US Core display end-state).
-- [#241](https://github.com/jwilleke/yourphr/issues/241) [chore] release-please auto-cut — wired; blocked on adding the RELEASE_PAT secret.
 - [#53](https://github.com/jwilleke/yourphr/issues/53) [SMART] Veradigm/FollowMyHealth registration + end-to-end integration (blocked).
 - [#20](https://github.com/jwilleke/yourphr/issues/20) [EPIC] SMART on FHIR — live provider sync.
 - [#14](https://github.com/jwilleke/yourphr/issues/14) [FEATURE] User Profile Update.
@@ -55,5 +55,4 @@
 
 ## ❓ Needs triage
 
-- [#354](https://github.com/jwilleke/yourphr/issues/354) [FEATURE] Integrate assets from HL7 FHIR GitHub org (fhir-test-cases, fhir-codegen) — priority label not showing.
 - [#314](https://github.com/jwilleke/yourphr/issues/314) [FEATURE] Wearable Device Integration for Vitals, Activity & PGHD — no priority label yet.
