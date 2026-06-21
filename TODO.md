@@ -16,9 +16,10 @@
 ## 🟡 P2
 
 - [#345](https://github.com/jwilleke/yourphr/issues/345) [security] http-proxy-middleware (webpack-dev-server tree) — blocked on upstream hpm 3.x (GHSA-64mm-vxmg-q3vj).
-- [#362](https://github.com/jwilleke/yourphr/issues/362) [FEATURE] Admin dashboard: restore database from a backup (blocked by #361).
-- [#361](https://github.com/jwilleke/yourphr/issues/361) [FEATURE] Admin dashboard: Database section (details + backup).
-- [#360](https://github.com/jwilleke/yourphr/issues/360) [FEATURE] Attach `classified` on resource-graph / list rows (per-row badges; split from #359).
+- [#362](https://github.com/jwilleke/yourphr/issues/362) [FEATURE] Admin: restore database from a backup (shipped v1.9.0, in-review — verify on deploy + restart).
+- [#361](https://github.com/jwilleke/yourphr/issues/361) [FEATURE] Admin: Database section — details + backup workflow (shipped v1.9.0, in-review).
+- [#364](https://github.com/jwilleke/yourphr/issues/364) [FEATURE] Admin Database card — polish (free space, schema version, totals, vacuum). Sub-issue of #361.
+- [#360](https://github.com/jwilleke/yourphr/issues/360) [FEATURE] Attach `classified` on resource-graph / list rows (split from #359).
 - [#354](https://github.com/jwilleke/yourphr/issues/354) [FEATURE] Integrate assets from HL7 FHIR GitHub org (fhir-test-cases, fhir-codegen).
 - [#353](https://github.com/jwilleke/yourphr/issues/353) [FEATURE] Patient private notes on records (persist + indicator).
 - [#352](https://github.com/jwilleke/yourphr/issues/352) [FEATURE] Patient-friendly Body Diagram / Body Map View.
@@ -49,6 +50,7 @@
 
 ## ⏸ Deferred
 
+- [#363](https://github.com/jwilleke/yourphr/issues/363) [FEATURE] Database at-rest encryption: enable/migrate (guarded) + decrypt. Sub-issue of #361.
 - [#278](https://github.com/jwilleke/yourphr/issues/278) [EPIC] Rename Fasten* → YourPHR.
 - [#263](https://github.com/jwilleke/yourphr/issues/263) [FEATURE] Message Provider.
 - [#239](https://github.com/jwilleke/yourphr/issues/239) [chore] Revisit gofhir-models 0.1.x once encoding/json/v2 is default in Go.
