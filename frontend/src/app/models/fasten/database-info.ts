@@ -12,8 +12,10 @@ export interface DatabaseInfo {
   users: number;
   sources: number;
   integrity_ok: boolean;
-  backup_destination: string;   // default/last-used folder backups are written to
-  backups: BackupFile[];        // backups present there, newest first
+  backup_destination: string;     // default/last-used folder backups are written to
+  backups: BackupFile[];          // backups present there, newest first
+  backup_interval_hours: number;  // scheduled-backup interval (0 = off)
+  backup_retention: number;       // scheduled backups kept
 }
 
 export interface BackupResult {

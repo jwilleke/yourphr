@@ -487,6 +487,7 @@ func (ae *AppEngine) Start() error {
 	// sources to refresh there).
 	if !ae.StandbyMode {
 		go ae.startTokenRefreshWorker()
+		go ae.startBackupWorker() // scheduled DB backups (#361); opt-in via backup.interval_hours
 	}
 
 	// Block indefinitely to keep the server running until process termination

@@ -44,7 +44,12 @@
               <i class="fas fa-download mg-r-5"></i>{{ backingUp ? 'Backing up...' : 'Backup now' }}
             </button>
           </div>
-          <p class="tx-gray-500 tx-12 mg-t-5">Defaults to the last-used location. A consistent online snapshot (SQLite <code>VACUUM INTO</code>) — safe while the app is in use. Filename: <code>yourphr-backup-YYYY-MM-DD-HHMMSS.db</code>.</p>
+          <p class="tx-gray-500 tx-12 mg-t-5 mg-b-0">Defaults to the last-used location (persists until changed). A consistent online snapshot (SQLite <code>VACUUM INTO</code>) — safe while the app is in use. Filename: <code>yourphr-backup-YYYY-MM-DD-HHMMSS.db</code>.</p>
+          <p class="tx-gray-500 tx-12 mg-t-5">
+            Automatic backups:
+            <ng-container *ngIf="info.backup_interval_hours > 0; else autoOff"><strong>every {{ info.backup_interval_hours }} h</strong>, keeping the latest {{ info.backup_retention }}.</ng-container>
+            <ng-template #autoOff>off — set <code>backup.interval_hours</code> in config to enable.</ng-template>
+          </p>
 
           <div *ngIf="backupResult" class="alert alert-success tx-13 mg-t-10 mg-b-0"><i class="fas fa-check mg-r-5"></i>{{ backupResult }}</div>
           <div *ngIf="backupError" class="text-danger tx-13 mg-t-10">{{ backupError }}</div>
