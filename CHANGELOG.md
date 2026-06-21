@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.10.0](https://github.com/jwilleke/yourphr/compare/v1.9.0...v1.10.0) (2026-06-21)
+
+### Features
+
+- **admin:** the footer now shows the **running** app version as `{channel}-{semver}` (e.g. `dev-1.9.0`, `prod-1.10.0`), fetched live from a new public `GET /api/version` endpoint — instead of a static placeholder ([#361](https://github.com/jwilleke/yourphr/issues/361))
+- **admin:** backup filenames embed the producing app **version** and an optional instance **label** (`backup.label` / `YOURPHR_BACKUP_LABEL`), so backups are self-identifying, e.g. `2026-06-21T14-09-57Z-yourphr-prod-1.10.0-backup.db.gz` ([#361](https://github.com/jwilleke/yourphr/issues/361))
+
 ## [1.9.0](https://github.com/jwilleke/yourphr/compare/v1.8.1...v1.9.0) (2026-06-21)
 
 ### Features
