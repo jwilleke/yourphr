@@ -2,13 +2,13 @@ import {Component, OnInit} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {FormsModule} from '@angular/forms';
 import {FastenApiService} from '../../services/fasten-api.service';
-import {DatabaseInfo} from '../../models/fasten/database-info';
+import {DatabaseInfo, BackupSettings} from '../../models/fasten/database-info';
 import {AdminBackLinkComponent} from '../../components/admin-back-link/admin-back-link.component';
 import {LoadingSpinnerComponent} from '../../components/loading-spinner/loading-spinner.component';
 
-// Admin Database page (#361): runtime DB facts + a safe online backup written to a server-side folder.
-// Admin-only (route guarded + backend self-gates). A backup is the ENTIRE single-file DB — every user's
-// full records (PHI) — so the UI warns. The destination folder defaults to the last-used location.
+// Admin Database page (#361): runtime DB facts; on-demand backup (download w/ spinner, or fire-and-forget
+// to a server folder); and a settable auto-backup schedule (enable + time-of-day + days + destination +
+// retention), aligned to the ngdpbase BackupManager. Admin-only.
 @Component({
   standalone: true,
   imports: [CommonModule, FormsModule, AdminBackLinkComponent, LoadingSpinnerComponent],
@@ -20,11 +20,15 @@ export class AdminDatabaseComponent implements OnInit {
   loading = true;
   errored = false;
   info: DatabaseInfo | null = null;
-  destination = '';
+
+  schedule: BackupSettings = {enabled: false, time: '02:00', days: 'daily', destination: '', max_backups: 7};
+
   backingUp = false;     // server-side (fire-and-forget) backup in progress
   downloading = false;   // on-demand download in progress (must stay on page)
+  savingSchedule = false;
   backupError = '';
   backupResult = '';
+  scheduleMsg = '';
 
   constructor(private fastenApi: FastenApiService) {}
 
@@ -36,8 +40,7 @@ export class AdminDatabaseComponent implements OnInit {
     this.fastenApi.getDatabaseInfo().subscribe({
       next: (info) => {
         this.info = info;
-        // Default the destination to the last-used folder; don't clobber what the admin is typing.
-        if (initial || !this.destination) { this.destination = info.backup_destination; }
+        if (initial && info.schedule) { this.schedule = {...info.schedule}; }
         this.loading = false;
       },
       error: () => { this.errored = true; this.loading = false; },
@@ -53,15 +56,16 @@ export class AdminDatabaseComponent implements OnInit {
     return `${n.toFixed(i === 0 ? 0 : 1)} ${units[i]}`;
   }
 
+  // Fire-and-forget server-side backup to the configured destination folder (leave the page freely).
   backup(): void {
     this.backingUp = true;
     this.backupError = '';
     this.backupResult = '';
-    this.fastenApi.backupDatabase(this.destination).subscribe({
+    this.fastenApi.backupDatabase(this.schedule.destination).subscribe({
       next: (res) => {
         this.backupResult = `Saved ${res.filename} (${this.humanSize(res.size_bytes)}) to ${res.destination}`;
         this.backingUp = false;
-        this.load(false); // refresh the backups list + destination
+        this.load(false);
       },
       error: (e) => {
         this.backupError = e?.error?.error || 'Backup failed — check the server logs.';
@@ -70,9 +74,7 @@ export class AdminDatabaseComponent implements OnInit {
     });
   }
 
-  // downloadBackup streams a fresh backup to the browser; the Save dialog picks the location. You must
-  // stay on the page until it finishes (a browser download cancels if you navigate away) — hence a
-  // spinner. Reuses the source-export download pattern.
+  // On-demand download; the browser Save dialog picks the location. Stay on the page until done.
   downloadBackup(): void {
     this.downloading = true;
     this.backupError = '';
@@ -98,6 +100,23 @@ export class AdminDatabaseComponent implements OnInit {
       error: () => {
         this.backupError = 'Download failed — check the server logs.';
         this.downloading = false;
+      },
+    });
+  }
+
+  saveSchedule(): void {
+    this.savingSchedule = true;
+    this.scheduleMsg = '';
+    this.fastenApi.setBackupSchedule(this.schedule).subscribe({
+      next: (s) => {
+        this.schedule = {...s};
+        this.scheduleMsg = 'Schedule saved.';
+        this.savingSchedule = false;
+        this.load(false);
+      },
+      error: (e) => {
+        this.scheduleMsg = e?.error?.error || 'Could not save the schedule.';
+        this.savingSchedule = false;
       },
     });
   }

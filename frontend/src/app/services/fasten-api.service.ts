@@ -9,7 +9,7 @@ import {ReconciledMedication} from '../models/fasten/reconciled-medication';
 import {ClassifiedCondition} from '../models/fasten/classified-condition';
 import {ClassifiedAllergy} from '../models/fasten/classified-allergy';
 import {ClassifiedImmunization} from '../models/fasten/classified-immunization';
-import {DatabaseInfo, BackupResult} from '../models/fasten/database-info';
+import {DatabaseInfo, BackupResult, BackupSettings} from '../models/fasten/database-info';
 import {AccountUser} from '../models/fasten/account-user';
 import {ResourceListItem} from '../models/fasten/resource-list-item';
 import {ServerLogs} from '../models/fasten/server-logs';
@@ -256,6 +256,17 @@ export class FastenApiService {
   downloadBackup(): Observable<HttpResponse<Blob>> {
     return this._httpClient.post(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/admin/database/backup/download`, {},
       {responseType: 'blob', observe: 'response'});
+  }
+
+  // setBackupSchedule persists the auto-backup settings (enable + time-of-day + days + destination +
+  // retention). The worker re-reads them, so it applies without a restart.
+  setBackupSchedule(settings: BackupSettings): Observable<BackupSettings> {
+    return this._httpClient.post<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/admin/database/schedule`, settings)
+      .pipe(
+        map((response: ResponseWrapper) => {
+          return response.data as BackupSettings
+        })
+      );
   }
 
   //admin-only (#170): change the running server log level at runtime (resets to config on restart).

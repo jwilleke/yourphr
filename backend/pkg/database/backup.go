@@ -2,6 +2,7 @@ package database
 
 import (
 	"compress/gzip"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -49,20 +50,66 @@ func DefaultBackupDir(appConfig config.Interface) string {
 	return filepath.Join(dbDirFromConfig(appConfig), "backups")
 }
 
-// backupMarkerPath holds the last-used destination (a one-line file in the data dir) so the chosen
-// destination persists until changed — without a settings-schema change.
-func backupMarkerPath(appConfig config.Interface) string {
-	return filepath.Join(dbDirFromConfig(appConfig), ".backup_dest")
+// BackupSettings is the persisted, admin-settable backup configuration — a JSON file in the data dir so
+// it survives restarts AND is editable at runtime (the worker re-reads it, so a save takes effect with
+// no restart). Config values seed the initial defaults. Schedule model mirrors the ngdpbase
+// BackupManager: enable + time-of-day + days, plus destination + retention.
+type BackupSettings struct {
+	Enabled     bool   `json:"enabled"`     // run scheduled backups
+	Time        string `json:"time"`        // "HH:MM" (server-local) — when the scheduled backup runs
+	Days        string `json:"days"`        // "daily" | "weekly"
+	Destination string `json:"destination"` // absolute folder; "" => DefaultBackupDir
+	MaxBackups  int    `json:"max_backups"` // retention; <= 0 disables pruning
 }
 
-// CurrentBackupDestination is the last-used destination, falling back to the default folder.
-func CurrentBackupDestination(appConfig config.Interface) string {
-	if b, err := os.ReadFile(backupMarkerPath(appConfig)); err == nil {
-		if p := strings.TrimSpace(string(b)); p != "" {
-			return p
-		}
+func backupSettingsPath(appConfig config.Interface) string {
+	return filepath.Join(dbDirFromConfig(appConfig), ".backup_settings.json")
+}
+
+// LoadBackupSettings reads the persisted settings, falling back to config defaults then hard defaults.
+func LoadBackupSettings(appConfig config.Interface) BackupSettings {
+	s := BackupSettings{
+		Enabled:     appConfig.GetBool("backup.auto-backup"),
+		Time:        appConfig.GetString("backup.auto-backup-time"),
+		Days:        appConfig.GetString("backup.auto-backup-days"),
+		Destination: appConfig.GetString("backup.destination"),
+		MaxBackups:  appConfig.GetInt("backup.max-backups"),
+	}
+	if b, err := os.ReadFile(backupSettingsPath(appConfig)); err == nil {
+		_ = json.Unmarshal(b, &s)
+	}
+	if s.Time == "" {
+		s.Time = "02:00"
+	}
+	if s.Days == "" {
+		s.Days = "daily"
+	}
+	if s.MaxBackups == 0 {
+		s.MaxBackups = 7
+	}
+	return s
+}
+
+// SaveBackupSettings persists the settings.
+func SaveBackupSettings(appConfig config.Interface, s BackupSettings) error {
+	b, err := json.MarshalIndent(s, "", "  ")
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(backupSettingsPath(appConfig), b, 0o600)
+}
+
+// ResolveDestination returns the configured destination, or the default folder when unset.
+func ResolveDestination(appConfig config.Interface, s BackupSettings) string {
+	if d := strings.TrimSpace(s.Destination); d != "" {
+		return d
 	}
 	return DefaultBackupDir(appConfig)
+}
+
+// CurrentBackupDestination is the resolved destination from the current settings.
+func CurrentBackupDestination(appConfig config.Interface) string {
+	return ResolveDestination(appConfig, LoadBackupSettings(appConfig))
 }
 
 // ListBackups returns the backups in dir, newest first.
@@ -107,7 +154,14 @@ func (gr *GormRepository) PerformBackup(appConfig config.Interface, destOverride
 		return BackupFile{}, "", err
 	}
 
-	_ = os.WriteFile(backupMarkerPath(appConfig), []byte(dest), 0o600) // remember as default (best-effort)
+	// If the caller explicitly chose a destination, remember it (persists until changed).
+	if strings.TrimSpace(destOverride) != "" {
+		s := LoadBackupSettings(appConfig)
+		if s.Destination != dest {
+			s.Destination = dest
+			_ = SaveBackupSettings(appConfig, s)
+		}
+	}
 
 	bf := BackupFile{Name: name, Modified: time.Now().UTC().Format(time.RFC3339)}
 	if fi, err := os.Stat(full); err == nil {

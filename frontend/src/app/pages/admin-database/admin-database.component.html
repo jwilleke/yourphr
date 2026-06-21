@@ -44,18 +44,48 @@
           </button>
           <p class="tx-gray-500 tx-12 mg-t-0">Streams a compressed backup to your browser — your Save dialog picks the location. Stay on this page until it finishes.</p>
 
-          <!-- Server-side: fire-and-forget to a folder; you can leave the page -->
-          <label class="tx-12 tx-uppercase tx-gray-500 mg-b-5 mg-t-10 d-block">Or back up to a server folder</label>
-          <div class="d-flex">
-            <input type="text" class="form-control mg-r-10" [(ngModel)]="destination" placeholder="/opt/fasten/db/backups">
-            <button type="button" class="btn btn-outline-indigo text-nowrap" (click)="backup()" [disabled]="backingUp || !destination">
-              <span *ngIf="backingUp" class="spinner-border spinner-border-sm mg-r-5"></span>{{ backingUp ? 'Backing up…' : 'Back up to server' }}
-            </button>
-          </div>
-          <p class="tx-gray-500 tx-12 mg-t-5">Writes to the folder (persists until changed); you can leave the page. Gzip-compressed; filename <code>YYYY-MM-DDTHH-MM-SSZ-yourphr-backup.db.gz</code>.</p>
+          <!-- Server-side: fire-and-forget to the configured folder; you can leave the page -->
+          <button type="button" class="btn btn-outline-indigo mg-t-10" (click)="backup()" [disabled]="backingUp">
+            <span *ngIf="backingUp" class="spinner-border spinner-border-sm mg-r-5"></span>{{ backingUp ? 'Backing up…' : 'Back up to server now' }}
+          </button>
+          <p class="tx-gray-500 tx-12 mg-t-5">Writes to the destination folder below; you can leave the page. Gzip-compressed; filename <code>YYYY-MM-DDTHH-MM-SSZ-yourphr-backup.db.gz</code>.</p>
 
           <div *ngIf="backupResult" class="alert alert-success tx-13 mg-t-10 mg-b-0"><i class="fas fa-check mg-r-5"></i>{{ backupResult }}</div>
           <div *ngIf="backupError" class="text-danger tx-13 mg-t-10">{{ backupError }}</div>
+
+          <!-- Automatic schedule (settable) -->
+          <hr/>
+          <strong class="tx-12 tx-uppercase tx-gray-500">Automatic backups</strong>
+          <div class="form-check mg-t-10">
+            <input class="form-check-input" type="checkbox" id="autoBackup" [(ngModel)]="schedule.enabled">
+            <label class="form-check-label" for="autoBackup">Enable scheduled backups</label>
+          </div>
+          <div class="row mg-t-10">
+            <div class="col-sm-3">
+              <label class="tx-12 tx-gray-600">Time (server)</label>
+              <input type="time" class="form-control" [(ngModel)]="schedule.time">
+            </div>
+            <div class="col-sm-3">
+              <label class="tx-12 tx-gray-600">Frequency</label>
+              <select class="form-control" [(ngModel)]="schedule.days">
+                <option value="daily">Daily</option>
+                <option value="weekly">Weekly (Sun)</option>
+              </select>
+            </div>
+            <div class="col-sm-3">
+              <label class="tx-12 tx-gray-600">Keep last</label>
+              <input type="number" min="1" class="form-control" [(ngModel)]="schedule.max_backups">
+            </div>
+          </div>
+          <label class="tx-12 tx-gray-600 mg-t-10 d-block">Destination folder (server)</label>
+          <input type="text" class="form-control" [(ngModel)]="schedule.destination" placeholder="default: {{ info.backup_destination }}">
+          <div class="mg-t-10">
+            <button type="button" class="btn btn-az-primary btn-sm" (click)="saveSchedule()" [disabled]="savingSchedule">
+              <span *ngIf="savingSchedule" class="spinner-border spinner-border-sm mg-r-5"></span>Save schedule
+            </button>
+            <span *ngIf="scheduleMsg" class="tx-13 mg-l-10">{{ scheduleMsg }}</span>
+          </div>
+          <p class="tx-gray-500 tx-12 mg-t-5">Used by both the schedule and "Back up to server now". A blank destination uses the default. Changes apply on the next scheduled run — no restart.</p>
 
           <div class="mg-t-20" *ngIf="info.backups?.length">
             <strong class="tx-12 tx-uppercase tx-gray-500">Backups in this folder</strong>

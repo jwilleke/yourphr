@@ -1,9 +1,11 @@
 package handler
 
 import (
+	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -27,10 +29,9 @@ type DatabaseInfoResponse struct {
 	Users               int64                 `json:"users"`
 	Sources             int64                 `json:"sources"`
 	IntegrityOk         bool                  `json:"integrity_ok"`
-	BackupDestination   string                `json:"backup_destination"`    // default/last-used folder
-	Backups             []database.BackupFile `json:"backups"`               // backups present there, newest first
-	BackupIntervalHours int                   `json:"backup_interval_hours"` // scheduled-backup interval (0 = off)
-	BackupRetention     int                   `json:"backup_retention"`      // scheduled backups kept
+	BackupDestination string                  `json:"backup_destination"` // resolved destination folder
+	Backups           []database.BackupFile   `json:"backups"`            // backups present there, newest first
+	Schedule          database.BackupSettings `json:"schedule"`           // settable auto-backup settings
 }
 
 func gormRepoFromContext(c *gin.Context) (*database.GormRepository, bool) {
@@ -54,14 +55,14 @@ func GetDatabaseInfo(c *gin.Context) {
 	}
 
 	location := appConfig.GetString("database.location")
-	dest := database.CurrentBackupDestination(appConfig)
+	settings := database.LoadBackupSettings(appConfig)
+	dest := database.ResolveDestination(appConfig, settings)
 	resp := DatabaseInfoResponse{
-		Location:            location,
-		EncryptionEnabled:   appConfig.GetBool("database.encryption.enabled"),
-		BackupDestination:   dest,
-		Backups:             database.ListBackups(dest),
-		BackupIntervalHours: appConfig.GetInt("backup.interval_hours"),
-		BackupRetention:     appConfig.GetInt("backup.retention"),
+		Location:          location,
+		EncryptionEnabled: appConfig.GetBool("database.encryption.enabled"),
+		BackupDestination: dest,
+		Backups:           database.ListBackups(dest),
+		Schedule:          settings,
 	}
 	if fi, err := os.Stat(location); err == nil {
 		resp.SizeBytes = fi.Size()
@@ -130,4 +131,71 @@ func BackupDatabaseDownload(c *gin.Context) {
 	}
 	defer os.Remove(tmp)
 	c.FileAttachment(tmp, name)
+}
+
+// ScheduleRequest is the POST /api/secure/admin/database/schedule payload.
+type ScheduleRequest struct {
+	Enabled     bool   `json:"enabled"`
+	Time        string `json:"time"`
+	Days        string `json:"days"`
+	Destination string `json:"destination"`
+	MaxBackups  int    `json:"max_backups"`
+}
+
+// SetBackupSchedule persists the auto-backup settings (enable + time-of-day + days + destination +
+// retention). The worker re-reads them each minute, so changes apply without a restart. Admin-only.
+func SetBackupSchedule(c *gin.Context) {
+	if !IsAdmin(c) {
+		c.JSON(http.StatusForbidden, gin.H{"success": false, "error": "admin role required"})
+		return
+	}
+	appConfig := c.MustGet(pkg.ContextKeyTypeConfig).(config.Interface)
+	var req ScheduleRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "invalid request"})
+		return
+	}
+	s := database.BackupSettings{
+		Enabled:     req.Enabled,
+		Time:        strings.TrimSpace(req.Time),
+		Days:        strings.ToLower(strings.TrimSpace(req.Days)),
+		Destination: strings.TrimSpace(req.Destination),
+		MaxBackups:  req.MaxBackups,
+	}
+	if s.Time == "" {
+		s.Time = "02:00"
+	}
+	if !validHHMM(s.Time) {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "time must be HH:MM (24-hour)"})
+		return
+	}
+	if s.Days == "" {
+		s.Days = "daily"
+	}
+	if s.Days != "daily" && s.Days != "weekly" {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "days must be 'daily' or 'weekly'"})
+		return
+	}
+	if s.Destination != "" && !filepath.IsAbs(s.Destination) {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "destination must be an absolute path"})
+		return
+	}
+	if s.MaxBackups <= 0 {
+		s.MaxBackups = 7
+	}
+	if err := database.SaveBackupSettings(appConfig, s); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": fmt.Sprintf("save failed: %s", err)})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"success": true, "data": s})
+}
+
+func validHHMM(v string) bool {
+	parts := strings.SplitN(v, ":", 2)
+	if len(parts) != 2 || len(parts[1]) != 2 {
+		return false
+	}
+	h, err1 := strconv.Atoi(parts[0])
+	m, err2 := strconv.Atoi(parts[1])
+	return err1 == nil && err2 == nil && h >= 0 && h <= 23 && m >= 0 && m <= 59
 }

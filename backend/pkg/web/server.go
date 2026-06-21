@@ -246,6 +246,7 @@ func (ae *AppEngine) Setup() (*gin.RouterGroup, *gin.Engine) {
 					secure.GET("/admin/database", handler.GetDatabaseInfo)
 					secure.POST("/admin/database/backup", handler.BackupDatabase)                 // server-side, fire-and-forget
 					secure.POST("/admin/database/backup/download", handler.BackupDatabaseDownload) // stream to browser (on-demand)
+					secure.POST("/admin/database/schedule", handler.SetBackupSchedule)             // settable auto-backup schedule
 
 					secure.POST("/practitioners", handler.CreatePractitioner)
 					secure.PUT("/practitioners/:practitionerId", handler.UpdatePractitioner)
