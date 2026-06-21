@@ -16,7 +16,7 @@
 ## 🟡 P2
 
 - [#345](https://github.com/jwilleke/yourphr/issues/345) [security] http-proxy-middleware (webpack-dev-server tree) — blocked on upstream hpm 3.x (GHSA-64mm-vxmg-q3vj).
-- [#359](https://github.com/jwilleke/yourphr/issues/359) [FEATURE] medical-history: Condition master from /conditions/classified + Type + classified on graph rows.
+- [#360](https://github.com/jwilleke/yourphr/issues/360) [FEATURE] Attach `classified` on resource-graph / list rows (per-row badges; split from #359, no consumer yet).
 - [#354](https://github.com/jwilleke/yourphr/issues/354) [FEATURE] Integrate assets from HL7 FHIR GitHub org (fhir-test-cases, fhir-codegen).
 - [#353](https://github.com/jwilleke/yourphr/issues/353) [FEATURE] Patient private notes on records (persist + indicator).
 - [#352](https://github.com/jwilleke/yourphr/issues/352) [FEATURE] Patient-friendly Body Diagram / Body Map View.
@@ -29,6 +29,7 @@
 - [#334](https://github.com/jwilleke/yourphr/issues/334) [FEATURE] Explore — Save Report.
 - [#335](https://github.com/jwilleke/yourphr/issues/335) [FEATURE] Explore — Export to PDF.
 - [#336](https://github.com/jwilleke/yourphr/issues/336) [FEATURE] Explore — Send to Email.
+- [#314](https://github.com/jwilleke/yourphr/issues/314) [FEATURE] Wearable Device Integration for Vitals, Activity & PGHD.
 - [#300](https://github.com/jwilleke/yourphr/issues/300) [FEATURE] Angular surface for Medicare claims & coverage (insurance view).
 - [#307](https://github.com/jwilleke/yourphr/issues/307) [FEATURE] Manual records — frontend: entry/edit/delete forms.
 - [#305](https://github.com/jwilleke/yourphr/issues/305) [FEATURE] Manual records — backend: store/edit/delete user-created records (FHIR-consistent).
@@ -55,4 +56,4 @@
 
 ## ❓ Needs triage
 
-- [#314](https://github.com/jwilleke/yourphr/issues/314) [FEATURE] Wearable Device Integration for Vitals, Activity & PGHD — no priority label yet.
+- None — every open issue carries a priority label.
