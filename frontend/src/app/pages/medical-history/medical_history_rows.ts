@@ -40,8 +40,12 @@ export function buildEncounterRows(encounters: ResourceFhir[]): BuiltRows {
       places.push(enc.provenance.display);
     }
 
-    const conditions = uniq(
-      related.filter((r) => r.source_resource_type === 'Condition').map((r) => conditionTitle(r.resource_raw)),
+    const relatedConditions = related.filter((r) => r.source_resource_type === 'Condition');
+    const conditions = uniq(relatedConditions.map((r) => conditionTitle(r.resource_raw)));
+    // Condition reference keys (sourceId/resourceId) — used to match the canonical /conditions/classified
+    // master in groupHistoryByConditions (#359). Matched by identity, not by label text.
+    const conditionRefs = uniq(
+      relatedConditions.map((r) => rowKey({sourceId: r.source_id, resourceId: r.source_resource_id})),
     );
 
     const key = rowKey({sourceId: enc.source_id, resourceId: enc.source_resource_id});
@@ -55,6 +59,7 @@ export function buildEncounterRows(encounters: ResourceFhir[]): BuiltRows {
       providers,
       places,
       conditions,
+      conditionRefs,
     });
   }
   return {rows, lookup};

@@ -1,15 +1,19 @@
 import {Component, OnInit} from '@angular/core';
+import {forkJoin} from 'rxjs';
 import {FastenApiService} from '../../services/fasten-api.service';
 import {ResourceFhir} from '../../models/fasten/resource_fhir';
 import {ResourceGraphResponse} from '../../models/fasten/resource-graph-response';
+import {ClassifiedCondition} from '../../models/fasten/classified-condition';
 import {
   GroupDimension,
   HistoryGroup,
   HistoryRow,
+  ConditionMaster,
   collapseByDate,
   DateBucket,
   distinctTotal,
   groupHistory,
+  groupHistoryByConditions,
 } from '../../../lib/utils/medical_history_grouping';
 import {buildEncounterRows, rowKey} from './medical_history_rows';
 
@@ -34,6 +38,9 @@ export class MedicalHistoryComponent implements OnInit {
 
   rows: HistoryRow[] = []
   lookup: Record<string, ResourceFhir> = {}
+  // Canonical conditions from /conditions/classified — the master for the by-Condition dimension (#359),
+  // so ALL conditions appear, not only those linked to an encounter.
+  conditions: ConditionMaster[] = []
   groups: HistoryGroup[] = []
   selectedKey: string | null = null
   total = 0
@@ -42,22 +49,31 @@ export class MedicalHistoryComponent implements OnInit {
 
   ngOnInit(): void {
     this.loading = true
-    // Load the full encounter set (grouping needs the whole history to build complete master groups,
-    // so this is not paginated). NOTE: heavy for very large patients — a lightweight grouping endpoint
-    // is the scalable follow-up (#359 / #354).
-    this.fastenApi.getResources('Encounter').subscribe((response: ResourceFhir[]) => {
-      const ids = (response || []).map((r) => ({
+    // Load the full encounter set + the canonical condition list in parallel (grouping needs the whole
+    // history to build complete master groups, so this is not paginated). NOTE: heavy for very large
+    // patients — a lightweight grouping endpoint is the scalable follow-up (#354).
+    forkJoin({
+      conditions: this.fastenApi.getClassifiedConditions(),
+      encounters: this.fastenApi.getResources('Encounter'),
+    }).subscribe(({conditions, encounters}) => {
+      this.conditions = (conditions || []).map((c: ClassifiedCondition): ConditionMaster => ({
+        key: rowKey({sourceId: c.sourceId, resourceId: c.sourceResourceId}),
+        label: c.title || 'Condition',
+        state: c.state,
+      }))
+      const ids = (encounters || []).map((r) => ({
         source_id: r.source_id,
         source_resource_type: r.source_resource_type,
         source_resource_id: r.source_resource_id,
       }))
       if (ids.length === 0) {
+        this.regroup()
         this.loading = false
         return
       }
       this.fastenApi.getResourceGraph(null, ids).subscribe((graph: ResourceGraphResponse) => {
-        const encounters = graph.results['Encounter'] || []
-        const built = buildEncounterRows(encounters)
+        const encounterResults = graph.results['Encounter'] || []
+        const built = buildEncounterRows(encounterResults)
         this.rows = built.rows
         this.lookup = built.lookup
         this.total = distinctTotal(this.rows)
@@ -78,7 +94,11 @@ export class MedicalHistoryComponent implements OnInit {
   }
 
   private regroup(): void {
-    this.groups = groupHistory(this.rows, this.dimension)
+    // The Condition dimension is driven by the canonical /conditions/classified master (#359) so every
+    // condition shows — including ones with no linked visit. Other dimensions derive groups from the rows.
+    this.groups = this.dimension === 'condition'
+      ? groupHistoryByConditions(this.rows, this.conditions)
+      : groupHistory(this.rows, this.dimension)
     this.selectedKey = this.groups.length ? this.groups[0].key : null
   }
 

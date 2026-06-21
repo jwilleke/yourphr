@@ -1,4 +1,4 @@
-import {groupHistory, collapseByDate, distinctTotal, typeLabel, UNKNOWN_KEY, HistoryRow} from './medical_history_grouping';
+import {groupHistory, groupHistoryByConditions, collapseByDate, distinctTotal, typeLabel, UNKNOWN_KEY, HistoryRow, ConditionMaster} from './medical_history_grouping';
 
 function row(p: Partial<HistoryRow>): HistoryRow {
   return {
@@ -10,6 +10,7 @@ function row(p: Partial<HistoryRow>): HistoryRow {
     providers: p.providers,
     places: p.places,
     conditions: p.conditions,
+    conditionRefs: p.conditionRefs,
   };
 }
 
@@ -69,5 +70,51 @@ describe('medical_history_grouping', () => {
   it('typeLabel maps known types and passes through unknown', () => {
     expect(typeLabel('MedicationStatement')).toBe('Medications');
     expect(typeLabel('Wibble')).toBe('Wibble');
+  });
+});
+
+describe('groupHistoryByConditions (#359)', () => {
+  const conditions: ConditionMaster[] = [
+    {key: 's1/c-htn', label: 'Hypertension', state: 'Active'},
+    {key: 's1/c-dm', label: 'Diabetes', state: 'Active'},
+    {key: 's1/c-old', label: 'Resolved thing', state: 'Resolved'}, // canonical but no linked records
+  ];
+  const condRows: HistoryRow[] = [
+    row({resourceId: 'e1', date: '2025-11-02', conditionRefs: ['s1/c-htn', 's1/c-dm']}),
+    row({resourceId: 'e2', date: '2025-10-01', conditionRefs: ['s1/c-htn']}),
+    row({resourceId: 'e3', date: '2024-01-01', conditionRefs: []}), // unattributed
+  ];
+
+  it('seeds a group for EVERY canonical condition, even with no linked records', () => {
+    const g = groupHistoryByConditions(condRows, conditions);
+    expect(g.find((x) => x.key === 's1/c-old')).toBeTruthy();
+    expect(g.find((x) => x.key === 's1/c-old')?.count).toBe(0);
+  });
+
+  it('maps rows to conditions by reference key, with multi-membership', () => {
+    const g = groupHistoryByConditions(condRows, conditions);
+    expect(g.find((x) => x.key === 's1/c-htn')?.count).toBe(2); // e1, e2
+    expect(g.find((x) => x.key === 's1/c-dm')?.count).toBe(1);  // e1 only
+  });
+
+  it('carries condition state as the group subLabel', () => {
+    const g = groupHistoryByConditions(condRows, conditions);
+    expect(g.find((x) => x.key === 's1/c-htn')?.subLabel).toBe('Active');
+  });
+
+  it('orders conditions-with-records first (recent), empty conditions next, Unattributed last', () => {
+    const g = groupHistoryByConditions(condRows, conditions);
+    expect(g.map((x) => x.key)).toEqual(['s1/c-htn', 's1/c-dm', 's1/c-old', UNKNOWN_KEY]);
+    const last = g[g.length - 1];
+    expect(last.isUnknown).toBeTrue();
+    expect(last.label).toBe('Unattributed');
+    expect(last.count).toBe(1); // e3
+  });
+
+  it('treats a stale ref (no canonical condition) as Unattributed', () => {
+    const g = groupHistoryByConditions([row({resourceId: 'eX', date: '2025-01-01', conditionRefs: ['s1/c-missing']})], conditions);
+    const last = g[g.length - 1];
+    expect(last.isUnknown).toBeTrue();
+    expect(last.count).toBe(1);
   });
 });

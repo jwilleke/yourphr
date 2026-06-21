@@ -32,6 +32,12 @@ test('medical-history master-detail: group-by selector + rail + detail render an
   expect(await railItems.count(), 'rail still populated after grouping by Provider').toBeGreaterThan(0);
   await expect(panels.first()).toBeVisible();
 
+  // #359: Condition dimension is sourced from /conditions/classified — the rail lists the patient's
+  // canonical conditions (not only encounter-linked ones). Seeded Synthea data has conditions.
+  await page.getByRole('button', { name: 'Condition', exact: true }).click();
+  await expect(railItems.first()).toBeVisible();
+  expect(await railItems.count(), 'condition rail populated from /conditions/classified').toBeGreaterThan(0);
+
   // Clean render — no enforcing-CSP violations or uncaught JS.
   expect(health.cspViolations, `CSP violations:\n${health.cspViolations.join('\n')}`).toEqual([]);
   expect(health.pageErrors, `uncaught page errors:\n${health.pageErrors.join('\n')}`).toEqual([]);

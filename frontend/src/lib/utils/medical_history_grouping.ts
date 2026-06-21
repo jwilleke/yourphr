@@ -25,14 +25,24 @@ export interface HistoryRow {
   providers?: string[]; // resolved "who" — clinician/org names
   places?: string[];    // facility / organization / location names
   conditions?: string[]; // linked condition labels
+  conditionRefs?: string[]; // linked condition keys (sourceId/resourceId) — match the canonical master (#359)
 }
 
 export interface HistoryGroup {
   key: string;        // dimension value, or UNKNOWN_KEY
   label: string;      // display label
+  subLabel?: string;  // secondary line (e.g. a condition's state) — optional
   count: number;      // rows in this group (counts overlap across groups under multi-membership)
   isUnknown: boolean; // the explicit "not stated" bucket
   rows: HistoryRow[]; // newest first
+}
+
+// ConditionMaster is a canonical condition (from /conditions/classified), decoupled from the app model
+// so this lib stays pure. `key` matches HistoryRow.conditionRefs (sourceId/resourceId). (#359)
+export interface ConditionMaster {
+  key: string;
+  label: string;
+  state?: string;
 }
 
 export interface DateBucket {
@@ -69,6 +79,50 @@ export function groupHistory(rows: HistoryRow[], dim: GroupDimension): HistoryGr
     if (a.isUnknown !== b.isUnknown) return a.isUnknown ? 1 : -1;
     return cmpDateDesc(mostRecent(a.rows), mostRecent(b.rows));
   });
+  return out;
+}
+
+// groupHistoryByConditions builds the by-Condition master from the canonical conditions list
+// (/conditions/classified) so EVERY condition appears — not only encounter-linked ones (#359). Each row
+// is assigned to the condition(s) it references (multi-membership). Rows referencing no canonical
+// condition go to an explicit "Unattributed" bucket. Conditions with no linked records are kept (the
+// whole point is to surface them), sorted after those that have records; Unattributed sinks last.
+export function groupHistoryByConditions(rows: HistoryRow[], conditions: ConditionMaster[]): HistoryGroup[] {
+  const groups = new Map<string, HistoryGroup>();
+  for (const c of conditions || []) {
+    if (!c?.key || groups.has(c.key)) continue;
+    groups.set(c.key, { key: c.key, label: c.label || 'Condition', subLabel: c.state, count: 0, isUnknown: false, rows: [] });
+  }
+  const unattributed: HistoryGroup = { key: UNKNOWN_KEY, label: 'Unattributed', count: 0, isUnknown: true, rows: [] };
+
+  for (const row of rows || []) {
+    const refs = Array.from(new Set((row.conditionRefs || []).filter((r) => groups.has(r))));
+    if (refs.length === 0) {
+      unattributed.rows.push(row);
+      continue;
+    }
+    for (const ref of refs) {
+      groups.get(ref)!.rows.push(row);
+    }
+  }
+
+  const out = Array.from(groups.values());
+  for (const g of out) {
+    g.rows.sort(byDateDesc);
+    g.count = g.rows.length;
+  }
+  // Conditions with linked records first (most-recent activity desc); empty ones next (alpha by label).
+  out.sort((a, b) => {
+    const aEmpty = a.rows.length === 0, bEmpty = b.rows.length === 0;
+    if (aEmpty !== bEmpty) return aEmpty ? 1 : -1;
+    if (aEmpty && bEmpty) return a.label.localeCompare(b.label);
+    return cmpDateDesc(mostRecent(a.rows), mostRecent(b.rows));
+  });
+  if (unattributed.rows.length) {
+    unattributed.rows.sort(byDateDesc);
+    unattributed.count = unattributed.rows.length;
+    out.push(unattributed);
+  }
   return out;
 }
 
