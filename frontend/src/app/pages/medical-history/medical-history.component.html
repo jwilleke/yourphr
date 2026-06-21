@@ -55,9 +55,9 @@
               </button>
             </div>
 
-            <div *ngFor="let bucket of detailBuckets" class="mg-b-20">
+            <div *ngFor="let bucket of detailBuckets; trackBy: trackBucket" class="mg-b-20">
               <h6 class="az-content-label tx-gray-600 mg-b-10">{{ bucket.date ? (bucket.date | date) : 'Undated' }}</h6>
-              <div *ngFor="let row of bucket.rows" class="mg-b-15">
+              <div *ngFor="let row of bucket.rows; trackBy: trackRow" class="mg-b-15">
                 <fhir-card *ngIf="modelFor(row) as model; else simpleRow" [displayModel]="model" [showDetails]="false"></fhir-card>
                 <ng-template #simpleRow>
                   <div class="card pd-15">

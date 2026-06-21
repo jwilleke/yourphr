@@ -50,6 +50,8 @@ export class MedicalHistoryComponent implements OnInit {
   conditions: ConditionMaster[] = []
   groups: HistoryGroup[] = []
   selectedKey: string | null = null
+  detailBuckets: DateBucket[] = [] // computed once per selection — NOT a getter (a getter returns a new
+                                   // array each change-detection cycle, re-mounting every fhir-card -> request storm)
   total = 0
   debug = false // page-level "raw FHIR" toggle, like /explore
   copiedKey: string | null = null // row whose raw FHIR was just copied (transient "Copied!")
@@ -120,6 +122,7 @@ export class MedicalHistoryComponent implements OnInit {
 
   selectGroup(key: string): void {
     this.selectedKey = key
+    this.updateDetail()
   }
 
   private regroup(): void {
@@ -136,16 +139,23 @@ export class MedicalHistoryComponent implements OnInit {
       this.total = distinctTotal(this.rows)
     }
     this.selectedKey = this.groups.length ? this.groups[0].key : null
+    this.updateDetail()
   }
 
   get selectedGroup(): HistoryGroup | undefined {
     return this.groups.find((g) => g.key === this.selectedKey)
   }
 
-  get detailBuckets(): DateBucket[] {
+  // updateDetail recomputes the date-collapsed detail ONCE per selection change (stored in a stable
+  // field), so change detection doesn't re-create the fhir-cards every cycle.
+  private updateDetail(): void {
     const g = this.selectedGroup
-    return g ? collapseByDate(g.rows) : []
+    this.detailBuckets = g ? collapseByDate(g.rows) : []
   }
+
+  // trackBy keeps Angular from tearing down + rebuilding DOM (and re-fetching fhir-cards) on each cycle.
+  trackBucket(_i: number, b: DateBucket): string { return b.date }
+  trackRow(_i: number, r: HistoryRow): string { return r.sourceId + '/' + r.resourceType + '/' + r.resourceId }
 
   resourceFor(row: HistoryRow): ResourceFhir | undefined {
     return this.lookup[rowKey(row)]
