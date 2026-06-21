@@ -9,7 +9,7 @@ import {ReconciledMedication} from '../models/fasten/reconciled-medication';
 import {ClassifiedCondition} from '../models/fasten/classified-condition';
 import {ClassifiedAllergy} from '../models/fasten/classified-allergy';
 import {ClassifiedImmunization} from '../models/fasten/classified-immunization';
-import {DatabaseInfo, BackupResult, BackupSettings} from '../models/fasten/database-info';
+import {DatabaseInfo, BackupResult, BackupSettings, DirListing} from '../models/fasten/database-info';
 import {AccountUser} from '../models/fasten/account-user';
 import {ResourceListItem} from '../models/fasten/resource-list-item';
 import {ServerLogs} from '../models/fasten/server-logs';
@@ -265,6 +265,18 @@ export class FastenApiService {
       .pipe(
         map((response: ResponseWrapper) => {
           return response.data as BackupSettings
+        })
+      );
+  }
+
+  // browseDirectories lists subfolders of a server path (admin-only) for picking a backup destination.
+  browseDirectories(path?: string): Observable<DirListing> {
+    const base = `${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/admin/database/browse`
+    const url = path ? `${base}?path=${encodeURIComponent(path)}` : base
+    return this._httpClient.get<any>(url)
+      .pipe(
+        map((response: ResponseWrapper) => {
+          return response.data as DirListing
         })
       );
   }

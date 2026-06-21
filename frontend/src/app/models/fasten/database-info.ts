@@ -17,6 +17,13 @@ export interface DatabaseInfo {
   schedule: BackupSettings;       // settable auto-backup settings
 }
 
+// Mirrors handler.DirListing — server-folder browser (GET /admin/database/browse).
+export interface DirListing {
+  path: string;
+  parent: string; // "" at filesystem root
+  dirs: string[];
+}
+
 // Mirrors database.BackupSettings — the settable auto-backup config (time-of-day model).
 export interface BackupSettings {
   enabled: boolean;

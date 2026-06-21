@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -188,6 +189,51 @@ func SetBackupSchedule(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"success": true, "data": s})
+}
+
+// DirListing is the payload for GET /api/secure/admin/database/browse.
+type DirListing struct {
+	Path   string   `json:"path"`
+	Parent string   `json:"parent"` // "" at filesystem root
+	Dirs   []string `json:"dirs"`   // subdirectory names, sorted
+}
+
+// BrowseDirectories lists the subfolders of a server path so the admin can pick a backup destination
+// (any folder). Admin-only; this exposes the server filesystem tree, acceptable for a trusted admin
+// (who could shell in anyway). Defaults to the current backup destination.
+func BrowseDirectories(c *gin.Context) {
+	if !IsAdmin(c) {
+		c.JSON(http.StatusForbidden, gin.H{"success": false, "error": "admin role required"})
+		return
+	}
+	appConfig := c.MustGet(pkg.ContextKeyTypeConfig).(config.Interface)
+	path := strings.TrimSpace(c.Query("path"))
+	if path == "" {
+		path = database.CurrentBackupDestination(appConfig)
+	}
+	if !filepath.IsAbs(path) {
+		path = string(filepath.Separator)
+	}
+	path = filepath.Clean(path)
+
+	entries, err := os.ReadDir(path)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": fmt.Sprintf("cannot read %q: %s", path, err)})
+		return
+	}
+	dirs := []string{}
+	for _, e := range entries {
+		if e.IsDir() && !strings.HasPrefix(e.Name(), ".") {
+			dirs = append(dirs, e.Name())
+		}
+	}
+	sort.Strings(dirs)
+
+	parent := filepath.Dir(path)
+	if parent == path { // at root
+		parent = ""
+	}
+	c.JSON(http.StatusOK, gin.H{"success": true, "data": DirListing{Path: path, Parent: parent, Dirs: dirs}})
 }
 
 func validHHMM(v string) bool {

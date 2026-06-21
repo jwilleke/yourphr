@@ -78,7 +78,25 @@
             </div>
           </div>
           <label class="tx-12 tx-gray-600 mg-t-10 d-block">Destination folder (server)</label>
-          <input type="text" class="form-control" [(ngModel)]="schedule.destination" placeholder="default: {{ info.backup_destination }}">
+          <div class="d-flex">
+            <input type="text" class="form-control mg-r-10" [(ngModel)]="schedule.destination" placeholder="default: {{ info.backup_destination }}">
+            <button type="button" class="btn btn-outline-secondary btn-sm text-nowrap" (click)="openBrowser()"><i class="fas fa-folder-open mg-r-5"></i>Browse</button>
+          </div>
+          <div *ngIf="browsing" class="card mg-t-10">
+            <div class="card-body pd-15">
+              <div class="d-flex justify-content-between align-items-center mg-b-10">
+                <code class="tx-13 text-truncate">{{ browse?.path }}</code>
+                <button type="button" class="btn-close btn-sm" (click)="browsing = false"></button>
+              </div>
+              <div *ngIf="browseError" class="text-danger tx-12 mg-b-10">{{ browseError }}</div>
+              <ul class="list-group list-group-flush" style="max-height: 220px; overflow-y: auto;">
+                <li *ngIf="browse?.parent" class="list-group-item py-1 cursor-pointer" (click)="navigateUp()"><i class="fas fa-level-up-alt mg-r-5 tx-gray-500"></i>..</li>
+                <li *ngFor="let d of browse?.dirs" class="list-group-item py-1 cursor-pointer" (click)="navigateInto(d)"><i class="fas fa-folder mg-r-5 tx-warning"></i>{{ d }}</li>
+                <li *ngIf="browse && browse.dirs.length === 0" class="list-group-item py-1 tx-gray-500">(no subfolders)</li>
+              </ul>
+              <button type="button" class="btn btn-az-primary btn-sm mg-t-10" (click)="useFolder()">Use this folder</button>
+            </div>
+          </div>
           <div class="mg-t-10">
             <button type="button" class="btn btn-az-primary btn-sm" (click)="saveSchedule()" [disabled]="savingSchedule">
               <span *ngIf="savingSchedule" class="spinner-border spinner-border-sm mg-r-5"></span>Save schedule

@@ -2,7 +2,7 @@ import {Component, OnInit} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {FormsModule} from '@angular/forms';
 import {FastenApiService} from '../../services/fasten-api.service';
-import {DatabaseInfo, BackupSettings} from '../../models/fasten/database-info';
+import {DatabaseInfo, BackupSettings, DirListing} from '../../models/fasten/database-info';
 import {AdminBackLinkComponent} from '../../components/admin-back-link/admin-back-link.component';
 import {LoadingSpinnerComponent} from '../../components/loading-spinner/loading-spinner.component';
 
@@ -29,6 +29,11 @@ export class AdminDatabaseComponent implements OnInit {
   backupError = '';
   backupResult = '';
   scheduleMsg = '';
+
+  // Server-folder browser
+  browsing = false;
+  browse: DirListing | null = null;
+  browseError = '';
 
   constructor(private fastenApi: FastenApiService) {}
 
@@ -102,6 +107,30 @@ export class AdminDatabaseComponent implements OnInit {
         this.downloading = false;
       },
     });
+  }
+
+  openBrowser(): void {
+    this.browsing = true;
+    this.browseError = '';
+    this.loadBrowse(this.schedule.destination || '');
+  }
+  private loadBrowse(path: string): void {
+    this.fastenApi.browseDirectories(path).subscribe({
+      next: (d) => { this.browse = d; this.browseError = ''; },
+      error: (e) => { this.browseError = e?.error?.error || 'Cannot read that folder.'; },
+    });
+  }
+  navigateInto(dir: string): void {
+    if (this.browse) { this.loadBrowse(this.joinPath(this.browse.path, dir)); }
+  }
+  navigateUp(): void {
+    if (this.browse?.parent) { this.loadBrowse(this.browse.parent); }
+  }
+  useFolder(): void {
+    if (this.browse) { this.schedule.destination = this.browse.path; this.browsing = false; }
+  }
+  private joinPath(a: string, b: string): string {
+    return a.endsWith('/') ? a + b : a + '/' + b;
   }
 
   saveSchedule(): void {
