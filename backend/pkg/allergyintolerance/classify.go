@@ -80,6 +80,10 @@ type ClassifiedAllergy struct {
 	Reactions       []Reaction `json:"reactions,omitempty"`
 	Onset           string     `json:"onset,omitempty"`
 	Recorded        string     `json:"recorded,omitempty"`
+	Start           string     `json:"start,omitempty"`        // earliest stated date (onset, else recorded); deduped: earliest across merged records
+	End             string     `json:"end,omitempty"`          // latest stated date (lastOccurrence, else recorded); deduped: latest across merged records
+	LastActivity    string     `json:"lastActivity,omitempty"` // = End; sort key for the list view
+	Occurrences     int        `json:"occurrences,omitempty"`  // number of source records merged into this entry (#290 dedupe)
 	Note            string     `json:"note,omitempty"`
 	StandardCodings []Coding   `json:"standardCodings,omitempty"`
 
@@ -94,7 +98,7 @@ type ClassifiedAllergy struct {
 //
 // resolver and sourceLabel are optional (pass nil for both to skip provenance in pure unit tests).
 func Classify(resources []InputResource, now time.Time, resolver *provenance.ResourceSet, sourceLabel func(sourceID string) string) []ClassifiedAllergy {
-	out := make([]ClassifiedAllergy, 0, len(resources))
+	perRecord := make([]ClassifiedAllergy, 0, len(resources))
 	for _, res := range resources {
 		var raw rawAllergy
 		if err := json.Unmarshal(res.Raw, &raw); err != nil {
@@ -106,6 +110,8 @@ func Classify(resources []InputResource, now time.Time, resolver *provenance.Res
 			continue // the record says this was a mistake — honor it, omit entirely
 		}
 
+		start := firstNonEmpty(raw.onset(), raw.RecordedDate)
+		end := firstNonEmpty(raw.LastOccurrence, raw.RecordedDate)
 		ca := ClassifiedAllergy{
 			SourceResourceType: res.SourceResourceType,
 			SourceResourceID:   res.SourceResourceID,
@@ -123,6 +129,10 @@ func Classify(resources []InputResource, now time.Time, resolver *provenance.Res
 			Reactions:          raw.reactions(),
 			Onset:              raw.onset(),
 			Recorded:           raw.RecordedDate,
+			Start:              start,
+			End:                end,
+			LastActivity:       end,
+			Occurrences:        1,
 			Note:               raw.noteText(),
 			StandardCodings:    standardCodings(raw.Code),
 		}
@@ -143,9 +153,69 @@ func Classify(resources []InputResource, now time.Time, resolver *provenance.Res
 			ca.Provenance = &prov
 		}
 
-		out = append(out, ca)
+		perRecord = append(perRecord, ca)
+	}
+	return dedupeAllergies(perRecord)
+}
+
+// dedupeAllergies collapses records describing the SAME substance (by standard code, else normalized
+// title) into ONE entry — the same allergy (or the same "no known" assertion) recorded across many
+// encounters must appear once, not repeated per encounter (#290). Merged: Start = earliest, End /
+// LastActivity = latest, Occurrences = count; the representative state/verification/criticality/
+// provenance come from the most-recently-recorded member (latest known status); reactions + categories
+// are unioned. Group order follows first appearance (stable).
+func dedupeAllergies(in []ClassifiedAllergy) []ClassifiedAllergy {
+	order := make([]string, 0, len(in))
+	groups := make(map[string][]ClassifiedAllergy)
+	for _, c := range in {
+		k := allergyDedupKey(c)
+		if _, ok := groups[k]; !ok {
+			order = append(order, k)
+		}
+		groups[k] = append(groups[k], c)
+	}
+	out := make([]ClassifiedAllergy, 0, len(order))
+	for _, k := range order {
+		out = append(out, mergeAllergyGroup(groups[k]))
 	}
 	return out
+}
+
+// allergyDedupKey identifies "the same substance": the first standard coding (system|code), else the
+// normalized title. Distinct negations (e.g. "no known food" vs "no known drug") have distinct codes
+// and stay separate, as they should.
+func allergyDedupKey(c ClassifiedAllergy) string {
+	for _, cd := range c.StandardCodings {
+		if cd.Code != "" {
+			return "code:" + strings.ToLower(cd.System) + "|" + strings.ToLower(cd.Code)
+		}
+	}
+	return "title:" + strings.ToLower(strings.TrimSpace(c.Title))
+}
+
+func mergeAllergyGroup(g []ClassifiedAllergy) ClassifiedAllergy {
+	rep := g[0]
+	for _, c := range g[1:] {
+		if allergyRecency(c) > allergyRecency(rep) {
+			rep = c // most-recently-recorded member drives the current status fields
+		}
+	}
+	merged := rep
+	merged.Occurrences = len(g)
+	for _, c := range g {
+		merged.Start = earlierDate(merged.Start, c.Start)
+		merged.End = laterDate(merged.End, c.End)
+		merged.NoKnown = merged.NoKnown || c.NoKnown
+		merged.Categories = unionStrings(merged.Categories, c.Categories)
+		merged.Reactions = mergeReactions(merged.Reactions, c.Reactions)
+	}
+	merged.LastActivity = merged.End
+	return merged
+}
+
+// allergyRecency is the sort key for "most recent record" within a dedupe group.
+func allergyRecency(c ClassifiedAllergy) string {
+	return firstNonEmpty(c.Recorded, c.End, c.Start)
 }
 
 // resolveState derives the display state: verificationStatus gates first (refuted -> RuledOut),

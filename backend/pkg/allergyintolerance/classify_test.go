@@ -156,3 +156,33 @@ func TestClassify_NoKnown(t *testing.T) {
 		t.Errorf("expected 1 real allergy (negations excluded), got %d", real)
 	}
 }
+
+// TestClassify_Dedupe verifies the same substance recorded at multiple encounters collapses into one
+// entry with a merged date range and an occurrence count (#290 — "don't repeat per encounter").
+func TestClassify_Dedupe(t *testing.T) {
+	in := []InputResource{
+		{SourceResourceType: "AllergyIntolerance", SourceResourceID: "a1", SourceID: "s",
+			Raw: json.RawMessage(`{"resourceType":"AllergyIntolerance","id":"a1","code":{"coding":[{"system":"http://www.nlm.nih.gov/research/umls/rxnorm","code":"7980"}],"text":"Penicillin"},"clinicalStatus":{"coding":[{"code":"active"}]},"recordedDate":"2019-03-01","onsetDateTime":"2015-01-01"}`)},
+		{SourceResourceType: "AllergyIntolerance", SourceResourceID: "a2", SourceID: "s",
+			Raw: json.RawMessage(`{"resourceType":"AllergyIntolerance","id":"a2","code":{"coding":[{"system":"http://www.nlm.nih.gov/research/umls/rxnorm","code":"7980"}],"text":"Penicillin"},"clinicalStatus":{"coding":[{"code":"active"}]},"recordedDate":"2022-06-15","lastOccurrence":"2022-06-15"}`)},
+		{SourceResourceType: "AllergyIntolerance", SourceResourceID: "a3", SourceID: "s",
+			Raw: json.RawMessage(`{"resourceType":"AllergyIntolerance","id":"a3","code":{"coding":[{"system":"http://snomed.info/sct","code":"294505008"}],"text":"Aspirin"},"clinicalStatus":{"coding":[{"code":"active"}]},"recordedDate":"2020-01-01"}`)},
+	}
+	got := Classify(in, time.Now().UTC(), nil, nil)
+	if len(got) != 2 {
+		t.Fatalf("expected 2 deduped entries (penicillin x2 merged + aspirin), got %d", len(got))
+	}
+	pen, ok := byID(got, "a2") // representative = most-recently recorded member
+	if !ok {
+		t.Fatalf("expected penicillin represented by its latest record a2")
+	}
+	if pen.Occurrences != 2 {
+		t.Errorf("penicillin Occurrences = %d, want 2", pen.Occurrences)
+	}
+	if pen.Start != "2015-01-01" {
+		t.Errorf("penicillin Start = %q, want earliest 2015-01-01", pen.Start)
+	}
+	if pen.End != "2022-06-15" {
+		t.Errorf("penicillin End = %q, want latest 2022-06-15", pen.End)
+	}
+}

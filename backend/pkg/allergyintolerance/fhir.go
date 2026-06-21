@@ -53,6 +53,7 @@ type rawAllergy struct {
 	OnsetPeriod        *fhirPeriod          `json:"onsetPeriod"`
 	OnsetString        string               `json:"onsetString"`
 	RecordedDate       string               `json:"recordedDate"`
+	LastOccurrence     string               `json:"lastOccurrence"` // dateTime of the most recent reaction — the "last seen" end of the range
 	Reaction           []fhirReaction       `json:"reaction"`
 	Note               []fhirAnnotation     `json:"note"`
 }
@@ -121,6 +122,73 @@ func (r *rawAllergy) title() string {
 		return t
 	}
 	return "Unknown allergy"
+}
+
+// --- dedupe / merge helpers (#290) ---
+
+func firstNonEmpty(vals ...string) string {
+	for _, v := range vals {
+		if strings.TrimSpace(v) != "" {
+			return v
+		}
+	}
+	return ""
+}
+
+// earlierDate / laterDate compare ISO-8601 date strings lexically (valid for YYYY-MM-DD[Thh:mm…]);
+// an empty value is treated as "unknown" and yields to the other.
+func earlierDate(a, b string) string {
+	switch {
+	case a == "":
+		return b
+	case b == "":
+		return a
+	case a < b:
+		return a
+	default:
+		return b
+	}
+}
+
+func laterDate(a, b string) string {
+	switch {
+	case a == "":
+		return b
+	case b == "":
+		return a
+	case a > b:
+		return a
+	default:
+		return b
+	}
+}
+
+func unionStrings(a, b []string) []string {
+	seen := map[string]bool{}
+	out := make([]string, 0, len(a)+len(b))
+	for _, v := range append(append([]string{}, a...), b...) {
+		v = strings.TrimSpace(v)
+		if v == "" || seen[v] {
+			continue
+		}
+		seen[v] = true
+		out = append(out, v)
+	}
+	return out
+}
+
+func mergeReactions(a, b []Reaction) []Reaction {
+	seen := map[string]bool{}
+	out := make([]Reaction, 0, len(a)+len(b))
+	for _, r := range append(append([]Reaction{}, a...), b...) {
+		key := strings.Join(r.Manifestations, "|") + "::" + r.Description + "::" + r.Severity
+		if seen[key] {
+			continue
+		}
+		seen[key] = true
+		out = append(out, r)
+	}
+	return out
 }
 
 // noKnownAllergyCodes are the SNOMED CT "no known allergy" NEGATION assertions — a record stating the

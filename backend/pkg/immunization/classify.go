@@ -61,8 +61,10 @@ type ClassifiedImmunization struct {
 
 	Status          string   `json:"status,omitempty"`       // raw FHIR status
 	StatusReason    string   `json:"statusReason,omitempty"` // why not given
-	Occurrence      string   `json:"occurrence,omitempty"`
+	Occurrence      string   `json:"occurrence,omitempty"`   // latest administration date (deduped: most recent dose)
 	Recorded        string   `json:"recorded,omitempty"`
+	Doses           int      `json:"doses,omitempty"`        // administrations merged into this entry (same vaccine repeated) (#289)
+	LastActivity    string   `json:"lastActivity,omitempty"` // latest administration/recorded date; sort key
 	Manufacturer    string   `json:"manufacturer,omitempty"`
 	LotNumber       string   `json:"lotNumber,omitempty"`
 	ExpirationDate  string   `json:"expirationDate,omitempty"`
@@ -79,7 +81,7 @@ type ClassifiedImmunization struct {
 //
 // resolver and sourceLabel are optional (pass nil for both to skip provenance in pure unit tests).
 func Classify(resources []InputResource, now time.Time, resolver *provenance.ResourceSet, sourceLabel func(sourceID string) string) []ClassifiedImmunization {
-	out := make([]ClassifiedImmunization, 0, len(resources))
+	perRecord := make([]ClassifiedImmunization, 0, len(resources))
 	for _, res := range resources {
 		var raw rawImmunization
 		if err := json.Unmarshal(res.Raw, &raw); err != nil {
@@ -101,6 +103,8 @@ func Classify(resources []InputResource, now time.Time, resolver *provenance.Res
 			StatusReason:       conceptText(raw.StatusReason),
 			Occurrence:         raw.occurrence(),
 			Recorded:           raw.Recorded,
+			Doses:              1,
+			LastActivity:       firstNonEmpty(raw.occurrence(), raw.Recorded),
 			Manufacturer:       raw.manufacturerName(),
 			LotNumber:          raw.LotNumber,
 			ExpirationDate:     raw.ExpirationDate,
@@ -130,9 +134,57 @@ func Classify(resources []InputResource, now time.Time, resolver *provenance.Res
 			ci.Provenance = &prov
 		}
 
-		out = append(out, ci)
+		perRecord = append(perRecord, ci)
+	}
+	return dedupeImmunizations(perRecord)
+}
+
+// dedupeImmunizations collapses administrations of the SAME vaccine (by standard code, else normalized
+// title) into ONE entry with a dose count — a vaccine given/recorded across encounters should appear
+// once, not repeated per encounter (#289). Immunizations are point-in-time, so there is no date range:
+// the representative (and its Occurrence date) is the most-recent administration; Doses = count. Group
+// order follows first appearance (stable).
+func dedupeImmunizations(in []ClassifiedImmunization) []ClassifiedImmunization {
+	order := make([]string, 0, len(in))
+	groups := make(map[string][]ClassifiedImmunization)
+	for _, c := range in {
+		k := immunizationDedupKey(c)
+		if _, ok := groups[k]; !ok {
+			order = append(order, k)
+		}
+		groups[k] = append(groups[k], c)
+	}
+	out := make([]ClassifiedImmunization, 0, len(order))
+	for _, k := range order {
+		g := groups[k]
+		rep := g[0]
+		for _, c := range g[1:] {
+			if firstNonEmpty(c.LastActivity) > firstNonEmpty(rep.LastActivity) {
+				rep = c // most-recent administration drives the displayed date/status
+			}
+		}
+		rep.Doses = len(g)
+		out = append(out, rep)
 	}
 	return out
+}
+
+func immunizationDedupKey(c ClassifiedImmunization) string {
+	for _, cd := range c.StandardCodings {
+		if cd.Code != "" {
+			return "code:" + strings.ToLower(cd.System) + "|" + strings.ToLower(cd.Code)
+		}
+	}
+	return "title:" + strings.ToLower(strings.TrimSpace(c.Title))
+}
+
+func firstNonEmpty(vals ...string) string {
+	for _, v := range vals {
+		if strings.TrimSpace(v) != "" {
+			return v
+		}
+	}
+	return ""
 }
 
 func stateLabel(status string) string {
