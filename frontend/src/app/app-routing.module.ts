@@ -15,6 +15,8 @@ import { DesktopCallbackComponent } from './pages/desktop-callback/desktop-callb
 import { ExploreComponent } from './pages/explore/explore.component';
 import { MedicalHistoryComponent } from './pages/medical-history/medical-history.component';
 import { CurrentMedicationsComponent } from './pages/current-medications/current-medications.component';
+import { AllergiesComponent } from './pages/allergies/allergies.component';
+import { ImmunizationsComponent } from './pages/immunizations/immunizations.component';
 import { MedicalConcernsComponent } from './pages/medical-concerns/medical-concerns.component';
 import { AccountProfileComponent } from './pages/account-profile/account-profile.component';
 import { ProceduresComponent } from './pages/procedures/procedures.component';
@@ -70,6 +72,8 @@ const routes: Routes = [
   { path: 'medical-history', component: MedicalHistoryComponent, canActivate: [ IsAuthenticatedAuthGuard ] },
   { path: 'account-profile', component: AccountProfileComponent, canActivate: [ IsAuthenticatedAuthGuard ] },
   { path: 'medications', component: CurrentMedicationsComponent, canActivate: [ IsAuthenticatedAuthGuard ] },
+  { path: 'allergies', component: AllergiesComponent, canActivate: [ IsAuthenticatedAuthGuard ] },
+  { path: 'immunizations', component: ImmunizationsComponent, canActivate: [ IsAuthenticatedAuthGuard ] },
   { path: 'medical-concerns', component: MedicalConcernsComponent, canActivate: [ IsAuthenticatedAuthGuard ] },
   { path: 'procedures', component: ProceduresComponent, canActivate: [ IsAuthenticatedAuthGuard ] },
   { path: 'admin', component: AdminDashboardComponent, canActivate: [ IsAuthenticatedAuthGuard, IsAdminAuthGuard ] },

@@ -115,42 +115,7 @@
         </div>
 
 
-        <!-- Immunizations & Allergies (#289: tile destination; cards expand inline, not hover-only) -->
-        <div class="row mt-5">
-          <div class="col-6">
-            <h2 class="tx-indigo">Immunizations</h2>
-
-            <p *ngIf="immunizations.length === 0" class="tx-gray-500">No immunizations on record.</p>
-            <div class="mg-b-15" *ngFor="let immunization of immunizations; let i = index">
-              <strong class="cursor-pointer tx-indigo" (click)="toggle('imm-' + i)" role="button" [attr.aria-expanded]="isExpanded('imm-' + i)">
-                <i class="fa-solid mg-r-5" [ngClass]="isExpanded('imm-' + i) ? 'fa-chevron-down' : 'fa-chevron-right'"></i>{{ immunization.title }}
-              </strong><br/>
-              <span class="tx-gray-600">{{ immunization.sort_date | date }}<span *ngIf="immunization.location"> · {{ immunization.location }}</span></span>
-              <div *ngIf="isExpanded('imm-' + i)" class="mg-t-10">
-                <fhir-card [displayModel]="immunization"></fhir-card>
-              </div>
-            </div>
-          </div>
-          <div class="col-6">
-            <h2 class="tx-indigo">Allergies</h2>
-
-            <!-- #290: "no known allergy" negations are excluded from the list; show one reassuring line. -->
-            <p *ngIf="allergyIntolerances.length === 0 && noKnownAllergies" class="tx-teal">
-              <i class="fa-solid fa-circle-check mg-r-5"></i>No known allergies on record.
-            </p>
-            <p *ngIf="allergyIntolerances.length === 0 && !noKnownAllergies" class="tx-gray-500">No allergies on record.</p>
-
-            <div class="mg-b-15" *ngFor="let allergy of allergyIntolerances; let i = index">
-              <strong class="cursor-pointer tx-indigo" (click)="toggle('alg-' + i)" role="button" [attr.aria-expanded]="isExpanded('alg-' + i)">
-                <i class="fa-solid mg-r-5" [ngClass]="isExpanded('alg-' + i) ? 'fa-chevron-down' : 'fa-chevron-right'"></i>{{ allergy.title }}
-              </strong><br/>
-              <span class="tx-gray-600">{{ allergy.recorded_date }}</span>
-              <div *ngIf="isExpanded('alg-' + i)" class="mg-t-10">
-                <fhir-card [displayModel]="allergy"></fhir-card>
-              </div>
-            </div>
-          </div>
-        </div>
+        <!-- Allergies and Immunizations now have dedicated pages (/allergies, /immunizations) — #289. -->
 
         <!-- Personal & social information (SDOH / health-concern) -->
         <div class="row mt-5" *ngIf="profileItems.length > 0">

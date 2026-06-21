@@ -33,6 +33,10 @@ export interface ClassifiedAllergy {
   reactions?: ClassifiedAllergyReaction[];
   onset?: string;
   recorded?: string;
+  start?: string;         // earliest stated date (deduped across encounters)
+  end?: string;           // latest stated date (deduped)
+  lastActivity?: string;  // = end; sort key
+  occurrences?: number;   // source records merged into this entry
   note?: string;
   standardCodings?: ClassifiedAllergyCoding[];
   provenance?: Provenance;

@@ -1,0 +1,56 @@
+<div class="az-content-body">
+  <div class="d-flex justify-content-between align-items-center mg-b-20">
+    <div>
+      <h4 class="mg-b-5">Immunizations</h4>
+      <p class="tx-gray-500 mg-b-0">From your records, as of your last import. One entry per vaccine — repeat doses are combined with a dose count.</p>
+    </div>
+  </div>
+
+  <app-loading-spinner *ngIf="loading" loadingTitle="Loading your immunizations..."></app-loading-spinner>
+
+  <div *ngIf="!loading && errored" class="alert alert-danger">Could not load your immunizations. Please try again.</div>
+
+  <div *ngIf="!loading && !errored && filtered.length === 0" class="alert alert-info">
+    No immunizations found in your records.
+  </div>
+
+  <div class="table-responsive" *ngIf="!loading && !errored && filtered.length > 0">
+    <table class="table table-hover">
+      <thead>
+        <tr>
+          <th style="width:1%"></th>
+          <th class="sortable" (click)="sortBy('title')">Vaccine <i class="fas" [ngClass]="sortColumn==='title' ? (sortDirection==='asc' ? 'fa-caret-up' : 'fa-caret-down') : ''"></i></th>
+          <th>Doses</th>
+          <th class="sortable" (click)="sortBy('state')">Status <i class="fas" [ngClass]="sortColumn==='state' ? (sortDirection==='asc' ? 'fa-caret-up' : 'fa-caret-down') : ''"></i></th>
+          <th class="sortable" (click)="sortBy('lastActivity')">Last administered <i class="fas" [ngClass]="sortColumn==='lastActivity' ? (sortDirection==='asc' ? 'fa-caret-up' : 'fa-caret-down') : ''"></i></th>
+        </tr>
+      </thead>
+      <tbody>
+        <ng-container *ngFor="let im of filtered">
+          <tr class="clickable-row" (click)="toggleExpanded(key(im))">
+            <td><i class="fas" [ngClass]="expanded[key(im)] ? 'fa-chevron-down' : 'fa-chevron-right'"></i></td>
+            <td>
+              <strong>{{ im.title }}</strong>
+              <span *ngIf="im.source === 'Reported'" class="badge badge-info mg-l-5" title="Reported by a secondary source (registry/recall), not a primary provider record.">Reported</span>
+            </td>
+            <td><span *ngIf="im.doses">{{ im.doses }}</span><span *ngIf="!im.doses" class="tx-gray-400">—</span></td>
+            <td><span class="badge" [ngClass]="stateBadgeClass(im.state)">{{ im.state }}</span></td>
+            <td><span *ngIf="im.occurrence; else noDate">{{ im.occurrence | date }}</span><ng-template #noDate><span class="tx-gray-400">—</span></ng-template></td>
+          </tr>
+          <tr *ngIf="expanded[key(im)]">
+            <td></td>
+            <td colspan="4">
+              <div *ngIf="im.source" class="mg-b-15"><strong class="tx-12 tx-uppercase tx-gray-500">Source</strong><div class="mg-t-5">{{ im.source }}<span *ngIf="im.reportOrigin"> — {{ im.reportOrigin }}</span></div></div>
+              <div *ngIf="im.statusReason" class="mg-b-15"><strong class="tx-12 tx-uppercase tx-gray-500">Status reason</strong><div class="mg-t-5">{{ im.statusReason }}</div></div>
+              <div class="mg-b-15"><strong class="tx-12 tx-uppercase tx-gray-500">Manufacturer</strong><div class="mg-t-5"><span *ngIf="im.manufacturer; else noMfr">{{ im.manufacturer }}</span><ng-template #noMfr><app-missing-data field="Manufacturer"></app-missing-data></ng-template></div></div>
+              <div *ngIf="im.lotNumber" class="mg-b-15"><strong class="tx-12 tx-uppercase tx-gray-500">Lot number</strong><div class="mg-t-5">{{ im.lotNumber }}</div></div>
+              <div *ngIf="im.provenance" class="mg-b-15"><strong class="tx-12 tx-uppercase tx-gray-500">Administered/recorded by</strong><div class="mg-t-5">{{ im.provenance.display }}</div></div>
+              <div *ngIf="im.note" class="mg-b-15"><strong class="tx-12 tx-uppercase tx-gray-500">Note</strong><div class="mg-t-5">{{ im.note }}</div></div>
+              <div *ngIf="im.doses > 1" class="tx-gray-500 tx-12">Combined from {{ im.doses }} records across your visits.</div>
+            </td>
+          </tr>
+        </ng-container>
+      </tbody>
+    </table>
+  </div>
+</div>

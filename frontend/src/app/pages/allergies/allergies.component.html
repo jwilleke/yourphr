@@ -1,0 +1,78 @@
+<div class="az-content-body">
+  <div class="d-flex justify-content-between align-items-center mg-b-20">
+    <div>
+      <h4 class="mg-b-5">Allergies &amp; Intolerances</h4>
+      <p class="tx-gray-500 mg-b-0">From your records, as of your last import. One entry per substance — combined across visits. "No known allergy" notes are shown as such, not counted as allergies.</p>
+    </div>
+    <div class="btn-group" role="group" aria-label="Filter">
+      <button type="button" class="btn btn-sm" [class.btn-primary]="showActiveOnly" [class.btn-outline-primary]="!showActiveOnly" (click)="showActiveOnly || toggleActiveOnly()">Active only</button>
+      <button type="button" class="btn btn-sm" [class.btn-primary]="!showActiveOnly" [class.btn-outline-primary]="showActiveOnly" (click)="!showActiveOnly || toggleActiveOnly()">All</button>
+    </div>
+  </div>
+
+  <app-loading-spinner *ngIf="loading" loadingTitle="Loading your allergies..."></app-loading-spinner>
+
+  <div *ngIf="!loading && errored" class="alert alert-danger">Could not load your allergies. Please try again.</div>
+
+  <div *ngIf="!loading && !errored && filtered.length === 0" class="alert alert-info">
+    No allergies found in your records{{ showActiveOnly ? ' that are currently active' : '' }}.
+  </div>
+
+  <div class="table-responsive" *ngIf="!loading && !errored && filtered.length > 0">
+    <table class="table table-hover">
+      <thead>
+        <tr>
+          <th style="width:1%"></th>
+          <th class="sortable" (click)="sortBy('title')">Allergy <i class="fas" [ngClass]="sortColumn==='title' ? (sortDirection==='asc' ? 'fa-caret-up' : 'fa-caret-down') : ''"></i></th>
+          <th>Reaction</th>
+          <th>Criticality</th>
+          <th class="sortable" (click)="sortBy('state')">Status <i class="fas" [ngClass]="sortColumn==='state' ? (sortDirection==='asc' ? 'fa-caret-up' : 'fa-caret-down') : ''"></i></th>
+          <th class="sortable" (click)="sortBy('lastActivity')">Recorded <i class="fas" [ngClass]="sortColumn==='lastActivity' ? (sortDirection==='asc' ? 'fa-caret-up' : 'fa-caret-down') : ''"></i></th>
+        </tr>
+      </thead>
+      <tbody>
+        <ng-container *ngFor="let a of filtered">
+          <tr class="clickable-row" (click)="toggleExpanded(key(a))">
+            <td><i class="fas" [ngClass]="expanded[key(a)] ? 'fa-chevron-down' : 'fa-chevron-right'"></i></td>
+            <td>
+              <strong>{{ a.title }}</strong>
+              <span *ngIf="a.noKnown" class="badge badge-success mg-l-5" title="A 'no known allergy' note — the record states the absence of an allergy.">No known</span>
+              <span *ngIf="a.selfReported" class="badge badge-info mg-l-5" title="You reported this; it was not stated by a clinician in your records.">Self-reported</span>
+              <span *ngIf="a.occurrences > 1" class="tx-gray-400 tx-12 mg-l-5">×{{ a.occurrences }}</span>
+            </td>
+            <td><span *ngIf="reactionSummary(a) as rs; else noRx">{{ rs }}</span><ng-template #noRx><span class="tx-gray-400">—</span></ng-template></td>
+            <td><span *ngIf="a.criticality; else noCrit" class="text-capitalize">{{ a.criticality }}</span><ng-template #noCrit><span class="tx-gray-400">—</span></ng-template></td>
+            <td><span class="badge" [ngClass]="stateBadgeClass(a.state)">{{ a.noKnown ? 'No known' : a.state }}</span></td>
+            <td>
+              <ng-container *ngIf="dateRange(a) as d">
+                <span *ngIf="d.start; else noDate">{{ d.start | date }}<span *ngIf="d.end"> – {{ d.end | date }}</span></span>
+                <ng-template #noDate><span class="tx-gray-400">—</span></ng-template>
+              </ng-container>
+            </td>
+          </tr>
+          <tr *ngIf="expanded[key(a)]">
+            <td></td>
+            <td colspan="5">
+              <div *ngIf="a.type" class="mg-b-15"><strong class="tx-12 tx-uppercase tx-gray-500">Type</strong><div class="mg-t-5 text-capitalize">{{ a.type }}</div></div>
+              <div *ngIf="a.categories?.length" class="mg-b-15"><strong class="tx-12 tx-uppercase tx-gray-500">Category</strong><div class="mg-t-5 text-capitalize">{{ a.categories.join(', ') }}</div></div>
+              <div *ngIf="a.verification" class="mg-b-15"><strong class="tx-12 tx-uppercase tx-gray-500">Verification</strong><div class="mg-t-5">{{ a.verification }}</div></div>
+
+              <div *ngIf="a.reactions?.length" class="mg-b-15">
+                <strong class="tx-12 tx-uppercase tx-gray-500">Reactions</strong>
+                <ul class="mg-t-5 mg-b-0">
+                  <li *ngFor="let r of a.reactions">
+                    {{ (r.manifestations || []).join(', ') }}<span *ngIf="r.severity"> ({{ r.severity }})</span><span *ngIf="r.description">: {{ r.description }}</span>
+                  </li>
+                </ul>
+              </div>
+
+              <div *ngIf="a.provenance" class="mg-b-15"><strong class="tx-12 tx-uppercase tx-gray-500">Reported by</strong><div class="mg-t-5">{{ a.provenance.display }}</div></div>
+              <div *ngIf="a.note" class="mg-b-15"><strong class="tx-12 tx-uppercase tx-gray-500">Note</strong><div class="mg-t-5">{{ a.note }}</div></div>
+              <div *ngIf="a.occurrences > 1" class="tx-gray-500 tx-12">Combined from {{ a.occurrences }} records across your visits.</div>
+            </td>
+          </tr>
+        </ng-container>
+      </tbody>
+    </table>
+  </div>
+</div>
