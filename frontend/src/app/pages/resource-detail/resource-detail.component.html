@@ -21,7 +21,7 @@
         </div>
 
         <ng-container *ngIf="resource && debugMode">
-          <button type="button" class="btn btn-sm btn-outline-indigo mg-b-10" (click)="copyResourceRaw()">
+          <button type="button" class="btn btn-sm btn-outline-secondary mg-b-10" (click)="copyResourceRaw()">
             <i class="fas fa-copy mg-r-5"></i>{{ copied ? 'Copied!' : 'Copy to Clipboard' }}
           </button>
           <pre><code  [highlight]="resource.resource_raw | json"></code></pre>

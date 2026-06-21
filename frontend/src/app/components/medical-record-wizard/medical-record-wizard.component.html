@@ -38,7 +38,7 @@
             <ng-template #addEncounter>
               <div class="row pt-2">
                 <div class="col-lg-4 col-md-4">
-                  <button type="button" (click)="openEncounterModal()" class="btn btn-outline-indigo w-100">Find/Create Encounter</button>
+                  <button type="button" (click)="openEncounterModal()" class="btn btn-outline-secondary w-100">Find/Create Encounter</button>
                 </div>
               </div>
             </ng-template>
@@ -129,7 +129,7 @@
                     <p class="mg-b-10">Attachments</p>
                   </div><!-- col -->
                   <div class="col-1">
-                    <button type="button" (click)="openAttachmentModal(medicationGroup, 'attachments')" class="btn btn-indigo btn-with-icon">
+                    <button type="button" (click)="openAttachmentModal(medicationGroup, 'attachments')" class="btn btn-az-primary btn-with-icon">
                       <i class="fas fa-paperclip"></i> Add
                     </button>
                   </div>
@@ -143,7 +143,7 @@
             </ng-container>
             <div class="row pt-2">
               <div class="col-lg-4 col-md-3">
-                <button type="button" (click)="addMedication()" class="btn btn-outline-indigo w-100">Add Medication</button>
+                <button type="button" (click)="addMedication()" class="btn btn-outline-secondary w-100">Add Medication</button>
               </div>
             </div>
 
@@ -231,7 +231,7 @@
                   </div><!-- col -->
 
                   <div class="col-1">
-                    <button type="button" (click)="openAttachmentModal(procedureGroup, 'attachments')" class="btn btn-indigo btn-with-icon">
+                    <button type="button" (click)="openAttachmentModal(procedureGroup, 'attachments')" class="btn btn-az-primary btn-with-icon">
                       <i class="fas fa-paperclip"></i> Add
                     </button>
                   </div>
@@ -247,7 +247,7 @@
 
             <div class="row pt-2">
               <div class="col-lg-4 col-md-3">
-                <button type="button" (click)="addProcedure()" class="btn btn-outline-indigo w-100">Add Surgery or Implant</button>
+                <button type="button" (click)="addProcedure()" class="btn btn-outline-secondary w-100">Add Surgery or Implant</button>
               </div>
             </div>
 
@@ -288,7 +288,7 @@
 
             <div class="row pt-2">
               <div class="col-lg-4 col-md-4">
-                <button type="button" (click)="openPractitionerModal()" class="btn btn-outline-indigo w-100">Add Practitioner</button>
+                <button type="button" (click)="openPractitionerModal()" class="btn btn-outline-secondary w-100">Add Practitioner</button>
               </div>
             </div>
 
@@ -326,7 +326,7 @@
 
             <div class="row pt-2">
               <div class="col-lg-4 col-md-4">
-                <button type="button" (click)="openOrganizationModal()" class="btn btn-outline-indigo w-100">Add Organization</button>
+                <button type="button" (click)="openOrganizationModal()" class="btn btn-outline-secondary w-100">Add Organization</button>
               </div>
             </div>
           </ng-template>
@@ -366,7 +366,7 @@
 
             <div class="row pt-2">
               <div class="col-lg-4 col-md-3">
-                <button type="button" (click)="openLabResultsModal()" class="btn btn-outline-indigo w-100">Create Lab Result</button>
+                <button type="button" (click)="openLabResultsModal()" class="btn btn-outline-secondary w-100">Create Lab Result</button>
               </div>
             </div>
 
@@ -416,7 +416,7 @@
 
             <div class="row pt-2">
               <div class="col-lg-4 col-md-3">
-                <button type="button" (click)="openAttachmentModal()" class="btn btn-outline-indigo w-100">Create Attachment/Document</button>
+                <button type="button" (click)="openAttachmentModal()" class="btn btn-outline-secondary w-100">Create Attachment/Document</button>
               </div>
             </div>
 
@@ -449,16 +449,16 @@
   </div>
   <div class="modal-footer">
     <button [ngClass]="{
-    'btn-outline-dark': !debugMode,
+    'btn-outline-secondary': !debugMode,
     'text-dark': !debugMode,
     'btn-dark':debugMode,
     'text-white':debugMode
      }" type="button" class="btn float-start" (click)="debugMode = !debugMode">
       <i class="fas fa-bug"></i>
     </button>
-    <button type="submit" class="btn btn-indigo" [disabled]="submitWizardLoading">
+    <button type="submit" class="btn btn-az-primary" [disabled]="submitWizardLoading">
       Save
     </button>
-    <button type="button" class="btn btn-outline-dark" (click)="activeModal.close('Close click')">Close</button>
+    <button type="button" class="btn btn-outline-secondary" (click)="activeModal.close('Close click')">Close</button>
   </div>
 </form>

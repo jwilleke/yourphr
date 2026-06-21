@@ -45,7 +45,7 @@
                           <span *ngIf="backgroundJob.done_time" [ngbTooltip]="backgroundJob.done_time | date:'yyyy-MM-dd HH:mm'">{{backgroundJob.done_time | timeAgo}}</span>
                         </td>
                         <td>
-                          <button (click)="openModal(content, backgroundJob)" class="btn btn-outline-indigo btn-with-icon btn-rounded"><i class="fa fa-info-circle"></i> Details</button>
+                          <button (click)="openModal(content, backgroundJob)" class="btn btn-outline-secondary btn-with-icon btn-rounded"><i class="fa fa-info-circle"></i> Details</button>
                         </td>
                       </tr>
 
@@ -88,6 +88,6 @@
     <pre><code  [highlight]="selectedBackgroundJob.data | json"></code></pre>
   </div>
   <div class="modal-footer">
-    <button type="button" class="btn btn-light" (click)="modal.close('Close click')">Close</button>
+    <button type="button" class="btn btn-outline-secondary" (click)="modal.close('Close click')">Close</button>
   </div>
 </ng-template>

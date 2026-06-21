@@ -23,7 +23,7 @@
 
         <!-- Create Button Column -->
         <div class="col-md-2 d-flex justify-content-end">
-          <button class="btn btn-purple" (click)="navigateToAddPractitioner()">
+          <button class="btn btn-az-primary" (click)="navigateToAddPractitioner()">
             <i class="fas fa-plus me-2"></i>
             <span class="d-none d-lg-inline"> New Practitioner</span>
             <span class="d-lg-none">New Practitioner</span>
@@ -327,11 +327,11 @@
             <p class="text-muted">
               {{ searchTerm ? 'Try adjusting your search terms.' : 'Get started by adding your first practitioner.' }}
             </p>
-            <button *ngIf="searchTerm" class="btn btn-outline-dark" (click)="clearSearch()">
+            <button *ngIf="searchTerm" class="btn btn-outline-secondary" (click)="clearSearch()">
               <i class="fas fa-times me-2"></i>
               Clear Search
             </button>
-            <button class="btn btn-purple ms-2" (click)="navigateToAddPractitioner()">
+            <button class="btn btn-az-primary ms-2" (click)="navigateToAddPractitioner()">
               <i class="fas fa-plus me-2"></i>
               Add Practitioner
             </button>

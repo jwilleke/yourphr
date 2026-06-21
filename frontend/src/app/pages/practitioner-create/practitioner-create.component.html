@@ -244,7 +244,7 @@
                     type="button"
                     class="btn btn-sm"
                     [ngClass]="{
-                      'btn-outline-dark': !debugMode,
+                      'btn-outline-secondary': !debugMode,
                       'btn-dark': debugMode
                     }"
                     (click)="debugMode = !debugMode"
@@ -265,7 +265,7 @@
                     </button>
                     <button 
                       type="submit"
-                      class="btn btn-purple"
+                      class="btn btn-az-primary"
                       [disabled]="!submitEnabled || isSubmitting"
                     >
                       <span *ngIf="isSubmitting" class="spinner-border spinner-border-sm me-2"></span>

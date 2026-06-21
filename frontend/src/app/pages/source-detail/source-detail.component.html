@@ -17,7 +17,7 @@
               <div class="patient-row row">
                 <div class="col-7 patient-name"><h3 class="pull-left text-primary">{{getPatientName()}}</h3></div>
                 <div class="col-5">
-                  <a [routerLink]="['/explore', selectedSource?.id, 'resource', selectedPatient?.source_resource_id]" class="btn btn-indigo btn-icon float-end">
+                  <a [routerLink]="['/explore', selectedSource?.id, 'resource', selectedPatient?.source_resource_id]" class="btn btn-az-primary btn-icon float-end">
                     <i class="fas fa-info-circle"></i>
                   </a>
                 </div>
@@ -79,7 +79,7 @@
         <h1>{{selectedSource?.endpoint_id}}</h1>
         <h2>No resources found for this Healthcare provider</h2>
         <h6>You may need to re-authenticate to this source, or wait for the resources to sync.</h6>
-        <a routerLink="/sources" class="btn btn-outline-indigo">Sources</a>
+        <a routerLink="/sources" class="btn btn-outline-secondary">Sources</a>
       </div>
     </div>
   </ng-template>

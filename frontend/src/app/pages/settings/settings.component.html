@@ -125,8 +125,8 @@
     </div>
   </div>
   <div class="modal-footer">
-    <button *ngIf="step === 'askDetails'" type="button" class="btn btn-secondary" (click)="modal.dismiss('cancel')">Cancel</button>
+    <button *ngIf="step === 'askDetails'" type="button" class="btn btn-outline-secondary" (click)="modal.dismiss('cancel')">Cancel</button>
     <button *ngIf="step === 'askDetails'" type="button" class="btn btn-az-primary" (click)="connectDevice()" [disabled]="isLoading">Connect</button>
-    <button *ngIf="step === 'showQR'" type="button" class="btn btn-secondary" (click)="modal.close()">Close</button>
+    <button *ngIf="step === 'showQR'" type="button" class="btn btn-outline-secondary" (click)="modal.close()">Close</button>
   </div>
 </ng-template>

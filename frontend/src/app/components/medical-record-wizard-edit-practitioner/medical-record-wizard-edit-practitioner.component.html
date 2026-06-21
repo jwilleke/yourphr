@@ -70,7 +70,7 @@
 </div>
 <div class="modal-footer">
   <button [ngClass]="{
-    'btn-outline-dark': !debugMode,
+    'btn-outline-secondary': !debugMode,
     'text-dark': !debugMode,
     'btn-dark':debugMode,
     'text-white':debugMode
@@ -80,7 +80,7 @@
   <button *ngIf="!loading; else spinnerButton" type="button" [class.disabled]="!submitEnabled"
     class="btn btn-az-primary" (click)="submit()">Edit Practitioner</button>
   <ng-template #spinnerButton>
-    <button class="btn btn-primary" type="button" disabled>
+    <button class="btn btn-az-primary" type="button" disabled>
       <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
       <span class="visually-hidden">Loading...</span>
     </button>

@@ -50,7 +50,7 @@
                 <label for="pw-confirm">Confirm new password</label>
                 <input id="pw-confirm" name="pw-confirm" type="password" class="form-control" [(ngModel)]="pw.confirm" autocomplete="new-password" required>
               </div>
-              <button type="submit" class="btn btn-primary btn-sm" [disabled]="pwSubmitting">
+              <button type="submit" class="btn btn-az-primary btn-sm" [disabled]="pwSubmitting">
                 <span *ngIf="pwSubmitting" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
                 Change password
               </button>
@@ -105,6 +105,6 @@
       <span *ngIf="loading.delete" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
       Delete
     </button>
-    <button (click)="modal.dismiss('Close click')" type="button" class="btn btn-outline-light">Close</button>
+    <button (click)="modal.dismiss('Close click')" type="button" class="btn btn-outline-secondary">Close</button>
   </div>
 </ng-template>

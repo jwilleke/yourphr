@@ -45,7 +45,7 @@
           <p class="tx-gray-500 tx-12 mg-t-0">Streams a compressed backup to your browser — your Save dialog picks the location. Stay on this page until it finishes.</p>
 
           <!-- Server-side: fire-and-forget to the configured folder; you can leave the page -->
-          <button type="button" class="btn btn-outline-indigo mg-t-10" (click)="backup()" [disabled]="backingUp">
+          <button type="button" class="btn btn-outline-secondary mg-t-10" (click)="backup()" [disabled]="backingUp">
             <span *ngIf="backingUp" class="spinner-border spinner-border-sm mg-r-5"></span>{{ backingUp ? 'Backing up…' : 'Back up to server now' }}
           </button>
           <p class="tx-gray-500 tx-12 mg-t-5">Writes to the destination folder below; you can leave the page. Gzip-compressed; filename <code>YYYY-MM-DDTHH-MM-SSZ-yourphr-backup.db.gz</code>.</p>

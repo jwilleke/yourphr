@@ -77,8 +77,8 @@
     </div>
   </div>
   <div class="modal-footer">
-    <button [disabled]="!supportRequestForm.form.valid || loading" type="submit" class="btn btn-indigo">Submit</button>
-    <button (click)="activeModal.dismiss('cancel')" type="button" class="btn btn-outline-light">Cancel</button>
+    <button [disabled]="!supportRequestForm.form.valid || loading" type="submit" class="btn btn-az-primary">Submit</button>
+    <button (click)="activeModal.dismiss('cancel')" type="button" class="btn btn-outline-secondary">Cancel</button>
   </div>
 
 </form>
@@ -89,6 +89,6 @@
     <i class="far fa-check-square tx-100 tx-success lh-1 mg-t-20 d-inline-block"></i>
     <h4 class="tx-success mg-b-20">Success!</h4>
     <p class="mg-b-20 mg-x-20">Your request has been recorded. <br/>Thanks!</p>
-    <button type="button" (click)="activeModal.close('success')" class="btn btn-success pd-x-25">Close</button>
+    <button type="button" (click)="activeModal.close('success')" class="btn btn-az-primary pd-x-25">Close</button>
   </div>
 </ng-template>

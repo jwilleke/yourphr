@@ -10,7 +10,7 @@
             <ng-container *ngIf="lastUpdated"> · last import {{lastUpdated | date:'MMM d, yyyy'}}</ng-container>
           </p>
         </div>
-        <a [routerLink]="'/sources'" class="btn btn-primary"><i class="fa-solid fa-plus" aria-hidden="true"></i> Add records</a>
+        <a [routerLink]="'/sources'" class="btn btn-az-primary"><i class="fa-solid fa-plus" aria-hidden="true"></i> Add records</a>
       </div>
 
       <div class="dashboard-search">
@@ -46,7 +46,7 @@
           <button *ngIf="customizing && (hasCustomOrder || hasCustomColors)" type="button" class="btn btn-sm btn-outline-secondary" (click)="resetTileOrder()">
             <i class="fa-solid fa-rotate-left" aria-hidden="true"></i> Reset to default
           </button>
-          <button type="button" class="btn btn-sm" [class.btn-outline-primary]="!customizing" [class.btn-primary]="customizing" (click)="toggleCustomizing()">
+          <button type="button" class="btn btn-sm" [class.btn-outline-primary]="!customizing" [class.btn-az-primary]="customizing" (click)="toggleCustomizing()">
             <i class="fa-solid" [class.fa-up-down-left-right]="!customizing" [class.fa-check]="customizing" aria-hidden="true"></i>
             {{customizing ? 'Done' : 'Customize'}}
           </button>
