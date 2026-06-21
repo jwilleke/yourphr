@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.7.0](https://github.com/jwilleke/yourphr/compare/v1.6.1...v1.7.0) (2026-06-21)
+
+### Features
+
+- **allergies:** dedicated `/allergies` page (like `/medications`) — a **deduped** list (one entry per substance, not repeated per encounter), titled by the record's text/display, with a first-seen → last-seen date range, reactions, criticality and state; "No known allergy" notes shown as their own entries, never counted as allergies ([#290](https://github.com/jwilleke/yourphr/issues/290))
+- **immunizations:** dedicated `/immunizations` page — deduped by vaccine with a **dose count** and last-administered date ([#289](https://github.com/jwilleke/yourphr/issues/289))
+- **dashboard:** Allergies and Immunizations tiles route to the new dedicated pages; `/patient-profile` is now demographics + personal/social only ([#289](https://github.com/jwilleke/yourphr/issues/289))
+
 ## [1.6.1](https://github.com/jwilleke/yourphr/compare/v1.6.0...v1.6.1) (2026-06-21)
 
 ### Bug Fixes
