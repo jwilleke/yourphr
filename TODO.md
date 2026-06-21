@@ -1,5 +1,20 @@
 # TODO
 
+<!-- RESUME:START -->
+## ▶ Resume here — 2026-06-21
+
+- Last worked on: shipped **v1.11.0** (medical-history group-by **Type** + rich /explore detail; #366 UI consistency — blue links + 3-role buttons; #365 security hardening). Then loaded **5 patient accounts into local dev** for QA.
+- Branch / state: `main`, clean, pushed (up to date).
+- Running / in-flight: **local dev servers from this session** — backend `:9090` + `ng serve :4200` (orphaned on VS Code shutdown; restart with `make serve-backend` + `cd frontend && npx ng serve -c dev`). Pre-existing Dependabot PR `mj-infra-flux#131` (npm bump, not mine).
+- Dev test data: users `clopez` (Epic/Camila), `jdoe`/`aheller`/`bblick` (Synthea, encounters), `nsmart` (Cerner — docs/allergies, no encounters). All password `Test1234!` (admin `test` same).
+- Parked / half-done: none (tree clean).
+- Next steps:
+  - Verify **#366** (links/buttons) on the deployed v1.11.0 instance → close it.
+  - Continue **#262** display-legibility QA using the new dev patients: Epic `class`/`type[0]` rendering (HOV), dedup duplicate conditions, fix "N records across M conditions" count. (Was mid data-exploration — encounters: all cryptic Epic classes, 0 reasonCode.)
+  - #351 group-by shipped; **Filters deferred**. #354 fhir-test-cases = optional P2 (Apache-2.0, modest ROI).
+- Blockers / significant notes: none.
+<!-- RESUME:END -->
+
 > Generated from live GitHub state — ranked by priority label. The `▶ Resume here` pointer is written by `/wrap`.
 
 ## 🔴 P0 — Security & Critical
