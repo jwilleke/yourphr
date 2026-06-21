@@ -22,4 +22,12 @@ From a clean `main` with everything pushed and tests green:
 4. Tag + push: `git tag -a vX.Y.Z -m "vX.Y.Z" && git push origin main --tags`.
 5. GitHub Release: `gh release create vX.Y.Z --title "vX.Y.Z" --generate-notes --notes-start-tag v<previous>`.
 
-Pushing to `main` builds + pushes `ghcr.io/jwilleke/yourphr`; Flux then deploys. Publishing the Release fires `ci.yaml`'s `release: [published]` (the release is created with a real user token via `gh`, so it triggers CI normally).
+## Deployment is release-gated
+
+The live instance deploys **strictly off release tags** — not off `main`:
+
+- Pushing the `vX.Y.Z` tag triggers `docker-jwilleke.yaml`, which builds + pushes `ghcr.io/jwilleke/yourphr:X.Y.Z` (+ `:X.Y`, `:latest`).
+- Flux's `ImagePolicy` (in `jwilleke/mj-infra-flux`, `apps/production/image-automation/yourphr-policy.yaml`) filters **semver** tags and bumps the deployment to the newest release. So the live instance updates **only when you cut a release**.
+- Pushes to `main` are CI-tested but produce **no image and no deploy**. To ship anything to the live instance — including a hotfix — cut a release (a `patch` release for hotfixes).
+
+Publishing the GitHub Release also fires `ci.yaml`'s `release: [published]` (the release is created with a real user token via `gh`, so it triggers CI normally).

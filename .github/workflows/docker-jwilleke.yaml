@@ -1,21 +1,17 @@
 name: Docker (YourPHR)
 # Replaces upstream docker.yaml which depends on depot.dev (paid service).
 # Builds linux/amd64 only — sufficient for deby (x86_64 k3s node).
-# Pushes to ghcr.io/<owner>/<repo>:main on every push to main. The image name
-# follows ${{ github.repository }}, so it becomes ghcr.io/jwilleke/yourphr once
-# the repo is renamed (see issue #3). Update the Flux ImageRepository to match.
+# Builds + publishes a DEPLOYABLE image ONLY on a release tag (vX.Y.Z) — tagged :X.Y.Z / :X.Y /
+# :latest. Pushes to main are CI-tested but NOT built/published here: the live instance deploys
+# strictly off semver tags (Flux ImagePolicy in jwilleke/mj-infra-flux/.../yourphr-policy.yaml).
+# So shipping = cutting a release (on any minor/major or on request — see docs/releasing.md).
 
 on:
   push:
-    branches: [main]
     tags: ['v*.*.*']
-    # Docs-only pushes don't change the image — skip the build/push (and the Flux redeploy).
-    paths-ignore:
-      - '**/*.md'
-      - 'docs/**'
-      - 'LICENSE'
   # Manual "full loop": Actions tab -> this workflow -> Run workflow, tick no_cache for a
-  # from-scratch build that ignores the layer cache (use when you suspect stale cache).
+  # from-scratch build that ignores the layer cache (use when you suspect stale cache). On a
+  # branch dispatch only the :sha tag is produced (not deployable — Flux ignores non-semver).
   workflow_dispatch:
     inputs:
       no_cache:
