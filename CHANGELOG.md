@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.1](https://github.com/jwilleke/yourphr/compare/v1.6.0...v1.6.1) (2026-06-21)
+
+### Bug Fixes
+
+- **allergies:** "No Known X" negation assertions no longer inflate the allergy count or list as allergies — the classifier flags `noKnown` (SNOMED `716186003` et al. + "No Known…" text), the dashboard tile counts real allergies only, and /patient-profile shows a single "No known allergies on record" line ([#290](https://github.com/jwilleke/yourphr/issues/290))
+- **dashboard:** the Allergies and Immunizations tiles route to `/patient-profile` (where the data lives) instead of dead-ending at `/medical-history`; the cards now expand inline instead of hover-only ([#289](https://github.com/jwilleke/yourphr/issues/289))
+
 ## [1.6.0](https://github.com/jwilleke/yourphr/compare/v1.5.0...v1.6.0) (2026-06-21)
 
 ### Features
