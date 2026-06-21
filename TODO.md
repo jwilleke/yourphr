@@ -4,19 +4,21 @@
 
 ## 🔴 P0 — Security & Critical
 
-- None open. (Security [#345](https://github.com/jwilleke/yourphr/issues/345) is graded P2 — dev-only, blocked on upstream — listed under P2. The one open Dependabot alert, http-proxy-middleware #197, is tracked there.)
+- None open. (Security [#345](https://github.com/jwilleke/yourphr/issues/345) is graded P2 — dev-only, blocked on upstream — listed under P2.)
 
 ## 🟠 P1
 
 - [#355](https://github.com/jwilleke/yourphr/issues/355) [FEATURE] Dynamic Client Registration (DCR).
-- [#351](https://github.com/jwilleke/yourphr/issues/351) [EPIC] /medical-history — group & filter (shell shipped; #359 remains).
+- [#351](https://github.com/jwilleke/yourphr/issues/351) [EPIC] /medical-history — group & filter (Date/Condition/Provider/Place shipped; Type dimension remains).
 - [#313](https://github.com/jwilleke/yourphr/issues/313) [FEATURE] patients able to add records to their own PHR.
 - [#262](https://github.com/jwilleke/yourphr/issues/262) [EPIC] Patient-legible display — health info a normal person can actually use.
 
 ## 🟡 P2
 
 - [#345](https://github.com/jwilleke/yourphr/issues/345) [security] http-proxy-middleware (webpack-dev-server tree) — blocked on upstream hpm 3.x (GHSA-64mm-vxmg-q3vj).
-- [#360](https://github.com/jwilleke/yourphr/issues/360) [FEATURE] Attach `classified` on resource-graph / list rows (per-row badges; split from #359, no consumer yet).
+- [#362](https://github.com/jwilleke/yourphr/issues/362) [FEATURE] Admin dashboard: restore database from a backup (blocked by #361).
+- [#361](https://github.com/jwilleke/yourphr/issues/361) [FEATURE] Admin dashboard: Database section (details + backup).
+- [#360](https://github.com/jwilleke/yourphr/issues/360) [FEATURE] Attach `classified` on resource-graph / list rows (per-row badges; split from #359).
 - [#354](https://github.com/jwilleke/yourphr/issues/354) [FEATURE] Integrate assets from HL7 FHIR GitHub org (fhir-test-cases, fhir-codegen).
 - [#353](https://github.com/jwilleke/yourphr/issues/353) [FEATURE] Patient private notes on records (persist + indicator).
 - [#352](https://github.com/jwilleke/yourphr/issues/352) [FEATURE] Patient-friendly Body Diagram / Body Map View.
@@ -33,8 +35,6 @@
 - [#300](https://github.com/jwilleke/yourphr/issues/300) [FEATURE] Angular surface for Medicare claims & coverage (insurance view).
 - [#307](https://github.com/jwilleke/yourphr/issues/307) [FEATURE] Manual records — frontend: entry/edit/delete forms.
 - [#305](https://github.com/jwilleke/yourphr/issues/305) [FEATURE] Manual records — backend: store/edit/delete user-created records (FHIR-consistent).
-- [#290](https://github.com/jwilleke/yourphr/issues/290) [FEATURE] "No Known Allergies" assertions inflate the allergy count and read confusingly.
-- [#289](https://github.com/jwilleke/yourphr/issues/289) [FEATURE] Allergies & Immunizations tiles dead-end at /medical-history — route to /patient-profile.
 - [#288](https://github.com/jwilleke/yourphr/issues/288) [ARCH] Decide the future of fasten-sources-stub.
 - [#287](https://github.com/jwilleke/yourphr/issues/287) [FEATURE] Upload/import UI polish — make all supported file types selectable + clearer 'add my data' affordances.
 - [#280](https://github.com/jwilleke/yourphr/issues/280) [FEATURE] Raw fhir-cards: resolve a referenced resource's display name (e.g. Medication/{id}).
