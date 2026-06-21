@@ -1,5 +1,9 @@
 # Releasing YourPHR
 
+> The full published deploy contract (image tags, what integrators should key off) lives in
+> [`docs/deployment/deployment-contract.md`](deployment/deployment-contract.md). This page covers how a
+> maintainer cuts a release.
+
 Releases are cut by **direct annotated git tag** — no release bot, no release PR, no tokens, no admin overrides. (We removed release-please, inherited from upstream Fasten, because its bot-created release PR could not pass `main`'s required status checks without a privileged token — see issue #241.)
 
 ## Versioning
@@ -31,3 +35,5 @@ The live instance deploys **strictly off release tags** — not off `main`:
 - Pushes to `main` are CI-tested but produce **no image and no deploy**. To ship anything to the live instance — including a hotfix — cut a release (a `patch` release for hotfixes).
 
 Publishing the GitHub Release also fires `ci.yaml`'s `release: [published]` (the release is created with a real user token via `gh`, so it triggers CI normally).
+
+For the full contract (exact tags emitted, how to integrate other deployment tools), see [`docs/deployment/deployment-contract.md`](deployment/deployment-contract.md).
