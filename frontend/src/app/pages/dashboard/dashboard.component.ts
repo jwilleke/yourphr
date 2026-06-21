@@ -8,6 +8,7 @@ import {AuthService} from '../../services/auth.service';
 import {DashboardPreferencesService} from '../../services/dashboard-preferences.service';
 import {Summary} from '../../models/fasten/summary';
 import {ClassifiedCondition} from '../../models/fasten/classified-condition';
+import {ClassifiedAllergy} from '../../models/fasten/classified-allergy';
 import {ResourceListItem} from '../../models/fasten/resource-list-item';
 
 // The palette a patient can pick a tile color from (matches the SCSS .tile-color-* classes).
@@ -27,17 +28,19 @@ export interface DashboardTile {
   count: number
   color: string
   unit: string
-  // countKey tiles get their count from the condition classifier (not the summary resource counts).
-  countKey?: 'concerns' | 'profile'
+  // countKey tiles get their count from a classifier (not the summary resource counts): concerns/profile
+  // from the condition classifier, allergies from the allergy classifier (so "no known allergy"
+  // negations are excluded — #290).
+  countKey?: 'concerns' | 'profile' | 'allergies'
 }
 
 export const DEFAULT_TILES: DashboardTile[] = [
   {id: 'concerns', label: 'Medical Concerns', clinicalLabel: 'Active health problems', icon: 'fa-solid fa-heart-pulse', route: '/medical-concerns', resourceTypes: [], count: 0, color: 'red', unit: 'active', countKey: 'concerns'},
   {id: 'patient-profile', label: 'Patient Profile', clinicalLabel: 'Personal & social info', icon: 'fa-solid fa-id-card', route: '/patient-profile', resourceTypes: [], count: 0, color: 'gray', unit: 'items', countKey: 'profile'},
   {id: 'medications', label: 'Medications', clinicalLabel: 'Prescriptions & medication statements', icon: 'fa-solid fa-pills', route: '/medications', resourceTypes: ['MedicationRequest', 'MedicationStatement', 'Medication', 'MedicationAdministration', 'MedicationDispense'], count: 0, color: 'amber', unit: 'records'},
-  {id: 'allergies', label: 'Allergies', clinicalLabel: 'Allergies & intolerances', icon: 'fa-solid fa-triangle-exclamation', route: '/medical-history', resourceTypes: ['AllergyIntolerance'], count: 0, color: 'pink', unit: 'recorded'},
+  {id: 'allergies', label: 'Allergies', clinicalLabel: 'Allergies & intolerances', icon: 'fa-solid fa-triangle-exclamation', route: '/patient-profile', resourceTypes: ['AllergyIntolerance'], count: 0, color: 'pink', unit: 'recorded', countKey: 'allergies'},
   {id: 'lab-results', label: 'Lab Results', clinicalLabel: 'Observations & diagnostic reports', icon: 'fa-solid fa-flask', route: '/labs', resourceTypes: ['Observation', 'DiagnosticReport'], count: 0, color: 'blue', unit: 'results'},
-  {id: 'immunizations', label: 'Immunizations', clinicalLabel: 'Vaccinations', icon: 'fa-solid fa-syringe', route: '/medical-history', resourceTypes: ['Immunization'], count: 0, color: 'green', unit: 'on file'},
+  {id: 'immunizations', label: 'Immunizations', clinicalLabel: 'Vaccinations', icon: 'fa-solid fa-syringe', route: '/patient-profile', resourceTypes: ['Immunization'], count: 0, color: 'green', unit: 'on file'},
   {id: 'visits', label: 'Visits & Notes', clinicalLabel: 'Encounters', icon: 'fa-solid fa-notes-medical', route: '/medical-history', resourceTypes: ['Encounter'], count: 0, color: 'teal', unit: 'encounters'},
   {id: 'procedures', label: 'Procedures', clinicalLabel: 'Procedures & surgeries', icon: 'fa-solid fa-user-nurse', route: '/procedures', resourceTypes: ['Procedure'], count: 0, color: 'purple', unit: 'procedures'},
   {id: 'documents', label: 'Documents', clinicalLabel: 'Clinical documents & files', icon: 'fa-solid fa-file-medical', route: '/medical-history', resourceTypes: ['DocumentReference', 'Media', 'Binary'], count: 0, color: 'gray', unit: 'documents'},
@@ -135,6 +138,16 @@ export class DashboardComponent implements OnInit, OnDestroy {
         this.setTileCount('profile', profile.length)
       },
     })
+
+    // The Allergies tile counts REAL allergies only — the allergy classifier flags "no known allergy"
+    // negation assertions (noKnown), which must not inflate the count (#290). RuledOut (refuted) is
+    // also excluded; everything else the record states is counted.
+    this.fastenApi.getClassifiedAllergies().subscribe({
+      next: (rows: ClassifiedAllergy[]) => {
+        const real = (rows || []).filter((r) => !r.noKnown && r.state !== 'RuledOut')
+        this.setTileCount('allergies', real.length)
+      },
+    })
   }
 
   ngOnDestroy() {
@@ -217,7 +230,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     return 'fa-solid ' + (map[resourceType] || 'fa-file-lines')
   }
 
-  private setTileCount(countKey: 'concerns' | 'profile', count: number) {
+  private setTileCount(countKey: NonNullable<DashboardTile['countKey']>, count: number) {
     const tile = this.tiles.find((t) => t.countKey === countKey)
     if (tile) tile.count = count
   }

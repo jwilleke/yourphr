@@ -13,7 +13,7 @@ describe('PatientProfileComponent', () => {
   let mockedFastenApiService
 
   beforeEach(async () => {
-    mockedFastenApiService = jasmine.createSpyObj('FastenApiService', ['getResources', 'getSummary', 'getClassifiedConditions'])
+    mockedFastenApiService = jasmine.createSpyObj('FastenApiService', ['getResources', 'getSummary', 'getClassifiedConditions', 'getClassifiedAllergies'])
     await TestBed.configureTestingModule({
       declarations: [ PatientProfileComponent, ReportHeaderComponent ],
       imports: [PipesModule, RouterTestingModule],
@@ -30,6 +30,7 @@ describe('PatientProfileComponent', () => {
     mockedFastenApiService.getResources.and.callFake((type: string) => of(type === 'Patient' ? [{}] : []));
     mockedFastenApiService.getSummary.and.returnValue(of({sources: []}));
     mockedFastenApiService.getClassifiedConditions.and.returnValue(of([]));
+    mockedFastenApiService.getClassifiedAllergies.and.returnValue(of([]));
     fixture = TestBed.createComponent(PatientProfileComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();

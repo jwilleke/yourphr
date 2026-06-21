@@ -123,6 +123,33 @@ func (r *rawAllergy) title() string {
 	return "Unknown allergy"
 }
 
+// noKnownAllergyCodes are the SNOMED CT "no known allergy" NEGATION assertions — a record stating the
+// ABSENCE of an allergy, not an allergy. USCDI / US-Core represent "no known allergies" with these.
+var noKnownAllergyCodes = map[string]bool{
+	"716186003": true, // No known allergy
+	"409137002": true, // No known history of drug allergy
+	"429625007": true, // No known food allergy
+	"428607008": true, // No known environmental allergy
+	"716184000": true, // No known latex allergy
+}
+
+// noKnown reports whether this AllergyIntolerance is a "no known allergy" NEGATION assertion rather
+// than an actual allergy — keyed off the explicit SNOMED negation codes, with a text fallback for
+// exports that carry only a "No Known ..." title (the observed real record listed four such negations
+// with no negation code). This is not inference: the record itself states the absence. Negations must
+// not be counted or listed as allergies (#290).
+func (r *rawAllergy) noKnown() bool {
+	if r.Code == nil {
+		return false
+	}
+	for _, c := range r.Code.Coding {
+		if noKnownAllergyCodes[strings.TrimSpace(c.Code)] {
+			return true
+		}
+	}
+	return strings.Contains(strings.ToLower(conceptText(r.Code)), "no known")
+}
+
 func (r *rawAllergy) onset() string {
 	if r.OnsetDateTime != "" {
 		return r.OnsetDateTime

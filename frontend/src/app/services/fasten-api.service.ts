@@ -7,6 +7,7 @@ import {map} from 'rxjs/operators';
 import {ResponseWrapper} from '../models/response-wrapper';
 import {ReconciledMedication} from '../models/fasten/reconciled-medication';
 import {ClassifiedCondition} from '../models/fasten/classified-condition';
+import {ClassifiedAllergy} from '../models/fasten/classified-allergy';
 import {AccountUser} from '../models/fasten/account-user';
 import {ResourceListItem} from '../models/fasten/resource-list-item';
 import {ServerLogs} from '../models/fasten/server-logs';
@@ -175,6 +176,15 @@ export class FastenApiService {
       .pipe(
         map((response: ResponseWrapper) => {
           return (response.data || []) as ClassifiedCondition[]
+        })
+      );
+  }
+
+  getClassifiedAllergies(): Observable<ClassifiedAllergy[]> {
+    return this._httpClient.get<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/allergies/classified`)
+      .pipe(
+        map((response: ResponseWrapper) => {
+          return (response.data || []) as ClassifiedAllergy[]
         })
       );
   }

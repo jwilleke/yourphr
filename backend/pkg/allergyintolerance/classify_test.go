@@ -121,3 +121,38 @@ func TestClassify_Provenance(t *testing.T) {
 		t.Errorf("no-status provenance = %+v, want source floor 'Source: Epic'", n.Provenance)
 	}
 }
+
+// TestClassify_NoKnown verifies "no known allergy" negation assertions are flagged (and so can be
+// excluded from counts/lists) — keyed off the SNOMED negation code or a "No Known ..." title (#290).
+func TestClassify_NoKnown(t *testing.T) {
+	in := []InputResource{
+		{SourceResourceType: "AllergyIntolerance", SourceResourceID: "nka-coded", SourceID: "s",
+			Raw: json.RawMessage(`{"resourceType":"AllergyIntolerance","id":"nka-coded","code":{"coding":[{"system":"http://snomed.info/sct","code":"716186003","display":"No known allergy"}]}}`)},
+		{SourceResourceType: "AllergyIntolerance", SourceResourceID: "nka-text", SourceID: "s",
+			Raw: json.RawMessage(`{"resourceType":"AllergyIntolerance","id":"nka-text","code":{"text":"No Known Drug Allergies"}}`)},
+		{SourceResourceType: "AllergyIntolerance", SourceResourceID: "real", SourceID: "s",
+			Raw: json.RawMessage(`{"resourceType":"AllergyIntolerance","id":"real","code":{"text":"Penicillin"},"clinicalStatus":{"coding":[{"code":"active"}]}}`)},
+	}
+	got := Classify(in, time.Now().UTC(), nil, nil)
+	if len(got) != 3 {
+		t.Fatalf("expected 3 classified, got %d", len(got))
+	}
+	if c, _ := byID(got, "nka-coded"); !c.NoKnown {
+		t.Errorf("SNOMED 716186003 should be flagged NoKnown")
+	}
+	if c, _ := byID(got, "nka-text"); !c.NoKnown {
+		t.Errorf("'No Known Drug Allergies' title should be flagged NoKnown")
+	}
+	if c, _ := byID(got, "real"); c.NoKnown {
+		t.Errorf("Penicillin must NOT be flagged NoKnown")
+	}
+	real := 0
+	for _, c := range got {
+		if !c.NoKnown {
+			real++
+		}
+	}
+	if real != 1 {
+		t.Errorf("expected 1 real allergy (negations excluded), got %d", real)
+	}
+}

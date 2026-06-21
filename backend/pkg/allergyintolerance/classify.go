@@ -69,6 +69,7 @@ type ClassifiedAllergy struct {
 	State              string `json:"state"`
 	Verification       string `json:"verification"`
 	SelfReported       bool   `json:"selfReported"`
+	NoKnown            bool   `json:"noKnown,omitempty"` // a "no known allergy" negation, not an allergy — exclude from counts (#290)
 
 	ClinicalStatus     string   `json:"clinicalStatus,omitempty"`
 	VerificationStatus string   `json:"verificationStatus,omitempty"`
@@ -113,6 +114,7 @@ func Classify(resources []InputResource, now time.Time, resolver *provenance.Res
 			State:              resolveState(conceptCode(raw.ClinicalStatus), verif),
 			Verification:       verificationLabel(verif),
 			SelfReported:       patientAsserted(&raw),
+			NoKnown:            raw.noKnown(),
 			ClinicalStatus:     conceptCode(raw.ClinicalStatus),
 			VerificationStatus: verif,
 			Type:               raw.Type,
