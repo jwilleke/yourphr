@@ -13,9 +13,9 @@ recommends what to do next. It does not start work.
 
 ### Step 1: Gather (run in parallel, read-only)
 
-- Security signals:
-  - `gh api /repos/{owner}/{repo}/dependabot/alerts?state=open`
-  - `gh api /repos/{owner}/{repo}/code-scanning/alerts?state=open` (ignore a 404 — feature off)
+- Security signals (quote the URL — an unquoted `?` is glob-expanded by zsh and the call silently fails with `no matches found`, which reads as a false "clean"):
+  - `gh api "/repos/{owner}/{repo}/dependabot/alerts?state=open"`
+  - `gh api "/repos/{owner}/{repo}/code-scanning/alerts?state=open"` (ignore a 404 — feature off)
   - any other scanner signal available (e.g. GitGuardian)
 - `gh issue list --state open --limit 100 --json number,title,labels`
 - `git log --oneline -5`
@@ -35,8 +35,9 @@ For each open Dependabot / code-scanning / GitGuardian alert:
 
 ### Step 3: Triage gate
 
-- Any open issue with **no** priority label (`P0` / `P1` / `P2` / `deferred`) gets `needs-triage`
-  so it shows up as awaiting a decision rather than being silently mis-ranked.
+- Any open issue with **no** placement label (`P0` / `P1` / `P2` / `deferred` / `in-review`) gets
+  `needs-triage` so it shows up as awaiting a decision rather than being silently mis-ranked. An
+  `in-review` issue is already placed (it lands in the In review band) and is never flagged.
 
 ### Step 4: Rank and regenerate `TODO.md`
 
@@ -47,18 +48,16 @@ has served its purpose, so regenerating a bands-only `TODO.md` here is expected:
 - `🔴 P0 — Security & Critical` (list `security` / vulnerability issues first)
 - `🟠 P1`
 - `🟡 P2`
+- `🔵 In review` (issues labeled `in-review` — work complete and pushed, awaiting the operator's
+  decision to close; takes precedence over an issue's priority band so it surfaces as "ready for your call")
 - `⏸ Deferred`
 - `❓ Needs triage` (count + titles)
 
-**One issue per line — never bundle multiple issues onto one bullet.** Each line starts with the
-full GitHub link and reads:
+**One issue per line — never bundle.** Each issue gets its OWN bullet, starting with a full clickable
+GitHub link. No grouping headers that pack several refs onto one bullet, no comma-separated runs of
+issues, no bare `#<num>`. Each line:
 
-```
-- [#<num>](https://github.com/{owner}/{repo}/issues/<num>) <title>
-```
-
-No grouping headers that pack several `#NN` refs into a single bullet, no comma-separated runs of
-issues — each issue gets its own line, every reference is a full `[#NN](link)` (never a bare `#NN`).
+`- [#<num>](https://github.com/{owner}/{repo}/issues/<num>) — <title>`
 
 ### Step 5: Brief the user
 

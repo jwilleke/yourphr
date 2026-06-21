@@ -1,4 +1,4 @@
-<!-- KIT:START v1.0.0-12-g1fa177f — managed by mjs-project-template; edit below the KIT:END marker -->
+<!-- KIT:START v1.0.0-26-gc0e965b — managed by mjs-project-template; edit below the KIT:END marker -->
 # Agent Context & Protocols
 
 This section is **managed by the kit** (`install-kit.sh`) — it is identical across repos. Put repo-specific context **below the `KIT:END` marker**; do not edit here.
@@ -7,7 +7,7 @@ This section is **managed by the kit** (`install-kit.sh`) — it is identical ac
 
 - Before starting, read the `▶ Resume here` block at the top of `TODO.md` (committed, so it syncs across machines) and recent `git log`. That is where the last session left off — repeating finished work is the most common avoidable mistake.
 - Commit a chunk of work with `/session-commit`: commits code + `TODO.md`, appends a journal entry to `private/project_log.md` (the log is never committed).
-- Run `/status` often (after every `/session-commit`): it ranks open work and recommends the next step.
+- Run `/pstatus` often (after every `/session-commit`): it ranks open work and recommends the next step.
 - End a session with `/wrap`: commits anything outstanding, refreshes the `▶ Resume here` pointer, and reports whether it is safe to shut down the editor.
 
 ## Priorities — GitHub labels are the source of truth
@@ -22,7 +22,7 @@ Priority labels are mutually exclusive and mean:
 Then:
 
 - Security comes first. Scanner alerts (Dependabot / code-scanning / GitGuardian) become issues labeled `security` + a graded priority: critical/high → `P0`, medium → `P1`, low → `P2`.
-- `TODO.md` = a `▶ Resume here` block (maintained by `/wrap`) on top, then priority bands that `/status` regenerates from the labels. Do not hand-edit the bands.
+- `TODO.md` = a `▶ Resume here` block (maintained by `/wrap`) on top, then priority bands that `/pstatus` regenerates from the labels. Do not hand-edit the bands.
 
 ## Working agreement
 
