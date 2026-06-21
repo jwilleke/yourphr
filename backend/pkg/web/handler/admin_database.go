@@ -3,7 +3,9 @@ package handler
 import (
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/fastenhealth/fasten-onprem/backend/pkg"
 	"github.com/fastenhealth/fasten-onprem/backend/pkg/config"
@@ -105,4 +107,27 @@ func BackupDatabase(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"success": true, "data": gin.H{
 		"filename": bf.Name, "path": full, "destination": database.CurrentBackupDestination(appConfig), "size_bytes": bf.SizeBytes,
 	}})
+}
+
+// BackupDatabaseDownload streams a fresh backup to the browser (the on-demand "Download backup" action;
+// the browser's Save dialog chooses where it lands). Admin-only; the artifact is the full multi-user
+// PHI database.
+func BackupDatabaseDownload(c *gin.Context) {
+	if !IsAdmin(c) {
+		c.JSON(http.StatusForbidden, gin.H{"success": false, "error": "admin role required"})
+		return
+	}
+	gr, ok := gormRepoFromContext(c)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "database backend does not support backup"})
+		return
+	}
+	name := database.BackupFileName(time.Now())
+	tmp := filepath.Join(os.TempDir(), name)
+	if err := gr.BackupToFile(tmp); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": err.Error()})
+		return
+	}
+	defer os.Remove(tmp)
+	c.FileAttachment(tmp, name)
 }

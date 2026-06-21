@@ -244,7 +244,8 @@ func (ae *AppEngine) Setup() (*gin.RouterGroup, *gin.Engine) {
 					secure.PUT("/admin/log-level", handler.SetLogLevel)
 					//admin Database card (#361) — DB facts + safe online backup (full PHI; admin-only)
 					secure.GET("/admin/database", handler.GetDatabaseInfo)
-					secure.POST("/admin/database/backup", handler.BackupDatabase)
+					secure.POST("/admin/database/backup", handler.BackupDatabase)                 // server-side, fire-and-forget
+					secure.POST("/admin/database/backup/download", handler.BackupDatabaseDownload) // stream to browser (on-demand)
 
 					secure.POST("/practitioners", handler.CreatePractitioner)
 					secure.PUT("/practitioners/:practitionerId", handler.UpdatePractitioner)

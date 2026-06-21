@@ -16,7 +16,19 @@ import (
 // "Backup now") and the scheduled-backup worker. The backup is the entire single-file DB — every
 // user's records (PHI) — so callers must gate on the admin role / run server-side only.
 
-const BackupFilePrefix = "yourphr-backup-"
+// backupLabel appears in every backup filename. Filenames are DATE-FIRST, ISO-ish, UTC, and
+// filesystem-safe (colons -> dashes): 2026-06-21T12-10-03Z-yourphr-backup.db — so they sort
+// chronologically by name.
+const backupLabel = "yourphr-backup"
+
+// BackupFileName builds the canonical date-first filename for time t.
+func BackupFileName(t time.Time) string {
+	return t.UTC().Format("2006-01-02T15-04-05") + "Z-" + backupLabel + ".db"
+}
+
+func isBackupFile(name string) bool {
+	return strings.Contains(name, backupLabel) && strings.HasSuffix(name, ".db")
+}
 
 // BackupFile describes one backup present in a destination folder.
 type BackupFile struct {
@@ -59,7 +71,7 @@ func ListBackups(dir string) []BackupFile {
 	}
 	out := make([]BackupFile, 0, len(entries))
 	for _, e := range entries {
-		if e.IsDir() || !strings.HasPrefix(e.Name(), BackupFilePrefix) {
+		if e.IsDir() || !isBackupFile(e.Name()) {
 			continue
 		}
 		info, err := e.Info()
@@ -74,7 +86,7 @@ func ListBackups(dir string) []BackupFile {
 
 // PerformBackup writes a consistent snapshot into destOverride (or the current/last-used destination),
 // records that destination as the new default, and returns the created file + its full path. The
-// filename is canonical and sortable: yourphr-backup-2026-06-21-071234.db.
+// filename is canonical and sortable: 2026-06-21T12-10-03Z-yourphr-backup.db.
 func (gr *GormRepository) PerformBackup(appConfig config.Interface, destOverride string) (BackupFile, string, error) {
 	dest := strings.TrimSpace(destOverride)
 	if dest == "" {
@@ -87,14 +99,10 @@ func (gr *GormRepository) PerformBackup(appConfig config.Interface, destOverride
 		return BackupFile{}, "", fmt.Errorf("cannot create destination: %w", err)
 	}
 
-	name := BackupFilePrefix + time.Now().UTC().Format("2006-01-02-150405") + ".db"
+	name := BackupFileName(time.Now())
 	full := filepath.Join(dest, name)
-
-	// VACUUM INTO does not accept a bound parameter for the path; it's server/admin-controlled. Escape
-	// single quotes defensively.
-	safe := strings.ReplaceAll(full, "'", "''")
-	if err := gr.GormClient.Exec(fmt.Sprintf("VACUUM INTO '%s'", safe)).Error; err != nil {
-		return BackupFile{}, "", fmt.Errorf("backup failed: %w", err)
+	if err := gr.BackupToFile(full); err != nil {
+		return BackupFile{}, "", err
 	}
 
 	_ = os.WriteFile(backupMarkerPath(appConfig), []byte(dest), 0o600) // remember as default (best-effort)
@@ -104,6 +112,18 @@ func (gr *GormRepository) PerformBackup(appConfig config.Interface, destOverride
 		bf.SizeBytes = fi.Size()
 	}
 	return bf, full, nil
+}
+
+// BackupToFile writes a consistent online snapshot (VACUUM INTO) to fullPath. Used by PerformBackup
+// (to a destination folder) and by the on-demand download path (to a temp file). VACUUM INTO does not
+// accept a bound parameter for the path; the path is server/admin-controlled, with single quotes
+// escaped defensively.
+func (gr *GormRepository) BackupToFile(fullPath string) error {
+	safe := strings.ReplaceAll(fullPath, "'", "''")
+	if err := gr.GormClient.Exec(fmt.Sprintf("VACUUM INTO '%s'", safe)).Error; err != nil {
+		return fmt.Errorf("backup failed: %w", err)
+	}
+	return nil
 }
 
 // PruneBackups keeps the newest `keep` backups in dir and deletes the rest. keep <= 0 disables pruning.
