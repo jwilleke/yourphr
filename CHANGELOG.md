@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.11.0](https://github.com/jwilleke/yourphr/compare/v1.10.0...v1.11.0) (2026-06-21)
+
+### Features
+
+- **medical-history:** group by **Type** — completes the group-by selector (Date · Condition · Provider · Place · Type); each pivots into a master/detail with honest counts ([#351](https://github.com/jwilleke/yourphr/issues/351))
+- **medical-history:** the detail pane now renders the rich `/explore` record card per visit, with a **raw-FHIR** toggle and **copy to clipboard** ([#351](https://github.com/jwilleke/yourphr/issues/351))
+- **ui:** consistent link styling (blue + underlined) and a 3-role button convention — primary / neutral / danger ([#366](https://github.com/jwilleke/yourphr/issues/366))
+
+### Bug Fixes
+
+- **medical-history:** fix a fhir-card re-mount request storm (`net::ERR_INSUFFICIENT_RESOURCES`) ([#351](https://github.com/jwilleke/yourphr/issues/351))
+- **security:** harden backup/restore paths (restore allowlist + path hygiene); remaining CodeQL findings are admin-by-design and dismissed ([#365](https://github.com/jwilleke/yourphr/issues/365))
+
+### Docs
+
+- document the backup & restore system under `docs/recovery/` ([#361](https://github.com/jwilleke/yourphr/issues/361), [#362](https://github.com/jwilleke/yourphr/issues/362))
+
 ## [1.10.0](https://github.com/jwilleke/yourphr/compare/v1.9.0...v1.10.0) (2026-06-21)
 
 ### Features
