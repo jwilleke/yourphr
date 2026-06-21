@@ -5,4 +5,4 @@ package version
 // semver: fix -> PATCH, feature -> MINOR, breaking change -> MAJOR (a higher bump resets the lower
 // digits to 0). Between releases the running build reports git-describe (vX.Y.Z-N-g<sha>), not this
 // constant.
-const VERSION = "1.7.0"
+const VERSION = "1.8.0"

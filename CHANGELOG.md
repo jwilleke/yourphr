@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.8.0](https://github.com/jwilleke/yourphr/compare/v1.7.0...v1.8.0) (2026-06-21)
+
+### Features
+
+- **admin:** Database card on the Admin dashboard (`/admin/database`) — shows DB location on disk, encryption-at-rest status, size, integrity, and user/source counts, plus a one-click **Backup now** that streams a safe online snapshot (SQLite `VACUUM INTO`). Admin-only; the backup is the full multi-user PHI database ([#361](https://github.com/jwilleke/yourphr/issues/361))
+
 ## [1.7.0](https://github.com/jwilleke/yourphr/compare/v1.6.1...v1.7.0) (2026-06-21)
 
 ### Features
