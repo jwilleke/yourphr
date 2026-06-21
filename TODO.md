@@ -9,7 +9,6 @@
 ## 🟠 P1
 
 - [#355](https://github.com/jwilleke/yourphr/issues/355) — [FEATURE] Dynamic Client Registration (DCR).
-- [#351](https://github.com/jwilleke/yourphr/issues/351) — [EPIC] /medical-history — group & filter (Date/Condition/Provider/Place shipped; Type remains).
 - [#313](https://github.com/jwilleke/yourphr/issues/313) — [FEATURE] patients able to add records to their own PHR.
 - [#262](https://github.com/jwilleke/yourphr/issues/262) — [EPIC] Patient-legible display — health info a normal person can actually use.
 
@@ -48,10 +47,11 @@
 
 ## 🔵 In review
 
-- None.
+- [#366](https://github.com/jwilleke/yourphr/issues/366) — [FEATURE] UI consistency: link styling + button convention (shipped v1.11.0; verify on deploy).
 
 ## ⏸ Deferred
 
+- [#351](https://github.com/jwilleke/yourphr/issues/351) — [EPIC] /medical-history — group-by (all 5 dims) + rich detail shipped v1.11.0; Filters deferred (uncertain need).
 - [#363](https://github.com/jwilleke/yourphr/issues/363) — [FEATURE] Database at-rest encryption: enable/migrate (guarded) + decrypt.
 - [#278](https://github.com/jwilleke/yourphr/issues/278) — [EPIC] Rename Fasten* → YourPHR.
 - [#263](https://github.com/jwilleke/yourphr/issues/263) — [FEATURE] Message Provider.
