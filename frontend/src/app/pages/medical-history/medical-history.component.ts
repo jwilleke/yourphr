@@ -16,6 +16,9 @@ import {
   groupHistoryByConditions,
 } from '../../../lib/utils/medical_history_grouping';
 import {buildEncounterRows, buildTypedRows, MEDICAL_HISTORY_TYPES, rowKey} from './medical_history_rows';
+import {fhirModelFactory} from '../../../lib/models/factory';
+import {ResourceType} from '../../../lib/models/constants';
+import {FastenDisplayModel} from '../../../lib/models/fasten/fasten-display-model';
 
 @Component({
     selector: 'app-medical-history',
@@ -47,6 +50,8 @@ export class MedicalHistoryComponent implements OnInit {
   groups: HistoryGroup[] = []
   selectedKey: string | null = null
   total = 0
+  debug = false // page-level "raw FHIR" toggle, like /explore
+  private modelCache: Record<string, FastenDisplayModel | null> = {}
 
   constructor(public fastenApi: FastenApiService) { }
 
@@ -132,5 +137,24 @@ export class MedicalHistoryComponent implements OnInit {
 
   resourceFor(row: HistoryRow): ResourceFhir | undefined {
     return this.lookup[rowKey(row)]
+  }
+
+  // modelFor parses a row's ResourceFhir into the rich display model that <fhir-card> renders (the same
+  // path /explore uses). Cached per row; null when the resource can't be parsed (the template falls back
+  // to a simple link). This is what surfaces the real record details inline (not the thin timeline card).
+  modelFor(row: HistoryRow): FastenDisplayModel | null {
+    const key = rowKey(row)
+    if (key in this.modelCache) return this.modelCache[key]
+    const res = this.lookup[key]
+    let model: FastenDisplayModel | null = null
+    if (res?.resource_raw) {
+      try {
+        model = fhirModelFactory(res.source_resource_type as ResourceType, res)
+      } catch {
+        model = null
+      }
+    }
+    this.modelCache[key] = model
+    return model
   }
 }

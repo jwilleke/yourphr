@@ -48,13 +48,25 @@
             <div *ngIf="selectedGroup && detailBuckets.length === 0" class="tx-gray-500 pd-20">
               No visits or records are linked to this {{ dimension }} yet.
             </div>
+
+            <div *ngIf="selectedGroup && detailBuckets.length" class="d-flex justify-content-end mg-b-10">
+              <button type="button" class="btn btn-sm btn-outline-secondary" (click)="debug = !debug">
+                <i class="fas fa-code mg-r-5"></i>{{ debug ? 'Hide' : 'Show' }} raw FHIR
+              </button>
+            </div>
+
             <div *ngFor="let bucket of detailBuckets" class="mg-b-20">
               <h6 class="az-content-label tx-gray-600 mg-b-10">{{ bucket.date ? (bucket.date | date) : 'Undated' }}</h6>
-              <ul class="timeline">
-                <li *ngFor="let row of bucket.rows">
-                  <app-report-medical-history-timeline-panel [resourceFhir]="resourceFor(row)"></app-report-medical-history-timeline-panel>
-                </li>
-              </ul>
+              <div *ngFor="let row of bucket.rows" class="mg-b-15">
+                <fhir-card *ngIf="modelFor(row) as model; else simpleRow" [displayModel]="model" [showDetails]="false"></fhir-card>
+                <ng-template #simpleRow>
+                  <div class="card pd-15">
+                    <a [routerLink]="['/explore', row.sourceId, 'resource', row.resourceId]">{{ row.title }}</a>
+                    <div class="tx-12 tx-gray-500">{{ row.resourceType }}</div>
+                  </div>
+                </ng-template>
+                <pre *ngIf="debug" class="tx-11 bg-light pd-10 mg-t-5 rounded" style="max-height: 360px; overflow: auto;">{{ resourceFor(row)?.resource_raw | json }}</pre>
+              </div>
             </div>
           </div>
         </div>
