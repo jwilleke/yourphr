@@ -65,7 +65,12 @@
                     <div class="tx-12 tx-gray-500">{{ row.resourceType }}</div>
                   </div>
                 </ng-template>
-                <pre *ngIf="debug" class="tx-11 bg-light pd-10 mg-t-5 rounded" style="max-height: 360px; overflow: auto;">{{ resourceFor(row)?.resource_raw | json }}</pre>
+                <div *ngIf="debug" class="mg-t-5">
+                  <button type="button" class="btn btn-sm btn-outline-secondary mg-b-5" (click)="copyRaw(row)">
+                    <i class="fas fa-copy mg-r-5"></i>{{ copiedKey === row.sourceId + '/' + row.resourceId ? 'Copied!' : 'Copy to clipboard' }}
+                  </button>
+                  <pre class="tx-11 bg-light pd-10 rounded" style="max-height: 360px; overflow: auto;">{{ resourceFor(row)?.resource_raw | json }}</pre>
+                </div>
               </div>
             </div>
           </div>

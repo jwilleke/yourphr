@@ -1,4 +1,5 @@
 import {Component, OnInit} from '@angular/core';
+import {Clipboard} from '@angular/cdk/clipboard';
 import {forkJoin} from 'rxjs';
 import {FastenApiService} from '../../services/fasten-api.service';
 import {ResourceFhir} from '../../models/fasten/resource_fhir';
@@ -51,9 +52,20 @@ export class MedicalHistoryComponent implements OnInit {
   selectedKey: string | null = null
   total = 0
   debug = false // page-level "raw FHIR" toggle, like /explore
+  copiedKey: string | null = null // row whose raw FHIR was just copied (transient "Copied!")
   private modelCache: Record<string, FastenDisplayModel | null> = {}
 
-  constructor(public fastenApi: FastenApiService) { }
+  constructor(public fastenApi: FastenApiService, private clipboard: Clipboard) { }
+
+  // copyRaw copies a record's raw FHIR JSON to the clipboard (like /explore's debug copy).
+  copyRaw(row: HistoryRow): void {
+    const res = this.resourceFor(row)
+    if (!res?.resource_raw) { return }
+    if (this.clipboard.copy(JSON.stringify(res.resource_raw, null, 2))) {
+      this.copiedKey = rowKey(row)
+      setTimeout(() => { this.copiedKey = null }, 2000)
+    }
+  }
 
   ngOnInit(): void {
     this.loading = true
