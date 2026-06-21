@@ -10,9 +10,15 @@ import (
 )
 
 func TestBackupFileName(t *testing.T) {
-	got := BackupFileName(time.Date(2026, 6, 21, 12, 10, 3, 0, time.UTC))
-	if want := "2026-06-21T12-10-03Z-yourphr-" + version.VERSION + "-backup.db.gz"; got != want {
-		t.Errorf("BackupFileName = %q, want %q", got, want)
+	t0 := time.Date(2026, 6, 21, 12, 10, 3, 0, time.UTC)
+	if got, want := BackupFileName(t0, ""), "2026-06-21T12-10-03Z-yourphr-"+version.VERSION+"-backup.db.gz"; got != want {
+		t.Errorf("BackupFileName(no label) = %q, want %q", got, want)
+	}
+	if got, want := BackupFileName(t0, "dev"), "2026-06-21T12-10-03Z-yourphr-dev-"+version.VERSION+"-backup.db.gz"; got != want {
+		t.Errorf("BackupFileName(dev) = %q, want %q", got, want)
+	}
+	if got, want := BackupFileName(t0, "weird/label name"), "2026-06-21T12-10-03Z-yourphr-weird-label-name-"+version.VERSION+"-backup.db.gz"; got != want {
+		t.Errorf("BackupFileName(sanitize) = %q, want %q", got, want)
 	}
 }
 
@@ -38,7 +44,7 @@ func TestPruneBackups(t *testing.T) {
 	base := time.Date(2026, 6, 1, 0, 0, 0, 0, time.UTC)
 	for i := 0; i < 5; i++ {
 		mt := base.Add(time.Duration(i) * time.Hour)
-		p := filepath.Join(dir, BackupFileName(mt))
+		p := filepath.Join(dir, BackupFileName(mt, ""))
 		if err := os.WriteFile(p, []byte("x"), 0o600); err != nil {
 			t.Fatal(err)
 		}

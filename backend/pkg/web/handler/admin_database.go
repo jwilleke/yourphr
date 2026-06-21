@@ -119,12 +119,13 @@ func BackupDatabaseDownload(c *gin.Context) {
 		c.JSON(http.StatusForbidden, gin.H{"success": false, "error": "admin role required"})
 		return
 	}
+	appConfig := c.MustGet(pkg.ContextKeyTypeConfig).(config.Interface)
 	gr, ok := gormRepoFromContext(c)
 	if !ok {
 		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "database backend does not support backup"})
 		return
 	}
-	name := database.BackupFileName(time.Now())
+	name := database.BackupFileName(time.Now(), appConfig.GetString("backup.label"))
 	tmp := filepath.Join(os.TempDir(), name)
 	if err := gr.BackupToFile(tmp); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": err.Error()})

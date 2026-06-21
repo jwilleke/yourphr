@@ -29,6 +29,13 @@ database:
   #    key: ''
   type: 'sqlite' # postgres will be supported in the future, but is completely **BROKEN** at the moment.
   location: '/opt/fasten/db/fasten.db' # if postgres (**BROKEN**) use a DSN, eg. `host=localhost user=gorm password=gorm dbname=gorm port=9920 sslmode=required TimeZone=Asia/Shanghai`
+# Admin Database backups (#361). `label` is an optional instance tag stamped into backup filenames,
+# e.g. label "prod" -> 2026-06-21T14-09-57Z-yourphr-prod-1.9.0-backup.db.gz (omitted when blank). Set
+# it per instance to tell backups apart (config.dev.yaml uses "dev"; on the deploy set
+# YOURPHR_BACKUP_LABEL=prod). The schedule (enable/time/days/destination/retention) is managed from the
+# Admin Database card and persisted in the data dir, not here.
+backup:
+  label: '' # e.g. 'prod' / 'sandbox'; blank = no label segment
 log:
   # Logs always go to STDOUT/STDERR; when this is set they are ALSO tee'd to this file so the
   # Admin Dashboard "Server Logs" card can read them back. Defaults to the persistent DB volume

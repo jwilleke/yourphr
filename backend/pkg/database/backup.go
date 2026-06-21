@@ -20,17 +20,37 @@ import (
 // "Backup now") and the scheduled-backup worker. The backup is the entire single-file DB — every
 // user's records (PHI) — so callers must gate on the admin role / run server-side only.
 
-// Filenames are DATE-FIRST, ISO-ish, UTC, filesystem-safe (colons -> dashes), embed the app version
-// that produced them, and are gzip-compressed:
+// Filenames are DATE-FIRST, ISO-ish, UTC, filesystem-safe (colons -> dashes), embed an optional
+// instance label (the `backup.label` config / YOURPHR_BACKUP_LABEL env, e.g. "dev"/"prod") and the app
+// version that produced them, and are gzip-compressed:
 //
-//	2026-06-21T14-09-57Z-yourphr-1.9.0-backup.db.gz
+//	2026-06-21T14-09-57Z-yourphr-dev-1.9.0-backup.db.gz   (label "dev")
+//	2026-06-21T14-09-57Z-yourphr-1.9.0-backup.db.gz       (no label)
 //
-// — so they sort chronologically by name and you can tell which app version wrote each backup (useful
-// when deciding whether a backup is safe to restore). Aligned with the ngdpbase BackupManager (gzip).
+// — so they sort chronologically by name and you can tell which instance + app version wrote each
+// backup (useful when deciding whether a backup is safe to restore). Aligned with ngdpbase (gzip).
 
-// BackupFileName builds the canonical date-first, version-stamped, gzip-compressed filename for time t.
-func BackupFileName(t time.Time) string {
-	return t.UTC().Format("2006-01-02T15-04-05") + "Z-yourphr-" + version.VERSION + "-backup.db.gz"
+// BackupFileName builds the canonical date-first, label+version-stamped, gzip filename for time t.
+func BackupFileName(t time.Time, label string) string {
+	seg := "yourphr-"
+	if l := sanitizeLabel(label); l != "" {
+		seg += l + "-"
+	}
+	return t.UTC().Format("2006-01-02T15-04-05") + "Z-" + seg + version.VERSION + "-backup.db.gz"
+}
+
+// sanitizeLabel keeps the instance label filesystem-safe ([A-Za-z0-9._-]; others -> '-').
+func sanitizeLabel(label string) string {
+	var b strings.Builder
+	for _, r := range strings.TrimSpace(label) {
+		switch {
+		case r >= 'a' && r <= 'z', r >= 'A' && r <= 'Z', r >= '0' && r <= '9', r == '.', r == '_', r == '-':
+			b.WriteRune(r)
+		default:
+			b.WriteRune('-')
+		}
+	}
+	return b.String()
 }
 
 // isBackupFile recognizes both the current name (yourphr-<version>-backup.db.gz) and older ones
@@ -155,7 +175,7 @@ func (gr *GormRepository) PerformBackup(appConfig config.Interface, destOverride
 		return BackupFile{}, "", fmt.Errorf("cannot create destination: %w", err)
 	}
 
-	name := BackupFileName(time.Now())
+	name := BackupFileName(time.Now(), appConfig.GetString("backup.label"))
 	full := filepath.Join(dest, name)
 	if err := gr.BackupToFile(full); err != nil {
 		return BackupFile{}, "", err
