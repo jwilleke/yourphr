@@ -1,16 +1,17 @@
 import {Component, OnInit} from '@angular/core';
 import {CommonModule} from '@angular/common';
+import {FormsModule} from '@angular/forms';
 import {FastenApiService} from '../../services/fasten-api.service';
 import {DatabaseInfo} from '../../models/fasten/database-info';
 import {AdminBackLinkComponent} from '../../components/admin-back-link/admin-back-link.component';
 import {LoadingSpinnerComponent} from '../../components/loading-spinner/loading-spinner.component';
 
-// Admin Database page (#361): runtime DB facts + a safe online backup. Admin-only (route guarded +
-// backend self-gates). The backup is the ENTIRE single-file DB — every user's full records (PHI) — so
-// the UI warns before download.
+// Admin Database page (#361): runtime DB facts + a safe online backup written to a server-side folder.
+// Admin-only (route guarded + backend self-gates). A backup is the ENTIRE single-file DB — every user's
+// full records (PHI) — so the UI warns. The destination folder defaults to the last-used location.
 @Component({
   standalone: true,
-  imports: [CommonModule, AdminBackLinkComponent, LoadingSpinnerComponent],
+  imports: [CommonModule, FormsModule, AdminBackLinkComponent, LoadingSpinnerComponent],
   selector: 'app-admin-database',
   templateUrl: './admin-database.component.html',
   styleUrls: ['./admin-database.component.scss'],
@@ -19,14 +20,25 @@ export class AdminDatabaseComponent implements OnInit {
   loading = true;
   errored = false;
   info: DatabaseInfo | null = null;
+  destination = '';
   backingUp = false;
   backupError = '';
+  backupResult = '';
 
   constructor(private fastenApi: FastenApiService) {}
 
   ngOnInit(): void {
+    this.load(true);
+  }
+
+  private load(initial: boolean): void {
     this.fastenApi.getDatabaseInfo().subscribe({
-      next: (info) => { this.info = info; this.loading = false; },
+      next: (info) => {
+        this.info = info;
+        // Default the destination to the last-used folder; don't clobber what the admin is typing.
+        if (initial || !this.destination) { this.destination = info.backup_destination; }
+        this.loading = false;
+      },
       error: () => { this.errored = true; this.loading = false; },
     });
   }
@@ -43,22 +55,17 @@ export class AdminDatabaseComponent implements OnInit {
   backup(): void {
     this.backingUp = true;
     this.backupError = '';
-    this.fastenApi.backupDatabase().subscribe({
-      next: (resp) => {
-        const blob = resp.body as Blob;
-        let filename = 'yourphr-backup.db';
-        const cd = resp.headers.get('Content-Disposition');
-        const m = cd ? /filename="?([^"]+)"?/.exec(cd) : null;
-        if (m) { filename = m[1]; }
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        a.click();
-        URL.revokeObjectURL(url);
+    this.backupResult = '';
+    this.fastenApi.backupDatabase(this.destination).subscribe({
+      next: (res) => {
+        this.backupResult = `Saved ${res.filename} (${this.humanSize(res.size_bytes)}) to ${res.destination}`;
+        this.backingUp = false;
+        this.load(false); // refresh the backups list + destination
+      },
+      error: (e) => {
+        this.backupError = e?.error?.error || 'Backup failed — check the server logs.';
         this.backingUp = false;
       },
-      error: () => { this.backupError = 'Backup failed — check the server logs.'; this.backingUp = false; },
     });
   }
 }

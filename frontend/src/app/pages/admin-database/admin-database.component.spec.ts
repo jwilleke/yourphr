@@ -12,7 +12,7 @@ describe('AdminDatabaseComponent', () => {
   beforeEach(async () => {
     mockApi = jasmine.createSpyObj('FastenApiService', ['getDatabaseInfo', 'backupDatabase']);
     mockApi.getDatabaseInfo.and.returnValue(of({
-      location: '/opt/fasten/db/fasten.db', encryption_enabled: false, size_bytes: 1048576, users: 2, sources: 4, integrity_ok: true,
+      location: '/opt/fasten/db/fasten.db', encryption_enabled: false, size_bytes: 1048576, users: 2, sources: 4, integrity_ok: true, backup_destination: '/opt/fasten/db/backups', backups: [],
     }));
     await TestBed.configureTestingModule({
       imports: [AdminDatabaseComponent, RouterTestingModule],

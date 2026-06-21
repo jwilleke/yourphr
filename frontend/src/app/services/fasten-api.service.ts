@@ -9,7 +9,7 @@ import {ReconciledMedication} from '../models/fasten/reconciled-medication';
 import {ClassifiedCondition} from '../models/fasten/classified-condition';
 import {ClassifiedAllergy} from '../models/fasten/classified-allergy';
 import {ClassifiedImmunization} from '../models/fasten/classified-immunization';
-import {DatabaseInfo} from '../models/fasten/database-info';
+import {DatabaseInfo, BackupResult} from '../models/fasten/database-info';
 import {AccountUser} from '../models/fasten/account-user';
 import {ResourceListItem} from '../models/fasten/resource-list-item';
 import {ServerLogs} from '../models/fasten/server-logs';
@@ -238,11 +238,16 @@ export class FastenApiService {
       );
   }
 
-  // backupDatabase returns the full HttpResponse<Blob> so the caller can read the Content-Disposition
-  // filename. The auth-interceptor attaches the JWT (admin-gated server-side).
-  backupDatabase(): Observable<HttpResponse<Blob>> {
-    return this._httpClient.post(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/admin/database/backup`, {},
-      {responseType: 'blob', observe: 'response'});
+  // backupDatabase writes a server-side backup into the destination folder (default: the last-used
+  // location) and returns where it wrote it. Admin-gated server-side.
+  backupDatabase(destination?: string): Observable<BackupResult> {
+    return this._httpClient.post<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/admin/database/backup`,
+      destination ? {destination} : {})
+      .pipe(
+        map((response: ResponseWrapper) => {
+          return response.data as BackupResult
+        })
+      );
   }
 
   //admin-only (#170): change the running server log level at runtime (resets to config on restart).

@@ -2,14 +2,14 @@
   <app-admin-back-link></app-admin-back-link>
 
   <h4 class="mg-b-5"><i class="fas fa-database"></i>&nbsp; Database</h4>
-  <p class="tx-gray-500">Details about the running database, and an on-demand backup.</p>
+  <p class="tx-gray-500">Details about the running database, and on-demand backups.</p>
 
   <app-loading-spinner *ngIf="loading" loadingTitle="Loading database details..."></app-loading-spinner>
   <div *ngIf="!loading && errored" class="alert alert-danger">Could not load database details.</div>
 
   <div class="row" *ngIf="!loading && !errored && info">
     <!-- Details -->
-    <div class="col-lg-7 mg-b-20">
+    <div class="col-lg-5 mg-b-20">
       <div class="card">
         <div class="card-header"><h6 class="card-title mg-b-0">Details</h6></div>
         <div class="card-body">
@@ -28,19 +28,41 @@
     </div>
 
     <!-- Backup -->
-    <div class="col-lg-5 mg-b-20">
+    <div class="col-lg-7 mg-b-20">
       <div class="card">
         <div class="card-header"><h6 class="card-title mg-b-0">Backup</h6></div>
         <div class="card-body">
           <div class="alert alert-warning tx-13">
             <i class="fas fa-triangle-exclamation mg-r-5"></i>
-            This downloads the <strong>entire database</strong> — <strong>every user's</strong> complete medical records (PHI). Store it securely.
+            A backup is the <strong>entire database</strong> — <strong>every user's</strong> complete medical records (PHI). Keep the destination secure.
           </div>
-          <button type="button" class="btn btn-az-primary" (click)="backup()" [disabled]="backingUp">
-            <i class="fas fa-download mg-r-5"></i>{{ backingUp ? 'Preparing backup...' : 'Backup now' }}
-          </button>
-          <div *ngIf="backupError" class="text-danger mg-t-10 tx-13">{{ backupError }}</div>
-          <p class="tx-gray-500 tx-12 mg-t-15 mg-b-0">A consistent online snapshot (SQLite <code>VACUUM INTO</code>) — safe to run while the app is in use.</p>
+
+          <label class="tx-12 tx-uppercase tx-gray-500 mg-b-5">Destination folder</label>
+          <div class="d-flex">
+            <input type="text" class="form-control mg-r-10" [(ngModel)]="destination" placeholder="/opt/fasten/db/backups">
+            <button type="button" class="btn btn-az-primary text-nowrap" (click)="backup()" [disabled]="backingUp || !destination">
+              <i class="fas fa-download mg-r-5"></i>{{ backingUp ? 'Backing up...' : 'Backup now' }}
+            </button>
+          </div>
+          <p class="tx-gray-500 tx-12 mg-t-5">Defaults to the last-used location. A consistent online snapshot (SQLite <code>VACUUM INTO</code>) — safe while the app is in use. Filename: <code>yourphr-backup-YYYY-MM-DD-HHMMSS.db</code>.</p>
+
+          <div *ngIf="backupResult" class="alert alert-success tx-13 mg-t-10 mg-b-0"><i class="fas fa-check mg-r-5"></i>{{ backupResult }}</div>
+          <div *ngIf="backupError" class="text-danger tx-13 mg-t-10">{{ backupError }}</div>
+
+          <div class="mg-t-20" *ngIf="info.backups?.length">
+            <strong class="tx-12 tx-uppercase tx-gray-500">Backups in this folder</strong>
+            <table class="table table-sm mg-t-5 mg-b-0">
+              <thead><tr><th>File</th><th>Size</th><th>Created</th></tr></thead>
+              <tbody>
+                <tr *ngFor="let b of info.backups">
+                  <td>{{ b.name }}</td>
+                  <td>{{ humanSize(b.size_bytes) }}</td>
+                  <td>{{ b.modified | date:'medium' }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p *ngIf="!info.backups?.length" class="tx-gray-500 tx-12 mg-t-15 mg-b-0">No backups in this folder yet.</p>
         </div>
       </div>
     </div>
