@@ -17,8 +17,19 @@ import {ReportMedicalHistoryEditorComponent} from '../report-medical-history-edi
 export class ReportMedicalHistoryTimelinePanelComponent implements OnInit {
   @Input() resourceFhir: ResourceFhir
   displayModel: EncounterModel
+  showRaw = false // "Details (raw FHIR)" debug toggle
 
   constructor(private modalService: NgbModal) { }
+
+  toggleRaw(): void {
+    this.showRaw = !this.showRaw
+  }
+
+  // typeBadge is the honest FHIR resource type shown on the card (replaces a hardcoded, misleading
+  // "Primary" badge that implied a primary-care relationship it never represented).
+  get typeBadge(): string {
+    return this.resourceFhir?.source_resource_type || ''
+  }
 
   ngOnInit(): void {
     if (!this.resourceFhir) {

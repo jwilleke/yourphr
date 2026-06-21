@@ -19,7 +19,7 @@
       <small></small>
     </span>
     <span class="float-end text-muted">
-      <span class="badge bg-primary"><i class="fas fa-folder-plus"></i> | Primary</span>
+      <span class="badge bg-secondary">{{ typeBadge }}</span>
     </span>
     <br/>
     <span>
@@ -101,9 +101,18 @@
         </li>
       </ul>
     </div>
+
+    <!-- Details (raw FHIR) — inline debug view, like /explore. The card title also deep-links to /explore. -->
+    <div class="mg-t-10">
+      <button type="button" class="btn btn-link btn-sm tx-12 pd-0 text-muted" (click)="toggleRaw()">
+        <i class="fas" [ngClass]="showRaw ? 'fa-caret-down' : 'fa-caret-right'"></i>
+        {{ showRaw ? 'Hide' : 'Show' }} details (raw FHIR)
+      </button>
+      <pre *ngIf="showRaw" class="tx-11 bg-light pd-10 mg-t-5 rounded" style="max-height: 360px; overflow: auto;">{{ resourceFhir?.resource_raw | json }}</pre>
+    </div>
   </div>
   <div class="timeline-footer">
-    <div *ngIf="displayModel?.related_resources?.['DocumentReference']?.length > 0 || displayModel?.related_resources?.['DiagnosticReport']?.length > 0" ngbDropdown class="d-inline-block dropdown ms-3">
+    <div *ngIf="displayModel?.related_resources?.['DocumentReference']?.length > 0 || displayModel?.related_resources?.['DiagnosticReport']?.length > 0" ngbDropdown container="body" class="d-inline-block dropdown ms-3">
       <button type="button" class="btn btn-outline-indigo" id="dropdownReports" ngbDropdownToggle>
         Clinical Reports
       </button>
@@ -119,7 +128,7 @@
       </div>
     </div>
 
-    <div ngbDropdown class="d-inline-block dropdown ms-3 float-end">
+    <div ngbDropdown container="body" class="d-inline-block dropdown ms-3 float-end">
       <button type="button" class="btn text-muted" id="dropdownAll" ngbDropdownToggle>
         View Related
       </button>
