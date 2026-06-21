@@ -9,6 +9,7 @@ import {ReconciledMedication} from '../models/fasten/reconciled-medication';
 import {ClassifiedCondition} from '../models/fasten/classified-condition';
 import {ClassifiedAllergy} from '../models/fasten/classified-allergy';
 import {ClassifiedImmunization} from '../models/fasten/classified-immunization';
+import {DatabaseInfo} from '../models/fasten/database-info';
 import {AccountUser} from '../models/fasten/account-user';
 import {ResourceListItem} from '../models/fasten/resource-list-item';
 import {ServerLogs} from '../models/fasten/server-logs';
@@ -225,6 +226,23 @@ export class FastenApiService {
           return response.data as ServerLogs
         })
       );
+  }
+
+  // Admin Database card (#361). Info is admin-gated; the backup is the full multi-user PHI DB.
+  getDatabaseInfo(): Observable<DatabaseInfo> {
+    return this._httpClient.get<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/admin/database`)
+      .pipe(
+        map((response: ResponseWrapper) => {
+          return response.data as DatabaseInfo
+        })
+      );
+  }
+
+  // backupDatabase returns the full HttpResponse<Blob> so the caller can read the Content-Disposition
+  // filename. The auth-interceptor attaches the JWT (admin-gated server-side).
+  backupDatabase(): Observable<HttpResponse<Blob>> {
+    return this._httpClient.post(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/admin/database/backup`, {},
+      {responseType: 'blob', observe: 'response'});
   }
 
   //admin-only (#170): change the running server log level at runtime (resets to config on restart).

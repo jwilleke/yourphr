@@ -1,0 +1,48 @@
+<div class="az-content-body">
+  <app-admin-back-link></app-admin-back-link>
+
+  <h4 class="mg-b-5"><i class="fas fa-database"></i>&nbsp; Database</h4>
+  <p class="tx-gray-500">Details about the running database, and an on-demand backup.</p>
+
+  <app-loading-spinner *ngIf="loading" loadingTitle="Loading database details..."></app-loading-spinner>
+  <div *ngIf="!loading && errored" class="alert alert-danger">Could not load database details.</div>
+
+  <div class="row" *ngIf="!loading && !errored && info">
+    <!-- Details -->
+    <div class="col-lg-7 mg-b-20">
+      <div class="card">
+        <div class="card-header"><h6 class="card-title mg-b-0">Details</h6></div>
+        <div class="card-body">
+          <div class="dl-row"><div class="k">Location on disk</div><div class="v">{{ info.location }}</div></div>
+          <div class="dl-row"><div class="k">Encryption at rest</div><div class="v">
+            <span class="badge" [ngClass]="info.encryption_enabled ? 'badge-success' : 'badge-warning'">{{ info.encryption_enabled ? 'Enabled' : 'Disabled' }}</span>
+          </div></div>
+          <div class="dl-row"><div class="k">Size on disk</div><div class="v">{{ humanSize(info.size_bytes) }}</div></div>
+          <div class="dl-row"><div class="k">Integrity check</div><div class="v">
+            <span class="badge" [ngClass]="info.integrity_ok ? 'badge-success' : 'badge-danger'">{{ info.integrity_ok ? 'OK' : 'FAILED' }}</span>
+          </div></div>
+          <div class="dl-row"><div class="k">Users</div><div class="v">{{ info.users }}</div></div>
+          <div class="dl-row"><div class="k">Connected sources</div><div class="v">{{ info.sources }}</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Backup -->
+    <div class="col-lg-5 mg-b-20">
+      <div class="card">
+        <div class="card-header"><h6 class="card-title mg-b-0">Backup</h6></div>
+        <div class="card-body">
+          <div class="alert alert-warning tx-13">
+            <i class="fas fa-triangle-exclamation mg-r-5"></i>
+            This downloads the <strong>entire database</strong> — <strong>every user's</strong> complete medical records (PHI). Store it securely.
+          </div>
+          <button type="button" class="btn btn-az-primary" (click)="backup()" [disabled]="backingUp">
+            <i class="fas fa-download mg-r-5"></i>{{ backingUp ? 'Preparing backup...' : 'Backup now' }}
+          </button>
+          <div *ngIf="backupError" class="text-danger mg-t-10 tx-13">{{ backupError }}</div>
+          <p class="tx-gray-500 tx-12 mg-t-15 mg-b-0">A consistent online snapshot (SQLite <code>VACUUM INTO</code>) — safe to run while the app is in use.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

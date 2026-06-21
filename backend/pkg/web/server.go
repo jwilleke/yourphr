@@ -242,6 +242,9 @@ func (ae *AppEngine) Setup() (*gin.RouterGroup, *gin.Engine) {
 					//admin dashboard (#170) — handlers self-gate on the admin role
 					secure.GET("/admin/logs", handler.GetServerLogs)
 					secure.PUT("/admin/log-level", handler.SetLogLevel)
+					//admin Database card (#361) — DB facts + safe online backup (full PHI; admin-only)
+					secure.GET("/admin/database", handler.GetDatabaseInfo)
+					secure.POST("/admin/database/backup", handler.BackupDatabase)
 
 					secure.POST("/practitioners", handler.CreatePractitioner)
 					secure.PUT("/practitioners/:practitionerId", handler.UpdatePractitioner)
