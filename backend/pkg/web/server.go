@@ -248,6 +248,7 @@ func (ae *AppEngine) Setup() (*gin.RouterGroup, *gin.Engine) {
 					secure.POST("/admin/database/backup/download", handler.BackupDatabaseDownload) // stream to browser (on-demand)
 					secure.POST("/admin/database/schedule", handler.SetBackupSchedule)             // settable auto-backup schedule
 					secure.GET("/admin/database/browse", handler.BrowseDirectories)                // server-folder browser (pick destination)
+					secure.POST("/admin/database/restore", handler.RestoreDatabase)                // stage a restore (applied on restart) — #362
 
 					secure.POST("/practitioners", handler.CreatePractitioner)
 					secure.PUT("/practitioners/:practitionerId", handler.UpdatePractitioner)
@@ -544,6 +545,14 @@ func (ae *AppEngine) initializeDatabase() error {
 		ae.Logger.Info("Encryption key found. Initializing database.")
 	} else {
 		ae.Logger.Info("Database encryption is disabled. Initializing database without encryption.")
+	}
+
+	// Apply a staged restore (#362) BEFORE opening the DB — never swap a live, open file. Backs the
+	// current DB aside first; if it fails we abort startup rather than open a half-restored DB.
+	if applied, rErr := database.ApplyPendingRestore(ae.Config); rErr != nil {
+		return fmt.Errorf("failed to apply staged database restore: %w", rErr)
+	} else if applied {
+		ae.Logger.Warn("Applied a staged database restore (previous DB saved as <db>.pre-restore).")
 	}
 
 	dbRepo, err := database.NewRepository(ae.Config, ae.Logger, ae.EventBus)

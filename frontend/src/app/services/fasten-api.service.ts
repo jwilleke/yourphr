@@ -269,6 +269,18 @@ export class FastenApiService {
       );
   }
 
+  // restoreDatabase STAGES a restore from a backup in the destination folder; it is applied on the next
+  // app restart. DANGER: replaces the entire database. Admin-only; requires confirmation.
+  restoreDatabase(backupName: string): Observable<{staged: boolean; message: string}> {
+    return this._httpClient.post<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/admin/database/restore`,
+      {backup_name: backupName, confirm: true})
+      .pipe(
+        map((response: ResponseWrapper) => {
+          return response.data as {staged: boolean; message: string}
+        })
+      );
+  }
+
   // browseDirectories lists subfolders of a server path (admin-only) for picking a backup destination.
   browseDirectories(path?: string): Observable<DirListing> {
     const base = `${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/admin/database/browse`

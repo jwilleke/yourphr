@@ -35,6 +35,10 @@ export class AdminDatabaseComponent implements OnInit {
   browse: DirListing | null = null;
   browseError = '';
 
+  // Restore
+  restoring = '';   // backup filename currently being restored
+  restoreMsg = '';
+
   constructor(private fastenApi: FastenApiService) {}
 
   ngOnInit(): void {
@@ -131,6 +135,20 @@ export class AdminDatabaseComponent implements OnInit {
   }
   private joinPath(a: string, b: string): string {
     return a.endsWith('/') ? a + b : a + '/' + b;
+  }
+
+  // restore stages a restore from a listed backup; applied on the next restart. Requires a typed
+  // confirmation because it replaces the entire database (every user's records).
+  restore(name: string): void {
+    const typed = window.prompt(
+      `This will REPLACE the entire database — every user's records — with "${name}" on the next app restart.\n\nType "restore" to confirm:`);
+    if (typed !== 'restore') { return; }
+    this.restoring = name;
+    this.restoreMsg = '';
+    this.fastenApi.restoreDatabase(name).subscribe({
+      next: (res) => { this.restoreMsg = res.message || 'Restore staged. Restart the app to apply.'; this.restoring = ''; this.load(false); },
+      error: (e) => { this.restoreMsg = e?.error?.error || 'Restore failed.'; this.restoring = ''; },
+    });
   }
 
   saveSchedule(): void {

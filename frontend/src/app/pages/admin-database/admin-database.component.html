@@ -107,16 +107,24 @@
 
           <div class="mg-t-20" *ngIf="info.backups?.length">
             <strong class="tx-12 tx-uppercase tx-gray-500">Backups in this folder</strong>
+            <div *ngIf="restoreMsg" class="alert alert-info tx-13 mg-t-5 mg-b-0"><i class="fas fa-circle-info mg-r-5"></i>{{ restoreMsg }}</div>
             <table class="table table-sm mg-t-5 mg-b-0">
-              <thead><tr><th>File</th><th>Size</th><th>Created</th></tr></thead>
+              <thead><tr><th>File</th><th>Size</th><th>Created</th><th></th></tr></thead>
               <tbody>
                 <tr *ngFor="let b of info.backups">
                   <td>{{ b.name }}</td>
                   <td>{{ humanSize(b.size_bytes) }}</td>
                   <td>{{ b.modified | date:'medium' }}</td>
+                  <td class="text-nowrap">
+                    <button type="button" class="btn btn-sm btn-outline-danger" (click)="restore(b.name)" [disabled]="restoring === b.name"
+                            title="Replace the entire database with this backup (applied on restart)">
+                      <span *ngIf="restoring === b.name" class="spinner-border spinner-border-sm mg-r-5"></span>Restore…
+                    </button>
+                  </td>
                 </tr>
               </tbody>
             </table>
+            <p class="tx-gray-500 tx-12 mg-t-5 mg-b-0"><i class="fas fa-triangle-exclamation mg-r-5"></i>Restore replaces <strong>all</strong> data with the chosen backup, applied on the next app restart (your current DB is auto-backed-up first).</p>
           </div>
           <p *ngIf="!info.backups?.length" class="tx-gray-500 tx-12 mg-t-15 mg-b-0">No backups in this folder yet.</p>
         </div>

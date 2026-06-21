@@ -191,6 +191,56 @@ func SetBackupSchedule(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"success": true, "data": s})
 }
 
+// RestoreRequest is the POST /api/secure/admin/database/restore payload.
+type RestoreRequest struct {
+	BackupName string `json:"backup_name"` // a file in the current backup destination
+	Confirm    bool   `json:"confirm"`     // must be true (UI requires a typed confirmation)
+}
+
+// RestoreDatabase STAGES a restore from a backup in the destination folder. DANGER: applying it
+// replaces the ENTIRE database (every user's records). It is staged + validated here (with an
+// auto-backup of the current DB), then APPLIED on the next app restart — never swapped under a live DB.
+// Admin-only.
+func RestoreDatabase(c *gin.Context) {
+	if !IsAdmin(c) {
+		c.JSON(http.StatusForbidden, gin.H{"success": false, "error": "admin role required"})
+		return
+	}
+	appConfig := c.MustGet(pkg.ContextKeyTypeConfig).(config.Interface)
+	gr, ok := gormRepoFromContext(c)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "database backend does not support restore"})
+		return
+	}
+	var req RestoreRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "invalid request"})
+		return
+	}
+	if !req.Confirm {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "restore must be confirmed"})
+		return
+	}
+	name := filepath.Base(strings.TrimSpace(req.BackupName)) // filepath.Base prevents path traversal
+	if name == "" || name == "." || (!strings.HasSuffix(name, ".db") && !strings.HasSuffix(name, ".db.gz")) {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "invalid backup file"})
+		return
+	}
+	full := filepath.Join(database.CurrentBackupDestination(appConfig), name)
+	if _, err := os.Stat(full); err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"success": false, "error": "backup not found in the destination folder"})
+		return
+	}
+	if err := gr.StageRestore(appConfig, full); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"success": true, "data": gin.H{
+		"staged":  true,
+		"message": "Restore staged (current DB auto-backed-up). Restart the app to apply it.",
+	}})
+}
+
 // DirListing is the payload for GET /api/secure/admin/database/browse.
 type DirListing struct {
 	Path   string   `json:"path"`
