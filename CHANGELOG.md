@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.8.1](https://github.com/jwilleke/yourphr/compare/v1.8.0...v1.8.1) (2026-06-21)
+
+### Features
+
+- **admin:** Database-card backups write to a **selectable destination folder that persists until changed**, with canonical sortable filenames (`yourphr-backup-YYYY-MM-DD-HHMMSS.db`) and a list of existing backups ([#361](https://github.com/jwilleke/yourphr/issues/361))
+- **admin:** **in-app scheduled backups** — opt-in `backup.interval_hours` + `backup.retention` (prune), surfaced in the Database card ([#361](https://github.com/jwilleke/yourphr/issues/361))
+
 ## [1.8.0](https://github.com/jwilleke/yourphr/compare/v1.7.0...v1.8.0) (2026-06-21)
 
 ### Features
