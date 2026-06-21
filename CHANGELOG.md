@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.6.0](https://github.com/jwilleke/yourphr/compare/v1.5.0...v1.6.0) (2026-06-21)
+
+### Features
+
+- **medical-history:** Condition dimension sourced from `/conditions/classified` — the by-Condition rail lists every canonical condition (not only encounter-linked ones) with its clinical state and linked visits ([#359](https://github.com/jwilleke/yourphr/issues/359))
+
+### Build / CI
+
+- **deploy:** release-gated deploys — the docker image is built + published only on a release tag (vX.Y.Z); Flux deploys strictly off semver tags. Pushes to main are CI-tested but no longer auto-deploy ([#241](https://github.com/jwilleke/yourphr/issues/241))
+- **e2e:** unblock E2E — firefox-ignore data/download specs; quarantine the lforms-modal wizard under [#131](https://github.com/jwilleke/yourphr/issues/131)
+- **deps:** Dependabot bumps across go / npm / github-actions; rejected gorm.io/driver/sqlite 1.6.0 (breaks the encrypted-DB tests)
+
 ## [1.5.0](https://github.com/jwilleke/yourphr/compare/v1.4.0...v1.5.0) (2026-06-20)
 
 ### Features
