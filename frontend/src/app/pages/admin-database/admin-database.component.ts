@@ -21,7 +21,8 @@ export class AdminDatabaseComponent implements OnInit {
   errored = false;
   info: DatabaseInfo | null = null;
   destination = '';
-  backingUp = false;
+  backingUp = false;     // server-side (fire-and-forget) backup in progress
+  downloading = false;   // on-demand download in progress (must stay on page)
   backupError = '';
   backupResult = '';
 
@@ -65,6 +66,38 @@ export class AdminDatabaseComponent implements OnInit {
       error: (e) => {
         this.backupError = e?.error?.error || 'Backup failed — check the server logs.';
         this.backingUp = false;
+      },
+    });
+  }
+
+  // downloadBackup streams a fresh backup to the browser; the Save dialog picks the location. You must
+  // stay on the page until it finishes (a browser download cancels if you navigate away) — hence a
+  // spinner. Reuses the source-export download pattern.
+  downloadBackup(): void {
+    this.downloading = true;
+    this.backupError = '';
+    this.backupResult = '';
+    this.fastenApi.downloadBackup().subscribe({
+      next: (resp) => {
+        const blob = resp.body;
+        if (!blob) { this.downloading = false; return; }
+        const disposition = resp.headers.get('Content-Disposition') || '';
+        const match = /filename="?([^";]+)"?/i.exec(disposition);
+        const filename = (match && match[1].trim()) || 'yourphr-backup.db.gz';
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+        this.backupResult = `Downloaded ${filename} (${this.humanSize(blob.size)}).`;
+        this.downloading = false;
+      },
+      error: () => {
+        this.backupError = 'Download failed — check the server logs.';
+        this.downloading = false;
       },
     });
   }

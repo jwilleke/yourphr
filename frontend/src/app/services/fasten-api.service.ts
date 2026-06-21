@@ -250,6 +250,14 @@ export class FastenApiService {
       );
   }
 
+  // downloadBackup streams a fresh backup to the browser (the on-demand "Download" action; the
+  // browser's Save dialog chooses where it lands). Returns the full HttpResponse<Blob> so the caller
+  // reads the Content-Disposition filename — same pattern as exportSource.
+  downloadBackup(): Observable<HttpResponse<Blob>> {
+    return this._httpClient.post(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/admin/database/backup/download`, {},
+      {responseType: 'blob', observe: 'response'});
+  }
+
   //admin-only (#170): change the running server log level at runtime (resets to config on restart).
   setServerLogLevel(level: string): Observable<{ level: string }> {
     return this._httpClient.put<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/admin/log-level`, { level })

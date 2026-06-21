@@ -1,7 +1,9 @@
 package database
 
 import (
+	"compress/gzip"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"sort"
@@ -17,17 +19,17 @@ import (
 // user's records (PHI) — so callers must gate on the admin role / run server-side only.
 
 // backupLabel appears in every backup filename. Filenames are DATE-FIRST, ISO-ish, UTC, and
-// filesystem-safe (colons -> dashes): 2026-06-21T12-10-03Z-yourphr-backup.db — so they sort
-// chronologically by name.
+// filesystem-safe (colons -> dashes), and gzip-compressed: 2026-06-21T12-10-03Z-yourphr-backup.db.gz
+// — so they sort chronologically by name. (Aligned with the ngdpbase BackupManager: gzip backups.)
 const backupLabel = "yourphr-backup"
 
-// BackupFileName builds the canonical date-first filename for time t.
+// BackupFileName builds the canonical date-first, gzip-compressed filename for time t.
 func BackupFileName(t time.Time) string {
-	return t.UTC().Format("2006-01-02T15-04-05") + "Z-" + backupLabel + ".db"
+	return t.UTC().Format("2006-01-02T15-04-05") + "Z-" + backupLabel + ".db.gz"
 }
 
 func isBackupFile(name string) bool {
-	return strings.Contains(name, backupLabel) && strings.HasSuffix(name, ".db")
+	return strings.Contains(name, backupLabel) && (strings.HasSuffix(name, ".db.gz") || strings.HasSuffix(name, ".db"))
 }
 
 // BackupFile describes one backup present in a destination folder.
@@ -114,16 +116,41 @@ func (gr *GormRepository) PerformBackup(appConfig config.Interface, destOverride
 	return bf, full, nil
 }
 
-// BackupToFile writes a consistent online snapshot (VACUUM INTO) to fullPath. Used by PerformBackup
-// (to a destination folder) and by the on-demand download path (to a temp file). VACUUM INTO does not
-// accept a bound parameter for the path; the path is server/admin-controlled, with single quotes
-// escaped defensively.
+// BackupToFile writes a consistent online snapshot to fullPath (a *.db.gz): VACUUM INTO a temp
+// uncompressed snapshot, then gzip it to fullPath and remove the temp. Used by PerformBackup (to a
+// destination folder) and by the on-demand download path (to a temp file). VACUUM INTO does not accept
+// a bound parameter for the path; the path is server/admin-controlled, single quotes escaped.
 func (gr *GormRepository) BackupToFile(fullPath string) error {
-	safe := strings.ReplaceAll(fullPath, "'", "''")
+	tmp := strings.TrimSuffix(fullPath, ".gz") + ".tmp"
+	safe := strings.ReplaceAll(tmp, "'", "''")
 	if err := gr.GormClient.Exec(fmt.Sprintf("VACUUM INTO '%s'", safe)).Error; err != nil {
 		return fmt.Errorf("backup failed: %w", err)
 	}
+	defer os.Remove(tmp)
+	if err := gzipFile(tmp, fullPath); err != nil {
+		os.Remove(fullPath)
+		return fmt.Errorf("compress failed: %w", err)
+	}
 	return nil
+}
+
+func gzipFile(src, dst string) error {
+	in, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer in.Close()
+	out, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+	gw := gzip.NewWriter(out)
+	if _, err := io.Copy(gw, in); err != nil {
+		gw.Close()
+		return err
+	}
+	return gw.Close()
 }
 
 // PruneBackups keeps the newest `keep` backups in dir and deletes the rest. keep <= 0 disables pruning.
