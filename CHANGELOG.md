@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.9.0](https://github.com/jwilleke/yourphr/compare/v1.8.1...v1.9.0) (2026-06-21)
+
+### Features
+
+- **admin:** full Database backup workflow — on-demand **Download** (browser Save dialog + spinner) or fire-and-forget **Back up to server**; **gzip** backups with date-first ISO filenames; a **settable schedule** (enable + time-of-day + days + retention; applied with no restart); and a **browseable** destination folder ([#361](https://github.com/jwilleke/yourphr/issues/361))
+- **admin:** **restore** the database from a backup — staged, validated (`integrity_check`), with an auto-backup of the current DB first, applied safely on the next restart; covered by a verifiable backup→restore round-trip test ([#362](https://github.com/jwilleke/yourphr/issues/362))
+
 ## [1.8.1](https://github.com/jwilleke/yourphr/compare/v1.8.0...v1.8.1) (2026-06-21)
 
 ### Features
