@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
 	"time"
@@ -53,11 +54,15 @@ func sanitizeLabel(label string) string {
 	return b.String()
 }
 
-// isBackupFile recognizes both the current name (yourphr-<version>-backup.db.gz) and older ones
-// (yourphr-backup.db / yourphr-backup-<date>.db), so existing backups still list + restore.
+// backupFileRe matches ONLY our own backup filenames — the current name
+// (<iso>Z-yourphr-[<label>-]<version>-backup.db.gz) and older ones (yourphr-backup.db,
+// yourphr-backup-<date>.db, <iso>Z-yourphr-backup.db[.gz]). It is anchored on "-backup.db[.gz]" (or the
+// legacy "yourphr-backup-<8 digits>.db") so an unrelated file dropped in the destination
+// (e.g. "…-yourphr-old-backup-notes.db") is NOT treated as a restorable/prunable backup (#368, finding #3).
+var backupFileRe = regexp.MustCompile(`(?i)yourphr-(.*-)?backup(-\d{8})?\.db(\.gz)?$`)
+
 func isBackupFile(name string) bool {
-	return strings.Contains(name, "yourphr") && strings.Contains(name, "backup") &&
-		(strings.HasSuffix(name, ".db.gz") || strings.HasSuffix(name, ".db"))
+	return backupFileRe.MatchString(name)
 }
 
 // BackupFile describes one backup present in a destination folder.
@@ -203,12 +208,20 @@ func (gr *GormRepository) PerformBackup(appConfig config.Interface, destOverride
 // destination folder) and by the on-demand download path (to a temp file). VACUUM INTO does not accept
 // a bound parameter for the path; the path is server/admin-controlled, single quotes escaped.
 func (gr *GormRepository) BackupToFile(fullPath string) error {
-	tmp := strings.TrimSuffix(fullPath, ".gz") + ".tmp"
+	// VACUUM INTO a fresh, unique private temp dir (0700) next to the target, then gzip to fullPath. A
+	// per-call temp dir avoids two concurrent backups colliding on a shared temp name (#368, finding #4)
+	// and keeps the uncompressed snapshot off a world-readable location.
+	tmpDir, err := os.MkdirTemp(filepath.Dir(fullPath), ".yourphr-backup-")
+	if err != nil {
+		return fmt.Errorf("backup failed (temp dir): %w", err)
+	}
+	defer os.RemoveAll(tmpDir)
+	tmp := filepath.Join(tmpDir, "snapshot.db")
+
 	safe := strings.ReplaceAll(tmp, "'", "''")
 	if err := gr.GormClient.Exec(fmt.Sprintf("VACUUM INTO '%s'", safe)).Error; err != nil {
 		return fmt.Errorf("backup failed: %w", err)
 	}
-	defer os.Remove(tmp)
 	if err := gzipFile(tmp, fullPath); err != nil {
 		os.Remove(fullPath)
 		return fmt.Errorf("compress failed: %w", err)

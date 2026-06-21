@@ -31,6 +31,8 @@ func TestIsBackupFile(t *testing.T) {
 		"random.db":                                       false,
 		"yourphr-backup.txt":                              false,
 		"notes.md":                                        false,
+		"2026-06-21T12-10-03Z-yourphr-old-backup-notes.db": false, // foreign file, not a real backup (#368 #3)
+		"company-backup.db":                                false, // no yourphr marker
 	}
 	for name, want := range cases {
 		if got := isBackupFile(name); got != want {

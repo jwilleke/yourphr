@@ -55,9 +55,23 @@ func ApplyPendingRestore(appConfig config.Interface) (bool, error) {
 		return false, nil // nothing staged
 	}
 	live := appConfig.GetString("database.location")
-	_ = copyFile(live, live+".pre-restore") // safety copy (app not running yet)
-	if err := copyFile(pending, live); err != nil {
-		return false, fmt.Errorf("apply restore failed: %w", err)
+	// Safety copy of the current DB is REQUIRED — never destroy the live DB if we can't back it up first
+	// (#368). Only when a live DB actually exists.
+	if _, err := os.Stat(live); err == nil {
+		if err := copyFile(live, live+".pre-restore"); err != nil {
+			return false, fmt.Errorf("aborting restore: could not write pre-restore safety copy: %w", err)
+		}
+	}
+	// Atomic swap: copy to a sibling temp, then rename over the live path. Rename is atomic on the same
+	// filesystem, so a crash/disk-full mid-copy can never leave a half-written live DB (#368 / finding #2).
+	staging := live + ".restoring"
+	if err := copyFile(pending, staging); err != nil {
+		os.Remove(staging)
+		return false, fmt.Errorf("apply restore failed (staging copy): %w", err)
+	}
+	if err := os.Rename(staging, live); err != nil {
+		os.Remove(staging)
+		return false, fmt.Errorf("apply restore failed (rename): %w", err)
 	}
 	_ = os.Remove(live + "-wal")
 	_ = os.Remove(live + "-shm")
