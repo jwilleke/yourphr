@@ -345,3 +345,20 @@ app-medical-sources-filter > .az-content-left-components:hover {
 .lhc-item-question.lhc-active-row {
   background-color: $primary;
 }
+
+// #366 — Consistent content links: blue + underlined throughout the main content area, so links read
+// the same everywhere (no more black-vs-blue mix from links inheriting the dark $body-color inside
+// styled containers). Scoped to .az-content and excludes elements that carry their own intentional
+// styling: buttons (incl. button-styled links), nav/tabs, dropdown items, pagination, badges,
+// breadcrumbs, and list-group rows.
+.az-content {
+  a:not(.btn):not([class*="btn-"]):not(.nav-link):not(.dropdown-item):not(.page-link):not(.badge):not(.breadcrumb-item):not(.list-group-item) {
+    color: $blue;
+    text-decoration: underline;
+
+    &:hover {
+      color: $blue;
+      text-decoration: underline;
+    }
+  }
+}
