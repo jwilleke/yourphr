@@ -93,7 +93,8 @@ Standard Angular 20 module layout (upgraded 14→20 via foundation epic #12):
 
 - **Project site:** `https://yourphr.org` — the public landing/docs site, served by **GitHub Pages** from this repo's `gh-pages` branch (CNAME=yourphr.org). It is *not* the app.
 - **Running instance:** the app is deployed (internal/LAN, behind Authentik forward-auth) at **`yourphr.nerdsbythehour.com`**.
-- **Delivery:** GitOps via **Flux** in the separate repo `jwilleke/mj-infra-flux` (`apps/production/fasten/`). On push to `main`, `.github/workflows/docker-jwilleke.yaml` builds and pushes **`ghcr.io/jwilleke/yourphr`** (tags `:main` and `:main-<run_number>`); Flux image-automation picks the latest `main-<N>` tag and updates the deployment. The k8s app/namespace are still named `fasten`.
+- **Delivery is RELEASE-GATED (GitOps via Flux).** `.github/workflows/docker-jwilleke.yaml` builds + pushes **`ghcr.io/jwilleke/yourphr`** (tags `:X.Y.Z`, `:X.Y`, `:latest`) **only on a `vX.Y.Z` release tag** — pushes to `main` are CI-tested but build NO image and do NOT deploy. Flux (repo `jwilleke/mj-infra-flux`, `apps/production/image-automation/yourphr-policy.yaml`) has a **semver `ImagePolicy`** that deploys the highest released `:X.Y.Z`. So **to ship anything to the live instance you must cut a release** (a `patch` release for hotfixes). The k8s app dir is `apps/production/yourphr`; namespace still named `fasten`.
+- The full contract is in [`docs/deployment/deployment-contract.md`](docs/deployment/deployment-contract.md); cutting a release is in [`docs/releasing.md`](docs/releasing.md).
 - The image name follows `${{ github.repository }}`, so it tracks the repo name automatically.
 
 ## Conventions
