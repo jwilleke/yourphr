@@ -171,6 +171,7 @@ func (gr *GormRepository) PerformBackup(appConfig config.Interface, destOverride
 	if !filepath.IsAbs(dest) {
 		return BackupFile{}, "", fmt.Errorf("destination must be an absolute path")
 	}
+	dest = filepath.Clean(dest) // normalize (resolve any . / .. segments) before use
 	if err := os.MkdirAll(dest, 0o750); err != nil {
 		return BackupFile{}, "", fmt.Errorf("cannot create destination: %w", err)
 	}

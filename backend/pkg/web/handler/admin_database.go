@@ -222,16 +222,23 @@ func RestoreDatabase(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "restore must be confirmed"})
 		return
 	}
-	name := filepath.Base(strings.TrimSpace(req.BackupName)) // filepath.Base prevents path traversal
-	if name == "" || name == "." || (!strings.HasSuffix(name, ".db") && !strings.HasSuffix(name, ".db.gz")) {
-		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "invalid backup file"})
+	// Allowlist: the requested name must EXACTLY match a backup ListBackups reports in the destination.
+	// This is the path-traversal barrier — we never build a path from arbitrary request input, only from
+	// a server-enumerated filename joined to the server-resolved destination.
+	name := filepath.Base(strings.TrimSpace(req.BackupName))
+	dest := database.CurrentBackupDestination(appConfig)
+	var matched string
+	for _, b := range database.ListBackups(dest) {
+		if b.Name == name {
+			matched = b.Name
+			break
+		}
+	}
+	if matched == "" {
+		c.JSON(http.StatusNotFound, gin.H{"success": false, "error": "no such backup in the destination folder"})
 		return
 	}
-	full := filepath.Join(database.CurrentBackupDestination(appConfig), name)
-	if _, err := os.Stat(full); err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"success": false, "error": "backup not found in the destination folder"})
-		return
-	}
+	full := filepath.Join(dest, matched)
 	if err := gr.StageRestore(appConfig, full); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": err.Error()})
 		return
