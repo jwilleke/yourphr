@@ -38,6 +38,7 @@ export default defineConfig({
         '**/data.spec.ts',
         '**/binary-document.spec.ts',
         '**/medical-history.spec.ts',
+        '**/allergies-immunizations.spec.ts',
         '**/lforms-modal.spec.ts',
         '**/sandbox-connect.spec.ts',
       ],
