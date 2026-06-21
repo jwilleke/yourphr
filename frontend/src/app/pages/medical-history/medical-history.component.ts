@@ -15,7 +15,7 @@ import {
   groupHistory,
   groupHistoryByConditions,
 } from '../../../lib/utils/medical_history_grouping';
-import {buildEncounterRows, rowKey} from './medical_history_rows';
+import {buildEncounterRows, buildTypedRows, MEDICAL_HISTORY_TYPES, rowKey} from './medical_history_rows';
 
 @Component({
     selector: 'app-medical-history',
@@ -26,17 +26,20 @@ import {buildEncounterRows, rowKey} from './medical_history_rows';
 export class MedicalHistoryComponent implements OnInit {
   loading = false
 
-  // Group-by selector (#351). Date is the default. Type is deferred to #359 (needs a multi-type row
-  // universe; today rows are encounters, so Type would be degenerate).
+  // Group-by selector (#351). Date is the default. Date/Condition/Provider/Place pivot the encounter
+  // universe (they need the encounter graph's links); Type pivots a bounded multi-type universe so it
+  // isn't degenerate.
   dimensions: {key: GroupDimension; label: string}[] = [
     {key: 'date', label: 'Date'},
     {key: 'condition', label: 'Condition'},
     {key: 'provider', label: 'Provider'},
     {key: 'place', label: 'Place'},
+    {key: 'type', label: 'Type'},
   ]
   dimension: GroupDimension = 'date'
 
-  rows: HistoryRow[] = []
+  rows: HistoryRow[] = []         // encounter universe (date/condition/provider/place)
+  typedRows: HistoryRow[] = []    // multi-type universe (by-Type view)
   lookup: Record<string, ResourceFhir> = {}
   // Canonical conditions from /conditions/classified — the master for the by-Condition dimension (#359),
   // so ALL conditions appear, not only those linked to an encounter.
@@ -54,14 +57,24 @@ export class MedicalHistoryComponent implements OnInit {
     // patients — a lightweight grouping endpoint is the scalable follow-up (#354).
     forkJoin({
       conditions: this.fastenApi.getClassifiedConditions(),
-      encounters: this.fastenApi.getResources('Encounter'),
-    }).subscribe(({conditions, encounters}) => {
+      typed: forkJoin(MEDICAL_HISTORY_TYPES.map((t) => this.fastenApi.getResources(t))),
+    }).subscribe(({conditions, typed}) => {
       this.conditions = (conditions || []).map((c: ClassifiedCondition): ConditionMaster => ({
         key: rowKey({sourceId: c.sourceId, resourceId: c.sourceResourceId}),
         label: c.title || 'Condition',
         state: c.state,
       }))
-      const ids = (encounters || []).map((r) => ({
+
+      // Multi-type universe (by-Type view) — built directly from each type's resources.
+      const byType: Record<string, ResourceFhir[]> = {}
+      MEDICAL_HISTORY_TYPES.forEach((t, i) => { byType[t] = (typed[i] as ResourceFhir[]) || [] })
+      const typedBuilt = buildTypedRows(byType)
+      this.typedRows = typedBuilt.rows
+      this.lookup = {...typedBuilt.lookup}
+
+      // Encounter universe (date/condition/provider/place) — needs the encounter graph for its links.
+      const encounters = byType['Encounter'] || []
+      const ids = encounters.map((r) => ({
         source_id: r.source_id,
         source_resource_type: r.source_resource_type,
         source_resource_id: r.source_resource_id,
@@ -75,8 +88,7 @@ export class MedicalHistoryComponent implements OnInit {
         const encounterResults = graph.results['Encounter'] || []
         const built = buildEncounterRows(encounterResults)
         this.rows = built.rows
-        this.lookup = built.lookup
-        this.total = distinctTotal(this.rows)
+        Object.assign(this.lookup, built.lookup) // merge so detail can render either universe
         this.regroup()
         this.loading = false
       }, () => { this.loading = false })
@@ -94,11 +106,18 @@ export class MedicalHistoryComponent implements OnInit {
   }
 
   private regroup(): void {
-    // The Condition dimension is driven by the canonical /conditions/classified master (#359) so every
-    // condition shows — including ones with no linked visit. Other dimensions derive groups from the rows.
-    this.groups = this.dimension === 'condition'
-      ? groupHistoryByConditions(this.rows, this.conditions)
-      : groupHistory(this.rows, this.dimension)
+    // Type pivots the multi-type universe; Condition uses the canonical /conditions/classified master
+    // (#359) so every condition shows (even with no linked visit); the rest pivot the encounter universe.
+    if (this.dimension === 'type') {
+      this.groups = groupHistory(this.typedRows, 'type')
+      this.total = distinctTotal(this.typedRows)
+    } else if (this.dimension === 'condition') {
+      this.groups = groupHistoryByConditions(this.rows, this.conditions)
+      this.total = distinctTotal(this.rows)
+    } else {
+      this.groups = groupHistory(this.rows, this.dimension)
+      this.total = distinctTotal(this.rows)
+    }
     this.selectedKey = this.groups.length ? this.groups[0].key : null
   }
 

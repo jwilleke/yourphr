@@ -16,6 +16,47 @@ export interface BuiltRows {
   lookup: Record<string, ResourceFhir>;
 }
 
+// MEDICAL_HISTORY_TYPES is the bounded set of record types surfaced in the by-Type view (#351). It
+// deliberately uses DiagnosticReport (one row per lab panel) rather than raw Observation (one row per
+// analyte — far too granular + heavy) for "Lab & Diagnostic", and keeps to higher-signal, bounded types.
+export const MEDICAL_HISTORY_TYPES = [
+  'Encounter',
+  'DiagnosticReport',
+  'MedicationRequest',
+  'MedicationStatement',
+  'Procedure',
+  'Immunization',
+  'DocumentReference',
+];
+
+// buildTypedRows turns resources of several types into one HistoryRow each, for grouping by Type. Detail
+// only needs date + title here (no encounter graph), so rows carry no provider/place/condition links.
+export function buildTypedRows(byType: Record<string, ResourceFhir[]>): BuiltRows {
+  const rows: HistoryRow[] = [];
+  const lookup: Record<string, ResourceFhir> = {};
+  for (const list of Object.values(byType || {})) {
+    for (const r of list || []) {
+      if (!r) continue;
+      const key = rowKey({sourceId: r.source_id, resourceId: r.source_resource_id});
+      lookup[key] = r;
+      rows.push({
+        sourceId: r.source_id,
+        resourceId: r.source_resource_id,
+        resourceType: r.source_resource_type || '',
+        title: r.sort_title || r.source_resource_type || 'Record',
+        date: isoDay(r.sort_date) || undefined,
+      });
+    }
+  }
+  return {rows, lookup};
+}
+
+function isoDay(sortDate?: string | Date): string {
+  if (!sortDate) return '';
+  const d = new Date(sortDate);
+  return isNaN(d.getTime()) ? '' : d.toISOString().slice(0, 10);
+}
+
 // buildEncounterRows turns the graph's Encounter resources into one HistoryRow each.
 export function buildEncounterRows(encounters: ResourceFhir[]): BuiltRows {
   const rows: HistoryRow[] = [];

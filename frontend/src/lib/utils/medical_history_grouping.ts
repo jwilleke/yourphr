@@ -133,8 +133,13 @@ function membershipsFor(row: HistoryRow, dim: GroupDimension): { key: string; la
       const d = dayOf(row.date);
       return d ? [{ key: d, label: d, isUnknown: false }] : [unknown('Undated')];
     }
-    case 'type':
-      return [{ key: row.resourceType || UNKNOWN_KEY, label: typeLabel(row.resourceType), isUnknown: !row.resourceType }];
+    case 'type': {
+      // Key by the patient-friendly CATEGORY (typeLabel), not the raw FHIR type, so related types merge
+      // into one group (e.g. MedicationRequest + MedicationStatement -> "Medications").
+      if (!row.resourceType) return [unknown('Other')];
+      const label = typeLabel(row.resourceType);
+      return [{ key: label, label, isUnknown: false }];
+    }
     case 'provider':
       return fromList(row.providers, 'Unknown provider');
     case 'place':

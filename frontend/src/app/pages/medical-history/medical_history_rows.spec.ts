@@ -1,4 +1,4 @@
-import {buildEncounterRows, rowKey} from './medical_history_rows';
+import {buildEncounterRows, buildTypedRows, rowKey} from './medical_history_rows';
 import {ResourceFhir} from '../../models/fasten/resource_fhir';
 
 function enc(p: Partial<ResourceFhir>): ResourceFhir {
@@ -53,5 +53,31 @@ describe('buildEncounterRows', () => {
     expect(rows[0].date).toBeUndefined();
     expect(rows[0].providers).toEqual([]);
     expect(rows[0].conditions).toEqual([]);
+  });
+});
+
+describe('buildTypedRows', () => {
+  const res = (type: string, id: string, date?: string): ResourceFhir => new ResourceFhir({
+    source_id: 's1', source_resource_type: type, source_resource_id: id,
+    sort_title: `${type} ${id}`, sort_date: date ? (new Date(date) as any) : undefined,
+  } as any);
+
+  it('builds one row per resource across types, with date + resourceType + lookup', () => {
+    const byType = {
+      Encounter: [res('Encounter', 'e1', '2025-11-02T10:00:00Z')],
+      DiagnosticReport: [res('DiagnosticReport', 'd1', '2025-08-14T00:00:00Z')],
+      MedicationRequest: [res('MedicationRequest', 'm1')],
+    };
+    const {rows, lookup} = buildTypedRows(byType);
+    expect(rows.length).toBe(3);
+    expect(rows.find((r) => r.resourceType === 'Encounter')?.date).toBe('2025-11-02');
+    expect(rows.find((r) => r.resourceType === 'MedicationRequest')?.date).toBeUndefined(); // no date stated
+    const enc = rows.find((r) => r.resourceType === 'Encounter')!;
+    expect(lookup[rowKey(enc)].source_resource_id).toBe('e1');
+  });
+
+  it('tolerates empty/missing type buckets', () => {
+    const {rows} = buildTypedRows({Encounter: [], Procedure: undefined as any});
+    expect(rows).toEqual([]);
   });
 });

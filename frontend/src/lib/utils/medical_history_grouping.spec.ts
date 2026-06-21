@@ -60,6 +60,13 @@ describe('medical_history_grouping', () => {
     expect(g.map((x) => x.label).sort()).toEqual(['Lab & Diagnostic', 'Procedures', 'Visits']);
   });
 
+  it('merges related types into one category group (MedicationRequest + MedicationStatement)', () => {
+    const meds = [row({resourceType: 'MedicationRequest'}), row({resourceType: 'MedicationStatement'}), row({resourceType: 'Procedure'})];
+    const g = groupHistory(meds, 'type');
+    expect(g.length).toBe(2); // Medications + Procedures (the two med types collapse)
+    expect(g.find((x) => x.label === 'Medications')?.count).toBe(2);
+  });
+
   it('collapseByDate buckets detail rows by day, newest first', () => {
     const buckets = collapseByDate(rows);
     expect(buckets[0].date).toBe('2025-11-02');
