@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
-import {versionInfo} from '../../../environments/versions';
+import {environment} from '../../../environments/environment';
+import {FastenApiService} from '../../services/fasten-api.service';
 
 @Component({
     selector: 'app-footer',
@@ -8,14 +9,18 @@ import {versionInfo} from '../../../environments/versions';
     standalone: false
 })
 export class FooterComponent implements OnInit {
-  appVersion: string;
+  // Shows "<channel>-<semver>" of the RUNNING backend, e.g. "dev-1.9.0" / "prod-1.9.0", so the footer
+  // reflects what's actually deployed (fetched from the public /api/version endpoint).
+  appVersion: string = environment.environment_name;
   currentYear: number = new Date().getFullYear();
 
-  constructor() {
-    this.appVersion = versionInfo.version
-  }
+  constructor(private fastenApi: FastenApiService) {}
 
   ngOnInit() {
+    this.fastenApi.getVersion().subscribe({
+      next: (version) => { this.appVersion = `${environment.environment_name}-${version}`; },
+      error: () => { /* keep the channel-only fallback */ },
+    });
   }
 
 }

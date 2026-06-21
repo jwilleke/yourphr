@@ -18,6 +18,7 @@ import (
 	"github.com/fastenhealth/fasten-onprem/backend/pkg/event_bus"
 	"github.com/fastenhealth/fasten-onprem/backend/pkg/models"
 	"github.com/fastenhealth/fasten-onprem/backend/pkg/tls"
+	"github.com/fastenhealth/fasten-onprem/backend/pkg/version"
 	"github.com/fastenhealth/fasten-onprem/backend/pkg/web/handler"
 	"github.com/fastenhealth/fasten-onprem/backend/pkg/web/middleware"
 	"github.com/gin-gonic/gin"
@@ -90,6 +91,10 @@ func (ae *AppEngine) Setup() (*gin.RouterGroup, *gin.Engine) {
 	{
 		api := base.Group("/api")
 		{
+			// Public: the running app version, so the UI footer can show what's deployed.
+			api.GET("/version", func(c *gin.Context) {
+				c.JSON(http.StatusOK, gin.H{"success": true, "data": gin.H{"version": version.VERSION}})
+			})
 			api.GET("/health", func(c *gin.Context) {
 				// This function does a quick check to see if the server is up and running
 				// it will also determine if we should show the first run wizard
@@ -244,7 +249,7 @@ func (ae *AppEngine) Setup() (*gin.RouterGroup, *gin.Engine) {
 					secure.PUT("/admin/log-level", handler.SetLogLevel)
 					//admin Database card (#361) — DB facts + safe online backup (full PHI; admin-only)
 					secure.GET("/admin/database", handler.GetDatabaseInfo)
-					secure.POST("/admin/database/backup", handler.BackupDatabase)                 // server-side, fire-and-forget
+					secure.POST("/admin/database/backup", handler.BackupDatabase)                  // server-side, fire-and-forget
 					secure.POST("/admin/database/backup/download", handler.BackupDatabaseDownload) // stream to browser (on-demand)
 					secure.POST("/admin/database/schedule", handler.SetBackupSchedule)             // settable auto-backup schedule
 					secure.GET("/admin/database/browse", handler.BrowseDirectories)                // server-folder browser (pick destination)

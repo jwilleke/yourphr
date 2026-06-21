@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/fastenhealth/fasten-onprem/backend/pkg/config"
+	"github.com/fastenhealth/fasten-onprem/backend/pkg/version"
 )
 
 // Database backup support (#361). A backup is a consistent ONLINE snapshot of the SQLite DB via
@@ -19,18 +20,24 @@ import (
 // "Backup now") and the scheduled-backup worker. The backup is the entire single-file DB — every
 // user's records (PHI) — so callers must gate on the admin role / run server-side only.
 
-// backupLabel appears in every backup filename. Filenames are DATE-FIRST, ISO-ish, UTC, and
-// filesystem-safe (colons -> dashes), and gzip-compressed: 2026-06-21T12-10-03Z-yourphr-backup.db.gz
-// — so they sort chronologically by name. (Aligned with the ngdpbase BackupManager: gzip backups.)
-const backupLabel = "yourphr-backup"
+// Filenames are DATE-FIRST, ISO-ish, UTC, filesystem-safe (colons -> dashes), embed the app version
+// that produced them, and are gzip-compressed:
+//
+//	2026-06-21T14-09-57Z-yourphr-1.9.0-backup.db.gz
+//
+// — so they sort chronologically by name and you can tell which app version wrote each backup (useful
+// when deciding whether a backup is safe to restore). Aligned with the ngdpbase BackupManager (gzip).
 
-// BackupFileName builds the canonical date-first, gzip-compressed filename for time t.
+// BackupFileName builds the canonical date-first, version-stamped, gzip-compressed filename for time t.
 func BackupFileName(t time.Time) string {
-	return t.UTC().Format("2006-01-02T15-04-05") + "Z-" + backupLabel + ".db.gz"
+	return t.UTC().Format("2006-01-02T15-04-05") + "Z-yourphr-" + version.VERSION + "-backup.db.gz"
 }
 
+// isBackupFile recognizes both the current name (yourphr-<version>-backup.db.gz) and older ones
+// (yourphr-backup.db / yourphr-backup-<date>.db), so existing backups still list + restore.
 func isBackupFile(name string) bool {
-	return strings.Contains(name, backupLabel) && (strings.HasSuffix(name, ".db.gz") || strings.HasSuffix(name, ".db"))
+	return strings.Contains(name, "yourphr") && strings.Contains(name, "backup") &&
+		(strings.HasSuffix(name, ".db.gz") || strings.HasSuffix(name, ".db"))
 }
 
 // BackupFile describes one backup present in a destination folder.

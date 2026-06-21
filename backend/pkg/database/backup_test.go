@@ -5,23 +5,26 @@ import (
 	"path/filepath"
 	"testing"
 	"time"
+
+	"github.com/fastenhealth/fasten-onprem/backend/pkg/version"
 )
 
 func TestBackupFileName(t *testing.T) {
 	got := BackupFileName(time.Date(2026, 6, 21, 12, 10, 3, 0, time.UTC))
-	if want := "2026-06-21T12-10-03Z-yourphr-backup.db.gz"; got != want {
+	if want := "2026-06-21T12-10-03Z-yourphr-" + version.VERSION + "-backup.db.gz"; got != want {
 		t.Errorf("BackupFileName = %q, want %q", got, want)
 	}
 }
 
 func TestIsBackupFile(t *testing.T) {
 	cases := map[string]bool{
-		"2026-06-21T12-10-03Z-yourphr-backup.db.gz": true,
-		"2026-06-21T12-10-03Z-yourphr-backup.db":    true,
-		"yourphr-backup-20260101.db":                true, // legacy name still recognized
-		"random.db":                                 false,
-		"yourphr-backup.txt":                        false,
-		"notes.md":                                  false,
+		"2026-06-21T14-09-57Z-yourphr-1.9.0-backup.db.gz": true, // current version-stamped name
+		"2026-06-21T12-10-03Z-yourphr-backup.db.gz":       true,
+		"2026-06-21T12-10-03Z-yourphr-backup.db":          true,
+		"yourphr-backup-20260101.db":                      true, // legacy name still recognized
+		"random.db":                                       false,
+		"yourphr-backup.txt":                              false,
+		"notes.md":                                        false,
 	}
 	for name, want := range cases {
 		if got := isBackupFile(name); got != want {

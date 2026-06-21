@@ -228,6 +228,16 @@ export class FastenApiService {
       );
   }
 
+  // getVersion returns the running backend's app version (the deployed semver). Public endpoint.
+  getVersion(): Observable<string> {
+    return this._httpClient.get<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/version`)
+      .pipe(
+        map((response: ResponseWrapper) => {
+          return ((response.data as any)?.version || 'unknown') as string
+        })
+      );
+  }
+
   // Admin Database card (#361). Info is admin-gated; the backup is the full multi-user PHI DB.
   getDatabaseInfo(): Observable<DatabaseInfo> {
     return this._httpClient.get<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/admin/database`)
