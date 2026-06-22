@@ -23,7 +23,6 @@
 
 ## 🟠 P1
 
-- [#367](https://github.com/jwilleke/yourphr/issues/367) — [security] Backup/restore not encryption-safe (plaintext snapshot leak + unopenable restore on encrypted DBs); needs decision: cipher-aware vs gate-when-encrypted. Relates #363.
 - [#355](https://github.com/jwilleke/yourphr/issues/355) — [FEATURE] Dynamic Client Registration (DCR).
 - [#313](https://github.com/jwilleke/yourphr/issues/313) — [FEATURE] patients able to add records to their own PHR.
 - [#262](https://github.com/jwilleke/yourphr/issues/262) — [EPIC] Patient-legible display — health info a normal person can actually use.
