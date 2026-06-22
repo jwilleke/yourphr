@@ -75,10 +75,10 @@ export class MedicalHistoryComponent implements OnInit {
     this.loading = true
     // Load the full encounter set + the canonical condition list in parallel (grouping needs the whole
     // history to build complete master groups, so this is not paginated). NOTE: heavy for very large
-    // patients — a lightweight grouping endpoint is the scalable follow-up (#354).
+    // patients — a lightweight grouping endpoint is the scalable follow-up (#369).
     // Default view (Date/Condition/Provider/Place) only needs Encounters + the canonical condition list.
     // The by-Type universe (all 7 resource types) is heavier and is loaded lazily on first Type switch
-    // (#354), so opening this page doesn't pull every resource up front.
+    // (#369), so opening this page doesn't pull every resource up front.
     forkJoin({
       conditions: this.fastenApi.getClassifiedConditions(),
       encounters: this.fastenApi.getResources('Encounter'),
@@ -119,7 +119,7 @@ export class MedicalHistoryComponent implements OnInit {
   }
 
   // loadTypedUniverse lazily fetches the by-Type resource set — only when the user opens the Type tab —
-  // so the default Date view doesn't pull every resource of all 7 types up front (#354).
+  // so the default Date view doesn't pull every resource of all 7 types up front (#369).
   private loadTypedUniverse(): void {
     this.typedLoading = true
     forkJoin(MEDICAL_HISTORY_TYPES.map((t) => this.fastenApi.getResources(t))).subscribe({
