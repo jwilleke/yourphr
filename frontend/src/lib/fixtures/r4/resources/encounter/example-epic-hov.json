@@ -1,0 +1,117 @@
+{
+  "resourceType": "Encounter",
+  "id": "ej567ARSFdaF4ooZVunIlIg3",
+  "identifier": [
+    {
+      "use": "usual",
+      "system": "urn:oid:1.2.840.114350.1.13.0.1.7.3.698084.8",
+      "value": "29542"
+    }
+  ],
+  "status": "in-progress",
+  "class": {
+    "system": "urn:oid:1.2.840.114350.1.72.1.7.7.10.696784.13260",
+    "code": "4",
+    "display": "HOV"
+  },
+  "type": [
+    {
+      "coding": [
+        {
+          "system": "urn:oid:1.2.840.114350.1.13.0.1.7.10.698084.10110",
+          "code": "102",
+          "display": "Outpatient"
+        }
+      ],
+      "text": "Outpatient"
+    },
+    {
+      "coding": [
+        {
+          "system": "urn:oid:1.2.840.114350.1.13.0.1.7.10.698084.30",
+          "code": "3",
+          "display": "Hospital Encounter"
+        }
+      ],
+      "text": "Hospital Encounter"
+    },
+    {
+      "coding": [
+        {
+          "system": "urn:oid:1.2.840.114350.1.13.0.1.7.2.808267",
+          "code": "10023",
+          "display": "Transthoracic Echocardiogram Complete"
+        }
+      ],
+      "text": "Transthoracic Echocardiogram Complete"
+    }
+  ],
+  "subject": {
+    "reference": "Patient/erXuFYUfucBZaryVksYEcMg3",
+    "display": "Lopez, Camila Maria"
+  },
+  "participant": [
+    {
+      "type": [
+        {
+          "coding": [
+            {
+              "system": "http://terminology.hl7.org/CodeSystem/v3-ParticipationType",
+              "code": "REF",
+              "display": "referrer"
+            }
+          ],
+          "text": "referrer"
+        }
+      ],
+      "individual": {
+        "reference": "Practitioner/elpRiy0AYgjhdjAhTBJ3Aiw3",
+        "type": "Practitioner",
+        "display": "Np"
+      }
+    }
+  ],
+  "period": {
+    "start": "2023-06-02T20:49:58Z"
+  },
+  "account": [
+    {
+      "identifier": {
+        "system": "urn:oid:1.2.840.114350.1.13.0.1.7.2.726582",
+        "value": "1000501"
+      },
+      "display": "LOPEZ,CAMILA MARIA"
+    }
+  ],
+  "hospitalization": {
+    "extension": [
+      {
+        "valueDateTime": "2023-06-02T20:49:00Z",
+        "url": "http://open.epic.com/FHIR/StructureDefinition/extension/observation-datetime"
+      }
+    ]
+  },
+  "location": [
+    {
+      "location": {
+        "reference": "Location/exzJSfs-2YYqMPilpdzkcdMVzw6TB9WJfeqFRVe.cpSo3",
+        "display": "EMC Cardiology Procedures"
+      },
+      "period": {
+        "start": "2023-06-02T20:49:00Z"
+      }
+    },
+    {
+      "location": {
+        "reference": "Location/exzJSfs-2YYqMPilpdzkcdMVzw6TB9WJfeqFRVe.cpSo3",
+        "display": "EMC Cardiology Procedures"
+      }
+    },
+    {
+      "location": {
+        "reference": "Location/eQSOrLdbVrMRc68KBcTBG4A3",
+        "display": "Epic Hospital System"
+      }
+    }
+  ]
+}

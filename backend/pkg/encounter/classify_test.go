@@ -39,6 +39,54 @@ func byID(list []ClassifiedEncounter, id string) (ClassifiedEncounter, bool) {
 	return ClassifiedEncounter{}, false
 }
 
+// loadEpicHOV loads real Epic FHIR sandbox Encounters (synthetic patient Camila Lopez), captured
+// verbatim from the Epic sandbox export. Epic ships class as a LOCAL code {code:"4", display:"HOV"}
+// while the human label lives in type[0].text ("Outpatient"). This golden guards that we surface the
+// legible label and never the raw local code "HOV" (#262 conformance).
+//
+// Provenance: Epic on FHIR R4 sandbox (fhir.epic.com), patient Camila Lopez (synthetic), exported
+// 2026-06-18; resources copied verbatim. No real PHI.
+func loadEpicHOV(t *testing.T) []InputResource {
+	t.Helper()
+	data, err := os.ReadFile("testdata/epic_camila_encounters.json")
+	if err != nil {
+		t.Fatalf("read fixture: %v", err)
+	}
+	var raws []json.RawMessage
+	if err := json.Unmarshal(data, &raws); err != nil {
+		t.Fatalf("unmarshal fixture: %v", err)
+	}
+	inputs := make([]InputResource, 0, len(raws))
+	for _, r := range raws {
+		var meta struct {
+			ID string `json:"id"`
+		}
+		_ = json.Unmarshal(r, &meta)
+		inputs = append(inputs, InputResource{SourceResourceType: "Encounter", SourceResourceID: meta.ID, SourceID: "epic-sandbox", Raw: r})
+	}
+	return inputs
+}
+
+// TestClassify_EpicHOV_Golden — vendor golden (conformance): a non-US-Core local class code must not
+// leak into the patient-facing label; the legible "Outpatient" (from type[].text) must win.
+func TestClassify_EpicHOV_Golden(t *testing.T) {
+	got := Classify(loadEpicHOV(t), time.Now().UTC(), nil, nil)
+	if len(got) != 2 {
+		t.Fatalf("expected 2 Epic HOV encounters, got %d", len(got))
+	}
+	for _, c := range got {
+		if c.Title != "Outpatient" {
+			t.Errorf("%s: Title = %q, want \"Outpatient\" (from type[0].text)", c.SourceResourceID, c.Title)
+		}
+		if c.Category != "Outpatient" {
+			t.Errorf("%s: Category = %q, want \"Outpatient\" — must NOT surface the raw Epic-local class display \"HOV\"", c.SourceResourceID, c.Category)
+		}
+		if c.State != StateInProgress {
+			t.Errorf("%s: State = %q, want %q", c.SourceResourceID, c.State, StateInProgress)
+		}
+	}
+}
+
 func TestClassify(t *testing.T) {
 	got := Classify(loadFixture(t), time.Now().UTC(), nil, nil)
 	if len(got) != 4 {

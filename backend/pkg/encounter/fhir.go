@@ -78,14 +78,20 @@ func (r *rawEncounter) title() string {
 	return "Encounter"
 }
 
-// category maps the v3-ActCode encounter class to a legible category, falling back to the class's own
-// display. Returns "" when the record states no class (no guessing).
+// category maps the v3-ActCode encounter class to a legible category. When the class code isn't a
+// known v3 code — typically a vendor-LOCAL code (e.g. Epic ships class {code:"4", display:"HOV"}) —
+// prefer the encounter's own human text (type[].text, e.g. "Outpatient") over the cryptic raw
+// class.display ("HOV"), and only fall back to class.display when there's no usable type text.
+// Returns "" when the record states no class (no guessing). (#262 — never surface a raw local code.)
 func (r *rawEncounter) category() string {
 	if r.Class == nil {
 		return ""
 	}
 	if label := legibleClass(r.Class.Code); label != "" {
 		return label
+	}
+	if t := r.title(); t != "" && t != "Encounter" {
+		return t
 	}
 	return r.Class.Display
 }

@@ -4,6 +4,7 @@ import * as example1Fixture from "../../fixtures/r4/resources/encounter/example1
 import * as example2Fixture from "../../fixtures/r4/resources/encounter/example2.json"
 import * as example3Fixture from "../../fixtures/r4/resources/encounter/example3.json"
 import * as exampleFmhFixture from "../../fixtures/r4/resources/encounter/example-followmyhealth.json"
+import * as exampleEpicHovFixture from "../../fixtures/r4/resources/encounter/example-epic-hov.json"
 
 
 describe('EncounterModel', () => {
@@ -94,6 +95,17 @@ describe('EncounterModel', () => {
       expect(model.encounter_type).toBeUndefined();
       expect(model.resource_status).toEqual('unknown');
       expect(model.period_start).toEqual('2026-03-05');
+    });
+
+    // Non-US-Core (Epic): class is a LOCAL patient-class code {code:"4", display:"HOV"} (NOT v3-ActCode
+    // — Epic's spec defines class as the local patient class outside NL/DK). The legible label lives in
+    // type[0].text ("Outpatient"), so the card title must surface that, never the raw local code "HOV".
+    it('should title an Epic HOV encounter from type text, not the raw local class code (#262)', () => {
+      const model = new EncounterModel(exampleEpicHovFixture);
+      expect(model.display).toEqual('Outpatient'); // legible title from type[0].text
+      // KNOWN GAP (#262): resource_class still carries the raw Epic-local display "HOV". The legible
+      // value is in `display`; surfacing "HOV" as a separate "Class" line is a card-level follow-up.
+      expect(model.resource_class).toEqual('HOV');
     });
 
   })
