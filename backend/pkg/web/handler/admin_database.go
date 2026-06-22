@@ -124,6 +124,10 @@ func BackupDatabaseDownload(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "database backend does not support backup"})
 		return
 	}
+	if database.BackupRestoreGated(appConfig) { // #367: refuse rather than write a plaintext snapshot of an encrypted DB
+		c.JSON(http.StatusConflict, gin.H{"success": false, "error": database.ErrEncryptionEnabled.Error()})
+		return
+	}
 	name := database.BackupFileName(time.Now(), appConfig.GetString("backup.label"))
 	// Stage the snapshot in a PRIVATE (0700) temp dir, not directly in the world-readable os.TempDir(),
 	// so the full PHI backup isn't readable by other local users during the request window (#368 #5).

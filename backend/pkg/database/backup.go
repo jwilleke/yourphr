@@ -3,6 +3,7 @@ package database
 import (
 	"compress/gzip"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -31,6 +32,17 @@ import (
 //
 // — so they sort chronologically by name and you can tell which instance + app version wrote each
 // backup (useful when deciding whether a backup is safe to restore). Aligned with ngdpbase (gzip).
+
+// ErrEncryptionEnabled gates backup + restore while at-rest encryption is on (#367 / #363). VACUUM INTO
+// would write a PLAINTEXT snapshot of an encrypted DB (PHI leak), and a restore couldn't be opened with
+// the cipher key — neither is handled yet. Refuse rather than silently leak/break. No-op when encryption
+// is disabled (the default + current deployment), so normal backup/restore is unaffected.
+var ErrEncryptionEnabled = errors.New("backup and restore are not available while at-rest database encryption is enabled")
+
+// BackupRestoreGated reports whether backup/restore must be refused (at-rest encryption enabled).
+func BackupRestoreGated(appConfig config.Interface) bool {
+	return appConfig.GetBool("database.encryption.enabled")
+}
 
 // BackupFileName builds the canonical date-first, label+version-stamped, gzip filename for time t.
 func BackupFileName(t time.Time, label string) string {
@@ -202,6 +214,9 @@ func ListBackups(dir string) []BackupFile {
 // records that destination as the new default, and returns the created file + its full path. The
 // filename is canonical and sortable: 2026-06-21T12-10-03Z-yourphr-backup.db.
 func (gr *GormRepository) PerformBackup(appConfig config.Interface, destOverride string) (BackupFile, string, error) {
+	if BackupRestoreGated(appConfig) {
+		return BackupFile{}, "", ErrEncryptionEnabled
+	}
 	dest := strings.TrimSpace(destOverride)
 	if dest == "" {
 		dest = CurrentBackupDestination(appConfig)

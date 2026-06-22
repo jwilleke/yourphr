@@ -1,6 +1,7 @@
 package database
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"testing"
@@ -9,6 +10,23 @@ import (
 	"github.com/fastenhealth/fasten-onprem/backend/pkg/config"
 	"github.com/fastenhealth/fasten-onprem/backend/pkg/version"
 )
+
+func TestBackupRestore_GatedWhenEncrypted(t *testing.T) {
+	appConfig, err := config.Create()
+	if err != nil {
+		t.Fatal(err)
+	}
+	appConfig.Set("database.location", filepath.Join(t.TempDir(), "fasten.db"))
+	appConfig.Set("database.encryption.enabled", true)
+	gr := &GormRepository{} // gate returns before touching the DB client
+
+	if _, _, err := gr.PerformBackup(appConfig, ""); !errors.Is(err, ErrEncryptionEnabled) {
+		t.Errorf("PerformBackup should be gated when encryption is enabled, got: %v", err)
+	}
+	if err := gr.StageRestore(appConfig, "anything"); !errors.Is(err, ErrEncryptionEnabled) {
+		t.Errorf("StageRestore should be gated when encryption is enabled, got: %v", err)
+	}
+}
 
 func TestBackupFileName(t *testing.T) {
 	t0 := time.Date(2026, 6, 21, 12, 10, 3, 0, time.UTC)

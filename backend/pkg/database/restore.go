@@ -27,6 +27,9 @@ func restorePendingPath(appConfig config.Interface) string {
 // the current DB first (so the restore is reversible), decompresses the candidate (if .gz), validates
 // it is an intact SQLite database, then writes it to the pending path. The swap happens at startup.
 func (gr *GormRepository) StageRestore(appConfig config.Interface, srcPath string) error {
+	if BackupRestoreGated(appConfig) {
+		return ErrEncryptionEnabled
+	}
 	tmp, cleanup, err := decompressIfNeeded(srcPath)
 	if err != nil {
 		return err
