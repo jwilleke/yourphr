@@ -2,7 +2,7 @@
 
 How we test the parts of YourPHR that meet real-world FHIR — the import engine, the Layer-1 classifiers, and the patient-legible display — and which test data to use for what. Living document; append as the strategy evolves.
 
-See also: [`test-sandboxes.md`](./test-sandboxes.md) (sandbox accounts + status) and the project `CLAUDE.md` (only *synthetic* fixtures may be committed).
+See also: [`data-quality-framework.md`](./data-quality-framework.md) (the DQF this testing asserts against — our doctrine + per-source quality profiles), [`test-sandboxes.md`](./test-sandboxes.md) (sandbox accounts + status), and the project `CLAUDE.md` (only *synthetic* fixtures may be committed).
 
 ## The concern
 
