@@ -151,6 +151,6 @@ Read-only probes that established the working path (a bare HTTP `200` is **not**
 
 ## See also
 
-- Sandbox index: [`../test-sandboxes.md`](../test-sandboxes.md)
+- Sandbox index: [`../testing-sandboxes/test-sandboxes.md`](../testing-sandboxes/test-sandboxes.md)
 - Cerner discovery document (scopes + endpoints): [`oracle-cerner.json`](./oracle-cerner.json)
 - Oracle docs: [Build & Test SMART on FHIR Apps](https://docs.oracle.com/en/industries/health/millennium-platform-apis/build-smart-on-fhir-apps/) · [SMART App Provisioning](https://docs.oracle.com/en/industries/health/millennium-platform-apis/smart-app-provisioning/)

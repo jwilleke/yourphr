@@ -11,7 +11,7 @@ Integration / topic notes (not vendor profiles): [`epic-sandbox.md`](./epic-sand
 
 ## Sandbox registration guides — where to register & what you need
 
-How to obtain credentials for each test sandbox. The index with connect values + status is [`../test-sandboxes.md`](../test-sandboxes.md); actual credential values live in `private/secrets.md` (gitignored).
+How to obtain credentials for each test sandbox. The index with connect values + status is [`../testing-sandboxes/test-sandboxes.md`](../testing-sandboxes/test-sandboxes.md); actual credential values live in `private/secrets.md` (gitignored).
 
 | Sandbox | Register at | What you get | Guide |
 |---|---|---|---|

@@ -66,5 +66,5 @@ E2E_LIVE=1 npx playwright test sandbox-connect --grep @live
 
 ## See also
 
-- [`../test-sandboxes.md`](../test-sandboxes.md) — sandbox index + status
+- [`../testing-sandboxes/test-sandboxes.md`](../testing-sandboxes/test-sandboxes.md) — sandbox index + status
 - [`fhir-testing.md`](fhir-testing.md) — connect walkthrough

@@ -47,5 +47,5 @@ Confirmed working values: base `https://api.preview.platform.athenahealth.com/fh
 
 ## See also
 
-- Index: [`../test-sandboxes.md`](../test-sandboxes.md)
+- Index: [`../testing-sandboxes/test-sandboxes.md`](../testing-sandboxes/test-sandboxes.md)
 - [athenahealth FHIR API docs](https://docs.athenahealth.com/api/docs/fhir-apis)

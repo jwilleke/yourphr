@@ -34,5 +34,5 @@ There is no real account. After **Connect**, the launcher shows a **patient pick
 
 ## See also
 
-- Index + status: [`../test-sandboxes.md`](../test-sandboxes.md)
+- Index + status: [`../testing-sandboxes/test-sandboxes.md`](../testing-sandboxes/test-sandboxes.md)
 - Step-by-step (Option A): [`../FHIR/fhir-testing.md`](../FHIR/fhir-testing.md)

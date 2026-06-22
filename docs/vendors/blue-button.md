@@ -43,4 +43,4 @@ A separate CMS **production** app-review (no cost); the base becomes `https://ap
 ## See also
 
 - **Full connect guide + troubleshooting:** [`../medicare-bluebutton.md`](../medicare-bluebutton.md)
-- Index: [`../test-sandboxes.md`](../test-sandboxes.md)
+- Index: [`../testing-sandboxes/test-sandboxes.md`](../testing-sandboxes/test-sandboxes.md)

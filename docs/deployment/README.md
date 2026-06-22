@@ -16,7 +16,7 @@ This page covers running and configuring an instance. The rest of the deployment
 | [Configuration model](#configuration-model) (this page) | Precedence (`config.yaml` < `.env` < `.env_custom` < `YOURPHR_*`), the env mapping, and the full key reference. |
 | [Sandbox provider credentials](#sandbox-provider-credentials) (this page) | The optional `YOURPHR_SANDBOX_*` one-click sandbox catalog ([#291](https://github.com/jwilleke/yourphr/issues/291)) — env-only, works on any deployment. |
 | [OAuth relay (self-hosting)](#oauth-relay-self-hosting) (this page) | Self-host the public SMART redirect relay ([#20](https://github.com/jwilleke/yourphr/issues/20)) — Docker or k8s; only needed for live provider sync. |
-| [`../test-sandboxes.md`](../test-sandboxes.md) | The test sandboxes themselves (Blue Button, Epic, SMART Health IT, …) and how to exercise them. |
+| [`../testing-sandboxes/test-sandboxes.md`](../testing-sandboxes/test-sandboxes.md) | The test sandboxes themselves (Blue Button, Epic, SMART Health IT, …) and how to exercise them. |
 | [`../vendors/README.md`](../vendors/README.md) | Per-vendor connection notes, onboarding gates, and registration friction. |
 | [`../provider-catalog/`](../provider-catalog/) | The admin-configured provider catalog model (server-held creds; patients never see `client_id`/`client_secret`). |
 | [`../medicare-bluebutton.md`](../medicare-bluebutton.md) | A full worked SMART-on-FHIR connect example with exact settings. |
@@ -147,7 +147,7 @@ This is **env-only and deployment-agnostic** — populate it however your deploy
 
 **Behaviour:** a provider whose `client_id` env value is **empty is skipped** — that provider just doesn't appear under `/sandbox` on that instance; nothing errors and the open SMART Health IT sandbox is unaffected. Seeding is idempotent and re-runs on every startup, so updating an env value and restarting refreshes the stored creds. These are **operator/sandbox config**, not per-user data — production patient connects use the admin-configured provider catalog ([`../provider-catalog/`](../provider-catalog/)), not these env vars.
 
-For the sandboxes themselves and how to exercise them, see [`../test-sandboxes.md`](../test-sandboxes.md) and the per-vendor notes in [`../vendors/README.md`](../vendors/README.md).
+For the sandboxes themselves and how to exercise them, see [`../testing-sandboxes/test-sandboxes.md`](../testing-sandboxes/test-sandboxes.md) and the per-vendor notes in [`../vendors/README.md`](../vendors/README.md).
 
 ## OAuth relay (self-hosting)
 
@@ -203,7 +203,7 @@ If `YOURPHR_RELAY_SECRET` is unset, the app simply doesn't use a relay (it falls
 ## See also
 
 - [README — Launch / HTTPS / Develop](../../README.md#instructions)
-- [`../test-sandboxes.md`](../test-sandboxes.md) — the test sandboxes and how to exercise them
+- [`../testing-sandboxes/test-sandboxes.md`](../testing-sandboxes/test-sandboxes.md) — the test sandboxes and how to exercise them
 - [`../vendors/README.md`](../vendors/README.md) — per-vendor connection notes and onboarding gates
 - [`../provider-catalog/`](../provider-catalog/) — admin-configured production provider catalog
 - [`../medicare-bluebutton.md`](../medicare-bluebutton.md) — a full worked SMART-on-FHIR connect example
