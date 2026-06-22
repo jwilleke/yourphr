@@ -2,7 +2,7 @@
 
 How YourPHR turns messy, vendor-specific FHIR into a patient-legible display — *regardless of source*. This is the design that underpins the dashboard's "Current Medical Concerns", the new "Patient Profile" section, and the per-resource detail cards.
 
-> Driving north star: the [patient-legible display principle](./patient-legible-display.md) (#262) — show what each thing *is* and *why it matters*, in plain words. This doc is the structural plan for delivering that across data from any source.
+> Driving north star: the [patient-legible display principle](./patient-legible-display.md) (#262) — show what each thing *is* and *why it matters*, in plain words. This doc is the structural plan for delivering that across data from any source. The data-quality *doctrine* behind it — why we tolerate, flag, and never reject the patient's own data — plus per-source quality profiles, lives in [`../testing-sandboxes/data-quality-framework.md`](../testing-sandboxes/data-quality-framework.md).
 
 ## The problem (what real data exposed)
 

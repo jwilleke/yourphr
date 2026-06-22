@@ -5,7 +5,7 @@ YourPHR consumes FHIR from many vendors of varying quality. To make import, clas
 1. **Our DQF** — what "data quality" *means* for a patient-facing PHR, and how we respond to each kind of defect.
 2. **Source DQF profiles** — the quality we actually get from each data source, including what we have *not* yet characterized.
 
-This is the conceptual backbone of [`testing-and-data.md`](./testing-and-data.md) (how we test it) and [`test-sandboxes.md`](./test-sandboxes.md) (where the data comes from).
+This is the conceptual backbone of [`testing-and-data.md`](./testing-and-data.md) (how we test it), [`test-sandboxes.md`](./test-sandboxes.md) (where the data comes from), and [`../your-phr-dashboard/classification-and-display-architecture.md`](../your-phr-dashboard/classification-and-display-architecture.md) (the two-layer ingest→display pipeline that *produces* the legible display this DQF governs).
 
 ## Part 1 — YourPHR's DQF (our doctrine)
 
