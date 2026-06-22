@@ -1,18 +1,18 @@
 # TODO
 
 <!-- RESUME:START -->
-## ▶ Resume here — 2026-06-21
+## ▶ Resume here — 2026-06-22
 
-- Last worked on: shipped **v1.11.0** (medical-history group-by **Type** + rich /explore detail; #366 UI consistency — blue links + 3-role buttons; #365 security hardening). Then loaded **5 patient accounts into local dev** for QA.
-- Branch / state: `main`, clean, pushed (up to date).
-- Running / in-flight: **local dev servers from this session** — backend `:9090` + `ng serve :4200` (orphaned on VS Code shutdown; restart with `make serve-backend` + `cd frontend && npx ng serve -c dev`). Pre-existing Dependabot PR `mj-infra-flux#131` (npm bump, not mine).
-- Dev test data: users `clopez` (Epic/Camila), `jdoe`/`aheller`/`bblick` (Synthea, encounters), `nsmart` (Cerner — docs/allergies, no encounters). All password `Test1234!` (admin `test` same).
+- Last worked on: **test-data / DQF thread.** Released **v1.11.1** (backup/restore hardening #368 + encryption gate #367). Then: lazy-loaded medical-history by-Type universe; wrote a **testing strategy + Data-Quality-Framework doc set** under `docs/testing-sandboxes/`; built the **first vendor golden** — real Epic HOV encounter caught a real #262 bug (`Category`="HOV") → fixed (prefer `type[].text` over raw local `class.display`) → green at both tiers.
+- Branch / state: `main`, clean, **1 unpushed** (`de44719a` test-sandboxes move) — push pending operator OK.
+- Running / in-flight: CI green on `b0f6fd52`/`a6faff9f`. No dev servers started this session. No workflows/background agents.
 - Parked / half-done: none (tree clean).
 - Next steps:
-  - Verify **#366** (links/buttons) on the deployed v1.11.0 instance → close it.
-  - Continue **#262** display-legibility QA using the new dev patients: Epic `class`/`type[0]` rendering (HOV), dedup duplicate conditions, fix "N records across M conditions" count. (Was mid data-exploration — encounters: all cryptic Epic classes, 0 reasonCode.)
-  - #351 group-by shipped; **Filters deferred**. #354 fhir-test-cases = optional P2 (Apache-2.0, modest ROI).
-- Blockers / significant notes: none.
+  - **Push `de44719a`** (test-sandboxes.md move + 9 link redirects).
+  - Optional: cut a **patch release** for the HOV #262 fix (unreleased on `main`).
+  - Extend goldens to the **Cerner docs-only** case (`nsmart`) + Condition dedup; then file the umbrella "test-data corpus + golden harness" issue.
+  - Open follow-ups: [#371](https://github.com/jwilleke/yourphr/issues/371) (frontend raw "Class:" line), [#369](https://github.com/jwilleke/yourphr/issues/369) (grouping endpoint), [#370](https://github.com/jwilleke/yourphr/issues/370) (VA provider), [#262](https://github.com/jwilleke/yourphr/issues/262) legibility QA.
+- Blockers / significant notes: Epic spec pages (`fhir.epic.com/Specifications?api=…`) are JS-gated — WebFetch can't read them; need the rendered page saved locally (verbatim Epic specs now in gitignored `sample-data/epic-specs/`).
 <!-- RESUME:END -->
 
 > Generated from live GitHub state — ranked by priority label. The `▶ Resume here` pointer is written by `/wrap`.
