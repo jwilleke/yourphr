@@ -15,13 +15,14 @@ test('medical-history master-detail: group-by selector + rail + detail render an
     await expect(page.getByRole('button', { name: dim, exact: true })).toBeVisible();
   }
 
-  // Master rail has groups, and the detail pane renders timeline panels for the selected group.
+  // Master rail has groups, and the detail pane renders the rich record cards (fhir-card, the same
+  // renderer /explore uses) for the selected group.
   const railItems = page.locator('.list-group-item-action');
   await expect(railItems.first()).toBeVisible({ timeout: 20_000 });
   expect(await railItems.count(), 'expected ≥1 master group from seeded encounters').toBeGreaterThan(0);
 
-  const panels = page.locator('app-report-medical-history-timeline-panel');
-  await expect(panels.first()).toBeVisible({ timeout: 20_000 });
+  const detailCards = page.locator('fhir-card');
+  await expect(detailCards.first()).toBeVisible({ timeout: 20_000 });
 
   // "N records across M groups" honest total is shown.
   await expect(page.getByText(/record(s)? across/)).toBeVisible();
@@ -30,7 +31,7 @@ test('medical-history master-detail: group-by selector + rail + detail render an
   await page.getByRole('button', { name: 'Provider', exact: true }).click();
   await expect(railItems.first()).toBeVisible();
   expect(await railItems.count(), 'rail still populated after grouping by Provider').toBeGreaterThan(0);
-  await expect(panels.first()).toBeVisible();
+  await expect(detailCards.first()).toBeVisible();
 
   // #359: Condition dimension is sourced from /conditions/classified — the rail lists the patient's
   // canonical conditions (not only encounter-linked ones). Seeded Synthea data has conditions.
