@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.11.1](https://github.com/jwilleke/yourphr/compare/v1.11.0...v1.11.1) (2026-06-22)
+
+### Bug Fixes
+
+- **backup/restore hardening** (from code review): required pre-restore safety copy + atomic restore swap; anchored backup-filename matching (foreign files no longer listable/prunable/restorable); unique per-backup temp dir; private (0700) download temp; legacy `.backup_dest` destination migration; best-effort + pruned pre-restore backup; single shared `HH:MM` parser; destination-aware scheduler ([#368](https://github.com/jwilleke/yourphr/issues/368))
+- **security:** gate backup + restore (refuse with a clear error) when at-rest database encryption is enabled, so an encrypted DB can't be written to a plaintext snapshot or restored into an unopenable state ([#367](https://github.com/jwilleke/yourphr/issues/367))
+
 ## [1.11.0](https://github.com/jwilleke/yourphr/compare/v1.10.0...v1.11.0) (2026-06-21)
 
 ### Features
