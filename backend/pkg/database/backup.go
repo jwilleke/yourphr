@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -107,19 +108,51 @@ func LoadBackupSettings(appConfig config.Interface) BackupSettings {
 		Destination: appConfig.GetString("backup.destination"),
 		MaxBackups:  appConfig.GetInt("backup.max-backups"),
 	}
+	settingsExist := false
 	if b, err := os.ReadFile(backupSettingsPath(appConfig)); err == nil {
 		_ = json.Unmarshal(b, &s)
+		settingsExist = true
 	}
+	// Migrate the legacy one-line .backup_dest marker (pre-v1.9.0) when there's no settings file and no
+	// configured destination, so an admin's custom destination isn't silently lost on upgrade (#368 #6).
+	if !settingsExist && strings.TrimSpace(s.Destination) == "" {
+		if b, err := os.ReadFile(filepath.Join(dbDirFromConfig(appConfig), ".backup_dest")); err == nil {
+			if p := strings.TrimSpace(string(b)); p != "" {
+				s.Destination = p
+			}
+		}
+	}
+	s.normalize()
+	return s
+}
+
+// normalize fills hard defaults. Single source of truth for defaulting, shared by LoadBackupSettings and
+// SetBackupSchedule so the two can't drift (#368 cleanup).
+func (s *BackupSettings) normalize() {
 	if s.Time == "" {
 		s.Time = "02:00"
 	}
 	if s.Days == "" {
 		s.Days = "daily"
 	}
-	if s.MaxBackups == 0 {
+	if s.MaxBackups <= 0 {
 		s.MaxBackups = 7
 	}
-	return s
+}
+
+// ParseHHMM parses a 24-hour "H:MM"/"HH:MM" time-of-day string. Single shared parser used by both the
+// schedule save-validator and the backup worker so the accepted format can't diverge (#368 #9).
+func ParseHHMM(v string) (hour, minute int, ok bool) {
+	parts := strings.SplitN(strings.TrimSpace(v), ":", 2)
+	if len(parts) != 2 {
+		return 0, 0, false
+	}
+	h, err1 := strconv.Atoi(strings.TrimSpace(parts[0]))
+	m, err2 := strconv.Atoi(strings.TrimSpace(parts[1]))
+	if err1 != nil || err2 != nil || h < 0 || h > 23 || m < 0 || m > 59 {
+		return 0, 0, false
+	}
+	return h, m, true
 }
 
 // SaveBackupSettings persists the settings.

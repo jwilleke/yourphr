@@ -1,7 +1,6 @@
 package web
 
 import (
-	"strconv"
 	"strings"
 	"time"
 
@@ -20,14 +19,6 @@ func (ae *AppEngine) startBackupWorker() {
 		return
 	}
 
-	// Seed lastRun from the newest existing backup so a restart doesn't re-trigger today's backup.
-	lastRun := ""
-	if files := database.ListBackups(database.CurrentBackupDestination(ae.Config)); len(files) > 0 {
-		if t, err := time.Parse(time.RFC3339, files[0].Modified); err == nil {
-			lastRun = t.Local().Format("2006-01-02")
-		}
-	}
-
 	ae.Logger.Info("scheduled-backup worker started (checks backup settings every minute)")
 	ticker := time.NewTicker(time.Minute)
 	defer ticker.Stop()
@@ -36,20 +27,23 @@ func (ae *AppEngine) startBackupWorker() {
 		if !s.Enabled {
 			continue
 		}
-		h, m, valid := parseHHMM(s.Time)
+		h, m, valid := database.ParseHHMM(s.Time)
 		if !valid {
 			continue
 		}
 		now = now.Local()
-		today := now.Format("2006-01-02")
-		if lastRun == today {
-			continue // already backed up today
-		}
 		if strings.EqualFold(s.Days, "weekly") && now.Weekday() != time.Sunday {
 			continue
 		}
 		if now.Hour()*60+now.Minute() < h*60+m {
 			continue // scheduled time-of-day not reached yet
+		}
+		// "Already backed up today?" is answered from the CURRENT destination's newest backup, not an
+		// in-memory seed — so it stays correct across restarts AND when the admin changes the destination
+		// at runtime (a fresh/empty destination correctly gets its first backup) (#368 #10).
+		dest := database.CurrentBackupDestination(ae.Config)
+		if newestBackupLocalDate(dest) == now.Format("2006-01-02") {
+			continue
 		}
 
 		_, full, err := gr.PerformBackup(ae.Config, "")
@@ -58,24 +52,20 @@ func (ae *AppEngine) startBackupWorker() {
 			continue
 		}
 		ae.Logger.Infof("scheduled backup written: %s", full)
-		lastRun = today
-		dest := database.CurrentBackupDestination(ae.Config)
 		if removed, err := database.PruneBackups(dest, s.MaxBackups); err == nil && removed > 0 {
 			ae.Logger.Infof("pruned %d old backup(s) in %s", removed, dest)
 		}
 	}
 }
 
-// parseHHMM parses a "HH:MM" 24-hour string.
-func parseHHMM(v string) (int, int, bool) {
-	parts := strings.SplitN(strings.TrimSpace(v), ":", 2)
-	if len(parts) != 2 {
-		return 0, 0, false
+// newestBackupLocalDate returns the server-local YYYY-MM-DD of the most recent backup in dir, or "".
+func newestBackupLocalDate(dir string) string {
+	files := database.ListBackups(dir)
+	if len(files) == 0 {
+		return ""
 	}
-	h, err1 := strconv.Atoi(strings.TrimSpace(parts[0]))
-	m, err2 := strconv.Atoi(strings.TrimSpace(parts[1]))
-	if err1 != nil || err2 != nil || h < 0 || h > 23 || m < 0 || m > 59 {
-		return 0, 0, false
+	if t, err := time.Parse(time.RFC3339, files[0].Modified); err == nil {
+		return t.Local().Format("2006-01-02")
 	}
-	return h, m, true
+	return ""
 }

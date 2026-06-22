@@ -36,9 +36,12 @@ func (gr *GormRepository) StageRestore(appConfig config.Interface, srcPath strin
 	if err := validateSqliteFile(tmp); err != nil {
 		return fmt.Errorf("not a valid/intact backup: %w", err)
 	}
-	// Reversibility: snapshot the current DB before staging the replacement.
-	if _, _, err := gr.PerformBackup(appConfig, ""); err != nil {
-		return fmt.Errorf("pre-restore backup failed: %w", err)
+	// Reversibility (best-effort): take a durable timestamped backup of the current DB and prune to the
+	// retention limit. A read-only/unavailable destination must NOT block the restore — ApplyPendingRestore
+	// also writes <db>.pre-restore at apply time, which is the guaranteed safety copy (#368 #7).
+	if _, _, err := gr.PerformBackup(appConfig, ""); err == nil {
+		settings := LoadBackupSettings(appConfig)
+		_, _ = PruneBackups(ResolveDestination(appConfig, settings), settings.MaxBackups)
 	}
 	if err := copyFile(tmp, restorePendingPath(appConfig)); err != nil {
 		return fmt.Errorf("could not stage restore: %w", err)

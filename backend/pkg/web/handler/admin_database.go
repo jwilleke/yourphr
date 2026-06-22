@@ -6,7 +6,6 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
-	"strconv"
 	"strings"
 	"time"
 
@@ -126,12 +125,19 @@ func BackupDatabaseDownload(c *gin.Context) {
 		return
 	}
 	name := database.BackupFileName(time.Now(), appConfig.GetString("backup.label"))
-	tmp := filepath.Join(os.TempDir(), name)
+	// Stage the snapshot in a PRIVATE (0700) temp dir, not directly in the world-readable os.TempDir(),
+	// so the full PHI backup isn't readable by other local users during the request window (#368 #5).
+	tmpDir, err := os.MkdirTemp("", "yourphr-download-")
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": err.Error()})
+		return
+	}
+	defer os.RemoveAll(tmpDir)
+	tmp := filepath.Join(tmpDir, name)
 	if err := gr.BackupToFile(tmp); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": err.Error()})
 		return
 	}
-	defer os.Remove(tmp)
 	c.FileAttachment(tmp, name)
 }
 
@@ -167,7 +173,7 @@ func SetBackupSchedule(c *gin.Context) {
 	if s.Time == "" {
 		s.Time = "02:00"
 	}
-	if !validHHMM(s.Time) {
+	if _, _, ok := database.ParseHHMM(s.Time); !ok {
 		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "time must be HH:MM (24-hour)"})
 		return
 	}
@@ -292,14 +298,4 @@ func BrowseDirectories(c *gin.Context) {
 		parent = ""
 	}
 	c.JSON(http.StatusOK, gin.H{"success": true, "data": DirListing{Path: path, Parent: parent, Dirs: dirs}})
-}
-
-func validHHMM(v string) bool {
-	parts := strings.SplitN(v, ":", 2)
-	if len(parts) != 2 || len(parts[1]) != 2 {
-		return false
-	}
-	h, err1 := strconv.Atoi(parts[0])
-	m, err2 := strconv.Atoi(parts[1])
-	return err1 == nil && err2 == nil && h >= 0 && h <= 23 && m >= 0 && m <= 59
 }

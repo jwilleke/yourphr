@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/fastenhealth/fasten-onprem/backend/pkg/config"
 	"github.com/fastenhealth/fasten-onprem/backend/pkg/version"
 )
 
@@ -38,6 +39,38 @@ func TestIsBackupFile(t *testing.T) {
 		if got := isBackupFile(name); got != want {
 			t.Errorf("isBackupFile(%q) = %v, want %v", name, got, want)
 		}
+	}
+}
+
+func TestParseHHMM(t *testing.T) {
+	cases := []struct {
+		in   string
+		ok   bool
+		h, m int
+	}{
+		{"02:00", true, 2, 0}, {"2:5", true, 2, 5}, {"23:59", true, 23, 59},
+		{"24:00", false, 0, 0}, {"12:60", false, 0, 0}, {"abc", false, 0, 0}, {"1230", false, 0, 0}, {"", false, 0, 0},
+	}
+	for _, c := range cases {
+		h, m, ok := ParseHHMM(c.in)
+		if ok != c.ok || (ok && (h != c.h || m != c.m)) {
+			t.Errorf("ParseHHMM(%q) = %d,%d,%v; want %d,%d,%v", c.in, h, m, ok, c.h, c.m, c.ok)
+		}
+	}
+}
+
+func TestLoadBackupSettings_MigratesLegacyDest(t *testing.T) {
+	dir := t.TempDir()
+	appConfig, err := config.Create()
+	if err != nil {
+		t.Fatal(err)
+	}
+	appConfig.Set("database.location", filepath.Join(dir, "fasten.db"))
+	if err := os.WriteFile(filepath.Join(dir, ".backup_dest"), []byte("/some/custom/dir\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if got := LoadBackupSettings(appConfig).Destination; got != "/some/custom/dir" {
+		t.Errorf("legacy .backup_dest not migrated: Destination = %q, want /some/custom/dir", got)
 	}
 }
 
