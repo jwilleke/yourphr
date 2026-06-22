@@ -27,6 +27,7 @@ Implication: **clean sources give breadth; vendor exports give the messy reality
 | Hand-written per-classifier fixtures | targeted logic branches | tiny; not realistic | n/a (ours) |
 | **Synthea / SyntheticMass** | volume + a complete happy-path patient | "too clean" — never reproduces vendor non-conformance | Apache-2.0 |
 | **Vendor sandbox exports** (Epic Camila, Cerner nancysmart, …) | the non-US-Core quirks that bite us | sandbox ≠ production; narrow; provenance must be the *raw* vendor response | public synthetic |
+| **VA Clinical Health** ([#370](https://github.com/jwilleke/yourphr/issues/370)) | another real-world US-Core-aligned vendor shape (VistA/Cerner); veterans mission | live OAuth API (not a ZIP) — fixtures require a SMART connect + export; onboarding cost | public synthetic |
 | **US-Core IG examples** | canonical per-profile conformance ("every profile we display") | happy-path; a better fit than base-R4 fhir-test-cases for a US-Core PHR | HL7 (permissive — verify) |
 | **Inferno US-Core test kit** | edge cases across US-Core 3.1.1 → 8.0+; what EHRs are certified against | data embedded in a server test kit → extraction effort | Apache-2.0 |
 | **fhir-test-cases** ([#354](https://github.com/jwilleke/yourphr/issues/354)) | spec validity + intentionally-*invalid* R4 (import resilience) | base R4, not US-Core; modest ROI | Apache-2.0 |
@@ -76,6 +77,7 @@ Adding a newly-found quirk later = drop a fixture + its expected output. That is
 - [#369](https://github.com/jwilleke/yourphr/issues/369) — medical-history grouping endpoint / perf (the document-heavy fixture lives here).
 - [#262](https://github.com/jwilleke/yourphr/issues/262) — patient-legible display (the vendor golden assertions guard this).
 - [#131](https://github.com/jwilleke/yourphr/issues/131) — E2E; a non-US-Core (Epic-shaped) seed would exercise the legible path end-to-end.
+- [#370](https://github.com/jwilleke/yourphr/issues/370) — add **VA Clinical Health** as a SMART provider (self-serve sandbox; yields a VA-shaped fixture as a bonus).
 - *Proposed:* an umbrella issue — "realistic test-data corpus + golden harness" — relating the above, pulling US-Core-IG + Synthea + vendor slices + Inferno.
 
 ## Recommended first steps
