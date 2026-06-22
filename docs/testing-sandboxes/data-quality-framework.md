@@ -52,7 +52,7 @@ What we know about each source's data quality. **Characterized** is honest about
 | Source | US-Core baseline | Known quirks (observed) | Our handling | Characterized |
 |---|---|---|---|---|
 | **Synthea** | aligned (synthetic) | "too clean" — never reproduces vendor non-conformance | happy-path baseline | ✅ well-understood (synthetic) |
-| **Epic** (sandbox) | US-Core | local codes in extensible fields (`class` = `HOV`); Epic OID code systems; `open.epic.com` extensions | prefer `type[].text` over raw `class` | 🟡 one patient (Camila) |
+| **Epic** (sandbox) | US-Core | `Encounter.class` is a LOCAL patient-class code (`HOV`/`Admission`, **not** v3-ActCode) so `legibleClass()` misses; clinical resources dual-code SNOMED/ICD/LOINC/CPT **inline**; pre-Nov-2022 exports use OID code systems (newer use standard URLs); generated CDAs carry a Care-Everywhere perf table | prefer the standard coding when present; `type[].text` for local-only fields (`class`, `Goal`); strip CDA perf telemetry. See [`../vendors/epic/notes.md`](../vendors/epic/notes.md) | 🟡 one patient (Camila) |
 | **Oracle Health (Cerner)** | US-Core | the `nsmart` export is **documents-only** (~2,149 `DocumentReference`, allergies, some `DiagnosticReport`) — no `Patient`/`Encounter` | docs-only empty state; treat `DocumentReference` narrative as primary | 🟡 one export |
 | **CMS Blue Button 2.0** | claims profiles | **claims only** (EOB/Coverage), no clinical resources; no `$everything`; initial token omits `patient` | claims classifiers ([#294](https://github.com/jwilleke/yourphr/issues/294)–[#296](https://github.com/jwilleke/yourphr/issues/296)) | 🟡 connected; data = claims |
 | **Veradigm / FollowMyHealth** | unknown | — | — | 🔴 never pulled data (blocked at auth) |
