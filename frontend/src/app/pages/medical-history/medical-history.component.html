@@ -24,7 +24,11 @@
           <span class="tx-gray-500 tx-13">{{ total }} record{{ total === 1 ? '' : 's' }} across {{ groups.length }} {{ dimension === 'date' ? 'dates' : (dimension + 's') }}</span>
         </div>
 
-        <div class="row">
+        <div *ngIf="typedLoading" class="pd-20 tx-gray-500">
+          <span class="spinner-border spinner-border-sm mg-r-10"></span>Loading records…
+        </div>
+
+        <div class="row" *ngIf="!typedLoading">
           <!-- Master rail -->
           <div class="col-md-4 col-lg-3 mg-b-20">
             <div class="list-group">

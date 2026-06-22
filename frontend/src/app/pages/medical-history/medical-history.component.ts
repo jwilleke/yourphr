@@ -43,7 +43,9 @@ export class MedicalHistoryComponent implements OnInit {
   dimension: GroupDimension = 'date'
 
   rows: HistoryRow[] = []         // encounter universe (date/condition/provider/place)
-  typedRows: HistoryRow[] = []    // multi-type universe (by-Type view)
+  typedRows: HistoryRow[] = []    // multi-type universe (by-Type view) — lazy-loaded on first Type switch
+  typedLoaded = false
+  typedLoading = false
   lookup: Record<string, ResourceFhir> = {}
   // Canonical conditions from /conditions/classified — the master for the by-Condition dimension (#359),
   // so ALL conditions appear, not only those linked to an encounter.
@@ -74,26 +76,20 @@ export class MedicalHistoryComponent implements OnInit {
     // Load the full encounter set + the canonical condition list in parallel (grouping needs the whole
     // history to build complete master groups, so this is not paginated). NOTE: heavy for very large
     // patients — a lightweight grouping endpoint is the scalable follow-up (#354).
+    // Default view (Date/Condition/Provider/Place) only needs Encounters + the canonical condition list.
+    // The by-Type universe (all 7 resource types) is heavier and is loaded lazily on first Type switch
+    // (#354), so opening this page doesn't pull every resource up front.
     forkJoin({
       conditions: this.fastenApi.getClassifiedConditions(),
-      typed: forkJoin(MEDICAL_HISTORY_TYPES.map((t) => this.fastenApi.getResources(t))),
-    }).subscribe(({conditions, typed}) => {
+      encounters: this.fastenApi.getResources('Encounter'),
+    }).subscribe(({conditions, encounters}) => {
       this.conditions = (conditions || []).map((c: ClassifiedCondition): ConditionMaster => ({
         key: rowKey({sourceId: c.sourceId, resourceId: c.sourceResourceId}),
         label: c.title || 'Condition',
         state: c.state,
       }))
 
-      // Multi-type universe (by-Type view) — built directly from each type's resources.
-      const byType: Record<string, ResourceFhir[]> = {}
-      MEDICAL_HISTORY_TYPES.forEach((t, i) => { byType[t] = (typed[i] as ResourceFhir[]) || [] })
-      const typedBuilt = buildTypedRows(byType)
-      this.typedRows = typedBuilt.rows
-      this.lookup = {...typedBuilt.lookup}
-
-      // Encounter universe (date/condition/provider/place) — needs the encounter graph for its links.
-      const encounters = byType['Encounter'] || []
-      const ids = encounters.map((r) => ({
+      const ids = (encounters || []).map((r) => ({
         source_id: r.source_id,
         source_resource_type: r.source_resource_type,
         source_resource_id: r.source_resource_id,
@@ -104,10 +100,9 @@ export class MedicalHistoryComponent implements OnInit {
         return
       }
       this.fastenApi.getResourceGraph(null, ids).subscribe((graph: ResourceGraphResponse) => {
-        const encounterResults = graph.results['Encounter'] || []
-        const built = buildEncounterRows(encounterResults)
+        const built = buildEncounterRows(graph.results['Encounter'] || [])
         this.rows = built.rows
-        Object.assign(this.lookup, built.lookup) // merge so detail can render either universe
+        this.lookup = {...built.lookup}
         this.regroup()
         this.loading = false
       }, () => { this.loading = false })
@@ -117,7 +112,29 @@ export class MedicalHistoryComponent implements OnInit {
   setDimension(dim: GroupDimension): void {
     if (this.dimension === dim) return
     this.dimension = dim
+    if (dim === 'type' && !this.typedLoaded && !this.typedLoading) {
+      this.loadTypedUniverse()
+    }
     this.regroup()
+  }
+
+  // loadTypedUniverse lazily fetches the by-Type resource set — only when the user opens the Type tab —
+  // so the default Date view doesn't pull every resource of all 7 types up front (#354).
+  private loadTypedUniverse(): void {
+    this.typedLoading = true
+    forkJoin(MEDICAL_HISTORY_TYPES.map((t) => this.fastenApi.getResources(t))).subscribe({
+      next: (results) => {
+        const byType: Record<string, ResourceFhir[]> = {}
+        MEDICAL_HISTORY_TYPES.forEach((t, i) => { byType[t] = (results[i] as ResourceFhir[]) || [] })
+        const built = buildTypedRows(byType)
+        this.typedRows = built.rows
+        Object.assign(this.lookup, built.lookup) // merge so the Type detail can render its records
+        this.typedLoaded = true
+        this.typedLoading = false
+        if (this.dimension === 'type') { this.regroup() }
+      },
+      error: () => { this.typedLoading = false },
+    })
   }
 
   selectGroup(key: string): void {
