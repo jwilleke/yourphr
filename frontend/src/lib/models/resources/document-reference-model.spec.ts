@@ -3,6 +3,8 @@ import {AdverseEventModel} from './adverse-event-model';
 import {CodableConceptModel} from '../datatypes/codable-concept-model';
 import * as example1Fixture from "../../fixtures/r4/resources/documentReference/example1.json"
 import * as exampleFmhFixture from "../../fixtures/r4/resources/documentReference/example-followmyhealth.json"
+import * as exampleCernerLoincFixture from "../../fixtures/r4/resources/documentReference/example-cerner-loinc-category.json"
+import * as exampleCernerCategoryTextFixture from "../../fixtures/r4/resources/documentReference/example-cerner-category-text.json"
 import {AttachmentModel} from '../datatypes/attachment-model';
 
 
@@ -78,6 +80,21 @@ describe('DocumentReferenceModel', () => {
     it('should never render a blank title (falls back to a generic label)', () => {
       const model = new DocumentReferenceModel({ resourceType: 'DocumentReference' });
       expect(model.title).toEqual('Document');
+    });
+
+    // Non-US-Core (Oracle/Cerner) goldens, captured verbatim from the Cerner sandbox (synthetic
+    // patient; no PHI). Cerner titles documents off the LOINC `category` coding display or
+    // `category.text` — both legible — never the vendor-local `type` code. (~2,149 docs in that export
+    // title this way: 1,528 via the LOINC category display, 610 via "Clinical Note" text.)
+    it('should title a Cerner document from its LOINC category display, not the vendor-local type code', () => {
+      const model = new DocumentReferenceModel(exampleCernerLoincFixture);
+      expect(model.title).toEqual('Physician Admission evaluation note'); // LOINC category display
+      expect(model.title).not.toEqual('Admission Note Physician');        // the Cerner-local type code
+    });
+
+    it('should title a Cerner clinical note from its category text', () => {
+      const model = new DocumentReferenceModel(exampleCernerCategoryTextFixture);
+      expect(model.title).toEqual('Clinical Note');
     });
   })
 

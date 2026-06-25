@@ -1,0 +1,110 @@
+{
+  "resourceType": "DocumentReference",
+  "id": "203508833",
+  "meta": {
+    "versionId": "2",
+    "lastUpdated": "2023-01-23T18:01:24.000Z"
+  },
+  "text": {
+    "status": "generated",
+    "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\"><p><b>Document Reference</b></p><p><b>Patient Name</b>: SMARTS SR., NANCYS II</p><p><b>Document Type</b>: Admission Note Physician</p><p><b>Document Title</b>: Abdominal</p><p><b>Service Start Date</b>: Jan 23, 2023  6:01 P.M. UTC</p><p><b>Service End Date</b>: Jan 23, 2029  6:01 P.M. UTC</p><p><b>Document Status</b>: Amended</p><p><b>Verifying Provider</b>: P., Portal</p></div>"
+  },
+  "identifier": [
+    {
+      "system": "https://fhir.cerner.com/ceuuid",
+      "value": "CE87caf4b7-9397-4667-9897-702218017c9e-203508833-2023012317593100"
+    }
+  ],
+  "status": "current",
+  "docStatus": "amended",
+  "type": {
+    "coding": [
+      {
+        "system": "https://fhir.cerner.com/ec2458f2-1e24-41c8-b71b-0e701af7583d/codeSet/72",
+        "code": "2820507",
+        "display": "Admission Note Physician"
+      },
+      {
+        "system": "http://loinc.org",
+        "code": "83805-2",
+        "display": "Physician Admission evaluation note"
+      }
+    ],
+    "text": "Admission Note Physician"
+  },
+  "category": [
+    {
+      "coding": [
+        {
+          "system": "http://loinc.org",
+          "code": "83805-2",
+          "display": "Physician Admission evaluation note"
+        }
+      ]
+    },
+    {
+      "coding": [
+        {
+          "system": "http://hl7.org/fhir/us/core/CodeSystem/us-core-documentreference-category",
+          "code": "clinical-note",
+          "display": "Clinical Note"
+        }
+      ],
+      "text": "Clinical Note"
+    },
+    {
+      "coding": [
+        {
+          "system": "http://loinc.org",
+          "code": "67852-4",
+          "display": "Hospital Admission evaluation note"
+        }
+      ]
+    }
+  ],
+  "subject": {
+    "reference": "Patient/12724066",
+    "display": "SMARTS SR., NANCYS II"
+  },
+  "date": "2023-01-23T17:59:30Z",
+  "author": [
+    {
+      "reference": "Practitioner/12742069",
+      "display": "P., Portal"
+    }
+  ],
+  "authenticator": {
+    "reference": "Practitioner/12742069",
+    "display": "P., Portal"
+  },
+  "custodian": {
+    "reference": "Organization/675844",
+    "display": "Model Hospital"
+  },
+  "content": [
+    {
+      "attachment": {
+        "contentType": "application/pdf",
+        "url": "https://fhir-ehr.cerner.com/r4/ec2458f2-1e24-41c8-b71b-0e701af7583d/Binary/XR-203508833",
+        "title": "Abdominal",
+        "creation": "2023-01-23T18:01:22.000Z"
+      },
+      "format": {
+        "system": "http://ihe.net/fhir/ValueSet/IHE.FormatCode.codesystem",
+        "code": "urn:ihe:iti:xds:2017:mimeTypeSufficient",
+        "display": "mimeType Sufficient"
+      }
+    }
+  ],
+  "context": {
+    "encounter": [
+      {
+        "reference": "Encounter/97953477"
+      }
+    ],
+    "period": {
+      "start": "2023-01-23T18:01:22Z",
+      "end": "2029-01-23T18:01:22Z"
+    }
+  }
+}
