@@ -71,7 +71,7 @@
     "@angular/cli": "^20.3.27",
     "@angular/compiler-cli": "^20.3.25",
     "@angular/language-service": "^20.3.25",
-    "@compodoc/compodoc": "^1.1.19",
+    "@compodoc/compodoc": "^1.2.1",
     "@eslint/js": "^9.39.1",
     "@playwright/test": "^1.61.0",
     "@storybook/addon-docs": "^9.1.20",
