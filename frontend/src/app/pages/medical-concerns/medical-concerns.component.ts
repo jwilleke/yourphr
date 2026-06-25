@@ -40,7 +40,7 @@ export class MedicalConcernsComponent implements OnInit {
   constructor(private fastenApi: FastenApiService) {}
 
   ngOnInit(): void {
-    this.fastenApi.getClassifiedConditions().subscribe({
+    this.fastenApi.getReconciledConditions().subscribe({
       next: (rows) => {
         this.concerns = (rows || []).filter((r) => r.category === 'problem-list-item' && r.state !== 'RuledOut');
         this.applyView();

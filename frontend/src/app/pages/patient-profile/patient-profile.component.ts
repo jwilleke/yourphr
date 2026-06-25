@@ -35,7 +35,7 @@ export class PatientProfileComponent implements OnInit {
     // Personal & social information: the SDOH / health-concern items the condition classifier
     // separated out of Medical Concerns ("stuff about me"). Loaded independently of the
     // demographics so a failure here never blanks the page.
-    this.fastenApi.getClassifiedConditions().subscribe({
+    this.fastenApi.getReconciledConditions().subscribe({
       next: (rows) => {
         this.profileItems = (rows || [])
           .filter((r) => r.category === 'sdoh' || r.category === 'health-concern')

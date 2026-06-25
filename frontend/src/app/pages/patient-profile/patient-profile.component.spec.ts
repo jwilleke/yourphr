@@ -13,7 +13,7 @@ describe('PatientProfileComponent', () => {
   let mockedFastenApiService
 
   beforeEach(async () => {
-    mockedFastenApiService = jasmine.createSpyObj('FastenApiService', ['getResources', 'getSummary', 'getClassifiedConditions', 'getClassifiedAllergies'])
+    mockedFastenApiService = jasmine.createSpyObj('FastenApiService', ['getResources', 'getSummary', 'getReconciledConditions', 'getClassifiedAllergies'])
     await TestBed.configureTestingModule({
       declarations: [ PatientProfileComponent, ReportHeaderComponent ],
       imports: [PipesModule, RouterTestingModule],
@@ -29,7 +29,7 @@ describe('PatientProfileComponent', () => {
     // ChromeHeadless DISCONNECT at a random later spec (the CI flake this fixes).
     mockedFastenApiService.getResources.and.callFake((type: string) => of(type === 'Patient' ? [{}] : []));
     mockedFastenApiService.getSummary.and.returnValue(of({sources: []}));
-    mockedFastenApiService.getClassifiedConditions.and.returnValue(of([]));
+    mockedFastenApiService.getReconciledConditions.and.returnValue(of([]));
     mockedFastenApiService.getClassifiedAllergies.and.returnValue(of([]));
     fixture = TestBed.createComponent(PatientProfileComponent);
     component = fixture.componentInstance;
@@ -41,7 +41,7 @@ describe('PatientProfileComponent', () => {
   });
 
   it('loads only the SDOH / health-concern bucket into the Personal & social section', () => {
-    mockedFastenApiService.getClassifiedConditions.and.returnValue(of([
+    mockedFastenApiService.getReconciledConditions.and.returnValue(of([
       {title: 'Employment', category: 'sdoh', state: 'Active', selfReported: true},
       {title: 'Diabetes', category: 'problem-list-item', state: 'Active', selfReported: false},
       {title: 'Housing', category: 'health-concern', state: 'Unknown', selfReported: false},

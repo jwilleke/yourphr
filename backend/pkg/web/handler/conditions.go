@@ -20,19 +20,47 @@ var provenanceRefTypes = []string{"Practitioner", "PractitionerRole", "Organizat
 
 // GetConditionsClassified returns the classified Condition list for the authenticated user: a
 // stateless compute-on-request derivation that synthesizes Condition.category and a display state,
-// separating real health problems from social/administrative "Personal Health Conditions". Never
-// materialized — see pkg/condition and docs/your-phr-dashboard/phase-1-condition-classifier-spec.md.
+// separating real health problems from social/administrative "Personal Health Conditions". Faithful
+// 1:1 — one row per Condition, never deduped (locked decision; see
+// docs/your-phr-dashboard/phase-1-condition-classifier-spec.md). For the deduped problem-list view,
+// use GetConditionsReconciled.
 func GetConditionsClassified(c *gin.Context) {
 	logger := c.MustGet(pkg.ContextKeyTypeLogger).(*logrus.Entry)
 	databaseRepo := c.MustGet(pkg.ContextKeyTypeDatabase).(database.DatabaseRepository)
-
-	resources, err := databaseRepo.ListResources(c, models.ListResourceQueryOptions{SourceResourceType: "Condition"})
+	inputs, resolver, sourceLabel, err := loadConditionInputs(c, logger, databaseRepo)
 	if err != nil {
 		logger.Errorf("error listing Condition resources for classification: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": err.Error()})
 		return
 	}
+	classified := condition.Classify(inputs, time.Now().UTC(), resolver, sourceLabel)
+	c.JSON(http.StatusOK, gin.H{"success": true, "data": classified})
+}
 
+// GetConditionsReconciled returns the deduped "problem list" view: Classify, then collapse conditions
+// that denote the same clinical concept (same standard code) into one entry — so a patient sees one
+// "Ischemic chest pain", not the per-visit copies a vendor returns. The reconciler home for dedup
+// (mirrors GetMedicationsReconciled); /conditions/classified stays faithful (#262).
+func GetConditionsReconciled(c *gin.Context) {
+	logger := c.MustGet(pkg.ContextKeyTypeLogger).(*logrus.Entry)
+	databaseRepo := c.MustGet(pkg.ContextKeyTypeDatabase).(database.DatabaseRepository)
+	inputs, resolver, sourceLabel, err := loadConditionInputs(c, logger, databaseRepo)
+	if err != nil {
+		logger.Errorf("error listing Condition resources for reconciliation: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": err.Error()})
+		return
+	}
+	reconciled := condition.Reconcile(inputs, time.Now().UTC(), resolver, sourceLabel)
+	c.JSON(http.StatusOK, gin.H{"success": true, "data": reconciled})
+}
+
+// loadConditionInputs lists the stored Condition resources as classifier inputs and builds the
+// provenance resolver + source-label lookup. Shared by the classified + reconciled handlers.
+func loadConditionInputs(c *gin.Context, logger *logrus.Entry, databaseRepo database.DatabaseRepository) ([]condition.InputResource, *provenance.ResourceSet, func(string) string, error) {
+	resources, err := databaseRepo.ListResources(c, models.ListResourceQueryOptions{SourceResourceType: "Condition"})
+	if err != nil {
+		return nil, nil, nil, err
+	}
 	inputs := make([]condition.InputResource, 0, len(resources))
 	for i := range resources {
 		inputs = append(inputs, condition.InputResource{
@@ -42,14 +70,11 @@ func GetConditionsClassified(c *gin.Context) {
 			Raw:                json.RawMessage(resources[i].ResourceRaw),
 		})
 	}
-
-	// Build the resolver from the resources a provenance chain can reference, plus a SourceID -> name
-	// map for the floor ("Source: <name>"). Both are best-effort: failures degrade to a lower rung.
+	// Best-effort: provenance resolver (the resources a chain can reference) + a SourceID -> name map
+	// for the floor ("Source: <name>"). Failures degrade to a lower rung rather than fail the request.
 	resolver := provenance.NewResourceSet(loadProvenanceResources(c, logger, databaseRepo))
 	sourceLabel := sourceLabelFunc(c, logger, databaseRepo)
-
-	classified := condition.Classify(inputs, time.Now().UTC(), resolver, sourceLabel)
-	c.JSON(http.StatusOK, gin.H{"success": true, "data": classified})
+	return inputs, resolver, sourceLabel, nil
 }
 
 // loadProvenanceResources loads the resource types a Condition's provenance chain references.

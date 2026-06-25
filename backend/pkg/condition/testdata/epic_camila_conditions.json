@@ -1,0 +1,440 @@
+[
+  {
+    "resourceType": "Condition",
+    "id": "e.bz79vrcUgwgW2zjAyoNbFdDgVqW-LYAriq-Wq-q5vprD.GRo1CkSQbUO70NF4VIltXfDsqR3E2ymzwZ4RZdJg3",
+    "category": [
+      {
+        "coding": [
+          {
+            "system": "http://terminology.hl7.org/CodeSystem/condition-category",
+            "code": "encounter-diagnosis",
+            "display": "Encounter Diagnosis"
+          }
+        ],
+        "text": "Encounter Diagnosis"
+      },
+      {
+        "coding": [
+          {
+            "system": "http://open.epic.com/FHIR/StructureDefinition/condition-category",
+            "code": "visit-diagnosis",
+            "display": "Visit Diagnosis"
+          }
+        ],
+        "text": "Visit Diagnosis"
+      }
+    ],
+    "code": {
+      "coding": [
+        {
+          "system": "http://snomed.info/sct",
+          "code": "225566008",
+          "display": "Ischemic chest pain (finding)"
+        },
+        {
+          "system": "http://hl7.org/fhir/sid/icd-9-cm",
+          "code": "786.50",
+          "display": "Chest pain, unspecified"
+        },
+        {
+          "system": "http://hl7.org/fhir/sid/icd-10-cm",
+          "code": "I20.9",
+          "display": "Angina pectoris, unspecified"
+        }
+      ],
+      "text": "Ischemic chest pain"
+    },
+    "subject": {
+      "reference": "Patient/erXuFYUfucBZaryVksYEcMg3",
+      "display": "Lopez, Camila Maria"
+    },
+    "recordedDate": "2023-06-02"
+  },
+  {
+    "resourceType": "Condition",
+    "id": "e.bz79vrcUgwgW2zjAyoNbJVNoClMvN-.L-eh8o8WqJw9SH6QL2.49H-bndryWLXvigQQGZJ7OKlxTnbYNVnx6w3",
+    "category": [
+      {
+        "coding": [
+          {
+            "system": "http://terminology.hl7.org/CodeSystem/condition-category",
+            "code": "encounter-diagnosis",
+            "display": "Encounter Diagnosis"
+          }
+        ],
+        "text": "Encounter Diagnosis"
+      },
+      {
+        "coding": [
+          {
+            "system": "http://open.epic.com/FHIR/StructureDefinition/condition-category",
+            "code": "visit-diagnosis",
+            "display": "Visit Diagnosis"
+          }
+        ],
+        "text": "Visit Diagnosis"
+      }
+    ],
+    "code": {
+      "coding": [
+        {
+          "system": "http://snomed.info/sct",
+          "code": "225566008",
+          "display": "Ischemic chest pain (finding)"
+        },
+        {
+          "system": "http://hl7.org/fhir/sid/icd-9-cm",
+          "code": "786.50",
+          "display": "Chest pain, unspecified"
+        },
+        {
+          "system": "http://hl7.org/fhir/sid/icd-10-cm",
+          "code": "I20.9",
+          "display": "Angina pectoris, unspecified"
+        }
+      ],
+      "text": "Ischemic chest pain"
+    },
+    "subject": {
+      "reference": "Patient/erXuFYUfucBZaryVksYEcMg3",
+      "display": "Lopez, Camila Maria"
+    },
+    "encounter": {
+      "reference": "Encounter/eoIRZgvu9RhrwOzDlZkRbSg3",
+      "identifier": {
+        "use": "usual",
+        "system": "urn:oid:1.2.840.114350.1.13.0.1.7.3.698084.8",
+        "value": "29541"
+      },
+      "display": "Hospital Outpatient Visit"
+    },
+    "recordedDate": "2023-06-02"
+  },
+  {
+    "resourceType": "Condition",
+    "id": "e.bz79vrcUgwgW2zjAyoNbKP8KjPs1AYAIh3cniJ-cYCOcX8pleUMmkw34DzeDN8jJrVNnlGbRJ7wc5BA-xgG6w3",
+    "category": [
+      {
+        "coding": [
+          {
+            "system": "http://terminology.hl7.org/CodeSystem/condition-category",
+            "code": "encounter-diagnosis",
+            "display": "Encounter Diagnosis"
+          }
+        ],
+        "text": "Encounter Diagnosis"
+      },
+      {
+        "coding": [
+          {
+            "system": "http://open.epic.com/FHIR/StructureDefinition/condition-category",
+            "code": "visit-diagnosis",
+            "display": "Visit Diagnosis"
+          }
+        ],
+        "text": "Visit Diagnosis"
+      }
+    ],
+    "code": {
+      "coding": [
+        {
+          "system": "http://snomed.info/sct",
+          "code": "271681002",
+          "display": "Stomach ache (finding)"
+        },
+        {
+          "system": "http://hl7.org/fhir/sid/icd-9-cm",
+          "code": "536.8",
+          "display": "Dyspepsia and other specified disorders of function of stomach"
+        },
+        {
+          "system": "http://hl7.org/fhir/sid/icd-10-cm",
+          "code": "R10.9",
+          "display": "Unspecified abdominal pain"
+        }
+      ],
+      "text": "Stomach ache"
+    },
+    "subject": {
+      "reference": "Patient/erXuFYUfucBZaryVksYEcMg3",
+      "display": "Lopez, Camila Maria"
+    },
+    "recordedDate": "2023-06-02"
+  },
+  {
+    "resourceType": "Condition",
+    "id": "e.bz79vrcUgwgW2zjAyoNbNOb7Ck-Tm76lw7OOBDX1qnKRcX9BbbaRspclkwQFMLDVSZbsIv4IcSGQLKmU56Y7w3",
+    "category": [
+      {
+        "coding": [
+          {
+            "system": "http://terminology.hl7.org/CodeSystem/condition-category",
+            "code": "encounter-diagnosis",
+            "display": "Encounter Diagnosis"
+          }
+        ],
+        "text": "Encounter Diagnosis"
+      },
+      {
+        "coding": [
+          {
+            "system": "http://open.epic.com/FHIR/StructureDefinition/condition-category",
+            "code": "visit-diagnosis",
+            "display": "Visit Diagnosis"
+          }
+        ],
+        "text": "Visit Diagnosis"
+      }
+    ],
+    "code": {
+      "coding": [
+        {
+          "system": "http://snomed.info/sct",
+          "code": "225566008",
+          "display": "Ischemic chest pain (finding)"
+        },
+        {
+          "system": "http://hl7.org/fhir/sid/icd-9-cm",
+          "code": "786.50",
+          "display": "Chest pain, unspecified"
+        },
+        {
+          "system": "http://hl7.org/fhir/sid/icd-10-cm",
+          "code": "I20.9",
+          "display": "Angina pectoris, unspecified"
+        }
+      ],
+      "text": "Ischemic chest pain"
+    },
+    "subject": {
+      "reference": "Patient/erXuFYUfucBZaryVksYEcMg3",
+      "display": "Lopez, Camila Maria"
+    },
+    "encounter": {
+      "reference": "Encounter/ej567ARSFdaF4ooZVunIlIg3",
+      "identifier": {
+        "use": "usual",
+        "system": "urn:oid:1.2.840.114350.1.13.0.1.7.3.698084.8",
+        "value": "29542"
+      },
+      "display": "Hospital Outpatient Visit"
+    },
+    "recordedDate": "2023-06-02"
+  },
+  {
+    "resourceType": "Condition",
+    "id": "e7c8aTjCaSoNH-8EquCI0Jn27nC7yIIoAkAPIt2TESwGzVJwyNizm9EE3yNDFX1jBbQB7NSaQMPRhEODE0g8QWw3",
+    "clinicalStatus": {
+      "coding": [
+        {
+          "system": "http://terminology.hl7.org/CodeSystem/condition-clinical",
+          "version": "4.0.0",
+          "code": "active",
+          "display": "Active"
+        }
+      ],
+      "text": "Active"
+    },
+    "verificationStatus": {
+      "coding": [
+        {
+          "system": "http://terminology.hl7.org/CodeSystem/condition-ver-status",
+          "version": "4.0.0",
+          "code": "confirmed",
+          "display": "Confirmed"
+        }
+      ],
+      "text": "Confirmed"
+    },
+    "category": [
+      {
+        "coding": [
+          {
+            "system": "http://terminology.hl7.org/CodeSystem/condition-category",
+            "code": "encounter-diagnosis",
+            "display": "Encounter Diagnosis"
+          }
+        ],
+        "text": "Encounter Diagnosis"
+      },
+      {
+        "coding": [
+          {
+            "system": "http://open.epic.com/FHIR/StructureDefinition/condition-category",
+            "code": "visit-diagnosis",
+            "display": "Visit Diagnosis"
+          }
+        ],
+        "text": "Visit Diagnosis"
+      }
+    ],
+    "code": {
+      "coding": [
+        {
+          "system": "http://snomed.info/sct",
+          "code": "69878008",
+          "display": "Polycystic ovaries (disorder)"
+        },
+        {
+          "system": "http://hl7.org/fhir/sid/icd-9-cm",
+          "code": "256.4",
+          "display": "Polycystic ovaries"
+        },
+        {
+          "system": "http://hl7.org/fhir/sid/icd-10-cm",
+          "code": "E28.2",
+          "display": "Polycystic ovarian syndrome"
+        }
+      ],
+      "text": "Polycystic ovaries"
+    },
+    "subject": {
+      "reference": "Patient/erXuFYUfucBZaryVksYEcMg3",
+      "display": "Lopez, Camila Maria"
+    },
+    "onsetDateTime": "2005-09-20",
+    "recordedDate": "2019-05-28",
+    "evidence": [
+      {
+        "detail": [
+          {
+            "reference": "Condition/euDDjG6i1-OkhZii5APxOiw3",
+            "display": "Polycystic ovaries"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "resourceType": "Condition",
+    "id": "eZo5zir3atulIZs.zByt1CfnQiIGDp.0eIrs1WjJWgSZmv61LxYYiR4Almdi3htmkjrLgh5q9lPZy.U0alNURUQ3",
+    "category": [
+      {
+        "coding": [
+          {
+            "system": "http://terminology.hl7.org/CodeSystem/condition-category",
+            "code": "encounter-diagnosis",
+            "display": "Encounter Diagnosis"
+          }
+        ],
+        "text": "Encounter Diagnosis"
+      },
+      {
+        "coding": [
+          {
+            "system": "http://open.epic.com/FHIR/StructureDefinition/condition-category",
+            "code": "visit-diagnosis",
+            "display": "Visit Diagnosis"
+          }
+        ],
+        "text": "Visit Diagnosis"
+      }
+    ],
+    "code": {
+      "coding": [
+        {
+          "system": "http://snomed.info/sct",
+          "code": "22253000",
+          "display": "Pain (finding)"
+        },
+        {
+          "system": "http://hl7.org/fhir/sid/icd-9-cm",
+          "code": "780.96",
+          "display": "Generalized pain"
+        },
+        {
+          "system": "http://hl7.org/fhir/sid/icd-10-cm",
+          "code": "R52",
+          "display": "Pain, unspecified"
+        }
+      ],
+      "text": "Pain aggravated by activities of daily living"
+    },
+    "subject": {
+      "reference": "Patient/erXuFYUfucBZaryVksYEcMg3",
+      "display": "Lopez, Camila Maria"
+    },
+    "encounter": {
+      "reference": "Encounter/exfbAtPCSLnf8s.193aMUnQ3",
+      "identifier": {
+        "use": "usual",
+        "system": "urn:oid:1.2.840.114350.1.13.0.1.7.3.698084.8",
+        "value": "29539"
+      },
+      "display": "Office Visit"
+    },
+    "recordedDate": "2023-05-21"
+  },
+  {
+    "resourceType": "Condition",
+    "id": "euDDjG6i1-OkhZii5APxOiw3",
+    "clinicalStatus": {
+      "coding": [
+        {
+          "system": "http://terminology.hl7.org/CodeSystem/condition-clinical",
+          "version": "4.0.0",
+          "code": "active",
+          "display": "Active"
+        }
+      ],
+      "text": "Active"
+    },
+    "verificationStatus": {
+      "coding": [
+        {
+          "system": "http://terminology.hl7.org/CodeSystem/condition-ver-status",
+          "version": "4.0.0",
+          "code": "confirmed",
+          "display": "Confirmed"
+        }
+      ],
+      "text": "Confirmed"
+    },
+    "category": [
+      {
+        "coding": [
+          {
+            "system": "http://terminology.hl7.org/CodeSystem/condition-category",
+            "code": "problem-list-item",
+            "display": "Problem List Item"
+          }
+        ],
+        "text": "Problem List Item"
+      }
+    ],
+    "severity": {
+      "text": "Medium"
+    },
+    "code": {
+      "coding": [
+        {
+          "system": "http://hl7.org/fhir/sid/icd-10-cm",
+          "code": "E28.2",
+          "display": "Polycystic ovarian syndrome"
+        },
+        {
+          "system": "http://snomed.info/sct",
+          "code": "69878008",
+          "display": "POLYCYSTIC OVARIES"
+        },
+        {
+          "system": "http://hl7.org/fhir/sid/icd-9-cm",
+          "code": "256.4",
+          "display": "PCOS (polycystic ovarian syndrome)"
+        },
+        {
+          "system": "urn:oid:2.16.840.1.113883.3.247.1.1",
+          "code": "330918",
+          "display": "PCOS (polycystic ovarian syndrome)"
+        }
+      ],
+      "text": "Polycystic ovaries"
+    },
+    "subject": {
+      "reference": "Patient/erXuFYUfucBZaryVksYEcMg3",
+      "display": "Lopez, Camila Maria"
+    },
+    "onsetDateTime": "2005-09-20",
+    "recordedDate": "2019-05-28"
+  }
+]

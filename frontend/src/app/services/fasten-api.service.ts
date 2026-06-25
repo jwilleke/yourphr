@@ -182,6 +182,18 @@ export class FastenApiService {
       );
   }
 
+  // getReconciledConditions returns the DEDUPED problem-list view (one entry per clinical concept).
+  // Use this for "current problems"/problem-list presentations; getClassifiedConditions is the
+  // faithful 1:1 list (every Condition, never collapsed).
+  getReconciledConditions(): Observable<ClassifiedCondition[]> {
+    return this._httpClient.get<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/conditions/reconciled`)
+      .pipe(
+        map((response: ResponseWrapper) => {
+          return (response.data || []) as ClassifiedCondition[]
+        })
+      );
+  }
+
   getClassifiedAllergies(): Observable<ClassifiedAllergy[]> {
     return this._httpClient.get<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/allergies/classified`)
       .pipe(

@@ -80,7 +80,7 @@ export class MedicalHistoryComponent implements OnInit {
     // The by-Type universe (all 7 resource types) is heavier and is loaded lazily on first Type switch
     // (#369), so opening this page doesn't pull every resource up front.
     forkJoin({
-      conditions: this.fastenApi.getClassifiedConditions(),
+      conditions: this.fastenApi.getReconciledConditions(),
       encounters: this.fastenApi.getResources('Encounter'),
     }).subscribe(({conditions, encounters}) => {
       this.conditions = (conditions || []).map((c: ClassifiedCondition): ConditionMaster => ({

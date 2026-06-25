@@ -186,6 +186,7 @@ func (ae *AppEngine) Setup() (*gin.RouterGroup, *gin.Engine) {
 					secure.GET("/summary/ips", handler.GetIPSSummary)
 					secure.GET("/medications/reconciled", handler.GetMedicationsReconciled)
 					secure.GET("/conditions/classified", handler.GetConditionsClassified)
+					secure.GET("/conditions/reconciled", handler.GetConditionsReconciled)
 					secure.GET("/allergies/classified", handler.GetAllergiesClassified)
 					secure.GET("/immunizations/classified", handler.GetImmunizationsClassified)
 					secure.GET("/procedures/classified", handler.GetProceduresClassified)

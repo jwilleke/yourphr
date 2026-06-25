@@ -25,8 +25,8 @@ describe('MedicalConcernsComponent', () => {
   let api: jasmine.SpyObj<FastenApiService>;
 
   beforeEach(async () => {
-    api = jasmine.createSpyObj('FastenApiService', ['getClassifiedConditions']);
-    api.getClassifiedConditions.and.returnValue(of([]));
+    api = jasmine.createSpyObj('FastenApiService', ['getReconciledConditions']);
+    api.getReconciledConditions.and.returnValue(of([]));
 
     await TestBed.configureTestingModule({
       imports: [MedicalConcernsComponent],
@@ -40,12 +40,12 @@ describe('MedicalConcernsComponent', () => {
 
   it('creates and loads concerns on init', () => {
     expect(component).toBeTruthy();
-    expect(api.getClassifiedConditions).toHaveBeenCalled();
+    expect(api.getReconciledConditions).toHaveBeenCalled();
     expect(component.loading).toBeFalse();
   });
 
   it('keeps only active problem-list-items, excluding Patient Profile and refuted', () => {
-    api.getClassifiedConditions.and.returnValue(of([
+    api.getReconciledConditions.and.returnValue(of([
       concern({title: 'Diabetes', category: 'problem-list-item', state: 'Active'}),
       concern({title: 'Employment', category: 'sdoh', state: 'Active'}),
       concern({title: 'Refuted', category: 'problem-list-item', state: 'RuledOut'}),
@@ -59,7 +59,7 @@ describe('MedicalConcernsComponent', () => {
   });
 
   it('flags self-reported concerns with a badge and a "Reported by" line', () => {
-    api.getClassifiedConditions.and.returnValue(of([
+    api.getReconciledConditions.and.returnValue(of([
       concern({title: 'Anxiety', selfReported: true, provenance: {kind: 'self-reported', display: 'Self-reported', level: 1}}),
     ]));
     component.ngOnInit();

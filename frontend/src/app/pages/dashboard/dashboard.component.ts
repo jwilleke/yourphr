@@ -127,7 +127,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     // The backend classifier synthesizes Condition.category + display state and separates real
     // health problems from social/administrative "Personal Health Conditions". The Medical Concerns
     // and Patient Profile tiles are counted from it (not the raw Condition count).
-    this.fastenApi.getClassifiedConditions().subscribe({
+    this.fastenApi.getReconciledConditions().subscribe({
       next: (rows: ClassifiedCondition[]) => {
         const problems = (rows || []).filter((r) => r.category === 'problem-list-item')
         // Concerns = Active + Remission (still tracked) + Unknown (shown, never assumed); RuledOut is
