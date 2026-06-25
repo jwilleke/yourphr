@@ -1,18 +1,18 @@
 # TODO
 
 <!-- RESUME:START -->
-## ▶ Resume here — 2026-06-22
+## ▶ Resume here — 2026-06-25
 
-- Last worked on: **test-data / DQF thread.** Released **v1.11.1** (backup/restore hardening #368 + encryption gate #367). Then: lazy-loaded medical-history by-Type universe; wrote a **testing strategy + Data-Quality-Framework doc set** under `docs/testing-sandboxes/`; built the **first vendor golden** — real Epic HOV encounter caught a real #262 bug (`Category`="HOV") → fixed (prefer `type[].text` over raw local `class.display`) → green at both tiers.
-- Branch / state: `main`, clean, **1 unpushed** (`de44719a` test-sandboxes move) — push pending operator OK.
-- Running / in-flight: CI green on `b0f6fd52`/`a6faff9f`. No dev servers started this session. No workflows/background agents.
+- Last worked on: **golden-harness + #262 legibility, end-to-end.** Released **v1.11.2** (path-injection #383 + HOV #262 + lazy-load) and **v1.12.0** (condition dedup `Reconcile` #262 + entered-in-error omission #384). The harness caught **3 real bugs** across Epic+Cerner (HOV, condition dedup, entered-in-error docs). Then closed **#371** (suppress raw vendor-local "Class: HOV" from the card) and filed the **#385** test-data-corpus epic.
+- Branch / state: `main`, clean, synced (v1.12.0 tag; #371 fix `e592c6dd` unreleased on top).
+- Running / in-flight: **CI running on `e592c6dd`** (the #371 fix) — was green on everything prior. No dev servers / workflows / background agents.
 - Parked / half-done: none (tree clean).
 - Next steps:
-  - **Push `de44719a`** (test-sandboxes.md move + 9 link redirects).
-  - Optional: cut a **patch release** for the HOV #262 fix (unreleased on `main`).
-  - Extend goldens to the **Cerner docs-only** case (`nsmart`) + Condition dedup; then file the umbrella "test-data corpus + golden harness" issue.
-  - Open follow-ups: [#371](https://github.com/jwilleke/yourphr/issues/371) (frontend raw "Class:" line), [#369](https://github.com/jwilleke/yourphr/issues/369) (grouping endpoint), [#370](https://github.com/jwilleke/yourphr/issues/370) (VA provider), [#262](https://github.com/jwilleke/yourphr/issues/262) legibility QA.
-- Blockers / significant notes: Epic spec pages (`fhir.epic.com/Specifications?api=…`) are JS-gated — WebFetch can't read them; need the rendered page saved locally (verbatim Epic specs now in gitignored `sample-data/epic-specs/`).
+  - Optional: cut **v1.12.1** (patch) for the #371 fix (unreleased on `main`).
+  - Bigger features (own sessions): [#369](https://github.com/jwilleke/yourphr/issues/369) (server-side grouping endpoint) · [#370](https://github.com/jwilleke/yourphr/issues/370) (VA Clinical Health provider).
+  - [#385](https://github.com/jwilleke/yourphr/issues/385) corpus roadmap: US-Core IG breadth, Inferno/fhir-test-cases resilience (#354), more Cerner goldens (allergies/DiagnosticReport).
+  - 3 Dependabot PRs open (#380/#381/#382, frontend npm bumps) — triage/merge.
+- Blockers / significant notes: CodeQL is GitHub **default setup** (runs on push to main; can lag — #42 was dismissed as a verified false positive). Epic spec pages are JS-gated (verbatim specs in gitignored `sample-data/epic-specs/`).
 <!-- RESUME:END -->
 
 > Generated from live GitHub state — ranked by priority label. The `▶ Resume here` pointer is written by `/wrap`.
