@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.11.2](https://github.com/jwilleke/yourphr/compare/v1.11.1...v1.11.2) (2026-06-25)
+
+### Bug Fixes
+
+- **security:** confine the backup destination to an allowlist of roots (data volume + configured `backup.destination` + `backup.allowed-roots`), rejecting relative paths and `..` escapes — fixes a CodeQL path-injection where the admin-provided destination flowed into a filesystem path ([#383](https://github.com/jwilleke/yourphr/issues/383))
+- **medical-history:** surface the legible encounter label for vendor-local class codes (e.g. Epic `class` = `HOV` now shows "Outpatient" from `type[].text`) instead of the raw code; guarded by a real Epic-sandbox golden test ([#262](https://github.com/jwilleke/yourphr/issues/262))
+
+### Performance
+
+- **medical-history:** lazy-load the by-Type resource universe only when the Type tab is opened, instead of fetching all 7 resource types on every page visit ([#354](https://github.com/jwilleke/yourphr/issues/354))
+
 ## [1.11.1](https://github.com/jwilleke/yourphr/compare/v1.11.0...v1.11.1) (2026-06-22)
 
 ### Bug Fixes
