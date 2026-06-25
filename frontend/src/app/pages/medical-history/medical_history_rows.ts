@@ -29,6 +29,19 @@ export const MEDICAL_HISTORY_TYPES = [
   'DocumentReference',
 ];
 
+// isEnteredInError reports whether a resource's own status marks it a mistake (FHIR entered-in-error),
+// across the fields different resource types use: `status` (DocumentReference, Observation, …),
+// `docStatus` (DocumentReference), and `verificationStatus` (Condition/AllergyIntolerance). Such records
+// are omitted from display — the record says it was an error, so honoring it is consistent with the
+// condition classifier, which already drops entered-in-error (#384).
+export function isEnteredInError(r: ResourceFhir): boolean {
+  const raw: any = r?.resource_raw;
+  if (!raw) return false;
+  if (raw.status === 'entered-in-error' || raw.docStatus === 'entered-in-error') return true;
+  const vs = raw.verificationStatus?.coding;
+  return Array.isArray(vs) && vs.some((c: any) => c?.code === 'entered-in-error');
+}
+
 // buildTypedRows turns resources of several types into one HistoryRow each, for grouping by Type. Detail
 // only needs date + title here (no encounter graph), so rows carry no provider/place/condition links.
 export function buildTypedRows(byType: Record<string, ResourceFhir[]>): BuiltRows {
@@ -36,7 +49,7 @@ export function buildTypedRows(byType: Record<string, ResourceFhir[]>): BuiltRow
   const lookup: Record<string, ResourceFhir> = {};
   for (const list of Object.values(byType || {})) {
     for (const r of list || []) {
-      if (!r) continue;
+      if (!r || isEnteredInError(r)) continue; // omit records the source marked a mistake (#384)
       const key = rowKey({sourceId: r.source_id, resourceId: r.source_resource_id});
       lookup[key] = r;
       rows.push({
@@ -63,6 +76,7 @@ export function buildEncounterRows(encounters: ResourceFhir[]): BuiltRows {
   const lookup: Record<string, ResourceFhir> = {};
 
   for (const enc of encounters || []) {
+    if (isEnteredInError(enc)) continue; // omit entered-in-error encounters (#384)
     const related = enc.related_resources || [];
 
     const providers = uniq(

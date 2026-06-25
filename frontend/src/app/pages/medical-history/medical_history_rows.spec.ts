@@ -80,4 +80,24 @@ describe('buildTypedRows', () => {
     const {rows} = buildTypedRows({Encounter: [], Procedure: undefined as any});
     expect(rows).toEqual([]);
   });
+
+  // #384: records the source marked entered-in-error must be omitted (never shown titled "Error").
+  it('omits entered-in-error resources (status, docStatus, verificationStatus)', () => {
+    const raw = (id: string, body: any): ResourceFhir => new ResourceFhir({
+      source_id: 's1', source_resource_type: 'DocumentReference', source_resource_id: id,
+      sort_title: id, resource_raw: body,
+    } as any);
+    const byType = {
+      DocumentReference: [
+        raw('ok', {resourceType: 'DocumentReference', status: 'current'}),
+        raw('err-status', {resourceType: 'DocumentReference', status: 'entered-in-error'}),
+        raw('err-docstatus', {resourceType: 'DocumentReference', status: 'current', docStatus: 'entered-in-error'}),
+      ],
+      Condition: [
+        raw('cond-err', {resourceType: 'Condition', verificationStatus: {coding: [{code: 'entered-in-error'}]}}),
+      ],
+    };
+    const {rows} = buildTypedRows(byType);
+    expect(rows.map((r) => r.resourceId)).toEqual(['ok']);
+  });
 });
