@@ -53,7 +53,7 @@ jobs:
       # toolchain that GOTOOLCHAIN auto-downloads (it lives under the module cache), so each run
       # stops re-fetching it and recompiling deps from cold. Key invalidates on go.sum changes.
       - name: Cache Go modules + build
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: |
             /go/pkg/mod
@@ -91,7 +91,7 @@ jobs:
           node-version-file: frontend/.nvmrc
       # Cache the Go module + build cache so the webServer's `go run` of the backend is fast.
       - name: Cache Go modules + build
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: |
             ~/go/pkg/mod
