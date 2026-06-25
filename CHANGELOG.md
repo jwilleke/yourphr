@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.12.0](https://github.com/jwilleke/yourphr/compare/v1.11.2...v1.12.0) (2026-06-25)
+
+### Features
+
+- **conditions:** deduped "problem list" view — a new `condition.Reconcile` + `/conditions/reconciled` collapses the same problem reported as multiple Condition resources (per-visit diagnoses + a problem-list entry) into one entry. Problem-list views (medical-history, dashboard, medical concerns, patient profile) now show one entry per condition instead of duplicates like "Ischemic chest pain" ×3. `/conditions/classified` stays faithful 1:1 ([#262](https://github.com/jwilleke/yourphr/issues/262))
+
+### Bug Fixes
+
+- **medical-history:** omit `entered-in-error` records from display — resources the source marked a mistake (e.g. Cerner documents that were entered in error, previously shown titled "Error") are no longer surfaced, consistent with how conditions are handled ([#384](https://github.com/jwilleke/yourphr/issues/384))
+
 ## [1.11.2](https://github.com/jwilleke/yourphr/compare/v1.11.1...v1.11.2) (2026-06-25)
 
 ### Bug Fixes
