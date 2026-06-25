@@ -167,6 +167,12 @@ Mapped to EPIC #20 child issues:
 
 Deferred (not blocking): non-US-Core display polish (#54). Additional providers (Epic, etc.) come later.
 
+## UDAP / Dynamic Client Registration (north star — deferred, #355)
+
+Our per-provider **bring-your-own-`client_id`** (manual app registration, the "long pole" prerequisite above) is the manual version of what **UDAP (Unified Data Access Profiles)** automates. UDAP is a set of open standards on top of OAuth 2.0 / OIDC — **Dynamic Client Registration** (register on-the-fly via a signed JWT + X.509 cert), JWT/cert-bound client auth, and trust frameworks — incorporated into the **HL7 FAST Security IG** (FHIR at Scale Taskforce) and used by Carequality, CARIN Blue Button, and Da Vinci HRex. It layers on the SMART flow we already build, so it's complementary, not a replacement.
+
+**Why it's deferred, not near-term:** patient-facing EHR FHIR APIs (Epic, Cerner, athenahealth patient access) today overwhelmingly use **plain SMART-on-FHIR with manual app registration** — they don't require or offer UDAP DCR for a patient pulling their own records. UDAP DCR adoption is real in **B2B / payer (CARIN)** contexts, much less for consumer patient access. So UDAP doesn't unblock current patient-record access (the mission); it's the right framework for [#355](https://github.com/jwilleke/yourphr/issues/355) when we scale to many providers / B2B. Refs: <https://www.udap.org>, HL7 FAST Security IG.
+
 ## Intellectual property and licensing
 
 Short version: **no copyright/IP-infringement risk** in building our own SMART client and relay on open standards and permissive libraries. The real obligations are contractual (per-provider terms) and license hygiene (GPLv3 + no reuse of Fasten's private/commercial code or marks).
