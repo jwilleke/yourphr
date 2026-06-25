@@ -188,9 +188,15 @@ func SetBackupSchedule(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "days must be 'daily' or 'weekly'"})
 		return
 	}
-	if s.Destination != "" && !filepath.IsAbs(s.Destination) {
-		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "destination must be an absolute path"})
-		return
+	if s.Destination != "" {
+		// Confine to allowlisted backup roots (#383 path-injection): reject anything outside the data
+		// volume / configured destination / configured allowed-roots before persisting.
+		clean, err := database.ValidateBackupDestination(appConfig, s.Destination)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": err.Error()})
+			return
+		}
+		s.Destination = clean
 	}
 	if s.MaxBackups <= 0 {
 		s.MaxBackups = 7

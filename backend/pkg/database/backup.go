@@ -189,6 +189,43 @@ func CurrentBackupDestination(appConfig config.Interface) string {
 	return ResolveDestination(appConfig, LoadBackupSettings(appConfig))
 }
 
+// AllowedBackupRoots is the allowlist of base directories a backup destination may live under: the data
+// volume (covers DefaultBackupDir), the configured backup.destination (covers the prod NAS mount), and
+// any operator-configured backup.allowed-roots. A chosen destination must equal or sit under one of
+// these — this confines the admin-provided destination so a full-PHI backup can't be written to an
+// arbitrary path (path-injection, #383).
+func AllowedBackupRoots(appConfig config.Interface) []string {
+	roots := []string{filepath.Clean(dbDirFromConfig(appConfig))}
+	if d := strings.TrimSpace(appConfig.GetString("backup.destination")); d != "" {
+		roots = append(roots, filepath.Clean(d))
+	}
+	for _, r := range appConfig.GetStringSlice("backup.allowed-roots") {
+		if r = strings.TrimSpace(r); r != "" {
+			roots = append(roots, filepath.Clean(r))
+		}
+	}
+	return roots
+}
+
+// ValidateBackupDestination cleans dest and confirms it is an absolute path confined to an allowed root.
+// Returns the cleaned path. Rejects empty, relative, and out-of-allowlist (incl. ".." escape) paths.
+func ValidateBackupDestination(appConfig config.Interface, dest string) (string, error) {
+	dest = strings.TrimSpace(dest)
+	if dest == "" {
+		return "", fmt.Errorf("destination is empty")
+	}
+	if !filepath.IsAbs(dest) {
+		return "", fmt.Errorf("destination must be an absolute path")
+	}
+	dest = filepath.Clean(dest)
+	for _, root := range AllowedBackupRoots(appConfig) {
+		if dest == root || strings.HasPrefix(dest, root+string(os.PathSeparator)) {
+			return dest, nil
+		}
+	}
+	return "", fmt.Errorf("destination %q is outside the allowed backup roots", dest)
+}
+
 // ListBackups returns the backups in dir, newest first.
 func ListBackups(dir string) []BackupFile {
 	entries, err := os.ReadDir(dir)
@@ -221,10 +258,10 @@ func (gr *GormRepository) PerformBackup(appConfig config.Interface, destOverride
 	if dest == "" {
 		dest = CurrentBackupDestination(appConfig)
 	}
-	if !filepath.IsAbs(dest) {
-		return BackupFile{}, "", fmt.Errorf("destination must be an absolute path")
+	dest, err := ValidateBackupDestination(appConfig, dest) // confine to allowlisted roots (#383 path-injection)
+	if err != nil {
+		return BackupFile{}, "", err
 	}
-	dest = filepath.Clean(dest) // normalize (resolve any . / .. segments) before use
 	if err := os.MkdirAll(dest, 0o750); err != nil {
 		return BackupFile{}, "", fmt.Errorf("cannot create destination: %w", err)
 	}

@@ -28,6 +28,42 @@ func TestBackupRestore_GatedWhenEncrypted(t *testing.T) {
 	}
 }
 
+func TestValidateBackupDestination(t *testing.T) {
+	dataDir := t.TempDir()
+	nas := t.TempDir()
+	appConfig, err := config.Create()
+	if err != nil {
+		t.Fatal(err)
+	}
+	appConfig.Set("database.location", filepath.Join(dataDir, "fasten.db"))
+	appConfig.Set("backup.destination", nas)
+
+	for _, d := range []string{
+		dataDir,                           // == data root
+		filepath.Join(dataDir, "backups"), // under data root (DefaultBackupDir)
+		nas,                               // == configured destination
+		filepath.Join(nas, "yourphr"),     // under configured destination
+	} {
+		got, err := ValidateBackupDestination(appConfig, d)
+		if err != nil {
+			t.Errorf("expected %q allowed, got error: %v", d, err)
+		} else if got != filepath.Clean(d) {
+			t.Errorf("expected cleaned %q, got %q", filepath.Clean(d), got)
+		}
+	}
+
+	for _, d := range []string{
+		"",                                        // empty
+		"relative/path",                           // not absolute
+		"/etc",                                    // outside the allowlist
+		filepath.Join(dataDir, "..", "elsewhere"), // ".." escapes the data root
+	} {
+		if _, err := ValidateBackupDestination(appConfig, d); err == nil {
+			t.Errorf("expected %q rejected, got nil error", d)
+		}
+	}
+}
+
 func TestBackupFileName(t *testing.T) {
 	t0 := time.Date(2026, 6, 21, 12, 10, 3, 0, time.UTC)
 	if got, want := BackupFileName(t0, ""), "2026-06-21T12-10-03Z-yourphr-"+version.VERSION+"-backup.db.gz"; got != want {
