@@ -6,6 +6,19 @@ import {CodingModel} from '../datatypes/coding-model';
 import {FastenDisplayModel} from '../fasten/fasten-display-model';
 import {FastenOptions} from '../fasten/fasten-options';
 
+// The standard code systems for Encounter.class (HL7 v3 ActCode / ActEncounterCode). A class coding in
+// any OTHER system is a vendor-LOCAL code (e.g. Epic's "HOV" under its 1.2.840.114350.* OID) — cryptic
+// to a patient — so we don't surface it as a "Class" value (#371). Never guess.
+const STANDARD_ENCOUNTER_CLASS_SYSTEMS = [
+  'http://terminology.hl7.org/CodeSystem/v3-ActCode',
+  'http://hl7.org/fhir/v3/ActCode',
+  'urn:oid:2.16.840.1.113883.5.4',
+];
+
+function isStandardEncounterClass(system: string | undefined): boolean {
+  return !!system && STANDARD_ENCOUNTER_CLASS_SYSTEMS.includes(system);
+}
+
 export class EncounterModel extends FastenDisplayModel {
   code: CodableConceptModel | undefined
   display: string | undefined
@@ -100,8 +113,13 @@ export class EncounterModel extends FastenDisplayModel {
     this.period_end = _.get(fhirResource, 'period.end');
     this.period_start = _.get(fhirResource, 'period.start');
 
-    // Veradigm R4 exports class with system but no display or code — fall back to code
-    this.resource_class = _.get(fhirResource, 'class.display') || _.get(fhirResource, 'class.code');
+    // Only surface a "Class" value when it's a recognized standard ActCode (AMB/IMP/EMER/…). A
+    // vendor-LOCAL class code (e.g. Epic "HOV") is cryptic and the Type row + title already convey the
+    // setting legibly, so suppress it rather than show a raw code (#371). Veradigm R4 ships class with a
+    // system but no code/display — that resolves to undefined here too. Never guess.
+    this.resource_class = isStandardEncounterClass(_.get(fhirResource, 'class.system'))
+      ? (_.get(fhirResource, 'class.display') || _.get(fhirResource, 'class.code'))
+      : undefined;
     this.participant = _.get(fhirResource, 'participant', []).map((item: any) => {
       const periodStart = _.get(item, 'period.start');
       return {

@@ -103,9 +103,9 @@ describe('EncounterModel', () => {
     it('should title an Epic HOV encounter from type text, not the raw local class code (#262)', () => {
       const model = new EncounterModel(exampleEpicHovFixture);
       expect(model.display).toEqual('Outpatient'); // legible title from type[0].text
-      // KNOWN GAP (#262): resource_class still carries the raw Epic-local display "HOV". The legible
-      // value is in `display`; surfacing "HOV" as a separate "Class" line is a card-level follow-up.
-      expect(model.resource_class).toEqual('HOV');
+      // #371: the Epic-local class ("HOV", under Epic's OID system) is NOT a standard ActCode, so it is
+      // suppressed — the card shows no cryptic "Class: HOV" line; the Type row + title carry the setting.
+      expect(model.resource_class).toBeUndefined();
     });
 
   })
