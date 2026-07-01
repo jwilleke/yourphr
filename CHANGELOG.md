@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.12.1](https://github.com/jwilleke/yourphr/compare/v1.12.0...v1.12.1) (2026-07-01)
+
+### Bug Fixes
+
+- **encounter:** suppress the raw vendor-local class code from the card — Epic's local "HOV" (and any non-standard class code) no longer renders as a cryptic "Class:" row; only recognized standard ActCodes (AMB/IMP/EMER/…) surface, and the Type row + title already convey the setting ([#371](https://github.com/jwilleke/yourphr/issues/371))
+
+### Documentation
+
+- add `docs/devserver.md` — how to run + check the local dev servers, plus the dev test accounts
+
 ## [1.12.0](https://github.com/jwilleke/yourphr/compare/v1.11.2...v1.12.0) (2026-06-25)
 
 ### Features
