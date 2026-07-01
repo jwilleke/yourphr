@@ -22,7 +22,18 @@ Then open **<http://localhost:4200>**.
 - **Ports:** backend **9090** (`config.dev.yaml` `web.listen.port` — the `ng serve` dev proxy forwards `/api` here), frontend **4200**.
 - **Sandbox mode:** the frontend dev server defaults to **sandbox** (talks only to synthetic-data test servers). `prod` mode talks to real servers; pick the build config with `-c` (e.g. `make build-frontend-prod`).
 - **Version:** the footer shows `dev-<version>` (e.g. `dev-1.12.0`) via the public `/api/version` endpoint.
-- **Dev data:** synthetic patient logins live in the local dev SQLite DB (persists on disk between restarts). The shared dev password is in `private/secrets.md` (gitignored) — not committed here.
+- **Dev data:** synthetic patient logins live in the local dev SQLite DB (persists on disk between restarts). See [Dev test accounts](#dev-test-accounts).
+
+## Dev test accounts
+
+Synthetic accounts seeded in the local dev SQLite DB (they persist across restarts). All share **one** dev password kept in `private/secrets.md` (gitignored) — not committed here.
+
+- `test` — admin
+- `clopez` — Epic sandbox (Camila Lopez): conditions / encounters / documents
+- `jdoe` — Synthea: full happy-path record (encounters)
+- `aheller` — Synthea (encounters)
+- `bblick` — Synthea (encounters)
+- `nsmart` — Oracle/Cerner sandbox (Nancy Smart): documents + allergies only (no `Patient`/`Encounter`)
 
 ## Check whether they're running
 
