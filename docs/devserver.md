@@ -17,6 +17,18 @@ make serve-frontend     # ng serve on :4200; proxies /api -> :9090 (sandbox mode
 
 Then open **<http://localhost:4200>**.
 
+## LAN access (other devices)
+
+By default `ng serve` binds to `localhost` only. To reach the dev app from another device on your network (a phone, another machine) use the LAN target instead of `serve-frontend`:
+
+```bash
+make serve-frontend-lan   # ng serve on 0.0.0.0 (+ --disable-host-check), still :4200
+```
+
+Then browse to `http://<this-host-ip>:4200` from the other device. The backend already listens on all interfaces (`:9090`), so no change is needed there.
+
+`--disable-host-check` accepts the LAN IP as the `Host` header (it turns off the dev server's DNS-rebinding protection). **Dev-only, trusted networks only** — don't expose it on an untrusted network.
+
 ## Notes
 
 - **Ports:** backend **9090** (`config.dev.yaml` `web.listen.port` — the `ng serve` dev proxy forwards `/api` here), frontend **4200**.
