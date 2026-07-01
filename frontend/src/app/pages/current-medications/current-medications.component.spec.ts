@@ -68,10 +68,20 @@ describe('CurrentMedicationsComponent', () => {
     expect(url).toContain('314076');
   });
 
-  it('always builds a DailyMed name-search link', () => {
-    expect(component.dailyMedUrl(med({title: 'Omeprazole 20 MG'}))).toBe(
-      'https://dailymed.nlm.nih.gov/dailymed/search.cfm?query=Omeprazole%2020%20MG'
+  it('builds a DailyMed link from the simplified ingredient name (strips dose/form)', () => {
+    // Full RxNorm strings do not match DailyMed search; the simplified ingredient name does.
+    expect(component.dailyMedUrl(med({title: 'Omeprazole 20 MG Delayed Release Oral Capsule'}))).toBe(
+      'https://dailymed.nlm.nih.gov/dailymed/search.cfm?query=Omeprazole'
     );
+    expect(component.dailyMedUrl(med({title: 'Amoxicillin 250 MG / Clavulanate 125 MG Oral Tablet'}))).toBe(
+      'https://dailymed.nlm.nih.gov/dailymed/search.cfm?query=' + encodeURIComponent('Amoxicillin / Clavulanate')
+    );
+  });
+
+  it('falls back to the raw title if simplification empties it', () => {
+    expect(component.simplifyDrugName('Amoxicillin 250 MG / Clavulanate 125 MG Oral Tablet'))
+      .toBe('Amoxicillin / Clavulanate');
+    expect(component.dailyMedUrl(med({title: '500 MG'}))).toContain('query=500%20MG');
   });
 
   it('flags self-reported provenance with a badge and a "Reported by" line', () => {

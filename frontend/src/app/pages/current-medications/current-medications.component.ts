@@ -107,9 +107,29 @@ export class CurrentMedicationsComponent implements OnInit {
     return `https://connect.medlineplus.gov/application?${params.toString()}`;
   }
 
-  // FDA label via DailyMed — works by drug name, so it is always available.
+  // simplifyDrugName reduces a full RxNorm title to its ingredient(s) by stripping strength/dose and
+  // dose-form/route tokens. DailyMed's search matches on ingredient names: the full string
+  // "Amoxicillin 250 MG / Clavulanate 125 MG Oral Tablet" returns nothing, but "Amoxicillin /
+  // Clavulanate" resolves. Not every med carries an NDC/RxNorm code (some arrive as a title only), so
+  // a name query is the one link we can always build.
+  simplifyDrugName(title: string): string {
+    return (title || '')
+      // a strength/dose: a number (decimal/ranged) + an optional unit
+      .replace(/\b\d[\d.,/-]*\s*(mg|mcg|ml|g|unt|units?|%|meq|iu|hr|actuat[a-z]*)?\b/gi, ' ')
+      // dose-form / route / packaging words
+      .replace(/\b(oral|tablets?|capsules?|solution|suspension|injection|injectable|per|patch|cream|ointment|inhaler|spray|drops?|film|extended|release|er|xr|delayed|chewable|topical|ophthalmic|nasal|prefilled|syringe|auto-?injector|pen|pack)\b/gi, ' ')
+      .replace(/-+/g, ' ')
+      .replace(/\s*\/\s*/g, ' / ')
+      .replace(/\s+/g, ' ')
+      .replace(/^[\s/-]+|[\s/-]+$/g, '')
+      .trim();
+  }
+
+  // FDA label via DailyMed — search by the simplified ingredient name so the link actually resolves
+  // (the full RxNorm string does not match). Falls back to the raw title if simplification empties it.
   dailyMedUrl(med: ReconciledMedication): string {
-    return `https://dailymed.nlm.nih.gov/dailymed/search.cfm?query=${encodeURIComponent(med.title || '')}`;
+    const query = this.simplifyDrugName(med.title || '') || (med.title || '');
+    return `https://dailymed.nlm.nih.gov/dailymed/search.cfm?query=${encodeURIComponent(query)}`;
   }
 
   stateBadgeClass(state: string): string {
