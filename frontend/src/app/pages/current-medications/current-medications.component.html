@@ -36,7 +36,7 @@
           <tr class="med-row" (click)="toggleExpanded(med.key)">
             <td><i class="fas" [ngClass]="expanded[med.key] ? 'fa-chevron-down' : 'fa-chevron-right'"></i></td>
             <td>
-              <strong>{{ med.title }}</strong>
+              <strong [title]="med.title">{{ med.patientDisplay || med.title }}</strong>
               <span *ngIf="med.provenance?.kind === 'self-reported'" class="badge badge-info mg-l-5" title="You reported this medication; it was not stated by a clinician in your records.">Self-reported</span>
               <span *ngIf="med.stateConflict" class="tx-warning" title="The records disagree on this medication's status — see details."> &#9888;</span>
             </td>

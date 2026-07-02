@@ -29,7 +29,8 @@ export interface MedicationProvenance {
 
 export interface ReconciledMedication {
   key: string;
-  title: string;
+  title: string;               // raw RxNorm name (clinical)
+  patientDisplay?: string;     // RxTerms patient-friendly name (#387); falls back to title when absent
   rxNormCode?: string;
   state: string;            // Active | Suspended | Past | Unknown
   stateConflict?: boolean;

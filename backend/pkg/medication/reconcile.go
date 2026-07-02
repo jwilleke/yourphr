@@ -63,6 +63,7 @@ type Contributor struct {
 type ReconciledMedication struct {
 	Key             string        `json:"key"`
 	Title           string        `json:"title"`
+	PatientDisplay  string        `json:"patientDisplay,omitempty"` // RxTerms patient-friendly name (#387); "" => use Title
 	RxNormCode      string        `json:"rxNormCode,omitempty"`
 	State           string        `json:"state"`
 	StateConflict   bool          `json:"stateConflict"`
