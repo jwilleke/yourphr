@@ -1,78 +1,66 @@
 # TODO
 
-<!-- RESUME:START -->
-## ▶ Resume here — 2026-06-25
-
-- Last worked on: **golden-harness + #262 legibility, end-to-end.** Released **v1.11.2** (path-injection #383 + HOV #262 + lazy-load) and **v1.12.0** (condition dedup `Reconcile` #262 + entered-in-error omission #384). The harness caught **3 real bugs** across Epic+Cerner (HOV, condition dedup, entered-in-error docs). Then closed **#371** (suppress raw vendor-local "Class: HOV" from the card) and filed the **#385** test-data-corpus epic.
-- Branch / state: `main`, clean, synced (v1.12.0 tag; #371 fix `e592c6dd` unreleased on top).
-- Running / in-flight: **CI running on `e592c6dd`** (the #371 fix) — was green on everything prior. No dev servers / workflows / background agents.
-- Parked / half-done: none (tree clean).
-- Next steps:
-  - Optional: cut **v1.12.1** (patch) for the #371 fix (unreleased on `main`).
-  - Bigger features (own sessions): [#369](https://github.com/jwilleke/yourphr/issues/369) (server-side grouping endpoint) · [#370](https://github.com/jwilleke/yourphr/issues/370) (VA Clinical Health provider).
-  - [#385](https://github.com/jwilleke/yourphr/issues/385) corpus roadmap: US-Core IG breadth, Inferno/fhir-test-cases resilience (#354), more Cerner goldens (allergies/DiagnosticReport).
-  - 3 Dependabot PRs open (#380/#381/#382, frontend npm bumps) — triage/merge.
-- Blockers / significant notes: CodeQL is GitHub **default setup** (runs on push to main; can lag — #42 was dismissed as a verified false positive). Epic spec pages are JS-gated (verbatim specs in gitignored `sample-data/epic-specs/`).
-<!-- RESUME:END -->
-
 > Generated from live GitHub state — ranked by priority label. The `▶ Resume here` pointer is written by `/wrap`.
 
 ## 🔴 P0 — Security & Critical
 
-- None. (CodeQL backup/restore alerts resolved + dismissed in [#365](https://github.com/jwilleke/yourphr/issues/365); 0 open code-scanning alerts.)
+- None. (0 open Dependabot alerts, 0 open code-scanning alerts.)
 
 ## 🟠 P1
 
-- [#355](https://github.com/jwilleke/yourphr/issues/355) — [FEATURE] Dynamic Client Registration (DCR).
-- [#313](https://github.com/jwilleke/yourphr/issues/313) — [FEATURE] patients able to add records to their own PHR.
-- [#262](https://github.com/jwilleke/yourphr/issues/262) — [EPIC] Patient-legible display — health info a normal person can actually use.
+- [#313](https://github.com/jwilleke/yourphr/issues/313) — [FEATURE] patients able to add records to their own PHR
+- [#355](https://github.com/jwilleke/yourphr/issues/355) — [FEATURE] Dynamic Client Registration (DCR)
+- [#387](https://github.com/jwilleke/yourphr/issues/387) — [FEATURE] RxNorm to patient-legible display (RxTerms)
 
 ## 🟡 P2
 
-- [#345](https://github.com/jwilleke/yourphr/issues/345) — [security] http-proxy-middleware (webpack-dev-server tree) — blocked on upstream hpm 3.x (GHSA-64mm-vxmg-q3vj).
-- [#364](https://github.com/jwilleke/yourphr/issues/364) — [FEATURE] Admin Database card — polish (free space, schema version, totals, vacuum).
-- [#360](https://github.com/jwilleke/yourphr/issues/360) — [FEATURE] Attach `classified` on resource-graph / list rows.
-- [#354](https://github.com/jwilleke/yourphr/issues/354) — [FEATURE] Integrate assets from HL7 FHIR GitHub org.
-- [#353](https://github.com/jwilleke/yourphr/issues/353) — [FEATURE] Patient private notes on records (persist + indicator).
-- [#352](https://github.com/jwilleke/yourphr/issues/352) — [FEATURE] Patient-friendly Body Diagram / Body Map View.
-- [#348](https://github.com/jwilleke/yourphr/issues/348) — [FEATURE] Binary import: skip already-stored documents on re-sync.
-- [#343](https://github.com/jwilleke/yourphr/issues/343) — [FEATURE] Add remaining higher-signal Cerner scopes.
-- [#340](https://github.com/jwilleke/yourphr/issues/340) — [FEATURE] Provider logos on Connected Sources.
-- [#339](https://github.com/jwilleke/yourphr/issues/339) — [FEATURE] athenahealth sandbox — Developer-Portal onboarding (blocked).
-- [#337](https://github.com/jwilleke/yourphr/issues/337) — [BUG] SSE sync events dropped ("Room not found") — import progress never clears.
-- [#333](https://github.com/jwilleke/yourphr/issues/333) — [EPIC] Explore — record export options (Save Report, PDF, Email).
-- [#334](https://github.com/jwilleke/yourphr/issues/334) — [FEATURE] Explore — Save Report.
-- [#335](https://github.com/jwilleke/yourphr/issues/335) — [FEATURE] Explore — Export to PDF.
-- [#336](https://github.com/jwilleke/yourphr/issues/336) — [FEATURE] Explore — Send to Email.
-- [#314](https://github.com/jwilleke/yourphr/issues/314) — [FEATURE] Wearable Device Integration for Vitals, Activity & PGHD.
-- [#300](https://github.com/jwilleke/yourphr/issues/300) — [FEATURE] Angular surface for Medicare claims & coverage.
-- [#307](https://github.com/jwilleke/yourphr/issues/307) — [FEATURE] Manual records — frontend: entry/edit/delete forms.
-- [#305](https://github.com/jwilleke/yourphr/issues/305) — [FEATURE] Manual records — backend: store/edit/delete user-created records.
-- [#288](https://github.com/jwilleke/yourphr/issues/288) — [ARCH] Decide the future of fasten-sources-stub.
-- [#287](https://github.com/jwilleke/yourphr/issues/287) — [FEATURE] Upload/import UI polish.
-- [#280](https://github.com/jwilleke/yourphr/issues/280) — [FEATURE] Raw fhir-cards: resolve a referenced resource's display name.
-- [#256](https://github.com/jwilleke/yourphr/issues/256) — [FEATURE] Sharing PHR data.
-- [#253](https://github.com/jwilleke/yourphr/issues/253) — [EPIC] Support manual data entry and user-created records.
-- [#252](https://github.com/jwilleke/yourphr/issues/252) — [FEATURE] Harden re-import dedup against stale overwrites.
-- [#251](https://github.com/jwilleke/yourphr/issues/251) — [FEATURE] Explore Apple Health's supported-institution list as a source.
-- [#244](https://github.com/jwilleke/yourphr/issues/244) — [EPIC] Per-profile dashboard widgets (US Core display end-state).
-- [#53](https://github.com/jwilleke/yourphr/issues/53) — [SMART] Veradigm/FollowMyHealth registration + integration (blocked).
-- [#20](https://github.com/jwilleke/yourphr/issues/20) — [EPIC] SMART on FHIR — live provider sync.
-- [#14](https://github.com/jwilleke/yourphr/issues/14) — [FEATURE] User Profile Update.
+- [#345](https://github.com/jwilleke/yourphr/issues/345) — [security] http-proxy-middleware (webpack-dev-server tree) — blocked on upstream hpm 3.x (GHSA-64mm-vxmg-q3vj)
+- [#14](https://github.com/jwilleke/yourphr/issues/14) — [FEATURE] User Profile Update
+- [#20](https://github.com/jwilleke/yourphr/issues/20) — [EPIC] SMART on FHIR — live provider sync
+- [#53](https://github.com/jwilleke/yourphr/issues/53) — [SMART] Veradigm/FollowMyHealth registration + end-to-end integration (blocked)
+- [#244](https://github.com/jwilleke/yourphr/issues/244) — [EPIC] Per-profile dashboard widgets (US Core display end-state)
+- [#251](https://github.com/jwilleke/yourphr/issues/251) — [FEATURE] Explore Apple Health's supported-institution list as a provider-catalog / FHIR-endpoint source
+- [#252](https://github.com/jwilleke/yourphr/issues/252) — [FEATURE] Harden re-import dedup: guard idempotent upserts against stale (older) overwrites + add coverage
+- [#253](https://github.com/jwilleke/yourphr/issues/253) — [FEATURE] Epic: Support manual data entry and user-created records
+- [#256](https://github.com/jwilleke/yourphr/issues/256) — [FEATURE] Sharing PHR data
+- [#280](https://github.com/jwilleke/yourphr/issues/280) — [FEATURE] Raw fhir-cards: resolve a referenced resource's display name (e.g. Medication/{id})
+- [#287](https://github.com/jwilleke/yourphr/issues/287) — [FEATURE] Upload/import UI polish — make all supported file types selectable + clearer 'add my data' affordances
+- [#288](https://github.com/jwilleke/yourphr/issues/288) — [ARCH] Decide the future of fasten-sources-stub: fold into the main module vs keep as the owned source layer
+- [#300](https://github.com/jwilleke/yourphr/issues/300) — [FEATURE] Angular surface for Medicare claims & coverage (insurance view)
+- [#305](https://github.com/jwilleke/yourphr/issues/305) — [FEATURE] Manual records — backend: store/edit/delete user-created records (FHIR-consistent)
+- [#307](https://github.com/jwilleke/yourphr/issues/307) — [FEATURE] Manual records — frontend: entry/edit/delete forms
+- [#314](https://github.com/jwilleke/yourphr/issues/314) — [FEATURE] Wearable Device Integration for Vitals, Activity & PGHD
+- [#333](https://github.com/jwilleke/yourphr/issues/333) — [EPIC] Explore — record export options (Save Report, PDF, Email)
+- [#334](https://github.com/jwilleke/yourphr/issues/334) — [FEATURE] Explore — Save Report
+- [#335](https://github.com/jwilleke/yourphr/issues/335) — [FEATURE] Explore — Export to PDF
+- [#336](https://github.com/jwilleke/yourphr/issues/336) — [FEATURE] Explore — Send to Email
+- [#337](https://github.com/jwilleke/yourphr/issues/337) — [BUG] SSE sync events dropped ("Room not found") — import progress never clears
+- [#339](https://github.com/jwilleke/yourphr/issues/339) — [FEATURE] athenahealth sandbox — complete Developer-Portal onboarding (blocked, approval-gated)
+- [#340](https://github.com/jwilleke/yourphr/issues/340) — [FEATURE] Provider logos on Connected Sources — brand_id / brand_logo_url override
+- [#343](https://github.com/jwilleke/yourphr/issues/343) — [FEATURE] Add patient/Observation.rs (+ lab/vital scopes) to the Cerner sandbox seed — no lab values import today
+- [#348](https://github.com/jwilleke/yourphr/issues/348) — [FEATURE] Binary import: skip already-stored documents on re-sync (cross-sync existence check)
+- [#352](https://github.com/jwilleke/yourphr/issues/352) — [FEATURE] Patient-friendly Body Diagram / Body Map View
+- [#353](https://github.com/jwilleke/yourphr/issues/353) — [FEATURE] Patient private notes on records (persist + indicator)
+- [#354](https://github.com/jwilleke/yourphr/issues/354) — [FEATURE] Integrate assets from HL7 FHIR GitHub organization (fhir-test-cases, fhir-codegen, etc.)
+- [#360](https://github.com/jwilleke/yourphr/issues/360) — [FEATURE] Attach `classified` on resource-graph / list rows (per-row synthesized badges)
+- [#364](https://github.com/jwilleke/yourphr/issues/364) — [FEATURE] Admin Database card — polish (free space, schema version, totals, vacuum)
+- [#369](https://github.com/jwilleke/yourphr/issues/369) — [FEATURE] /medical-history — server-side grouping endpoint (counts + paged detail) for scale
+- [#370](https://github.com/jwilleke/yourphr/issues/370) — [FEATURE] Add VA Clinical Health (FHIR) as a SMART provider
+- [#385](https://github.com/jwilleke/yourphr/issues/385) — [EPIC] Realistic test-data corpus + golden-test harness
 
 ## 🔵 In review
 
-- [#366](https://github.com/jwilleke/yourphr/issues/366) — [FEATURE] UI consistency: link styling + button convention (shipped v1.11.0; verify on deploy).
+- [#366](https://github.com/jwilleke/yourphr/issues/366) — [FEATURE] UI consistency: link styling + a small button convention
 
 ## ⏸ Deferred
 
-- [#351](https://github.com/jwilleke/yourphr/issues/351) — [EPIC] /medical-history — group-by (all 5 dims) + rich detail shipped v1.11.0; Filters deferred (uncertain need).
-- [#363](https://github.com/jwilleke/yourphr/issues/363) — [FEATURE] Database at-rest encryption: enable/migrate (guarded) + decrypt.
-- [#278](https://github.com/jwilleke/yourphr/issues/278) — [EPIC] Rename Fasten* → YourPHR.
-- [#263](https://github.com/jwilleke/yourphr/issues/263) — [FEATURE] Message Provider.
-- [#239](https://github.com/jwilleke/yourphr/issues/239) — [chore] Revisit gofhir-models 0.1.x once encoding/json/v2 is default in Go.
-- [#131](https://github.com/jwilleke/yourphr/issues/131) — [FEATURE] E2E testing — lforms questionnaire render + interact.
+- [#131](https://github.com/jwilleke/yourphr/issues/131) — [FEATURE] E2E testing — remaining gap: lforms questionnaire render + interact
+- [#239](https://github.com/jwilleke/yourphr/issues/239) — [chore] Revisit gofhir-models 0.1.x once encoding/json/v2 is default in Go
+- [#263](https://github.com/jwilleke/yourphr/issues/263) — [FEATURE] Message Provider
+- [#278](https://github.com/jwilleke/yourphr/issues/278) — [EPIC] Rename Fasten* → YourPHR (only on committing to a hard fork)
+- [#351](https://github.com/jwilleke/yourphr/issues/351) — [FEATURE] /medical-history — group & filter by Date/Condition/Provider/Place/Type
+- [#363](https://github.com/jwilleke/yourphr/issues/363) — [FEATURE] Database at-rest encryption: enable/migrate (guarded) + decrypt
 
 ## ❓ Needs triage
 
-- None — every open issue carries a priority label.
+- None. (All open issues carry a placement label.)
