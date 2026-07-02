@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.13.0](https://github.com/jwilleke/yourphr/compare/v1.12.1...v1.13.0) (2026-07-02)
+
+### Features
+
+- **medications:** patient-friendly drug names via NLM **RxTerms** — the raw RxNorm title ("Amoxicillin 250 MG / Clavulanate 125 MG Oral Tablet") now displays as "Amoxicillin/Clavulanate (Oral Pill)" with a separate **Strength** column ("250-125 mg"), distinct from Dose. Resolved from an embedded **offline** RxTerms crosswalk (no external calls; ~21k drugs), with an optional RxNav API fallback for uncovered codes. Opt-in via `medications.rxterms_enrich` ([#387](https://github.com/jwilleke/yourphr/issues/387))
+- **dev:** `make serve-frontend-lan` — run the dev frontend on `0.0.0.0` so other LAN devices can reach it
+
+### Bug Fixes
+
+- **medications:** DailyMed "FDA label" links now resolve — search by the simplified ingredient name instead of the full RxNorm string, which never matched ([#386](https://github.com/jwilleke/yourphr/issues/386))
+
 ## [1.12.1](https://github.com/jwilleke/yourphr/compare/v1.12.0...v1.12.1) (2026-07-01)
 
 ### Bug Fixes
