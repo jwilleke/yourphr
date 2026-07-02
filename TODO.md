@@ -1,5 +1,19 @@
 # TODO
 
+<!-- RESUME:START -->
+## ▶ Resume here — 2026-07-02
+
+- Last worked on: **#387 RxTerms patient-friendly medication names — shipped end to end.** API prototype → strength (`allinfo`) → **offline embedded crosswalk** (21k drugs, 230 KB, `go:embed`, `make gen-rxterms-crosswalk`) → **separate Strength column** (name vs strength vs dose). Released **v1.13.0** and **enabled in prod** (mj-flux#135, `YOURPHR_MEDICATIONS_RXTERMS_ENRICH=true`). Also #386 (DailyMed links) + `serve-frontend-lan`.
+- Branch / state: `main`, clean, synced (v1.13.0 tagged).
+- Running / in-flight: **dev servers I started this session** — backend `:9090` + frontend `:4200` on `0.0.0.0` (LAN, rxterms on); they stop on VS Code shutdown (restart: `make serve-backend` + `make serve-frontend-lan`). CI on `ae58076` finishing (v1.13.0 image already built ✓). **Flux rolling `:1.13.0` + the rxterms flag to prod** — verify once reconciled.
+- Parked / half-done: none (tree clean).
+- Next steps:
+  - **Verify RxTerms live on prod** (yourphr.nerdsbythehour.com → Current Medications; behind Authentik). Nudge: `ssh jim@192.168.68.71 sudo flux reconcile kustomization apps --with-source`.
+  - Triage 3 Dependabot PRs (#380/#381/#382, frontend npm bumps).
+  - Backlog: P1 [#313](https://github.com/jwilleke/yourphr/issues/313) / [#355](https://github.com/jwilleke/yourphr/issues/355); [#369](https://github.com/jwilleke/yourphr/issues/369) grouping endpoint; [#370](https://github.com/jwilleke/yourphr/issues/370) VA; [#385](https://github.com/jwilleke/yourphr/issues/385) test-data corpus.
+- Blockers / significant notes: RxTerms shows the **generic** name (Lipitor→Atorvastatin; accepted — reopen #387 for brand names). Enrichment gated by `medications.rxterms_enrich` (on in prod+dev, off by default; offline crosswalk = no external calls).
+<!-- RESUME:END -->
+
 > Generated from live GitHub state — ranked by priority label. The `▶ Resume here` pointer is written by `/wrap`.
 
 ## 🔴 P0 — Security & Critical
