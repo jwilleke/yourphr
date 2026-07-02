@@ -13,10 +13,12 @@ func TestResolver_DisplayName(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		atomic.AddInt32(&hits, 1)
 		switch r.URL.Path {
-		case "/313782/name.json":
-			w.Write([]byte(`{"displayGroup":{"rxcui":null,"displayName":"Acetaminophen (Oral Pill)"}}`))
-		case "/999999/name.json":
-			w.Write([]byte(`{"displayGroup":{"rxcui":null,"displayName":null}}`)) // no RxTerms entry
+		case "/313782/allinfo.json":
+			w.Write([]byte(`{"rxtermsProperties":{"displayName":"Acetaminophen (Oral Pill)","strength":"325 mg"}}`))
+		case "/111111/allinfo.json":
+			w.Write([]byte(`{"rxtermsProperties":{"displayName":"Something (Oral Pill)","strength":""}}`)) // no strength
+		case "/999999/allinfo.json":
+			w.Write([]byte(`{"rxtermsProperties":{"displayName":null,"strength":null}}`)) // no RxTerms entry
 		default:
 			w.WriteHeader(http.StatusNotFound)
 		}
@@ -26,8 +28,13 @@ func TestResolver_DisplayName(t *testing.T) {
 	r := &Resolver{client: srv.Client(), baseURL: srv.URL, cache: map[string]string{}}
 	ctx := context.Background()
 
-	if got := r.DisplayName(ctx, "313782"); got != "Acetaminophen (Oral Pill)" {
-		t.Errorf("DisplayName(313782) = %q, want %q", got, "Acetaminophen (Oral Pill)")
+	// name + strength are combined
+	if got := r.DisplayName(ctx, "313782"); got != "Acetaminophen (Oral Pill) - 325 mg" {
+		t.Errorf("DisplayName(313782) = %q, want %q", got, "Acetaminophen (Oral Pill) - 325 mg")
+	}
+	// name with no strength: just the name (no trailing " - ")
+	if got := r.DisplayName(ctx, "111111"); got != "Something (Oral Pill)" {
+		t.Errorf("DisplayName(111111) = %q, want %q", got, "Something (Oral Pill)")
 	}
 	// empty rxcui, no-entry, and unknown all resolve to "" (caller falls back to the raw title)
 	if got := r.DisplayName(ctx, ""); got != "" {

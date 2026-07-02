@@ -1,5 +1,5 @@
-// Package rxterms resolves an RxNorm RxCUI to a patient-friendly RxTerms display name via NLM's RxNav
-// API (e.g. RxCUI 313782 -> "Acetaminophen (Oral Pill)"). RxTerms is NLM's consumer-facing companion
+// Package rxterms resolves an RxNorm RxCUI to a patient-friendly RxTerms name + strength via NLM's
+// RxNav API (e.g. RxCUI 313782 -> "Acetaminophen (Oral Pill) - 325 mg"). RxTerms is NLM's consumer-facing companion
 // to RxNorm; the raw RxNorm name ("Acetaminophen 325 MG Oral Tablet") is optimized for machines.
 //
 // PROTOTYPE for #387. This is the API path; the production path is a local RxTerms crosswalk (offline,
@@ -58,7 +58,10 @@ func (r *Resolver) DisplayName(ctx context.Context, rxcui string) string {
 }
 
 func (r *Resolver) fetch(ctx context.Context, rxcui string) string {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, r.baseURL+"/"+rxcui+"/name.json", nil)
+	// allinfo returns both the patient-friendly displayName and the RxTerms canonical strength in one
+	// call, e.g. {"displayName":"Acetaminophen (Oral Pill)","strength":"325 mg"} — combos come back
+	// pre-formatted ("250-125 mg"). Combine into "<name> - <strength>".
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, r.baseURL+"/"+rxcui+"/allinfo.json", nil)
 	if err != nil {
 		return ""
 	}
@@ -71,12 +74,22 @@ func (r *Resolver) fetch(ctx context.Context, rxcui string) string {
 		return ""
 	}
 	var out struct {
-		DisplayGroup struct {
+		RxTermsProperties struct {
 			DisplayName string `json:"displayName"`
-		} `json:"displayGroup"`
+			Strength    string `json:"strength"`
+		} `json:"rxtermsProperties"`
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {
 		return ""
 	}
-	return strings.TrimSpace(out.DisplayGroup.DisplayName)
+	name := strings.TrimSpace(out.RxTermsProperties.DisplayName)
+	strength := strings.TrimSpace(out.RxTermsProperties.Strength)
+	switch {
+	case name == "":
+		return ""
+	case strength != "":
+		return name + " - " + strength
+	default:
+		return name
+	}
 }
