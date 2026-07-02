@@ -64,7 +64,7 @@
 
 ## 🔵 In review
 
-- [#366](https://github.com/jwilleke/yourphr/issues/366) — [FEATURE] UI consistency: link styling + a small button convention
+- None.
 
 ## ⏸ Deferred
 
