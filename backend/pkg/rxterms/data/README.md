@@ -1,8 +1,9 @@
 # Embedded RxTerms crosswalk
 
-`rxterms_crosswalk.tsv.gz` is a gzipped TSV of `<RXCUI>\t<DISPLAY_NAME[ - STRENGTH]>` — the offline
+`rxterms_crosswalk.tsv.gz` is a gzipped TSV of `<RXCUI>\t<DISPLAY_NAME>\t<STRENGTH>` — the offline
 lookup that turns raw RxNorm names into patient-friendly ones (#387), e.g.
-`313782 → Acetaminophen (Oral Pill) - 325 mg`. It is embedded into the binary via `go:embed`
+`313782 → Acetaminophen (Oral Pill) | 325 mg` (name and strength kept separate so the UI can show a
+distinct Strength column). It is embedded into the binary via `go:embed`
 (`../crosswalk.go`), so medication display works with **no network call**.
 
 ## Source & attribution

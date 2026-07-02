@@ -8,7 +8,7 @@
 //	go run backend/pkg/rxterms/gen_crosswalk.go /path/to/RxTerms<YYYYMM>.txt
 //
 // It writes backend/pkg/rxterms/data/rxterms_crosswalk.tsv.gz — a gzipped TSV of
-// "<RXCUI>\t<DISPLAY_NAME[ - STRENGTH]>" — which crosswalk.go embeds. Re-run to refresh; commit the
+// "<RXCUI>\t<DISPLAY_NAME>\t<STRENGTH>" — which crosswalk.go embeds. Re-run to refresh; commit the
 // regenerated file. Source data: NLM RxTerms (RxNorm-derived interface terminology, freely distributed).
 package main
 
@@ -59,10 +59,9 @@ func main() {
 		if rxcui == "" || name == "" {
 			continue
 		}
-		if strength != "" {
-			name = name + " - " + strength
-		}
-		fmt.Fprintf(gw, "%s\t%s\n", rxcui, name)
+		// name and strength kept SEPARATE (columns, not combined) so the UI can show a distinct
+		// "Strength" column vs the drug name (#387).
+		fmt.Fprintf(gw, "%s\t%s\t%s\n", rxcui, name, strength)
 		n++
 	}
 	must(sc.Err())

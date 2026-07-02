@@ -9,18 +9,20 @@ import (
 	"sync"
 )
 
-// crosswalkGz is the offline RxTerms crosswalk (#387): a gzipped TSV of "<RXCUI>\t<name - strength>",
+// crosswalkGz is the offline RxTerms crosswalk (#387): a gzipped TSV of "<RXCUI>\t<name>\t<strength>",
 // generated from NLM's RxTerms release by gen_crosswalk.go. Source: NLM RxTerms (RxNorm-derived
 // interface terminology, freely distributed). Regenerate + commit to refresh.
 //
 //go:embed data/rxterms_crosswalk.tsv.gz
 var crosswalkGz []byte
 
-// Crosswalk is an in-memory RxCUI -> patient-friendly-name map backed by the embedded RxTerms data.
-// Fully offline (no network). Lazy-loaded + cached on first lookup.
+type entry struct{ name, strength string }
+
+// Crosswalk is an in-memory RxCUI -> {name, strength} map backed by the embedded RxTerms data. Fully
+// offline (no network). Lazy-loaded + cached on first lookup.
 type Crosswalk struct {
 	once sync.Once
-	m    map[string]string
+	m    map[string]entry
 }
 
 var defaultCrosswalk = &Crosswalk{}
@@ -28,14 +30,16 @@ var defaultCrosswalk = &Crosswalk{}
 // DefaultCrosswalk returns the process-wide embedded crosswalk.
 func DefaultCrosswalk() *Crosswalk { return defaultCrosswalk }
 
-// Lookup returns the RxTerms "<name> - <strength>" for an RxCUI, or "" if it isn't in the crosswalk.
-func (c *Crosswalk) Lookup(rxcui string) string {
+// Lookup returns the patient-friendly name and strength for an RxCUI (either may be "" if absent).
+// name is the drug identity (e.g. "Acetaminophen (Oral Pill)"); strength is per-unit (e.g. "325 mg").
+func (c *Crosswalk) Lookup(rxcui string) (name, strength string) {
 	rxcui = strings.TrimSpace(rxcui)
 	if rxcui == "" {
-		return ""
+		return "", ""
 	}
 	c.once.Do(c.load)
-	return c.m[rxcui]
+	e := c.m[rxcui]
+	return e.name, e.strength
 }
 
 // Len returns the number of loaded entries (diagnostics/tests).
@@ -45,18 +49,23 @@ func (c *Crosswalk) Len() int {
 }
 
 func (c *Crosswalk) load() {
-	c.m = map[string]string{}
+	c.m = map[string]entry{}
 	gr, err := gzip.NewReader(bytes.NewReader(crosswalkGz))
 	if err != nil {
-		return // embedded data is corrupt/absent — degrade to an empty crosswalk (callers fall back to the title)
+		return // embedded data corrupt/absent — degrade to empty (callers fall back to the title)
 	}
 	defer gr.Close()
 	sc := bufio.NewScanner(gr)
 	sc.Buffer(make([]byte, 1<<16), 1<<20)
 	for sc.Scan() {
-		line := sc.Text()
-		if tab := strings.IndexByte(line, '\t'); tab > 0 {
-			c.m[line[:tab]] = line[tab+1:]
+		parts := strings.SplitN(sc.Text(), "\t", 3)
+		if len(parts) < 2 || parts[0] == "" {
+			continue
 		}
+		e := entry{name: parts[1]}
+		if len(parts) == 3 {
+			e.strength = parts[2]
+		}
+		c.m[parts[0]] = e
 	}
 }

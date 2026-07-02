@@ -1,10 +1,10 @@
-// Package rxterms resolves an RxNorm RxCUI to a patient-friendly RxTerms name + strength via NLM's
-// RxNav API (e.g. RxCUI 313782 -> "Acetaminophen (Oral Pill) - 325 mg"). RxTerms is NLM's consumer-facing companion
-// to RxNorm; the raw RxNorm name ("Acetaminophen 325 MG Oral Tablet") is optimized for machines.
+// Package rxterms resolves an RxNorm RxCUI to a patient-friendly RxTerms name + strength (e.g. RxCUI
+// 313782 -> "Acetaminophen (Oral Pill)", "325 mg"). RxTerms is NLM's consumer-facing companion to
+// RxNorm; the raw RxNorm name ("Acetaminophen 325 MG Oral Tablet") is optimized for machines.
 //
-// PROTOTYPE for #387. This is the API path; the production path is a local RxTerms crosswalk (offline,
-// no per-med external call — see #387). Everything here is BEST-EFFORT: any miss/error/timeout returns
-// "" so the caller falls back to the raw title. Only meds that carry an RxCUI can be resolved.
+// Two sources: the embedded offline Crosswalk (crosswalk.go, the default/production path, #387) and
+// this Resolver over NLM's RxNav API (optional fallback for RxCUIs not in the bundle). Everything is
+// BEST-EFFORT: any miss/error/timeout yields empty so the caller falls back to the raw title.
 package rxterms
 
 import (
@@ -16,14 +16,16 @@ import (
 	"time"
 )
 
-// Resolver maps RxCUI -> RxTerms display name, caching results (including negatives) in memory so a
-// given RxCUI hits RxNav at most once per process.
+type apiResult struct{ name, strength string }
+
+// Resolver maps RxCUI -> {name, strength} via the RxNav API, caching results (incl. negatives) in
+// memory so a given RxCUI hits RxNav at most once per process.
 type Resolver struct {
 	client  *http.Client
 	baseURL string
 
 	mu    sync.Mutex
-	cache map[string]string
+	cache map[string]apiResult
 }
 
 // NewResolver builds a Resolver pointed at the public RxNav RxTerms endpoint.
@@ -31,47 +33,45 @@ func NewResolver() *Resolver {
 	return &Resolver{
 		client:  &http.Client{Timeout: 3 * time.Second},
 		baseURL: "https://rxnav.nlm.nih.gov/REST/RxTerms/rxcui",
-		cache:   map[string]string{},
+		cache:   map[string]apiResult{},
 	}
 }
 
-// DisplayName returns the patient-friendly RxTerms name for rxcui, or "" if it can't be resolved
-// (empty rxcui, no RxTerms entry, or any network/parse error). Results are cached.
-func (r *Resolver) DisplayName(ctx context.Context, rxcui string) string {
+// Resolve returns the patient-friendly name and strength for rxcui (either "" if unresolvable).
+func (r *Resolver) Resolve(ctx context.Context, rxcui string) (name, strength string) {
 	rxcui = strings.TrimSpace(rxcui)
 	if rxcui == "" {
-		return ""
+		return "", ""
 	}
 	r.mu.Lock()
 	if v, ok := r.cache[rxcui]; ok {
 		r.mu.Unlock()
-		return v
+		return v.name, v.strength
 	}
 	r.mu.Unlock()
 
-	name := r.fetch(ctx, rxcui)
+	res := r.fetch(ctx, rxcui)
 
 	r.mu.Lock()
-	r.cache[rxcui] = name // cache negatives too, so a bad rxcui isn't retried every request
+	r.cache[rxcui] = res // cache negatives too, so a bad rxcui isn't retried every request
 	r.mu.Unlock()
-	return name
+	return res.name, res.strength
 }
 
-func (r *Resolver) fetch(ctx context.Context, rxcui string) string {
-	// allinfo returns both the patient-friendly displayName and the RxTerms canonical strength in one
-	// call, e.g. {"displayName":"Acetaminophen (Oral Pill)","strength":"325 mg"} — combos come back
-	// pre-formatted ("250-125 mg"). Combine into "<name> - <strength>".
+func (r *Resolver) fetch(ctx context.Context, rxcui string) apiResult {
+	// allinfo returns both displayName and the canonical strength in one call, e.g.
+	// {"displayName":"Acetaminophen (Oral Pill)","strength":"325 mg"} (combos: "250-125 mg").
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, r.baseURL+"/"+rxcui+"/allinfo.json", nil)
 	if err != nil {
-		return ""
+		return apiResult{}
 	}
 	resp, err := r.client.Do(req)
 	if err != nil {
-		return ""
+		return apiResult{}
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		return ""
+		return apiResult{}
 	}
 	var out struct {
 		RxTermsProperties struct {
@@ -80,16 +80,10 @@ func (r *Resolver) fetch(ctx context.Context, rxcui string) string {
 		} `json:"rxtermsProperties"`
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {
-		return ""
+		return apiResult{}
 	}
-	name := strings.TrimSpace(out.RxTermsProperties.DisplayName)
-	strength := strings.TrimSpace(out.RxTermsProperties.Strength)
-	switch {
-	case name == "":
-		return ""
-	case strength != "":
-		return name + " - " + strength
-	default:
-		return name
+	return apiResult{
+		name:     strings.TrimSpace(out.RxTermsProperties.DisplayName),
+		strength: strings.TrimSpace(out.RxTermsProperties.Strength),
 	}
 }

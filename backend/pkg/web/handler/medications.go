@@ -70,8 +70,9 @@ func GetMedicationsReconciled(c *gin.Context) {
 		cw := rxterms.DefaultCrosswalk()
 		for i := range reconciled {
 			if reconciled[i].RxNormCode != "" {
-				if name := cw.Lookup(reconciled[i].RxNormCode); name != "" {
+				if name, strength := cw.Lookup(reconciled[i].RxNormCode); name != "" {
 					reconciled[i].PatientDisplay = name
+					reconciled[i].Strength = strength
 				}
 			}
 		}
@@ -101,8 +102,9 @@ func enrichRxTermsDisplayAPI(ctx context.Context, meds []medication.ReconciledMe
 		go func(i int) {
 			defer wg.Done()
 			defer func() { <-sem }()
-			if name := rxTermsResolver.DisplayName(ctx, meds[i].RxNormCode); name != "" {
+			if name, strength := rxTermsResolver.Resolve(ctx, meds[i].RxNormCode); name != "" {
 				meds[i].PatientDisplay = name
+				meds[i].Strength = strength
 			}
 		}(i)
 	}

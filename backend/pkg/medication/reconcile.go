@@ -63,7 +63,8 @@ type Contributor struct {
 type ReconciledMedication struct {
 	Key             string        `json:"key"`
 	Title           string        `json:"title"`
-	PatientDisplay  string        `json:"patientDisplay,omitempty"` // RxTerms patient-friendly name (#387); "" => use Title
+	PatientDisplay  string        `json:"patientDisplay,omitempty"` // RxTerms patient-friendly NAME (#387); "" => use Title
+	Strength        string        `json:"strength,omitempty"`       // RxTerms per-unit strength, e.g. "325 mg" (#387); shown in its own column, distinct from Dose
 	RxNormCode      string        `json:"rxNormCode,omitempty"`
 	State           string        `json:"state"`
 	StateConflict   bool          `json:"stateConflict"`

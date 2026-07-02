@@ -30,7 +30,8 @@ export interface MedicationProvenance {
 export interface ReconciledMedication {
   key: string;
   title: string;               // raw RxNorm name (clinical)
-  patientDisplay?: string;     // RxTerms patient-friendly name (#387); falls back to title when absent
+  patientDisplay?: string;     // RxTerms patient-friendly NAME (#387); falls back to title when absent
+  strength?: string;           // RxTerms per-unit strength, e.g. "325 mg" (#387) — its own column, not the dose
   rxNormCode?: string;
   state: string;            // Active | Suspended | Past | Unknown
   stateConflict?: boolean;

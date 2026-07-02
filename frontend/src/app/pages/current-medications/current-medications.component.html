@@ -24,6 +24,7 @@
         <tr>
           <th style="width:1%"></th>
           <th class="sortable" (click)="sortBy('title')">Medication <i class="fas" [ngClass]="sortColumn==='title' ? (sortDirection==='asc' ? 'fa-caret-up' : 'fa-caret-down') : ''"></i></th>
+          <th>Strength</th>
           <th>Dose</th>
           <th>Frequency</th>
           <th>Purpose</th>
@@ -40,6 +41,7 @@
               <span *ngIf="med.provenance?.kind === 'self-reported'" class="badge badge-info mg-l-5" title="You reported this medication; it was not stated by a clinician in your records.">Self-reported</span>
               <span *ngIf="med.stateConflict" class="tx-warning" title="The records disagree on this medication's status — see details."> &#9888;</span>
             </td>
+            <td class="tx-nowrap">{{ med.strength || '—' }}</td>
             <td><span *ngIf="med.dose; else noDose">{{ med.dose }}</span><ng-template #noDose><app-missing-data field="Dose"></app-missing-data></ng-template></td>
             <td><span *ngIf="med.frequency; else noFreq">{{ med.frequency }}</span><ng-template #noFreq><app-missing-data field="Frequency"></app-missing-data></ng-template></td>
             <td><span *ngIf="med.purpose; else noPurpose">{{ med.purpose }}</span><ng-template #noPurpose><app-missing-data field="Purpose"></app-missing-data></ng-template></td>
@@ -48,7 +50,7 @@
           </tr>
           <tr *ngIf="expanded[med.key]" class="med-detail">
             <td></td>
-            <td colspan="6">
+            <td colspan="7">
               <div class="mg-b-15">
                 <strong class="tx-12 tx-uppercase tx-gray-500">More information</strong>
                 <div class="mg-t-5">
