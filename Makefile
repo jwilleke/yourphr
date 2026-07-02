@@ -78,6 +78,18 @@ generate-backend:
 	go generate ./...
 	tygo generate
 
+# Regenerate the embedded offline RxTerms crosswalk (#387) from the latest NLM release. Downloads the
+# release, unzips, and rewrites backend/pkg/rxterms/data/rxterms_crosswalk.tsv.gz — commit the result.
+# Override the release with: make gen-rxterms-crosswalk RXTERMS_RELEASE=RxTerms<YYYYMM>
+RXTERMS_RELEASE ?= RxTerms202606
+.PHONY: gen-rxterms-crosswalk
+gen-rxterms-crosswalk:
+	tmp=$$(mktemp -d) && \
+	curl -sSL -o $$tmp/rxterms.zip "https://data.lhncbc.nlm.nih.gov/public/rxterms/release/$(RXTERMS_RELEASE).zip" && \
+	unzip -o $$tmp/rxterms.zip -d $$tmp >/dev/null && \
+	go run backend/pkg/rxterms/gen_crosswalk.go $$tmp/$(RXTERMS_RELEASE).txt && \
+	rm -rf $$tmp
+
 ########################################################################################################################
 # Frontend
 ########################################################################################################################
