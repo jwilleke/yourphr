@@ -151,7 +151,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v7
       - name: markdownlint
-        uses: DavidAnson/markdownlint-cli2-action@v23
+        uses: DavidAnson/markdownlint-cli2-action@v24
         with:
           # Canonical exclusion set — keep identical to markdown-lint.yml. Skip vendored/3rd-party
           # and gitignored build artifacts (vendor/, dist/), legal text (LICENSE.md), and the
