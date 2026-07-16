@@ -8,6 +8,7 @@
 - Running / in-flight: none. Latest CI on `main` (Markdown Lint, CodeQL) green. Dev servers stopped (`:9090`/`:4200` free; restart: `make serve-backend` + `make serve-frontend-lan`).
 - Parked / half-done: none.
 - Next steps:
+  - **3 open Dependabot alerts** (surfaced on push 2026-07-15): HIGH golang.org/x/image GHSA-q675-qj96-32m9 (fix = merge [#390](https://github.com/jwilleke/yourphr/pull/390)); medium morgan GHSA-4vj7-5mj6-jm8m (fix = merge [#394](https://github.com/jwilleke/yourphr/pull/394)); medium js-yaml GHSA-h67p-54hq-rp68 (frontend/yarn.lock — verify a PR exists, else bump manually).
   - **Verify RxTerms live on prod** (yourphr.nerdsbythehour.com → Current Medications; behind Authentik). Nudge: run `flux reconcile kustomization apps --with-source` on the k3s node.
   - Triage **14** open Dependabot PRs ([#372](https://github.com/jwilleke/yourphr/pull/372)–[#382](https://github.com/jwilleke/yourphr/pull/382) plus [#390](https://github.com/jwilleke/yourphr/pull/390), [#391](https://github.com/jwilleke/yourphr/pull/391), [#394](https://github.com/jwilleke/yourphr/pull/394): frontend npm, Go modules, actions).
   - Backlog: P1 [#313](https://github.com/jwilleke/yourphr/issues/313) / [#355](https://github.com/jwilleke/yourphr/issues/355); [#369](https://github.com/jwilleke/yourphr/issues/369) grouping endpoint; [#370](https://github.com/jwilleke/yourphr/issues/370) VA; [#385](https://github.com/jwilleke/yourphr/issues/385) test-data corpus.
