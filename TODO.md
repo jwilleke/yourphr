@@ -1,15 +1,15 @@
 # TODO
 
 <!-- RESUME:START -->
-## ▶ Resume here — 2026-07-02
+## ▶ Resume here — 2026-07-15
 
-- Last worked on: **/code-review (high) of the resume-pointer commit → fixed all 3 confirmed findings** (23fdc3ab): removed the internal `ssh user@LAN-IP` nudge that had been published in this public file (tip-only fix — Jim decided **no history scrub**, residual exposure at b5409826 accepted), fixed the unresolvable `mj-flux#135` shorthand → [mj-infra-flux#135](https://github.com/jwilleke/mj-infra-flux/pull/135), and converted all bare #N refs to full URLs. Earlier today: [#387](https://github.com/jwilleke/yourphr/issues/387) RxTerms shipped end to end, **v1.13.0 released + enabled in prod**.
-- Branch / state: `main`, pushed/synced — EXCEPT one uncommitted working-tree change: **deletion of `.claude/commands/check-todos-local.md`**, not made by this session (origin unknown — decide restore vs commit before it surprises someone).
-- Running / in-flight: CodeQL on `23fdc3ab` finishing (docs-only change). Dev servers from the earlier session are **stopped** (`:9090`/`:4200` free; restart: `make serve-backend` + `make serve-frontend-lan`).
-- Parked / half-done: the `.claude/commands/check-todos-local.md` deletion (see above).
+- Last worked on: read-only session — confirmed the scheduled OAuth token-refresh worker exists (`backend/pkg/web/token_refresh.go`, landed `94429d17`, [#51](https://github.com/jwilleke/yourphr/issues/51) / PR [#187](https://github.com/jwilleke/yourphr/pull/187), EPIC [#20](https://github.com/jwilleke/yourphr/issues/20) component E); no code changes. The previously-parked `.claude/commands/check-todos-local.md` deletion was committed by Jim today (`e15c9ec1`, pushed) — resolved.
+- Branch / state: `main`, clean, pushed/synced, no stashes.
+- Running / in-flight: none. Latest CI on `main` (Markdown Lint, CodeQL) green. Dev servers stopped (`:9090`/`:4200` free; restart: `make serve-backend` + `make serve-frontend-lan`).
+- Parked / half-done: none.
 - Next steps:
   - **Verify RxTerms live on prod** (yourphr.nerdsbythehour.com → Current Medications; behind Authentik). Nudge: run `flux reconcile kustomization apps --with-source` on the k3s node.
-  - Triage **11** open Dependabot PRs ([#372](https://github.com/jwilleke/yourphr/pull/372)–[#382](https://github.com/jwilleke/yourphr/pull/382): frontend npm, Go modules, actions — earlier pointer undercounted at 3).
+  - Triage **14** open Dependabot PRs ([#372](https://github.com/jwilleke/yourphr/pull/372)–[#382](https://github.com/jwilleke/yourphr/pull/382) plus [#390](https://github.com/jwilleke/yourphr/pull/390), [#391](https://github.com/jwilleke/yourphr/pull/391), [#394](https://github.com/jwilleke/yourphr/pull/394): frontend npm, Go modules, actions).
   - Backlog: P1 [#313](https://github.com/jwilleke/yourphr/issues/313) / [#355](https://github.com/jwilleke/yourphr/issues/355); [#369](https://github.com/jwilleke/yourphr/issues/369) grouping endpoint; [#370](https://github.com/jwilleke/yourphr/issues/370) VA; [#385](https://github.com/jwilleke/yourphr/issues/385) test-data corpus.
 - Blockers / significant notes: RxTerms shows the **generic** name (Lipitor→Atorvastatin; accepted — reopen [#387](https://github.com/jwilleke/yourphr/issues/387) for brand names). Enrichment gated by `medications.rxterms_enrich` (on in prod+dev, off by default; offline crosswalk = no external calls).
 <!-- RESUME:END -->
