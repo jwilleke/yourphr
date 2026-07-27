@@ -71,5 +71,8 @@ Report one clear verdict:
 ## Notes
 
 - `/wrap` is the close bookend to `/context` (open) and complements `/session-commit` (per-chunk).
-- `/context` and `/pstatus` read the `▶ Resume here` block at the top of `TODO.md` first to restore
-  continuity. The dated session history stays in `private/project_log.md`.
+- `/context` reads the `▶ Resume here` block at the top of `TODO.md` first to restore continuity.
+  `/pstatus` does **not** read it — it removes the block when it regenerates the bands. So the
+  block survives exactly one hop: `/wrap` writes it, the next session's `/context` reads it, the
+  first `/pstatus` of that session clears it. Open a session with `/context`, not `/pstatus`, or
+  the pointer is discarded unread. The dated session history stays in `private/project_log.md`.
