@@ -154,6 +154,14 @@
     "@angular-devkit/core" "20.3.27"
     rxjs "7.8.2"
 
+"@angular-devkit/architect@>= 0.2100.0 < 0.2200.0":
+  version "0.2102.19"
+  resolved "https://registry.yarnpkg.com/@angular-devkit/architect/-/architect-0.2102.19.tgz#5b3d10704905036c8c6ccb3015490701f9932a71"
+  integrity sha512-cj4tzUMiloLTg5rNf17E8MsvIxCWYoBiBsaj7ns6dgXqT9XCeG+J0TA2t1M+N9uuqfeLd22U/rYoCkADmcircQ==
+  dependencies:
+    "@angular-devkit/core" "21.2.19"
+    rxjs "7.8.2"
+
 "@angular-devkit/build-angular@^20.3.27":
   version "20.3.27"
   resolved "https://registry.yarnpkg.com/@angular-devkit/build-angular/-/build-angular-20.3.27.tgz#8da7ebe2f5a3a59a94ffc8b47001200012df5ef4"
@@ -248,6 +256,18 @@
     rxjs "7.8.2"
     source-map "0.7.6"
 
+"@angular-devkit/core@21.2.19", "@angular-devkit/core@>= 21.0.0 < 22.0.0":
+  version "21.2.19"
+  resolved "https://registry.yarnpkg.com/@angular-devkit/core/-/core-21.2.19.tgz#27579d242f489ac2986643a2ae8f301207db7e90"
+  integrity sha512-dtpJMQBz5nhkcIogPmXP/aT2Ak8m/wLRPOSTI/g4vSJSuGiI53PgtWq4/wfQga6E6wdM2XWsblAE89d8w5heQQ==
+  dependencies:
+    ajv "8.18.0"
+    ajv-formats "3.0.1"
+    jsonc-parser "3.3.1"
+    picomatch "4.0.4"
+    rxjs "7.8.2"
+    source-map "0.7.6"
+
 "@angular-devkit/schematics@20.3.27", "@angular-devkit/schematics@>= 20.0.0 < 21.0.0":
   version "20.3.27"
   resolved "https://registry.yarnpkg.com/@angular-devkit/schematics/-/schematics-20.3.27.tgz#88b0c24d84047d4b81efad14c02f7a1995b91696"
@@ -277,6 +297,14 @@
   dependencies:
     "@angular-devkit/architect" ">= 0.2000.0 < 0.2100.0"
     "@angular-devkit/core" ">= 20.0.0 < 21.0.0"
+
+"@angular-eslint/builder@21.0.1":
+  version "21.0.1"
+  resolved "https://registry.yarnpkg.com/@angular-eslint/builder/-/builder-21.0.1.tgz#d1d2915dcd28cc371251911f064751d3de50c767"
+  integrity sha512-6BqpmW0XvjTOs2YOHwzeZcQ32eL8vs8SCHjt1cQnq1+libOVDXky1eb/jRs7ouyA49UagLDoM34K1kjrYo8P3Q==
+  dependencies:
+    "@angular-devkit/architect" ">= 0.2100.0 < 0.2200.0"
+    "@angular-devkit/core" ">= 21.0.0 < 22.0.0"
 
 "@angular-eslint/bundled-angular-compiler@20.7.0":
   version "20.7.0"
