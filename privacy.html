@@ -15,7 +15,7 @@
     h1 { font-size:1.7rem; margin:24px 0 4px; } h2 { font-size:1.15rem; margin:28px 0 8px; }
     .muted { color:var(--muted); } .small { font-size:.9rem; }
     .lead { background:var(--panel); border:1px solid var(--border); border-left:3px solid var(--accent); border-radius:8px; padding:14px 16px; margin:16px 0; }
-    ul { padding-left:20px; } li { margin:6px 0; }
+    ol, ul { padding-left:20px; } li { margin:6px 0; }
     table { width:100%; border-collapse:collapse; margin:12px 0; font-size:.95rem; }
     th, td { border:1px solid var(--border); padding:8px 10px; text-align:left; vertical-align:top; }
     th { background:var(--panel); }
@@ -26,95 +26,85 @@
   <div class="wrap">
     <p><a class="home" href="/">Your<span>PHR</span></a></p>
     <h1>Privacy Policy</h1>
-    <p class="muted small">Last updated: 31 July 2026</p>
+    <p class="muted small">Last updated: 31 July 2026 · <a href="/terms.html">Terms of Service</a> (use rules — not data detail)</p>
 
     <div class="lead">
       <strong>YourPHR is self-hosted software.</strong> Your health records live on the server
-      <em>you</em> (or your instance operator) run. The YourPHR open-source project and
-      <a href="https://yourphr.org">yourphr.org</a> do <strong>not</strong> receive, store, sell, or
-      have access to your medical or Medicare claims data. There is no YourPHR multi-tenant cloud that holds enrollees’ records.
+      <em>you</em> (or your instance operator) run. The YourPHR project and
+      <a href="https://yourphr.org">yourphr.org</a> do <strong>not</strong> hold your health or Medicare data.
+      Rules of use are in the <a href="/terms.html">Terms of Service</a>; data handling is described only here.
     </div>
 
-    <h2>Who this policy is for</h2>
+    <h2>Who this covers</h2>
     <table>
-      <thead><tr><th>Role</th><th>What they do</th><th>Privacy implication</th></tr></thead>
+      <thead><tr><th>Role</th><th>Role for privacy</th></tr></thead>
       <tbody>
-        <tr><td>You (the user)</td><td>Import and view your own records</td><td>Data stays on the instance you use</td></tr>
-        <tr><td>Instance operator</td><td>Runs the server</td><td>Responsible for security, access, backups, and legal duties for that deployment</td></tr>
-        <tr><td>YourPHR project</td><td>Publishes software and this site</td><td>Does not hold your Medicare or clinical data</td></tr>
+        <tr><td><strong>User</strong></td><td>Your records on the instance you use</td></tr>
+        <tr><td><strong>Instance operator</strong></td><td>Runs the server; responsible for that deployment’s security, access, backups, and any legal duties</td></tr>
+        <tr><td><strong>YourPHR project / yourphr.org</strong></td><td>Publishes software and this site; does <strong>not</strong> hold your health or Medicare data</td></tr>
       </tbody>
     </table>
-    <p>If you use a hosted demo (for example an operator’s instance), ask <strong>that operator</strong> how they protect your data. Their practices apply in addition to this software description.</p>
+    <p>If someone else hosts your instance, ask <strong>them</strong> how they protect your data.</p>
 
     <h2>What data is involved</h2>
-    <p>On an instance, YourPHR can store:</p>
-    <ul>
-      <li><strong>Health information</strong> you import (FHIR records, documents you upload). For Medicare via CMS Blue Button, that is typically claims-related data such as Patient, Coverage, and ExplanationOfBenefit.</li>
-      <li><strong>Account data</strong> for the instance (e.g. username and password hash — never your Medicare.gov password).</li>
-      <li><strong>Connection data</strong>: provider settings and encrypted OAuth tokens used only to fetch data you authorized.</li>
-    </ul>
-    <p>By default the database is designed to be encrypted at rest when encryption is enabled and working. The operator controls keys, backups, and who can log in.</p>
-    <p>The project maintainers do <strong>not</strong> collect your health records, Medicare claims, or provider tokens.</p>
+    <p><strong>On an instance:</strong> health records you import (including Medicare claims-related data such as Coverage and ExplanationOfBenefit when you connect Medicare); documents you upload; account login data for the instance; provider/OAuth tokens used to fetch data you authorized.</p>
+    <p><strong>Not by the project:</strong> maintainers and yourphr.org do not receive your health records, Medicare claims, or tokens.</p>
+    <p><strong>This website:</strong> static pages only; no health data; no first-party analytics cookies. The host may log standard request metadata (e.g. IP).</p>
 
-    <h2>How Medicare (CMS Blue Button) data is collected</h2>
-    <p>When you choose to connect <strong>Medicare</strong> through the CMS Blue Button API:</p>
-    <ul>
-      <li>You sign in with <strong>Medicare / CMS</strong>. YourPHR never asks for your Medicare.gov password.</li>
-      <li>You authorize <strong>read-only</strong> access to the data scopes the app requests.</li>
-      <li>CMS returns a short-lived authorization <em>code</em>. A public <strong>sign-in relay</strong> may hold that code in memory for about <strong>60 seconds</strong> so your instance can retrieve it. The relay never receives access or refresh tokens and never sees health data. Your instance exchanges the code for tokens <strong>directly with CMS</strong>.</li>
-      <li>Tokens are stored <strong>encrypted on the instance</strong> and used only to download the data you authorized.</li>
-      <li>Imported data is stored and displayed only on that instance (and any backups the operator makes).</li>
-    </ul>
-    <p><strong>Sharing with CMS:</strong> only what OAuth and the API require. <strong>Sharing with the YourPHR project:</strong> none of your Medicare data.</p>
-    <p><strong>How long collection continues:</strong> the instance may re-sync while the connection remains authorized and tokens work. You can disconnect the source at any time. Disconnect removes stored credentials for that source; previously imported records remain until you or the operator delete them (unless the operator’s policy says otherwise).</p>
+    <h2>How data is collected (including Medicare)</h2>
+    <p>You may import files yourself or connect a patient-access API (SMART on FHIR), including <strong>Medicare via CMS Blue Button</strong>.</p>
+    <p>When you connect Medicare (or another provider):</p>
+    <ol>
+      <li>You sign in with <strong>that provider / CMS</strong> — not with a YourPHR project account. We never ask for your Medicare.gov password.</li>
+      <li>You authorize <strong>read</strong> access to the scopes requested.</li>
+      <li>A short-lived OAuth <strong>code</strong> may pass through a public <strong>sign-in relay</strong> (~60 seconds in memory). The relay does <strong>not</strong> get tokens or health data. Your instance exchanges the code for tokens <strong>directly with the provider/CMS</strong>.</li>
+      <li>Tokens stay <strong>encrypted on the instance</strong>. Imported data is stored and shown only there (and on operator backups).</li>
+    </ol>
+    <p><strong>Shared with CMS:</strong> only what OAuth/API requires. <strong>Shared with the YourPHR project:</strong> nothing about your Medicare or clinical data.</p>
+    <p><strong>How long:</strong> the instance may re-sync while the connection is authorized. Disconnect removes stored credentials for that source. <strong>Data already imported stays until you or the operator delete it.</strong></p>
 
     <h2>How data is used</h2>
-    <p>On the instance, data is used only to help you view and organize your own health information (and other users the operator allows).</p>
-    <p>YourPHR is <strong>not</strong> designed to sell your data, use it for advertising or third-party marketing, or train commercial AI models on your records.</p>
-    <p><strong>De-identified data:</strong> the stock software does not package your Medicare data for sale or research as de-identified datasets. Even “anonymized” health data can sometimes re-identify people; we do not claim zero risk for any real-world dataset.</p>
+    <p>Only to display and organize health information for users of that instance.</p>
+    <p>The stock software is <strong>not</strong> designed to sell data, use it for advertising/marketing, or train commercial AI on your records. Default product does not send Medicare data to third parties for their own use. If an operator adds export/share features, they must disclose that.</p>
+    <p><strong>De-identified data:</strong> stock software does not package your data for sale/research as de-identified datasets. Even “anonymized” health data can sometimes re-identify people.</p>
 
     <h2>Third parties</h2>
-    <ul>
-      <li><strong>CMS / Medicare</strong> — you authorize; they provide claims-related data under their rules.</li>
-      <li><strong>Sign-in relay</strong> — authorization code only (~60 seconds); no health data, no tokens.</li>
-      <li><strong>Operator infrastructure</strong> (hosting, reverse proxy, SSO) — must be secured by the operator; should not be used as a secondary store of claim payloads.</li>
-      <li><strong>GitHub Pages</strong> (this website only) — serves static pages; no health data.</li>
-    </ul>
-    <p>Operators should ensure any vendor that handles personal information meets legal and contractual expectations for the sensitivity of that information.</p>
+    <table>
+      <thead><tr><th>Who</th><th>Role</th></tr></thead>
+      <tbody>
+        <tr><td>CMS / your providers</td><td>You authorize; they supply data under their rules</td></tr>
+        <tr><td>Sign-in relay</td><td>OAuth code only (~60s); no health data, no tokens</td></tr>
+        <tr><td>Operator’s host / reverse proxy / SSO</td><td>Access control and hosting — operator must secure them</td></tr>
+        <tr><td>GitHub Pages</td><td>Serves yourphr.org only</td></tr>
+      </tbody>
+    </table>
 
-    <h2>Your control and deletion</h2>
+    <h2>Your control</h2>
     <ul>
-      <li>You can choose <strong>not</strong> to connect Medicare or any provider.</li>
-      <li>You can <strong>disconnect</strong> a source (removes stored OAuth credentials for that source).</li>
-      <li>You can <strong>delete</strong> records or your account where the product provides those features, or ask the operator to wipe the deployment and backups.</li>
+      <li>Do not connect Medicare (or any source) if you do not want that import</li>
+      <li>Disconnect a source (removes stored OAuth credentials)</li>
+      <li>Delete records or your account where the product allows, or ask the operator to wipe the deployment</li>
     </ul>
-    <p>If you revoke access at Medicare/CMS, new fetches may stop. Data already on the instance stays until deleted there.</p>
-    <p><strong>Dormant or closed accounts:</strong> data remains on the operator’s disk until the account, database, or backups are removed. The project holds no dormant enrollee databases.</p>
+    <p><strong>Dormant/closed accounts:</strong> data remains on the operator’s storage until removed. The project holds no enrollee databases.</p>
 
     <h2>Security</h2>
-    <p>The software aims to reduce risk: local storage, at-rest encryption when active, no project-side copy of records, short-lived relay codes. Operators must also use HTTPS, strong access control, secure backups, and current software. No system is perfect.</p>
+    <p>Local storage, encryption at rest when enabled, no project copy of records, short-lived relay codes. Operators must also use HTTPS, access control, secure backups, and current software.</p>
 
     <h2>Breach notification</h2>
-    <p>If a breach affects health information on an instance, the <strong>instance operator</strong> is responsible for assessing the incident and notifying people as required by law (including, where applicable, the FTC Health Breach Notification Rule for personal health records, and other federal or state rules).</p>
-    <p>The YourPHR project does not hold your Medicare data and cannot notify you of a breach of <em>your</em> instance. If project-operated infrastructure (for example the public relay or this website) is involved in an incident that could affect users, we will communicate appropriately (for example GitHub security notices or a site notice).</p>
+    <p>The <strong>instance operator</strong> handles breaches of data on their deployment and notifies people as required by law (including, where applicable, the FTC Health Breach Notification Rule for personal health records).</p>
+    <p>The project does not hold your instance data. If project-run infrastructure (e.g. the public relay or this site) is involved in an incident, we will communicate through appropriate public channels.</p>
 
-    <h2>If the project or operator is sold</h2>
-    <p>A change in open-source maintainers does <strong>not</strong> move your instance’s database. If the <strong>operator</strong> of a hosted instance is sold or changes how data is used, that operator must notify you when the law or their commitments require it; you should be able to disconnect Medicare and delete or export your data.</p>
-
-    <h2>This website (yourphr.org)</h2>
-    <p>Static informational site. No health information. No first-party analytics cookies. The host may log standard request metadata (such as IP address).</p>
-
-    <h2>If you operate an instance for others</h2>
-    <p>You are the operator/controller of that deployment. You are responsible for user privacy, access control, backups, and regulations that apply to you (for example HIPAA if you are a covered entity). This policy describes the software’s default behaviour, not a multi-tenant service run by the project.</p>
+    <h2>Sale or change of control</h2>
+    <p>Open-source maintainer changes do <strong>not</strong> move your database. If a <strong>hosted operator</strong> is sold or changes data use, they must notify you when required; you should be able to disconnect sources and delete data.</p>
 
     <h2>Changes to this policy</h2>
-    <p>We may update this policy. The “Last updated” date will change at this URL. For a CMS-approved Blue Button production application, draft policy changes and enrollee notices may need CMS review before rollout (see CMS production-access guidance).</p>
+    <p>We may update this policy; the date above will change. For a CMS-approved Blue Button production app, policy/notice changes may need CMS review before rollout.</p>
 
     <h2>Contact</h2>
     <ul>
-      <li>Project questions: <a href="https://github.com/jwilleke/yourphr/issues">GitHub issues</a></li>
-      <li>CMS Blue Button program: <a href="mailto:BlueButtonAPI@cms.hhs.gov">BlueButtonAPI@cms.hhs.gov</a></li>
-      <li>Your instance: contact the person or organization that runs the server you use</li>
+      <li>Project: <a href="https://github.com/jwilleke/yourphr/issues">GitHub issues</a></li>
+      <li>CMS Blue Button: <a href="mailto:BlueButtonAPI@cms.hhs.gov">BlueButtonAPI@cms.hhs.gov</a></li>
+      <li>Your instance: the operator who runs the server</li>
     </ul>
 
     <footer>

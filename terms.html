@@ -24,73 +24,62 @@
   <div class="wrap">
     <p><a class="home" href="/">Your<span>PHR</span></a></p>
     <h1>Terms of Service</h1>
-    <p class="muted small">Last updated: 31 July 2026</p>
+    <p class="muted small">Last updated: 31 July 2026 · Data handling: <a href="/privacy.html">Privacy Policy</a></p>
 
     <div class="lead">
-      <strong>YourPHR is free, open-source, self-hosted software.</strong> You (or an instance operator)
-      run it on infrastructure you control. These terms cover the software and
-      <a href="https://yourphr.org">yourphr.org</a>. They work together with our
-      <a href="/privacy.html">Privacy Policy</a> — if anything here conflicts with the Privacy Policy
-      on how health data is handled, the <strong>Privacy Policy controls</strong>.
+      These Terms cover use of the software and <a href="https://yourphr.org">yourphr.org</a>.
+      <strong>Collection, storage, sharing, and deletion of health data are described only in the
+      <a href="/privacy.html">Privacy Policy</a></strong> — these Terms do not repeat or override that policy on those topics.
     </div>
 
     <h2>Agreement</h2>
     <p>By using the software or website, you agree to these Terms and the Privacy Policy. If you do not agree, do not use them.</p>
 
-    <h2>The software</h2>
-    <p>YourPHR is a personal/family health-record viewer under the
-      <a href="https://github.com/jwilleke/yourphr/blob/main/LICENSE.md">GNU GPL v3</a>,
-      a community continuation of
-      <a href="https://github.com/fastenhealth/fasten-onprem">Fasten OnPrem</a>.
-      Your rights to use, modify, and redistribute the code are defined by the GPL v3; these Terms do not restrict those rights.</p>
+    <h2>Software license</h2>
+    <p>YourPHR is distributed under the
+      <a href="https://github.com/jwilleke/yourphr/blob/main/LICENSE.md">GNU GPL v3</a>.
+      Rights to use, modify, and redistribute the code are defined by the GPL; these Terms do not restrict those rights.</p>
 
-    <h2>Self-hosted use</h2>
-    <p>YourPHR is designed so health records stay on the instance you (or your operator) run. The open-source project does <strong>not</strong> operate a multi-tenant cloud that stores your medical or Medicare data.</p>
-    <p>If you self-host, you are responsible for securing the deployment, controlling access, backups, and laws that apply to you. If someone else hosts the instance you use, that <strong>operator</strong> is responsible for that deployment.</p>
+    <h2>Your responsibilities</h2>
+    <p>You (or the operator of the instance you use) run the software and are responsible for securing that deployment and complying with applicable law. The project does not host your health records. Details of where data lives and who can see it are in the <strong>Privacy Policy</strong>.</p>
 
-    <h2>Connecting to healthcare providers and Medicare</h2>
-    <p>You may connect patient-access APIs (including SMART on FHIR and <strong>CMS Blue Button / Medicare</strong>) to import <strong>your own</strong> records with your authorization.</p>
-    <ul>
-      <li>You also accept that provider’s or CMS’s terms, policies, and API rules.</li>
-      <li>You must only import records you are authorized to access.</li>
-      <li>The software is intended for <strong>read</strong> access to your own records, not for changing data held by providers or CMS.</li>
-      <li>Keep developer credentials confidential. Do not put production secrets in public repositories. CMS production credentials, if issued, may only be used with the application CMS approved.</li>
-    </ul>
-    <p>A public <strong>sign-in relay</strong> may briefly hold an OAuth authorization code (not health data, not access tokens). See the Privacy Policy.</p>
-    <p>In enrollee-facing source lists, Medicare claims from Blue Button should be labeled <strong>Medicare</strong> (not “Blue Button” or “Medicare.gov”), per CMS guidance.</p>
-    <p>When the software uses Blue Button APIs, this notice applies:</p>
+    <h2>Connecting to providers and Medicare</h2>
+    <p>You may connect patient-access APIs (including CMS Blue Button / Medicare) only for records <strong>you are authorized</strong> to access. You must also follow <strong>that provider’s and CMS’s</strong> terms and API rules. Keep client credentials confidential; do not put production secrets in public repositories. CMS production credentials, if issued, may only be used with the application CMS approved.</p>
+    <p>How OAuth, tokens, and the sign-in relay handle data is described in the <strong>Privacy Policy</strong>, not here.</p>
+    <p>When Blue Button APIs are used, this product is <strong>not endorsed or certified</strong> by CMS or HHS. Required notice:</p>
     <blockquote>
       This product uses the Blue Button APIs but is not endorsed or certified by the Centers for Medicare &amp; Medicaid Services or the U.S. Department of Health and Human Services.
     </blockquote>
 
     <h2>Not medical advice</h2>
-    <p>YourPHR helps you view and organize records. It does <strong>not</strong> provide medical advice, diagnosis, or treatment. Records may be incomplete, delayed, or wrong. Consult a qualified clinician for medical decisions.</p>
+    <p>YourPHR is for viewing and organizing records. It is not medical advice, diagnosis, or treatment. Records may be incomplete or wrong. Consult a qualified clinician for medical decisions.</p>
 
     <h2>Acceptable use</h2>
+    <p>You agree not to:</p>
     <ul>
-      <li>Do not access someone else’s records without authorization.</li>
-      <li>Do not abuse or circumvent provider or CMS APIs.</li>
-      <li>Do not claim CMS or HHS endorsement.</li>
-      <li>Do not misuse CMS or provider developer credentials.</li>
+      <li>Access records without authorization</li>
+      <li>Abuse or circumvent provider or CMS APIs</li>
+      <li>Claim CMS or HHS endorsement</li>
+      <li>Misuse developer credentials</li>
     </ul>
 
     <h2>No warranty</h2>
-    <p>The software is provided <strong>“AS IS”</strong>, without warranty of any kind, as set out in the GPL v3, including merchantability, fitness for a particular purpose, and non-infringement. You use and host it at your own risk.</p>
+    <p>Software is provided <strong>“AS IS”</strong>, without warranty of any kind, as set out in the GPL v3. You use and host it at your own risk.</p>
 
     <h2>Limitation of liability</h2>
-    <p>To the maximum extent permitted by law, the YourPHR project, contributors, and maintainers are not liable for damages from use of (or inability to use) the software — including loss or inaccuracy of health data — as further described in the GPL v3. CMS and HHS have their own disclaimers for the Blue Button APIs under CMS’s terms.</p>
+    <p>To the maximum extent permitted by law, the project, contributors, and maintainers are not liable for damages from use of (or inability to use) the software, including loss or inaccuracy of health data, as further described in the GPL v3. CMS/HHS disclaimers apply to the Blue Button APIs themselves under CMS’s terms.</p>
 
     <h2>Website</h2>
-    <p>yourphr.org is a static informational site. It does not store your health records.</p>
+    <p>yourphr.org is a static informational site and does not store health records.</p>
 
     <h2>Changes</h2>
-    <p>We may update these Terms. The “Last updated” date will change at this URL. For CMS-approved Blue Button production apps, follow CMS rules on changing terms and notifying enrollees before rollout.</p>
+    <p>We may update these Terms; the date above will change. For CMS-approved Blue Button production apps, follow CMS rules on changing terms and notifying enrollees.</p>
 
     <h2>Contact</h2>
     <ul>
       <li>Project: <a href="https://github.com/jwilleke/yourphr/issues">GitHub issues</a></li>
       <li>CMS Blue Button: <a href="mailto:BlueButtonAPI@cms.hhs.gov">BlueButtonAPI@cms.hhs.gov</a></li>
-      <li>Hosted instance: contact your operator</li>
+      <li>Hosted instance: your operator</li>
     </ul>
 
     <footer>
