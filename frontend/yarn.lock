@@ -5751,13 +5751,13 @@ duplexer@^0.1.1, duplexer@~0.1.1:
   resolved "https://registry.npmjs.org/duplexer/-/duplexer-0.1.2.tgz#3abe43aef3835f8ae077d136ddce0f276b0400e6"
   integrity sha512-jtD6YG370ZCIi/9GTaJKQxWTZD045+4R4hTk/x1UyoqadyJ9x9CgSi1RlVDQF8U2sxLLSnFkCaMihqljHIWgMg==
 
-dwv@^0.31.0:
-  version "0.31.0"
-  resolved "https://registry.npmjs.org/dwv/-/dwv-0.31.0.tgz#c9777291774d49225ba0c1b8020d104f09312ebf"
-  integrity sha512-c/9cmBdPHtH2l2YEacMLdkqpzXTx0rfcof70ujvR2XhDC/IVgGuXUkM1+ZJKvfFyQowditTciif938ib3SB9vQ==
+dwv@^0.36.3:
+  version "0.36.3"
+  resolved "https://registry.yarnpkg.com/dwv/-/dwv-0.36.3.tgz#7c514f4c2030fc669165afffaaec05572c5c3ff8"
+  integrity sha512-7zzU6DSgtzQm66IYPa+wzWz+wpK7unf7jlKUv8GQqjeaKfmaBxthu/v158/HsqXJCrUSLogLbtwoj6OiSpPPNw==
   dependencies:
-    jszip "~3.7.0"
-    konva "~8.3.0"
+    jszip "^3.10.1"
+    konva "~10.2.0"
     magic-wand-tool "~1.1.7"
 
 ee-first@1.1.1:
@@ -7726,7 +7726,7 @@ jsonparse@^1.3.1:
   resolved "https://registry.npmjs.org/jsonparse/-/jsonparse-1.3.1.tgz#3f4dae4a91fac315f71062f8521cc239f1366280"
   integrity sha512-POQXvpdL69+CluYsillJ7SUhKvytYjW9vG/GKpnf+xP8UWgYEM/RaMzHHofbALDiKbbP1W8UEYmgGl39WkPZsg==
 
-jszip@^3.8.0, jszip@~3.7.0:
+jszip@^3.10.1, jszip@^3.8.0:
   version "3.10.1"
   resolved "https://registry.yarnpkg.com/jszip/-/jszip-3.10.1.tgz#34aee70eb18ea1faec2f589208a157d1feb091c2"
   integrity sha512-xXDvecyTpGLrqFrvkrUSoxxfJI5AH7U8zxxtVclpsUtMCq4JQ290LY8AW5c7Ggnr/Y/oK+bQMbqK2qmtk3pN4g==
@@ -7834,10 +7834,10 @@ kind-of@^6.0.2:
   resolved "https://registry.npmjs.org/kind-of/-/kind-of-6.0.3.tgz#07c05034a6c349fa06e24fa35aa76db4580ce4dd"
   integrity sha512-dcS1ul+9tmeD95T+x28/ehLgd9mENa3LsvDTtzm3vyBEO7RPptvAD+t44WVXaUjTBRcrpFeFlC8WCruUR456hw==
 
-konva@~8.3.0:
-  version "8.3.14"
-  resolved "https://registry.npmjs.org/konva/-/konva-8.3.14.tgz#691ecb6f4568c58818359af369f03e7438ea3640"
-  integrity sha512-6I/TZppgY3Frs//AvZ87YVQLFxLywitb8wLS3qMM+Ih9e4QcB5Yy8br6eq7DdUzxPdbsYTz1FQBHzNxs08M1Tw==
+konva@~10.2.0:
+  version "10.2.5"
+  resolved "https://registry.yarnpkg.com/konva/-/konva-10.2.5.tgz#9b1be6c0392dbf0f1d29ba3439adce46016817b5"
+  integrity sha512-WwBoe/EBhFcv+seL1Wnp3OAOwOFjCY4nCCgpLRrzUzw1IX4lKf/lYhj2Z3qo9P9q2fA3h+OdGDlimSNqZJaY5A==
 
 launch-editor@^2.14.1:
   version "2.14.1"
