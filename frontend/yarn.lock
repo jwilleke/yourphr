@@ -358,7 +358,7 @@
   dependencies:
     "@angular-eslint/bundled-angular-compiler" "20.7.0"
 
-"@angular/animations@20.3.27", "@angular/animations@^20.3.18", "@angular/animations@^20.3.27":
+"@angular/animations@20.3.27", "@angular/animations@^20.3.25", "@angular/animations@^20.3.27":
   version "20.3.27"
   resolved "https://registry.yarnpkg.com/@angular/animations/-/animations-20.3.27.tgz#21aefe74ea36df86f0af20458a9f97d09635cd6a"
   integrity sha512-BgGTloDiD3qIFVSxZq8xO6CiyhKn00WbhQQiklZF8WI2hXd3Hmc1OUAAHqSMh2c9uL7X1ZYkg9lSzjiasK2vKg==
@@ -431,7 +431,7 @@
     yargs "18.0.0"
     zod "4.1.13"
 
-"@angular/common@20.3.27", "@angular/common@^20.3.18", "@angular/common@^20.3.27":
+"@angular/common@20.3.27", "@angular/common@^20.3.25", "@angular/common@^20.3.27":
   version "20.3.27"
   resolved "https://registry.yarnpkg.com/@angular/common/-/common-20.3.27.tgz#52405b538e1e662b4b93a4176d6ff86fbb81f7e7"
   integrity sha512-4ectYP60XatB9zZ40WlfmaTzjmEhaz8SSqLsbZI4VZ8gDb5qNmxWtwwt8UxS3NmDHEgqdNL8UPO4E94+yKCICg==
@@ -452,28 +452,28 @@
     tslib "^2.3.0"
     yargs "^18.0.0"
 
-"@angular/compiler@20.3.27", "@angular/compiler@^20.3.18", "@angular/compiler@^20.3.27":
+"@angular/compiler@20.3.27", "@angular/compiler@^20.3.25", "@angular/compiler@^20.3.27":
   version "20.3.27"
   resolved "https://registry.yarnpkg.com/@angular/compiler/-/compiler-20.3.27.tgz#052a968f3830b9279d299b7ee0d1f248bdf0dc23"
   integrity sha512-in3THZ678GAYuOR9RZV18+zZz0KGhlGikyUEfLeALLjGf9ZaR3n+t19BmYx6G2VkF/Xqadne1omQ2vbl6PRASA==
   dependencies:
     tslib "^2.3.0"
 
-"@angular/core@20.3.27", "@angular/core@^20.3.18", "@angular/core@^20.3.27":
+"@angular/core@20.3.27", "@angular/core@^20.3.25", "@angular/core@^20.3.27":
   version "20.3.27"
   resolved "https://registry.yarnpkg.com/@angular/core/-/core-20.3.27.tgz#97ce97a90c3e06564df7d7d8abbb2eeac3afdb07"
   integrity sha512-8EfYIUST5CKldOF4MAYWTFFRB7EtwqUoQBZdar6US39/EEzWm/wm/iRNkH2jmKe4YuPa2GoeHS1WQ8VRuOk7Dg==
   dependencies:
     tslib "^2.3.0"
 
-"@angular/elements@20.3.27", "@angular/elements@^20.3.18":
+"@angular/elements@20.3.27", "@angular/elements@^20.3.25":
   version "20.3.27"
   resolved "https://registry.yarnpkg.com/@angular/elements/-/elements-20.3.27.tgz#5d86d3edceee044ec14e78a315f06419f1ed8702"
   integrity sha512-RaK7vGDy1/QNoSItxlcNdvaQbjyOomGChH3xsbRgelhChYOLXJETTpkQ1sFJX/McQWbXHfQAEYWbVsqnXF6QcQ==
   dependencies:
     tslib "^2.3.0"
 
-"@angular/forms@20.3.27", "@angular/forms@^20.3.18", "@angular/forms@^20.3.27":
+"@angular/forms@20.3.27", "@angular/forms@^20.3.25", "@angular/forms@^20.3.27":
   version "20.3.27"
   resolved "https://registry.yarnpkg.com/@angular/forms/-/forms-20.3.27.tgz#57d9eac1864454967f112a8b65a542a7d3e72dd9"
   integrity sha512-cNG26wi3tr3m8At6puxJpAMVk9mBhEqREA4Jk/klalMwWuYEf8ApTEAw0a5NUfMxDkL3dcJJwDRf8rK6ma6TYQ==
@@ -495,21 +495,21 @@
     tinyglobby "^0.2.12"
     yargs "^18.0.0"
 
-"@angular/platform-browser-dynamic@20.3.27", "@angular/platform-browser-dynamic@^20.3.18", "@angular/platform-browser-dynamic@^20.3.27":
+"@angular/platform-browser-dynamic@20.3.27", "@angular/platform-browser-dynamic@^20.3.25", "@angular/platform-browser-dynamic@^20.3.27":
   version "20.3.27"
   resolved "https://registry.yarnpkg.com/@angular/platform-browser-dynamic/-/platform-browser-dynamic-20.3.27.tgz#6a5863b79df3ae5cf9d5070720aed73834de553a"
   integrity sha512-4UUs8vOswgBOWCRoeZrswguarBLrM3j6WGb927Y3GXdN37fVJQYjyKHivNeQwZvwsGgl5Nl6mvpBpZv47n/OrQ==
   dependencies:
     tslib "^2.3.0"
 
-"@angular/platform-browser@20.3.27", "@angular/platform-browser@^20.3.18", "@angular/platform-browser@^20.3.27":
+"@angular/platform-browser@20.3.27", "@angular/platform-browser@^20.3.25", "@angular/platform-browser@^20.3.27":
   version "20.3.27"
   resolved "https://registry.yarnpkg.com/@angular/platform-browser/-/platform-browser-20.3.27.tgz#4f98b2941aa1be881c0c6c8da5b7bbb577f7ae73"
   integrity sha512-IV2zQ4zk6liyw5NE48bQqSk3nOAZ1rmDAQi7W4Kw0N8cs9MYVgK3zulo0zx5UqSv1kuNDAGb0HPR5tUGVOf9kw==
   dependencies:
     tslib "^2.3.0"
 
-"@angular/router@20.3.27", "@angular/router@^20.3.18", "@angular/router@^20.3.27":
+"@angular/router@20.3.27", "@angular/router@^20.3.25", "@angular/router@^20.3.27":
   version "20.3.27"
   resolved "https://registry.yarnpkg.com/@angular/router/-/router-20.3.27.tgz#5635e1dadd0d6ad02a262598c13cabeae197ed30"
   integrity sha512-F3hfJQ0GAuD6LdeB7A6fMfaErc4HXCtCQGh3C/8VrbVEbGfIgSveNjQXzGYPNklnOLhj1BmWf5w0WniUAEjLBA==
@@ -5476,31 +5476,7 @@ deep-eql@^5.0.1:
   resolved "https://registry.yarnpkg.com/deep-eql/-/deep-eql-5.0.2.tgz#4b756d8d770a9257300825d52a2c2cff99c3a341"
   integrity sha512-h5k/5U50IJJFpzfL6nO9jaaumfjO/f2NjK/oYB2Djzm4p9L+3T9qWpZqZ2hAbLPuuYq9wrU08WQyBTL5GbPk5Q==
 
-deep-equal@^2.0.5:
-  version "2.2.1"
-  resolved "https://registry.npmjs.org/deep-equal/-/deep-equal-2.2.1.tgz#c72ab22f3a7d3503a4ca87dde976fe9978816739"
-  integrity sha512-lKdkdV6EOGoVn65XaOsPdH4rMxTZOnmFyuIkMjM1i5HHCbfjC97dawgTAy0deYNfuqUqW+Q5VrVaQYtUpSd6yQ==
-  dependencies:
-    array-buffer-byte-length "^1.0.0"
-    call-bind "^1.0.2"
-    es-get-iterator "^1.1.3"
-    get-intrinsic "^1.2.0"
-    is-arguments "^1.1.1"
-    is-array-buffer "^3.0.2"
-    is-date-object "^1.0.5"
-    is-regex "^1.1.4"
-    is-shared-array-buffer "^1.0.2"
-    isarray "^2.0.5"
-    object-is "^1.1.5"
-    object-keys "^1.1.1"
-    object.assign "^4.1.4"
-    regexp.prototype.flags "^1.5.0"
-    side-channel "^1.0.4"
-    which-boxed-primitive "^1.0.2"
-    which-collection "^1.0.1"
-    which-typed-array "^1.1.9"
-
-deep-equal@^2.2.3:
+deep-equal@^2.0.5, deep-equal@^2.2.3:
   version "2.2.3"
   resolved "https://registry.yarnpkg.com/deep-equal/-/deep-equal-2.2.3.tgz#af89dafb23a396c7da3e862abc0be27cf51d56e1"
   integrity sha512-ZIwpnevOurS8bpT4192sqAowWM76JDKSHYzMLty3BZGSswgq6pBaH3DhCSW5xVAZICZyKdOBPjwww5wfgT/6PA==
@@ -5566,7 +5542,7 @@ define-lazy-prop@^3.0.0:
   resolved "https://registry.yarnpkg.com/define-lazy-prop/-/define-lazy-prop-3.0.0.tgz#dbb19adfb746d7fc6d734a06b72f4a00d021255f"
   integrity sha512-N+MeXYoqr3pOgn8xfyRPREN7gHakLYjhsHhWGT3fWAiL4IkAt0iDw14QiiEm2bE30c5XX5q0FtAA3CK5f9/BUg==
 
-define-properties@^1.1.3, define-properties@^1.1.4, define-properties@^1.2.0:
+define-properties@^1.1.3, define-properties@^1.1.4:
   version "1.2.0"
   resolved "https://registry.npmjs.org/define-properties/-/define-properties-1.2.0.tgz#52988570670c9eacedd8064f4a990f2405849bd5"
   integrity sha512-xvqAVKGfT1+UAvPwKTVw/njhdQ8ZhXK4lI0bCIuCMrp2up9nPnaDftrLtmpTazqd1o+UY4zgzU+avtMbDP+ldA==
@@ -5879,7 +5855,7 @@ entities@^2.0.0:
   resolved "https://registry.npmjs.org/entities/-/entities-2.2.0.tgz#098dc90ebb83d8dffa089d55256b351d34c4da55"
   integrity sha512-p92if5Nz619I0w+akJrLZH0MX0Pb5DX39XOwQTtXSdQQOaYH03S1uIQp4mhOZtAXrxq4ViO67YTiLBo2638o9A==
 
-entities@^4.2.0, entities@^4.4.0:
+entities@^4.2.0, entities@^4.4.0, entities@^4.5.0:
   version "4.5.0"
   resolved "https://registry.npmjs.org/entities/-/entities-4.5.0.tgz#5d268ea5e7113ec74c4d033b79ea5a35a488fb48"
   integrity sha512-V0hjH4dGPh9Ao5p0MoRY6BVqtwCjhz6vI5LT8AJ55H+4g9/4vbHx1I54fS0XuclLhDHArPQCiMjDxjaL8fPxhw==
@@ -7877,20 +7853,20 @@ levn@^0.4.1:
     prelude-ls "^1.2.1"
     type-check "~0.4.0"
 
-lforms@42.2.0:
-  version "42.2.0"
-  resolved "https://registry.yarnpkg.com/lforms/-/lforms-42.2.0.tgz#a2255f71b9a31936858566aaf0959f377d7d0f05"
-  integrity sha512-3mzYBJF5OtW5oXjhk+fCOeKPpBoMEzKgPQFNCy27lx24yib+j4Wvmutrw29efVsCuZHNRppJUGNzKTkDANxnZw==
+lforms@43.0.0:
+  version "43.0.0"
+  resolved "https://registry.yarnpkg.com/lforms/-/lforms-43.0.0.tgz#b2fc4528d7e9ac341f97c13fe1ae6362f973cde4"
+  integrity sha512-kaFDxGL5aZ7Ydo3yQ1YJNZHmnYeEkCPJsZgZUeQNodZkSV8FnGCI7cBGNgU0LRLjtneiBcXv0RXrtaajDhlGMw==
   dependencies:
-    "@angular/animations" "^20.3.18"
-    "@angular/common" "^20.3.18"
-    "@angular/compiler" "^20.3.18"
-    "@angular/core" "^20.3.18"
-    "@angular/elements" "^20.3.18"
-    "@angular/forms" "^20.3.18"
-    "@angular/platform-browser" "^20.3.18"
-    "@angular/platform-browser-dynamic" "^20.3.18"
-    "@angular/router" "^20.3.18"
+    "@angular/animations" "^20.3.25"
+    "@angular/common" "^20.3.25"
+    "@angular/compiler" "^20.3.25"
+    "@angular/core" "^20.3.25"
+    "@angular/elements" "^20.3.25"
+    "@angular/forms" "^20.3.25"
+    "@angular/platform-browser" "^20.3.25"
+    "@angular/platform-browser-dynamic" "^20.3.25"
+    "@angular/router" "^20.3.25"
     "@lhncbc/ucum-lhc" "^7.1.3"
     "@types/jquery" "^3.5.33"
     autocomplete-lhc "^20.1.0"
@@ -7899,7 +7875,7 @@ lforms@42.2.0:
     fhirpath "^4.8.0"
     htmlparser2 "^10.0.0"
     jquery "^3.7.1"
-    markdown-it "^14.1.1"
+    markdown-it "^14.2.0"
     moment "2.29.4"
     ng-zorro-antd "^20.4.1"
     rxjs "~7.8.2"
@@ -7927,7 +7903,7 @@ lines-and-columns@^1.1.6:
   resolved "https://registry.npmjs.org/lines-and-columns/-/lines-and-columns-1.2.4.tgz#eca284f75d2965079309dc0ad9255abb2ebc1632"
   integrity sha512-7ylylesZQ/PV29jhEDl3Ufjo6ZX7gCqJr5F7PKrqc93v7fzSymt1BpwEU8nAUXs8qzzvqhbjhK5QZg6Mt/HkBg==
 
-linkify-it@^5.0.1:
+linkify-it@^5.0.2:
   version "5.0.2"
   resolved "https://registry.yarnpkg.com/linkify-it/-/linkify-it-5.0.2.tgz#d3be0a693af3da9df3883f1e346a0e97461a8c19"
   integrity sha512-ONTm2jCMAVZjgQa/Fy1kScXsuOoF5NPTsoFBdE1KVIZ2vAh/r9+Bqo+0jINCBYnavTPQZz38QzFTme79ENoN3Q==
@@ -8179,14 +8155,14 @@ map-stream@0.0.7:
   resolved "https://registry.npmjs.org/map-stream/-/map-stream-0.0.7.tgz#8a1f07896d82b10926bd3744a2420009f88974a8"
   integrity sha512-C0X0KQmGm3N2ftbTGBhSyuydQ+vV1LC3f3zPvT3RXHXNZrvfPZcoXp/N5DOa8vedX/rTMm2CjTtivFg2STJMRQ==
 
-markdown-it@^14.1.1:
-  version "14.2.0"
-  resolved "https://registry.yarnpkg.com/markdown-it/-/markdown-it-14.2.0.tgz#06d48d9035e77d5b1c85adb315482fc8240289ef"
-  integrity sha512-1TGiQiJVRQ3NPmZH6sx5Cfnmg6GQm9jvC1ch4TK511NjSJvjzKLzn5pPfZRNZkRPZP0HqCioSndqH8v2nRaWVQ==
+markdown-it@^14.2.0:
+  version "14.3.0"
+  resolved "https://registry.yarnpkg.com/markdown-it/-/markdown-it-14.3.0.tgz#8542fa5506e3530f7e2b08dc3885630135c5620e"
+  integrity sha512-RCEsPjR+sr0x+AuYp601tKTkgFG4YEPLCzHST3cQ/fhlJkqAkz1L2/Qbp1j9qw5SBwQHFBoW8+hoN5xssOF0Tw==
   dependencies:
     argparse "^2.0.1"
-    entities "^4.4.0"
-    linkify-it "^5.0.1"
+    entities "^4.5.0"
+    linkify-it "^5.0.2"
     mdurl "^2.0.0"
     punycode.js "^2.3.1"
     uc.micro "^2.1.0"
@@ -9608,15 +9584,6 @@ regex-parser@^2.2.11:
   version "2.2.11"
   resolved "https://registry.npmjs.org/regex-parser/-/regex-parser-2.2.11.tgz#3b37ec9049e19479806e878cabe7c1ca83ccfe58"
   integrity sha512-jbD/FT0+9MBU2XAZluI7w2OBs1RBi6p9M83nkoZayQXXU9e8Robt69FcZc7wU4eJD/YFTjn1JdCk3rbMJajz8Q==
-
-regexp.prototype.flags@^1.5.0:
-  version "1.5.0"
-  resolved "https://registry.npmjs.org/regexp.prototype.flags/-/regexp.prototype.flags-1.5.0.tgz#fe7ce25e7e4cca8db37b6634c8a2c7009199b9cb"
-  integrity sha512-0SutC3pNudRKgquxGoRGIz946MZVHqbNfPjBdxeOhBrdgDKlRoXmYLQN9xRbrR09ZXWeGAdPuif7egofn6v5LA==
-  dependencies:
-    call-bind "^1.0.2"
-    define-properties "^1.2.0"
-    functions-have-names "^1.2.3"
 
 regexp.prototype.flags@^1.5.1:
   version "1.5.4"
@@ -11330,18 +11297,6 @@ which-typed-array@^1.1.13:
     get-proto "^1.0.1"
     gopd "^1.2.0"
     has-tostringtag "^1.0.2"
-
-which-typed-array@^1.1.9:
-  version "1.1.9"
-  resolved "https://registry.npmjs.org/which-typed-array/-/which-typed-array-1.1.9.tgz#307cf898025848cf995e795e8423c7f337efbde6"
-  integrity sha512-w9c4xkx6mPidwp7180ckYWfMmvxpjlZuIudNtDf4N/tTAUB8VJbX25qZoAsrtGuYNnGw3pa0AXgbGKRB8/EceA==
-  dependencies:
-    available-typed-arrays "^1.0.5"
-    call-bind "^1.0.2"
-    for-each "^0.3.3"
-    gopd "^1.0.1"
-    has-tostringtag "^1.0.0"
-    is-typed-array "^1.1.10"
 
 which@^1.2.1:
   version "1.3.1"
