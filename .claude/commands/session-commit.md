@@ -21,11 +21,8 @@ related GitHub issues. The personal log is **never committed**.
 ### Step 3: Refresh `TODO.md` and commit it
 
 - Regenerate `TODO.md` from the current GitHub issue labels (same banding as `/pstatus`:
-  P0 / P1 / P2 / Deferred / Needs triage / In review / Open PRs). **Preserve** any
-  `<!-- RESUME:START -->` … `<!-- RESUME:END -->` block exactly — only `/wrap` updates resume
-  content. If `/pstatus` was just run, bands are already current.
-- **Escape bare URLs copied from issue titles** — wrap them in angle brackets (`<https://…>`).
-  A title containing a URL otherwise fails markdownlint MD034 on a file nobody hand-edited.
+  P0 / P1 / P2 / Deferred / Needs triage). The `▶ Resume here` pointer is owned by `/wrap`; no need
+  to preserve it here. If `/pstatus` was just run, it is already current.
 - Stage and commit `TODO.md` if it changed: `docs: refresh TODO from issue labels`.
 
 ### Step 4: Journal the session (local only — NOT committed)
@@ -55,9 +52,6 @@ For each related open issue:
 - If the work fully resolves it, say so but do **not** close it — let the operator decide
   (consider adding `in-review`).
 - Use `gh issue comment <number> --body "<comment>"`.
-- **When closing an issue (operator request or explicit close):** always
-  `gh issue edit <N> --remove-label in-review` **before or when closing**. Never leave
-  `in-review` on a closed issue.
 
 ### Step 6: Push
 
