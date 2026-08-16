@@ -10,6 +10,10 @@
 #   utility/sync-labels.sh --all owner     # every active (non-archived, source) repo for owner
 #
 # Requires: gh (authenticated).
+#
+# Note: macOS ships bash 3.2, where `set -u` treats "${arr[@]}" on an EMPTY array as an
+# unbound variable (fixed in bash 4.4). Expand possibly-empty arrays as
+# ${arr[@]+"${arr[@]}"} — outer unquoted, inner quoted — or the no-arg path aborts.
 
 set -euo pipefail
 
@@ -35,7 +39,8 @@ apply_to() {
   local spec name color desc
   for spec in "${LABELS[@]}"; do
     IFS='|' read -r name color desc <<<"$spec"
-    gh label create "$name" --color "$color" --description "$desc" --force "${repo_args[@]}" >/dev/null
+    # ${repo_args[@]+...} — empty-safe on bash 3.2; a plain "${repo_args[@]}" aborts under set -u
+    gh label create "$name" --color "$color" --description "$desc" --force ${repo_args[@]+"${repo_args[@]}"} >/dev/null
     echo "   ✓ $name"
   done
 }

@@ -48,10 +48,10 @@ pick up:
 <!-- RESUME:END -->
 ```
 
-Insert (or replace) the block right after the `# TODO` title, **above** the generated priority bands.
-If a resume block is already present, overwrite only that marker region with the new handoff — leave
-the `/pstatus`-generated bands intact unless you also refresh them. `/pstatus` **preserves** this
-block when regenerating bands; only `/wrap` updates the resume text.
+Insert the block right after the `# TODO` title (the markers will usually be absent, since `/pstatus`
+regenerated a bands-only `TODO.md` during the session; replace the block if it is present). This
+reflects only the latest handoff — `/context` reads it next session, then the first `/pstatus` clears
+it again.
 
 ### Step 4: Commit the refreshed pointer & push (ask)
 
@@ -71,7 +71,8 @@ Report one clear verdict:
 ## Notes
 
 - `/wrap` is the close bookend to `/context` (open) and complements `/session-commit` (per-chunk).
-- `/context` should read the `▶ Resume here` block at the top of `TODO.md` first to restore
-  continuity. `/pstatus` **preserves** that block when it regenerates priority bands (it does not
-  clear it). `/wrap` is the only skill that refreshes resume content. Dated session history still
-  lives in `private/project_log.md` (local, not committed).
+- `/context` reads the `▶ Resume here` block at the top of `TODO.md` first to restore continuity.
+  `/pstatus` does **not** read it — it removes the block when it regenerates the bands. So the
+  block survives exactly one hop: `/wrap` writes it, the next session's `/context` reads it, the
+  first `/pstatus` of that session clears it. Open a session with `/context`, not `/pstatus`, or
+  the pointer is discarded unread. The dated session history stays in `private/project_log.md`.
