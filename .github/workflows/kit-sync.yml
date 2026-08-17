@@ -1,0 +1,140 @@
+# Seeded by mjs-project-template's install-kit.sh. Keeps this repo up to date with
+# the agent kit by opening a pull request — it never pushes to the default branch.
+# Delete it if you do not want that. Seeded create-if-absent, so local edits here
+# survive the next kit sync.
+#
+# It replaces the older Kit Check workflow, which only filed an issue telling
+# someone to go and run the installer. This runs the installer.
+#
+# No cron, on purpose. A schedule fires while you are asleep, and GitHub disables
+# scheduled workflows after 60 days of repository inactivity — so it stops firing
+# in exactly the dormant repos that drift furthest. This runs when you push, which
+# is when you are already here, and on demand.
+#
+# No PAT and no GitHub App. The built-in GITHUB_TOKEN is scoped to this repo and
+# expires with the job. The one thing it cannot do is start a CI run for a PR it
+# opened, so the sync validates itself in-job and reports the result in the PR
+# body rather than waiting for checks that will not come.
+#
+# Green means checked. Red means the check could not run.
+
+name: Kit Sync
+
+on:
+  push:
+    branches: [master, main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: kit-sync
+  cancel-in-progress: false
+
+jobs:
+  kit-sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out this repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Beside this repo, not installed into it: Actions runners already ship
+      # Node, so a C++, Go, Python or Shell repo pays nothing to run the checker.
+      # Full history because the kit's version comes from `git describe --tags`.
+      - name: Check out the kit
+        uses: actions/checkout@v4
+        with:
+          repository: jwilleke/mjs-project-template
+          path: .kit-sync
+          fetch-depth: 0
+
+      - name: Is this repo behind?
+        id: check
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          node .kit-sync/bin/kit.mjs check . --kit .kit-sync --json >status.json
+          node -e '
+            const s = require("./status.json");
+            const behind = s.status === "behind" || s.status === "unmarked" ||
+                           s.status === "unknown" || s.missing.length || s.modified.length;
+            console.log(`status=${s.status} behind=${!!behind}`);
+            require("fs").appendFileSync(process.env.GITHUB_OUTPUT, `behind=${behind ? "true" : "false"}\n`);
+          '
+
+      - name: Apply the kit
+        if: steps.check.outputs.behind == 'true'
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          .kit-sync/install-kit.sh .
+
+      # The PR the token opens will not trigger this repo's own CI — GitHub does
+      # not raise workflow runs from GITHUB_TOKEN events. So check here, where the
+      # change already exists, and gate on the result: a sync that breaks the kit's
+      # own markdown rules never becomes a PR.
+      - name: Check what the sync produced
+        if: steps.check.outputs.behind == 'true'
+        id: verify
+        run: |
+          npx --yes markdownlint-cli2 >lint.txt 2>&1 && echo "lint=pass" >>"$GITHUB_OUTPUT" || {
+            echo "lint=fail" >>"$GITHUB_OUTPUT"
+            tail -40 lint.txt
+          }
+
+      - name: Open the sync pull request
+        if: steps.check.outputs.behind == 'true' && steps.verify.outputs.lint == 'pass'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          version="$(node -p "require('./.agent-kit.json').installed")"
+          branch="chore/kit-sync-$version"
+
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "Nothing changed — already at $version."
+            exit 0
+          fi
+
+          git checkout -b "$branch"
+          git add -A
+          git commit -q -m "chore(kit): sync to $version"
+          git push -q -f -u origin "$branch"
+
+          if gh pr view "$branch" --json number >/dev/null 2>&1; then
+            echo "PR already open for $branch."
+            exit 0
+          fi
+
+          # P2 on creation: /pstatus places a PR by its own label first, and an
+          # unlabelled one lands in Needs triage in every repo on every release.
+          gh pr create \
+            --base "${GITHUB_REF_NAME}" --head "$branch" \
+            --label P2 \
+            --title "chore(kit): sync to $version" \
+            --body "Automated kit sync applied by \`install-kit.sh\` from
+          [mjs-project-template](https://github.com/jwilleke/mjs-project-template).
+
+          Kit version: \`$version\`
+
+          The kit's own markdown lint ran against these changes before this PR was opened and passed.
+          GitHub does not start workflow runs for pull requests opened by \`GITHUB_TOKEN\`, so that
+          in-job check is the gate rather than the checks below.
+
+          Canonical kit files are overwritten wholesale; your own content is untouched, and
+          \`AGENTS.md\` changes stay between the \`KIT:START\` / \`KIT:END\` markers. If something here
+          is wrong, fix it upstream in the template — the next sync would overwrite a local fix." \
+            || gh pr create --base "${GITHUB_REF_NAME}" --head "$branch" \
+                 --title "chore(kit): sync to $version" --body "Automated kit sync to \`$version\`."
+
+      # Only when the sync itself failed. A repo that is merely behind gets a PR,
+      # not an issue — the issue existed because nothing could act.
+      - name: Report a sync that could not be applied
+        if: steps.check.outputs.behind == 'true' && steps.verify.outputs.lint == 'fail'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node .kit-sync/bin/kit.mjs check . --kit .kit-sync --report-issue

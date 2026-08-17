@@ -1,0 +1,63 @@
+// THE markdown rulebook for this repo — rules, what is linted, and what is not,
+// all in one file. Read by the CLI (`npm run lint:md`), by CI's
+// markdownlint-cli2-action, and by the VS Code markdownlint extension, so all
+// three give the same answer. Shipped by the kit; never per-repo edited.
+//
+// Before this file the rules lived in .markdownlint.jsonc, the glob lived in
+// package.json, and CI kept a third list in markdown-lint.yml. They disagreed:
+// CHANGELOG.md was exempt in CI and linted locally.
+{
+  // Lint what a human or their agents author AND commit. Nothing else.
+  //
+  // `gitignore: true` makes git the arbiter, which is the whole point: anything
+  // git ignores is generated or vendored, so linting it reports an error at a
+  // path where the fix does not survive. packages/agent-kit/{commands,templates}
+  // is the case in point — build.mjs deletes and re-copies it from source on
+  // every pack, and it is absent from a fresh checkout entirely, so linting it
+  // gave a different answer on a developer's machine than in CI.
+  //
+  // The explicit .claude glob is required because `**/*.md` does not match
+  // dot-directories. Without it the kit's four canonical command files — the
+  // ones overwritten into twelve repos — were linted nowhere, which is how
+  // pstatus.md carried a false claim about MD049 unnoticed.
+  "globs": ["**/*.md", ".claude/**/*.md"],
+  "gitignore": true,
+
+  // Tracked is not the same as authored. `gitignore: true` catches what is
+  // generated or vendored, but a repo also commits text it holds without having
+  // written — and a licence is the case where owning the file does not grant the
+  // right to reformat it. The MD029 hits in a GPL copy are the licence's own
+  // section numbering and its `show w' shell examples: correct as written, and
+  // legally load-bearing.
+  //
+  // Deliberately only the licence. CHANGELOG.md and CODE_OF_CONDUCT.md were
+  // considered and rejected — those are ours, so they get fixed, not exempted.
+  // COPYING and NOTICE are not here because no consumer has one; a pattern that
+  // matches nothing is a rule someone has to understand later for no benefit.
+  "ignores": ["**/LICENSE*.md", "**/LICENCE*.md"],
+
+  "config": {
+    "default": true,
+    "MD003": { "style": "atx" },           // headings use # / ## (atx) style
+    "MD004": { "style": "dash" },          // bullet lists use "-"
+    "MD007": { "indent": 2 },              // nested lists indent 2 spaces
+    "MD013": false,                        // no line-length limit (long prose is fine)
+    "MD024": { "siblings_only": true },    // repeated sub-headings under different sections OK
+    "MD025": { "front_matter_title": "" }, // a frontmatter title does not count as the H1
+    "MD033": true,                         // inline HTML NOT allowed (flagged)
+    "MD036": true,                         // bold-used-as-a-heading is flagged
+    "MD040": false,                        // code fences need not declare a language
+    "MD041": false,                        // first line need not be a heading (frontmatter)
+
+    // Pinned, not "consistent". The default is `consistent`, which is per-file:
+    // it lets one repo be all-asterisk and another all-underscore, both green
+    // forever. That is the opposite of markdown being the same across repos.
+    "MD049": { "style": "asterisk" },      // *italic*
+    "MD050": { "style": "underscore" },    // __bold__
+
+    "MD055": false,                        // table pipe-style / column nitpicks off
+    "MD056": false,
+    "MD058": false,
+    "MD060": false
+  }
+}

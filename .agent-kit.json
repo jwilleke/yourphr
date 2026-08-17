@@ -1,0 +1,18 @@
+{
+  "schema": 1,
+  "source": "https://github.com/jwilleke/mjs-project-template",
+  "installed": "v1.9.0",
+  "installed_ref": "v1.9.0-0-g22c939c",
+  "installed_at": "2026-08-17",
+  "files": {
+    ".claude/commands/pstatus.md": { "behavior": "overwrite", "sha256": "d01fc63bde87b183d8d544bedbbfb0d86a76882881d8927d71acf97cba11d0a7" },
+    ".claude/commands/session-commit.md": { "behavior": "overwrite", "sha256": "62c6d562b8ad9a57622d295c33a0847041fcaada87ad80c3e900292a86171068" },
+    ".claude/commands/context.md": { "behavior": "overwrite", "sha256": "e44ff50bc76c517afaef6f421145d4d3afb9d9886fb6562ee18e2e3eff9b4310" },
+    ".claude/commands/wrap.md": { "behavior": "overwrite", "sha256": "e2cb39682af3bd4923b64b851dba585c60eba8139f0272f8b630f62fbc622dea" },
+    "utility/sync-labels.sh": { "behavior": "overwrite", "sha256": "33ef23780cbac7aef9f094bd32b128f311698e5e642395b2adf9d7984058caab" },
+    ".claude/commands/update-agents.md": { "behavior": "overwrite", "sha256": "1f4c6433448658be783b09007be99fbcad1d1d7b75daab66624e7a45940ac4e6" },
+    ".markdownlint-cli2.jsonc": { "behavior": "overwrite", "sha256": "a269ec1af759cd56af8dc9b6393148a587cfcb5d03af3d4c8999a95bbab1057d" },
+    "utility/set-version.mjs": { "behavior": "overwrite", "sha256": "292730d5df9c923f57dde984bc132ebfd2ba92fb83c9494f5b6ac3d0f6dcbc6c" },
+    ".claude/commands/semver-kit.md": { "behavior": "overwrite-or-suffix", "sha256": "0b94552c7a4447ab265c2761b1edcb76afb1ea99322221936b7a24b1b9749e3b" }
+  }
+}
