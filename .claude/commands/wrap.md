@@ -1,6 +1,6 @@
 # /wrap — close the session safely
 
-End-of-session ritual. Run it **last**, before shutting down VS Code. It makes sure every change is
+End-of-session ritual. Run it __last__, before shutting down VS Code. It makes sure every change is
 committed, refreshes the "Resume here" pointer at the top of the log, and reports whether it is safe
 to close.
 
@@ -16,11 +16,11 @@ Git state:
 
 In-flight work that a shutdown would orphan (note status of each, anything of significance):
 
-- **Workflows / background agents** still running this session (e.g. `/workflows`, background tasks) — capture what each is doing and whether it finished.
-- **Running processes** started this session — dev servers, watchers, background shells, tunnels.
-- **CI in progress** — `gh run list --limit 5` (anything `in_progress`/`queued`).
-- **Open PRs awaiting action** — `gh pr list` (review/merge state).
-- **Scheduled tasks / routines** that will fire (`/schedule` list, cron).
+- __Workflows / background agents__ still running this session (e.g. `/workflows`, background tasks) — capture what each is doing and whether it finished.
+- __Running processes__ started this session — dev servers, watchers, background shells, tunnels.
+- __CI in progress__ — `gh run list --limit 5` (anything `in_progress`/`queued`).
+- __Open PRs awaiting action__ — `gh pr list` (review/merge state).
+- __Scheduled tasks / routines__ that will fire (`/schedule` list, cron).
 
 ### Step 2: Commit outstanding work
 
@@ -30,7 +30,7 @@ In-flight work that a shutdown would orphan (note status of each, anything of si
 
 ### Step 3: Refresh the "Resume here" pointer
 
-Overwrite the marker-delimited block at the **top** of `TODO.md` (above the generated priority
+Overwrite the marker-delimited block at the __top__ of `TODO.md` (above the generated priority
 bands) so the next session — on any machine, since `TODO.md` is committed — knows exactly where to
 pick up:
 
@@ -62,9 +62,9 @@ it again.
 
 Report one clear verdict:
 
-- ✅ **Safe to close** — working tree clean (or only intentional local files), commits pushed
+- ✅ __Safe to close__ — working tree clean (or only intentional local files), commits pushed
   (or explicitly held), nothing running, resume pointer written.
-- ⚠️ **Attention** — list anything a shutdown would interrupt or that would be forgotten:
+- ⚠️ __Attention__ — list anything a shutdown would interrupt or that would be forgotten:
   still-running workflows / background agents / dev servers, in-progress CI, untracked files
   not committed, stashes, unpushed commits held locally by choice.
 
@@ -72,7 +72,20 @@ Report one clear verdict:
 
 - `/wrap` is the close bookend to `/context` (open) and complements `/session-commit` (per-chunk).
 - `/context` reads the `▶ Resume here` block at the top of `TODO.md` first to restore continuity.
-  `/pstatus` does **not** read it — it removes the block when it regenerates the bands. So the
+  `/pstatus` does __not__ read it — it removes the block when it regenerates the bands. So the
   block survives exactly one hop: `/wrap` writes it, the next session's `/context` reads it, the
   first `/pstatus` of that session clears it. Open a session with `/context`, not `/pstatus`, or
   the pointer is discarded unread. The dated session history stays in `private/project_log.md`.
+
+## Repo-specific additions
+
+This file is __kit-managed and overwritten wholesale__ on every `install-kit.sh` run — anything
+you add here is lost at the next sync, silently until the installer started warning about it.
+
+If this repo needs something extra from `/wrap` — a package manager the kit does not name, a
+scanner only this repo has, a path only this repo uses — put it in
+`.claude/commands/wrap.local.md`. The kit never writes, reads, or deletes that file.
+
+__Read it, if it exists, and treat its contents as part of this command.__ A rule that is generic
+does not belong there: raise it upstream in
+[mjs-project-template](https://github.com/jwilleke/mjs-project-template) so every repo gets it.
