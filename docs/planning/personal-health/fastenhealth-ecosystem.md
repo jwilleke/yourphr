@@ -55,8 +55,8 @@ Prioritized for a personal PHR use case.
 
 ## Recommended order of attack for the fork
 
-1. **Fix display bugs** — Encounter/Condition rendering with non-US-Core data (#428, #431, #347). Code context already gathered; this is the immediate blocker.
-2. **FHIR-Converter normalization** — use as a pre-import step to clean Veradigm's non-standard codings before they hit the DB (#428, #592).
-3. **Edit/delete records** (#631) — basic PHR hygiene before adding more data.
-4. **LLM integration** (#623) — wire `fasten-answers-ai` POC to Ollama with MedGemma; Ollama is already on the infra roadmap.
-5. **PostgreSQL** (#361) — long-term; swap SQLite once record volume or multi-user needs grow.
+1. __Fix display bugs__ — Encounter/Condition rendering with non-US-Core data (#428, #431, #347). Code context already gathered; this is the immediate blocker.
+2. __FHIR-Converter normalization__ — use as a pre-import step to clean Veradigm's non-standard codings before they hit the DB (#428, #592).
+3. __Edit/delete records__ (#631) — basic PHR hygiene before adding more data.
+4. __LLM integration__ (#623) — wire `fasten-answers-ai` POC to Ollama with MedGemma; Ollama is already on the infra roadmap.
+5. __PostgreSQL__ (#361) — long-term; swap SQLite once record volume or multi-user needs grow.

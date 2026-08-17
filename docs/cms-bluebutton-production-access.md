@@ -1,10 +1,10 @@
 # CMS Blue Button — production access runbook
 
-Operator checklist to apply for **production** Blue Button API credentials, run the CMS Zoom demo, and enable **Medicare** on a YourPHR instance.
+Operator checklist to apply for __production__ Blue Button API credentials, run the CMS Zoom demo, and enable __Medicare__ on a YourPHR instance.
 
-**CMS process (source of truth):** [Production Access](https://bluebutton.cms.gov/production-access/)  
-**CMS Terms:** [Blue Button API Terms of Service](https://bluebutton.cms.gov/terms/)  
-**Contact:** [BlueButtonAPI@cms.hhs.gov](mailto:BlueButtonAPI@cms.hhs.gov)
+__CMS process (source of truth):__ [Production Access](https://bluebutton.cms.gov/production-access/)  
+__CMS Terms:__ [Blue Button API Terms of Service](https://bluebutton.cms.gov/terms/)  
+__Contact:__ [BlueButtonAPI@cms.hhs.gov](mailto:BlueButtonAPI@cms.hhs.gov)
 
 | Related | Doc / issue |
 |---|---|
@@ -27,31 +27,31 @@ Operator checklist to apply for **production** Blue Button API credentials, run 
 | API base | `https://sandbox.bluebutton.cms.gov/v2/fhir` | `https://api.bluebutton.cms.gov/v2/fhir` |
 | Data | Synthetic beneficiaries | Real enrollee claims (with consent) |
 | Credentials | Self-serve developer portal | Issued only after CMS form + Zoom demo + post-approval form |
-| YourPHR UI | Admin **`/sandbox`** | Patient **`/sources`** → **Medicare** |
+| YourPHR UI | Admin __`/sandbox`__ | Patient __`/sources`__ → __Medicare__ |
 
-YourPHR already has a production catalog template and operator wiring; you do **not** need a code change after CMS issues credentials — see [`medicare-bluebutton.md`](medicare-bluebutton.md) § Production.
+YourPHR already has a production catalog template and operator wiring; you do __not__ need a code change after CMS issues credentials — see [`medicare-bluebutton.md`](medicare-bluebutton.md) § Production.
 
 ---
 
 ## Process overview (CMS)
 
-1. Read **[Blue Button API Terms of Service](https://bluebutton.cms.gov/terms/)** end-to-end.
-2. Develop and exercise the app against the **sandbox** (as far as CMS sandbox health allows).
-3. Publish **Privacy Policy** and **Terms of Service** (public URLs + PDF copies for the form).
+1. Read __[Blue Button API Terms of Service](https://bluebutton.cms.gov/terms/)__ end-to-end.
+2. Develop and exercise the app against the __sandbox__ (as far as CMS sandbox health allows).
+3. Publish __Privacy Policy__ and __Terms of Service__ (public URLs + PDF copies for the form).
 4. Email [BlueButtonAPI@cms.hhs.gov](mailto:BlueButtonAPI@cms.hhs.gov) to request the production access form.
 5. Submit the form (org/app info + PDF PP/ToS).
-6. Schedule and deliver a **~1 hour Zoom demo**.
+6. Schedule and deliver a __~1 hour Zoom demo__.
 7. Address any CMS follow-ups.
-8. Complete the **post-approval form** (directory listing preferences).
-9. Receive **production** `client_id` / `client_secret` → enable YourPHR production Medicare entry (env or Admin catalog).
+8. Complete the __post-approval form__ (directory listing preferences).
+9. Receive __production__ `client_id` / `client_secret` → enable YourPHR production Medicare entry (env or Admin catalog).
 
-CMS typically acknowledges the initial email within ~24 business hours. PP/ToS change reviews after approval: ~5 business days (do **not** ship PP/ToS changes until CMS approves).
+CMS typically acknowledges the initial email within ~24 business hours. PP/ToS change reviews after approval: ~5 business days (do __not__ ship PP/ToS changes until CMS approves).
 
 ---
 
 ## Gate: product readiness (YourPHR)
 
-These ship targets map to closed CMS prep issues. Re-check on the **demo host** you will show CMS (prefer <https://demo.yourphr.org>).
+These ship targets map to closed CMS prep issues. Re-check on the __demo host__ you will show CMS (prefer <https://demo.yourphr.org>).
 
 | CMS expectation | YourPHR capability | Verify |
 |---|---|---|
@@ -60,18 +60,18 @@ These ship targets map to closed CMS prep issues. Re-check on the **demo host** 
 | Active opt-in (not default-agree) | Account Profile → Privacy & Terms (#427) | Unchecked checkbox + Grant consent |
 | In-app PP/ToS links | Account Profile + consent URLs | Same public URLs as above |
 | Pre-connect informed messaging | Sources / Medicare modal (#430) | Cancel / Continue; claims-oriented copy |
-| Label source **Medicare** | Production picker (#429) | List shows **Medicare**, not “Blue Button” |
+| Label source __Medicare__ | Production picker (#429) | List shows __Medicare__, not “Blue Button” |
 | CMS non-endorsement | `/attributions` + Medicare connect (#428) | Required sentence visible |
 | Enrollee controls | Sources Actions (#431 / #437) | Disconnect; Remove data; combined teardown |
 | Revoke product consent | Account Profile revoke | Blocks new Medicare connects; disconnects Medicare-class tokens (records stay until Remove data) |
 | Secure tokens / no project PHI | Architecture | Tokens on instance; relay never sees tokens ([SMART-flow-map.md](SMART-flow-map.md)) |
 
-**Demo host checklist (day-of):**
+__Demo host checklist (day-of):__
 
 - [ ] App version known (footer / release tag); prefer latest released image with #437 controls if possible  
 - [ ] Relay healthy: Admin → SMART OAuth Relay shows `callback_url` (e.g. `https://demo-relay.yourphr.org/callback`)  
-- [ ] Sandbox Blue Button entry enabled **or** SMART Health IT enabled for OAuth smoke  
-- [ ] Production Medicare entry remains **disabled** until production secrets exist (do not show live real Medicare until approved)  
+- [ ] Sandbox Blue Button entry enabled __or__ SMART Health IT enabled for OAuth smoke  
+- [ ] Production Medicare entry remains __disabled__ until production secrets exist (do not show live real Medicare until approved)  
 - [ ] Operator contact on Admin Instance card filled if you want CMS to see a support path  
 
 ---
@@ -87,11 +87,11 @@ These ship targets map to closed CMS prep issues. Re-check on the **demo host** 
 
 Source of truth in-repo: `backend/pkg/legal/privacy-policy.md`, `backend/pkg/legal/terms-of-service.md` (moved there in [#463](https://github.com/jwilleke/yourphr/issues/463) so they can be embedded and served by the instance at `/privacy` and `/terms`). After editing source, republish `gh-pages` (`privacy.html` / `terms.html`) before attaching PDFs.
 
-**Which URL to submit.** CMS asks for a public URL, so submit the `yourphr.org` pages — an instance URL may sit behind auth or be unreachable from outside. The instance serves the same text unless its operator has published their own; see the operator override in [`deployment/README.md`](deployment/README.md).
+__Which URL to submit.__ CMS asks for a public URL, so submit the `yourphr.org` pages — an instance URL may sit behind auth or be unreachable from outside. The instance serves the same text unless its operator has published their own; see the operator override in [`deployment/README.md`](deployment/README.md).
 
 ### PDF for CMS form
 
-CMS asks for **PDF** attachments. Generate from the **published** HTML (so pagination matches what enrollees see):
+CMS asks for __PDF__ attachments. Generate from the __published__ HTML (so pagination matches what enrollees see):
 
 ```bash
 # Example — print to PDF from a browser, or:
@@ -99,7 +99,7 @@ CMS asks for **PDF** attachments. Generate from the **published** HTML (so pagin
 # open https://yourphr.org/terms.html → Print → Save as PDF
 ```
 
-Store PDFs **outside git** (e.g. `private/cms-application/`) with a date stamp:
+Store PDFs __outside git__ (e.g. `private/cms-application/`) with a date stamp:
 
 ```text
 private/cms-application/YourPHR-Privacy-Policy-YYYY-MM-DD.pdf
@@ -119,13 +119,13 @@ Confirm the published PP still covers (CMS wording summarized):
 - Breach notification intent  
 - Sale of company / change of control if applicable  
 
-YourPHR PP is written for **self-hosted** software: the **instance operator** holds data; the open-source project does not. Be ready to explain that on Zoom.
+YourPHR PP is written for __self-hosted__ software: the __instance operator__ holds data; the open-source project does not. Be ready to explain that on Zoom.
 
-### PP/ToS **changes after** CMS approval
+### PP/ToS __changes after__ CMS approval
 
 1. Draft new PP/ToS in `backend/pkg/legal/`.  
 2. Draft enrollee notification text (what changed + how to opt out / delete).  
-3. Email both to [BlueButtonAPI@cms.hhs.gov](mailto:BlueButtonAPI@cms.hhs.gov) **before** shipping.  
+3. Email both to [BlueButtonAPI@cms.hhs.gov](mailto:BlueButtonAPI@cms.hhs.gov) __before__ shipping.  
 4. Wait for CMS approval (they target five business days).  
 5. Then publish `gh-pages` and in-app links.
 
@@ -135,8 +135,8 @@ YourPHR PP is written for **self-hosted** software: the **instance operator** ho
 
 Send when gates above are green enough for a Zoom (product controls + public PP/ToS; live Medicare sandbox optional — see Demo script).
 
-**To:** [BlueButtonAPI@cms.hhs.gov](mailto:BlueButtonAPI@cms.hhs.gov)  
-**Subject:** Production access request — YourPHR (self-hosted personal health record)
+__To:__ [BlueButtonAPI@cms.hhs.gov](mailto:BlueButtonAPI@cms.hhs.gov)  
+__Subject:__ Production access request — YourPHR (self-hosted personal health record)
 
 ```text
 Hello Blue Button API team,
@@ -161,7 +161,7 @@ Thank you,
 [Name]
 ```
 
-CMS replies with the **production access form** link. Fill it and attach the dated PP/ToS PDFs.
+CMS replies with the __production access form__ link. Fill it and attach the dated PP/ToS PDFs.
 
 ### Form field prep (fill offline first)
 
@@ -185,20 +185,20 @@ Keep answers in `private/cms-application/form-answers.md` (gitignored) so they a
 
 ## Demo script (Zoom, ~1 hour)
 
-CMS asks for a **substantially complete** enrollee journey. Script for <https://demo.yourphr.org> (adjust host if needed).
+CMS asks for a __substantially complete__ enrollee journey. Script for <https://demo.yourphr.org> (adjust host if needed).
 
 ### A. Pre-flight (15 min before call)
 
 1. Fresh browser profile or private window.  
 2. Confirm relay callback URL from Admin (if admin account available).  
 3. Confirm PP/ToS pages load.  
-4. Decide **data path for “show Medicare-shaped data”** (pick one):
+4. Decide __data path for “show Medicare-shaped data”__ (pick one):
 
 | Path | When to use | Notes |
 |---|---|---|
-| **A1 — Blue Button sandbox** | CMS synthetic login works | Preferred for “authorize Medicare” authenticity. **As of 2026-07-31 / 2026-08-01, CMS sandbox login is failing** for `BBUser…` ([`vendors/medicare.md`](vendors/medicare.md)). |
-| **A2 — SMART Health IT** | Sandbox BB broken | Proves YourPHR OAuth + import + Explore end-to-end; tell CMS BB sandbox is currently unavailable vendor-side. |
-| **A3 — Manual FHIR / prior import** | Last resort | Show Explore + controls only; be explicit that live CMS authorize will be shown when sandbox or prod credentials allow. |
+| __A1 — Blue Button sandbox__ | CMS synthetic login works | Preferred for “authorize Medicare” authenticity. __As of 2026-07-31 / 2026-08-01, CMS sandbox login is failing__ for `BBUser…` ([`vendors/medicare.md`](vendors/medicare.md)). |
+| __A2 — SMART Health IT__ | Sandbox BB broken | Proves YourPHR OAuth + import + Explore end-to-end; tell CMS BB sandbox is currently unavailable vendor-side. |
+| __A3 — Manual FHIR / prior import__ | Last resort | Show Explore + controls only; be explicit that live CMS authorize will be shown when sandbox or prod credentials allow. |
 
 ### B. Spoken arc (map to CMS bullets)
 
@@ -211,47 +211,47 @@ CMS asks for a **substantially complete** enrollee journey. Script for <https://
 | User authorization | CMS login popup → authorize (or SMART Health IT) | Relay callback must match registration |
 | How data is displayed | Connected Sources → Explore claims/coverage/patient | `/explore/...` |
 | How data is used | State: “stored only on this instance for this user; project does not receive it” | |
-| Enrollee controls | Actions → **Disconnect** (tokens only); **Remove data**; optional combined teardown | #437 |
+| Enrollee controls | Actions → __Disconnect__ (tokens only); __Remove data__; optional combined teardown | #437 |
 | Revoke product consent | Account Profile → Revoke (if time) | Tokens cleared for Medicare-class sources |
-| Sharing with others | Stock product: **no** multi-user share of Medicare data — say so if asked (#256 is future) | |
+| Sharing with others | Stock product: __no__ multi-user share of Medicare data — say so if asked (#256 is future) | |
 
 ### C. Timed outline (~50 min + Q&A)
 
-1. **0–5 min** — Intro: YourPHR mission, self-hosted vs project, GPL, no project PHI.  
-2. **5–12 min** — Create account; show PP/ToS links; grant consent (active opt-in).  
-3. **12–20 min** — Sources list: **Medicare** label; pre-connect modal (collect / store / disconnect / not medical advice); CMS attribution.  
-4. **20–35 min** — Connect path (A1/A2/A3); wait for import; open Explore; show EOB/Coverage/Patient if present.  
-5. **35–45 min** — Controls: Disconnect vs Remove data; Attributions page; optional revoke.  
-6. **45–55 min** — Security model: confidential client, PKCE, relay (code only), tokens on instance.  
-7. **55–60 min** — PP/ToS Q&A; next steps (post-approval form, directory listing).
+1. __0–5 min__ — Intro: YourPHR mission, self-hosted vs project, GPL, no project PHI.  
+2. __5–12 min__ — Create account; show PP/ToS links; grant consent (active opt-in).  
+3. __12–20 min__ — Sources list: __Medicare__ label; pre-connect modal (collect / store / disconnect / not medical advice); CMS attribution.  
+4. __20–35 min__ — Connect path (A1/A2/A3); wait for import; open Explore; show EOB/Coverage/Patient if present.  
+5. __35–45 min__ — Controls: Disconnect vs Remove data; Attributions page; optional revoke.  
+6. __45–55 min__ — Security model: confidential client, PKCE, relay (code only), tokens on instance.  
+7. __55–60 min__ — PP/ToS Q&A; next steps (post-approval form, directory listing).
 
 ### D. Honest talk tracks
 
-**If CMS sandbox login is still broken:**
+__If CMS sandbox login is still broken:__
 
 > “Our OAuth client and relay reach CMS authorize successfully. As of [date], CMS synthetic beneficiary login returns *can't process your request* for published `BBUser` credentials, so we cannot complete live Blue Button sandbox authorize today. We can demonstrate the full YourPHR journey with SMART Health IT and show Medicare UI, policy, and controls. We previously completed Blue Button sandbox E2E on 2026-06-14.”
 
-**Self-hosted privacy model:**
+__Self-hosted privacy model:__
 
 > “Enrollees’ data stays on the instance they use. The open-source project and yourphr.org do not receive claims or tokens. Operators who host for others must secure that deployment under their own obligations.”
 
-**Labeling:**
+__Labeling:__
 
-> “In multi-source pickers the source is labeled **Medicare**, per CMS UI guidance. Attributions correctly name the Blue Button APIs.”
+> “In multi-source pickers the source is labeled __Medicare__, per CMS UI guidance. Attributions correctly name the Blue Button APIs.”
 
 ### E. After the demo
 
 - Note any CMS concerns in `private/cms-application/demo-notes-YYYY-MM-DD.md`.  
 - Fix product gaps if any; re-demo only if CMS requests.  
-- Do **not** enable production credentials until post-approval form and CMS handoff.
+- Do __not__ enable production credentials until post-approval form and CMS handoff.
 
 ---
 
 ## Post-approval
 
-1. Complete CMS **post-approval form** (Medicare connected apps directory preferences).  
+1. Complete CMS __post-approval form__ (Medicare connected apps directory preferences).  
 2. Receive production `client_id` / `client_secret`.  
-3. Store **only** in operator secret store / k8s Secret — never git.  
+3. Store __only__ in operator secret store / k8s Secret — never git.  
 4. Enable YourPHR production Medicare:
 
 ```bash
@@ -259,8 +259,8 @@ YOURPHR_PROD_BLUEBUTTON_CLIENT_ID=…
 YOURPHR_PROD_BLUEBUTTON_CLIENT_SECRET=…
 ```
 
-   Or Admin → Provider Catalog → **Medicare** → set secrets → Enabled.  
-5. Register production callback URI **exactly** as Admin reports `callback_url`.  
+   Or Admin → Provider Catalog → __Medicare__ → set secrets → Enabled.  
+5. Register production callback URI __exactly__ as Admin reports `callback_url`.  
 6. Smoke-test with a real enrollee identity only if you are authorized (operator’s own Medicare, etc.).  
 7. Track remaining proof work on [#408](https://github.com/jwilleke/yourphr/issues/408).
 

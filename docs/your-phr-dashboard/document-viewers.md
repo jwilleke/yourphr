@@ -6,9 +6,9 @@ How YourPHR displays document attachments — the actual bytes behind a `Documen
 
 A document reaches the viewer as a FHIR [`Binary`](https://www.hl7.org/fhir/binary.html) (a `contentType` + base64 `data`). It can arrive three ways:
 
-- **Inline** — the attachment already carries `data` (e.g. Synthea bundles, many manual uploads).
-- **By reference** — the attachment has only a `url` pointing to a separate `Binary` (e.g. `Binary/{id}`, or an absolute `…/Binary/{id}`). This is the shape Oracle Health / Cerner and most SMART exports produce; the import engine fetches and stores the `Binary` ([#342](https://github.com/jwilleke/yourphr/issues/342)).
-- **Raw upload** — a PDF/image/DICOM uploaded directly is wrapped as a `DocumentReference` + `Binary` on import ([#255](https://github.com/jwilleke/yourphr/issues/255)).
+- __Inline__ — the attachment already carries `data` (e.g. Synthea bundles, many manual uploads).
+- __By reference__ — the attachment has only a `url` pointing to a separate `Binary` (e.g. `Binary/{id}`, or an absolute `…/Binary/{id}`). This is the shape Oracle Health / Cerner and most SMART exports produce; the import engine fetches and stores the `Binary` ([#342](https://github.com/jwilleke/yourphr/issues/342)).
+- __Raw upload__ — a PDF/image/DICOM uploaded directly is wrapped as a `DocumentReference` + `Binary` on import ([#255](https://github.com/jwilleke/yourphr/issues/255)).
 
 Resolution happens in `FastenApiService.getBinaryModel()` (`frontend/src/app/services/fasten-api.service.ts`): if the attachment is a reference (`url`, no `data`), it parses the `Binary/{id}` out of the URL and fetches the stored resource; otherwise it uses the inline data. The host component is `fhir-binary` (`frontend/src/app/components/fhir-card/resources/binary/binary.component.ts`), which dispatches to a type-specific viewer by `contentType`.
 
@@ -29,17 +29,17 @@ All viewer components live under `frontend/src/app/components/fhir-card/datatype
 
 ## Behaviors (all content types)
 
-- **Download** — every rendered document shows a **Download** button that saves the bytes to the user's device, including content types the inline viewer can't render well (e.g. `text/xml`). The filename comes from the attachment `title` plus an extension inferred from the `contentType`. ([#349](https://github.com/jwilleke/yourphr/issues/349))
-- **Unavailable documents** — when a referenced `Binary` can't be retrieved (not downloaded yet, or skipped as oversized on import), the viewer shows a clear "document could not be retrieved" message instead of a broken/empty state. ([#349](https://github.com/jwilleke/yourphr/issues/349))
-- **Unknown content type** — a type with no matching viewer shows an "Unknown Binary content type" message; the Download button is still available so the user can open it in a native app.
+- __Download__ — every rendered document shows a __Download__ button that saves the bytes to the user's device, including content types the inline viewer can't render well (e.g. `text/xml`). The filename comes from the attachment `title` plus an extension inferred from the `contentType`. ([#349](https://github.com/jwilleke/yourphr/issues/349))
+- __Unavailable documents__ — when a referenced `Binary` can't be retrieved (not downloaded yet, or skipped as oversized on import), the viewer shows a clear "document could not be retrieved" message instead of a broken/empty state. ([#349](https://github.com/jwilleke/yourphr/issues/349))
+- __Unknown content type__ — a type with no matching viewer shows an "Unknown Binary content type" message; the Download button is still available so the user can open it in a native app.
 
 ## Where documents appear
 
-Attachments render on the **resource-detail page** (`/explore/:source_id/resource/:resource_id`), where the card is shown with `showDetails=false`. In list/summary views attachments are intentionally not rendered (a "details" link routes to the detail page) to keep lists light. A `DocumentReference`/`DiagnosticReport` with multiple attachments shows them as tabs.
+Attachments render on the __resource-detail page__ (`/explore/:source_id/resource/:resource_id`), where the card is shown with `showDetails=false`. In list/summary views attachments are intentionally not rendered (a "details" link routes to the detail page) to keep lists light. A `DocumentReference`/`DiagnosticReport` with multiple attachments shows them as tabs.
 
 ## Related
 
-This doc covers rendering the **document bytes** (`Binary`). Making the surrounding *resource* legible — plain names, states, "Reported by" provenance, etc. — is the separate two-layer classification system in [`classification-and-display-architecture.md`](./classification-and-display-architecture.md). A `DiagnosticReport`, for example, has both: its `presentedForm` documents render here, while its status/category/provenance are synthesized by the `diagnosticreport` Layer-1 classifier.
+This doc covers rendering the __document bytes__ (`Binary`). Making the surrounding *resource* legible — plain names, states, "Reported by" provenance, etc. — is the separate two-layer classification system in [`classification-and-display-architecture.md`](./classification-and-display-architecture.md). A `DiagnosticReport`, for example, has both: its `presentedForm` documents render here, while its status/category/provenance are synthesized by the `diagnosticreport` Layer-1 classifier.
 
 ## Notes / limitations
 

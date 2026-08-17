@@ -1,22 +1,22 @@
 # US Core 9.0.0 — display-conformance coverage
 
-> **What this is:** the client-appropriate conformance gate for epic [#136](https://github.com/jwilleke/yourphr/issues/136), tracked as [#248](https://github.com/jwilleke/yourphr/issues/248). It verifies that YourPHR's **display models surface the Must-Support (MS) elements** of the audited US Core 9.0.0 profiles, checked against the **official US Core 9.0.0 example resources** (not hand-made fixtures). It is **not** a server/API conformance claim — YourPHR is a display-only Requestor/Client, so Inferno's server suites are N/A (see closed [#161](https://github.com/jwilleke/yourphr/issues/161)).
+> __What this is:__ the client-appropriate conformance gate for epic [#136](https://github.com/jwilleke/yourphr/issues/136), tracked as [#248](https://github.com/jwilleke/yourphr/issues/248). It verifies that YourPHR's __display models surface the Must-Support (MS) elements__ of the audited US Core 9.0.0 profiles, checked against the __official US Core 9.0.0 example resources__ (not hand-made fixtures). It is __not__ a server/API conformance claim — YourPHR is a display-only Requestor/Client, so Inferno's server suites are N/A (see closed [#161](https://github.com/jwilleke/yourphr/issues/161)).
 
-**Method.** For each audited profile, the official US Core 9.0.0 example (pinned under `frontend/src/lib/fixtures/us-core/`) is parsed into its display model and every MS element it populates is checked. Must-Support means *"display the element when it is present"*, so an MS element the example does not populate is reported **N/A** (it can't be verified by that example), not a pass or fail. The MS lists come verbatim from the published US Core 9.0.0 `StructureDefinition` differentials (`element[].mustSupport === true`).
+__Method.__ For each audited profile, the official US Core 9.0.0 example (pinned under `frontend/src/lib/fixtures/us-core/`) is parsed into its display model and every MS element it populates is checked. Must-Support means *"display the element when it is present"*, so an MS element the example does not populate is reported __N/A__ (it can't be verified by that example), not a pass or fail. The MS lists come verbatim from the published US Core 9.0.0 `StructureDefinition` differentials (`element[].mustSupport === true`).
 
-**Enforcement.** This table is generated from, and kept honest by, `frontend/src/lib/conformance/us-core-conformance.ts` + its spec (`us-core-conformance.spec.ts`), which runs in `make test-frontend` / CI. Each element carries a committed status (`displayed` / `gap`); the spec asserts the live display model matches it, so a regression (a `displayed` element stops surfacing) **or** a fix (a `gap` starts surfacing) fails the build until this doc + the registry are updated.
+__Enforcement.__ This table is generated from, and kept honest by, `frontend/src/lib/conformance/us-core-conformance.ts` + its spec (`us-core-conformance.spec.ts`), which runs in `make test-frontend` / CI. Each element carries a committed status (`displayed` / `gap`); the spec asserts the live display model matches it, so a regression (a `displayed` element stops surfacing) __or__ a fix (a `gap` starts surfacing) fails the build until this doc + the registry are updated.
 
 ## Summary
 
-Audited profiles: **6** (the Cures-Act USCDI core — Patient, Condition, AllergyIntolerance, MedicationRequest, Observation-Lab, DocumentReference).
+Audited profiles: __6__ (the Cures-Act USCDI core — Patient, Condition, AllergyIntolerance, MedicationRequest, Observation-Lab, DocumentReference).
 
 | | Count |
 |---|---|
-| MS elements exercised by the official examples | **44** |
-| …displayed by the model | **44** |
-| …known gaps (not yet surfaced) | **0** |
+| MS elements exercised by the official examples | __44__ |
+| …displayed by the model | __44__ |
+| …known gaps (not yet surfaced) | __0__ |
 
-Resource types that still render generically (Encounter, Immunization, Procedure, Care*, Device, Provider/Org, Coverage, Specimen, ServiceRequest, etc.) are **not** claimed here — no MS-display assertion is made for them.
+Resource types that still render generically (Encounter, Immunization, Procedure, Care*, Device, Provider/Org, Coverage, Specimen, ServiceRequest, etc.) are __not__ claimed here — no MS-display assertion is made for them.
 
 ## Per-profile coverage
 
@@ -33,7 +33,7 @@ Legend: ✅ displayed · ⚠️ gap (present in the example but not surfaced) ·
 | address (line/city/state/postalCode) | yes | ✅ |
 | communication.language | yes | ✅ |
 
-Additional US Core elements surfaced (USCDI-supported; **not** MS-flagged in 9.0.0): race ✅, ethnicity ✅, individual sex ✅, tribal affiliation ✅, interpreter needed ✅.
+Additional US Core elements surfaced (USCDI-supported; __not__ MS-flagged in 9.0.0): race ✅, ethnicity ✅, individual sex ✅, tribal affiliation ✅, interpreter needed ✅.
 
 ### US Core Condition (Problems & Health Concerns) — `Condition-health-concern-example` (audited #143 / #246)
 
@@ -108,7 +108,7 @@ Additional US Core elements surfaced (USCDI-supported; **not** MS-flagged in 9.0
 
 ## Known gaps (follow-up work)
 
-**None.** All 44 Must-Support elements exercised by the official examples now display. The six prior gaps — `meta.lastUpdated` (Condition + Observation), Condition `extension:assertedDate`, MedicationRequest `dispenseRequest`, Observation `specimen`, and DocumentReference `context.encounter` — were closed in [#281](https://github.com/jwilleke/yourphr/issues/281)–[#285](https://github.com/jwilleke/yourphr/issues/285) (tracker [#249](https://github.com/jwilleke/yourphr/issues/249), epic [#136](https://github.com/jwilleke/yourphr/issues/136)). The display-conformance gate (`us-core-conformance.spec.ts`) now reports **44/44**.
+__None.__ All 44 Must-Support elements exercised by the official examples now display. The six prior gaps — `meta.lastUpdated` (Condition + Observation), Condition `extension:assertedDate`, MedicationRequest `dispenseRequest`, Observation `specimen`, and DocumentReference `context.encounter` — were closed in [#281](https://github.com/jwilleke/yourphr/issues/281)–[#285](https://github.com/jwilleke/yourphr/issues/285) (tracker [#249](https://github.com/jwilleke/yourphr/issues/249), epic [#136](https://github.com/jwilleke/yourphr/issues/136)). The display-conformance gate (`us-core-conformance.spec.ts`) now reports __44/44__.
 
 ## Regenerating
 

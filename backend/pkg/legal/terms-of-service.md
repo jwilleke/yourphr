@@ -1,8 +1,8 @@
 # Terms of Service — YourPHR
 
-**Public URL:** [https://yourphr.org/terms.html](https://yourphr.org/terms.html)
+__Public URL:__ [https://yourphr.org/terms.html](https://yourphr.org/terms.html)
 
-**Privacy:** [Privacy Policy](privacy) / [https://yourphr.org/privacy.html](https://yourphr.org/privacy.html) — **data collection, storage, sharing, and deletion live only there.** These Terms do not override the Privacy Policy on those topics.
+__Privacy:__ [Privacy Policy](privacy) / [https://yourphr.org/privacy.html](https://yourphr.org/privacy.html) — __data collection, storage, sharing, and deletion live only there.__ These Terms do not override the Privacy Policy on those topics.
 
 Last updated: 31 July 2026
 
@@ -24,17 +24,17 @@ YourPHR is distributed under the [GNU GPL v3](https://github.com/jwilleke/yourph
 
 ## Your responsibilities
 
-You (or the operator of the instance you use) run the software and are responsible for securing that deployment and complying with applicable law. The project does not host your health records. Details of where data lives and who can see it are in the **Privacy Policy**.
+You (or the operator of the instance you use) run the software and are responsible for securing that deployment and complying with applicable law. The project does not host your health records. Details of where data lives and who can see it are in the __Privacy Policy__.
 
 ---
 
 ## Connecting to providers and Medicare
 
-You may connect patient-access APIs (including CMS Blue Button / Medicare) only for records **you are authorized** to access. You must also follow **that provider’s and CMS’s** terms and API rules. Keep client credentials confidential; do not put production secrets in public repositories. CMS production credentials, if issued, may only be used with the application CMS approved.
+You may connect patient-access APIs (including CMS Blue Button / Medicare) only for records __you are authorized__ to access. You must also follow __that provider’s and CMS’s__ terms and API rules. Keep client credentials confidential; do not put production secrets in public repositories. CMS production credentials, if issued, may only be used with the application CMS approved.
 
-How OAuth, tokens, and the sign-in relay handle data is described in the **Privacy Policy**, not here.
+How OAuth, tokens, and the sign-in relay handle data is described in the __Privacy Policy__, not here.
 
-When Blue Button APIs are used, this product is **not endorsed or certified** by CMS or HHS. Required notice:
+When Blue Button APIs are used, this product is __not endorsed or certified__ by CMS or HHS. Required notice:
 
 > This product uses the Blue Button APIs but is not endorsed or certified by the Centers for Medicare & Medicaid Services or the U.S. Department of Health and Human Services.
 
@@ -59,7 +59,7 @@ You agree not to:
 
 ## No warranty
 
-Software is provided **“AS IS”**, without warranty of any kind, as set out in the GPL v3. You use and host it at your own risk.
+Software is provided __“AS IS”__, without warranty of any kind, as set out in the GPL v3. You use and host it at your own risk.
 
 ---
 

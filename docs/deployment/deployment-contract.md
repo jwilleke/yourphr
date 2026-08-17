@@ -1,6 +1,6 @@
 # YourPHR deployment contract
 
-This is the **published contract** for deploying YourPHR. If you run your own instance — with Flux,
+This is the __published contract__ for deploying YourPHR. If you run your own instance — with Flux,
 Argo CD, plain Kubernetes, Docker Compose, Watchtower, or anything else — key your automation off the
 rules here and it will behave predictably across upgrades.
 
@@ -16,7 +16,7 @@ Two images are published. Both follow the same semver contract.
 | | |
 |---|---|
 | Registry image | `ghcr.io/jwilleke/yourphr` |
-| Visibility | **public** (anonymous pull + tag scanning) |
+| Visibility | __public__ (anonymous pull + tag scanning) |
 | Platform | `linux/amd64`, `linux/arm64` |
 | Built by | [`.github/workflows/docker-jwilleke.yaml`](../../.github/workflows/docker-jwilleke.yaml) |
 
@@ -27,14 +27,14 @@ Only needed if you connect providers that require a public OAuth callback.
 | | |
 |---|---|
 | Registry image | `ghcr.io/jwilleke/yourphr-relay` |
-| Visibility | **public** (anonymous pull + tag scanning) |
+| Visibility | __public__ (anonymous pull + tag scanning) |
 | Platform | `linux/amd64`, `linux/arm64` |
 | Built by | [`docker-relay-release.yaml`](../../.github/workflows/docker-relay-release.yaml) (semver) and [`docker-relay.yaml`](../../.github/workflows/docker-relay.yaml) (dev tags) |
 
-## The contract: deploy off **semver tags only**
+## The contract: deploy off __semver tags only__
 
-**A deployable image is built and pushed only when a release tag `vX.Y.Z` is created.** Pushes to
-`main` are CI-tested but produce **no image** and trigger **no deploy**. This is deliberate
+__A deployable image is built and pushed only when a release tag `vX.Y.Z` is created.__ Pushes to
+`main` are CI-tested but produce __no image__ and trigger __no deploy__. This is deliberate
 (release-gated deployment): the running instance changes only when a release is cut.
 
 Image tags emitted — `ghcr.io/jwilleke/yourphr`:
@@ -53,9 +53,9 @@ Image tags emitted — `ghcr.io/jwilleke/yourphr-relay`:
 | Push to `main` touching relay sources | `:main`, `:main-<run>` | ⚠️ dev build — not a release |
 | Manual `workflow_dispatch` | as above, per workflow | ⚠️ build only |
 
-The relay's semver tags track the **repository** release, not a separate relay version — `yourphr-relay:1.20.3` is the relay as of the `v1.20.3` release. A release always publishes both images, even when the relay's own sources did not change in it, so the two are always pullable at the same version.
+The relay's semver tags track the __repository__ release, not a separate relay version — `yourphr-relay:1.20.3` is the relay as of the `v1.20.3` release. A release always publishes both images, even when the relay's own sources did not change in it, so the two are always pullable at the same version.
 
-**Integrator rule:** follow the immutable `:X.Y.Z` tags (or `:X.Y` for auto-patch, or `:latest` for
+__Integrator rule:__ follow the immutable `:X.Y.Z` tags (or `:X.Y` for auto-patch, or `:latest` for
 "newest release") on both images. Never deploy `:sha-*` or `:main` / `:main-<run>` — they are not
 part of the contract, and `:main-<run>` in particular is a CI run counter, not a version.
 
@@ -63,17 +63,17 @@ part of the contract, and `:main-<run>` in particular is a CI run counter, not a
 
 Semver `MAJOR.MINOR.PATCH`:
 
-- **PATCH** — backward-compatible fixes.
-- **MINOR** — new backward-compatible features.
-- **MAJOR** — breaking changes.
+- __PATCH__ — backward-compatible fixes.
+- __MINOR__ — new backward-compatible features.
+- __MAJOR__ — breaking changes.
 
-Releases are cut on any **minor/major or on request** (patch chains may be consolidated). Between
-releases a running build self-reports **git-describe** (`vX.Y.Z-N-g<sha>`) in the UI — that is the
+Releases are cut on any __minor/major or on request__ (patch chains may be consolidated). Between
+releases a running build self-reports __git-describe__ (`vX.Y.Z-N-g<sha>`) in the UI — that is the
 last release tag plus commits-since, not a deployable artifact.
 
 ## Reference implementation (the production instance)
 
-The canonical instance (`yourphr.nerdsbythehour.com`) is delivered by **Flux** from
+The canonical instance (`yourphr.nerdsbythehour.com`) is delivered by __Flux__ from
 [`jwilleke/mj-infra-flux`](https://github.com/jwilleke/mj-infra-flux)
 (`apps/production/image-automation/yourphr-policy.yaml`). The `ImagePolicy` encodes the contract:
 
@@ -94,12 +94,12 @@ with `# {"$imagepolicy": "flux-system:yourphr"}`) and commits it back to the Git
 
 Apply the same "highest `:X.Y.Z`" rule:
 
-- **Argo CD Image Updater** — `argocd-image-updater.argoproj.io/image-list: yourphr=ghcr.io/jwilleke/yourphr` with `update-strategy: semver` and a `^\d+\.\d+\.\d+$` tag filter.
-- **Plain Kubernetes** — pin `image: ghcr.io/jwilleke/yourphr:X.Y.Z` and bump it (by hand or CI) when a release you want lands.
-- **Docker Compose** — `image: ghcr.io/jwilleke/yourphr:X.Y.Z` (or `:latest` for newest release); `docker compose pull && up -d` after a release.
-- **Watchtower / similar** — track `:latest` (it only moves on a release) if you want auto-upgrade-on-release.
+- __Argo CD Image Updater__ — `argocd-image-updater.argoproj.io/image-list: yourphr=ghcr.io/jwilleke/yourphr` with `update-strategy: semver` and a `^\d+\.\d+\.\d+$` tag filter.
+- __Plain Kubernetes__ — pin `image: ghcr.io/jwilleke/yourphr:X.Y.Z` and bump it (by hand or CI) when a release you want lands.
+- __Docker Compose__ — `image: ghcr.io/jwilleke/yourphr:X.Y.Z` (or `:latest` for newest release); `docker compose pull && up -d` after a release.
+- __Watchtower / similar__ — track `:latest` (it only moves on a release) if you want auto-upgrade-on-release.
 
 ## To ship a change to a running instance
 
-Cut a release. There is no "merge to deploy" path — including for hotfixes, which ship as a **patch**
+Cut a release. There is no "merge to deploy" path — including for hotfixes, which ship as a __patch__
 release. See [`docs/releasing.md`](../releasing.md) for the steps.

@@ -4,11 +4,11 @@
 lookup that turns raw RxNorm names into patient-friendly ones (#387), e.g.
 `313782 → Acetaminophen (Oral Pill) | 325 mg` (name and strength kept separate so the UI can show a
 distinct Strength column). It is embedded into the binary via `go:embed`
-(`../crosswalk.go`), so medication display works with **no network call**.
+(`../crosswalk.go`), so medication display works with __no network call__.
 
 ## Source & attribution
 
-Derived from **NLM RxTerms** — a drug interface terminology derived from RxNorm, freely distributed by
+Derived from __NLM RxTerms__ — a drug interface terminology derived from RxNorm, freely distributed by
 the U.S. National Library of Medicine (Lister Hill National Center for Biomedical Communications):
 
 - <https://lhncbc.nlm.nih.gov/MOR/RxTerms/>
@@ -16,7 +16,7 @@ the U.S. National Library of Medicine (Lister Hill National Center for Biomedica
 
 Only the RxTerms-generated `DISPLAY_NAME` and `STRENGTH` columns are used (RxTerms's own value-add over
 RxNorm normal forms — no restricted UMLS source-vocabulary text). Current file built from release
-**RxTerms202606**.
+__RxTerms202606__.
 
 ## Regenerating (refresh to a newer release)
 

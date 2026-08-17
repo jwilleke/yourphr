@@ -2,27 +2,27 @@
 
 Relay-specific deep dive for [EPIC #20](https://github.com/jwilleke/yourphr/issues/20). The overall plan and all decisions live in [`smart-on-fhir.md`](./smart-on-fhir.md); this file covers just the relay (component B — the public `redirect_uri`).
 
-> **As-built:** the live end-to-end map (UI → authorize → relay → connect → sync, timeouts, config, failures) is in [`../../SMART-flow-map.md`](../../SMART-flow-map.md). Prefer that for operators and debugging; this file is design history for the relay itself.
+> __As-built:__ the live end-to-end map (UI → authorize → relay → connect → sync, timeouts, config, failures) is in [`../../SMART-flow-map.md`](../../SMART-flow-map.md). Prefer that for operators and debugging; this file is design history for the relay itself.
 
 ## Background
 
-Upstream `fasten-sources` used Fasten Lighthouse — a hosted cloud OAuth relay — as the callback endpoint for SMART on FHIR. Lighthouse moved to the commercial Fasten Connect product (`fastenhealth/fasten-onprem#629`), so provider sync is broken in the open-source build, and we will **not** use Fasten's hosted relay.
+Upstream `fasten-sources` used Fasten Lighthouse — a hosted cloud OAuth relay — as the callback endpoint for SMART on FHIR. Lighthouse moved to the commercial Fasten Connect product (`fastenhealth/fasten-onprem#629`), so provider sync is broken in the open-source build, and we will __not__ use Fasten's hosted relay.
 
 The underlying problem: a self-hosted instance (e.g. `yourphr.nerdsbythehour.com`, internal/LAN behind Authentik) is unreachable from the internet, but provider portals need a publicly accessible `redirect_uri` to deliver the authorization `code`. We need our own public relay.
 
 ## Chosen approach: self-hosted Go store-and-poll relay
 
-A small **Go** HTTP service at a public URL receives the provider's redirect, stores the short-lived authorization `code` keyed by `state`, and serves it to the local instance, which polls for it and completes the token exchange directly with the provider. The relay never sees tokens. This is the **store-and-poll** pattern; it matches the desktop-poll flow the frontend already implements.
+A small __Go__ HTTP service at a public URL receives the provider's redirect, stores the short-lived authorization `code` keyed by `state`, and serves it to the local instance, which polls for it and completes the token exchange directly with the provider. The relay never sees tokens. This is the __store-and-poll__ pattern; it matches the desktop-poll flow the frontend already implements.
 
-This reflects the project decisions (see [`smart-on-fhir.md`](./smart-on-fhir.md)): **all Go**, **store-and-poll**, **self-hosted** (not a JS Cloudflare Worker, not Fasten Lighthouse), **per-user / BYO `client_id`**.
+This reflects the project decisions (see [`smart-on-fhir.md`](./smart-on-fhir.md)): __all Go__, __store-and-poll__, __self-hosted__ (not a JS Cloudflare Worker, not Fasten Lighthouse), __per-user / BYO `client_id`__.
 
 ### Why this approach
 
-- **All Go** — one language across client and relay; reuses the team's Go toolchain and `mj-infra-flux` GitOps.
-- **Codes never leave the relay as tokens** — the relay stores the `code` for ~60 seconds then deletes it; it never sees access/refresh tokens.
-- **Token exchange is local** — the instance exchanges the `code` with the provider directly; the relay never touches tokens.
-- **Nothing inbound to the instance** — the instance only makes outbound calls (the redirect and the poll), so a LAN/NAT instance stays reachable-free; only the relay is public.
-- **Provider-agnostic and client-agnostic** — the relay is a dumb bouncer keyed by `state`; it holds no provider app registration and no `client_id` (BYO model).
+- __All Go__ — one language across client and relay; reuses the team's Go toolchain and `mj-infra-flux` GitOps.
+- __Codes never leave the relay as tokens__ — the relay stores the `code` for ~60 seconds then deletes it; it never sees access/refresh tokens.
+- __Token exchange is local__ — the instance exchanges the `code` with the provider directly; the relay never touches tokens.
+- __Nothing inbound to the instance__ — the instance only makes outbound calls (the redirect and the poll), so a LAN/NAT instance stays reachable-free; only the relay is public.
+- __Provider-agnostic and client-agnostic__ — the relay is a dumb bouncer keyed by `state`; it holds no provider app registration and no `client_id` (BYO model).
 
 ### Flow
 
@@ -51,30 +51,30 @@ State is held in memory with a TTL (no external KV needed); a single small repli
 
 ## Hosting
 
-For dev/demo, deploy via [`mj-infra-flux`](https://github.com/jwilleke/mj-infra-flux) to the existing k8s cluster behind the current Cloudflare ingress at **`relay.nerdsbythehour.com`** (the dev infra domain; `yourphr.org` is the static GitHub Pages site and cannot host a service). It is a Deployment + Service + Ingress + Secret under `apps/.../yourphr-relay/`, reconciled by Flux like the `fasten` app.
+For dev/demo, deploy via [`mj-infra-flux`](https://github.com/jwilleke/mj-infra-flux) to the existing k8s cluster behind the current Cloudflare ingress at __`relay.nerdsbythehour.com`__ (the dev infra domain; `yourphr.org` is the static GitHub Pages site and cannot host a service). It is a Deployment + Service + Ingress + Secret under `apps/.../yourphr-relay/`, reconciled by Flux like the `fasten` app.
 
-The relay must be **publicly reachable and excluded from Authentik forward-auth** (`/callback` is unauthenticated; `/pending` is shared-secret gated). Even though the app is internal/LAN, the relay is the one public piece, served by its own ingress.
+The relay must be __publicly reachable and excluded from Authentik forward-auth__ (`/callback` is unauthenticated; `/pending` is shared-secret gated). Even though the app is internal/LAN, the relay is the one public piece, served by its own ingress.
 
-For the eventual distributed product, reserve **`relay.yourphr.org`** on a managed runtime (Fly.io / Cloud Run) so the shared relay is not bound to homelab uptime — trivial to move since the relay is stateless.
+For the eventual distributed product, reserve __`relay.yourphr.org`__ on a managed runtime (Fly.io / Cloud Run) so the shared relay is not bound to homelab uptime — trivial to move since the relay is stateless.
 
 ## Rejected alternative: Cloudflare Worker + KV
 
-The original plan used a stateless Cloudflare Worker storing codes in Cloudflare KV. Rejected to satisfy the **all-Go** decision: a Worker is JS/TS, a second language and toolchain outside `mj-infra-flux`. A self-hosted Go service does the same job (store-and-poll, tokens never pass through) in one language on the existing infra. The Worker remains a viable option only if we later want zero-ops hosting for the product relay.
+The original plan used a stateless Cloudflare Worker storing codes in Cloudflare KV. Rejected to satisfy the __all-Go__ decision: a Worker is JS/TS, a second language and toolchain outside `mj-infra-flux`. A self-hosted Go service does the same job (store-and-poll, tokens never pass through) in one language on the existing infra. The Worker remains a viable option only if we later want zero-ops hosting for the product relay.
 
 ## Security considerations
 
 - The relay only ever holds the short-lived `code` (~60s TTL), never access/refresh tokens.
-- **PKCE** is required: a stolen `code` is useless without the `code_verifier`, which never leaves the instance.
+- __PKCE__ is required: a stolen `code` is useless without the `code_verifier`, which never leaves the instance.
 - The `/pending` endpoint is gated by a shared secret.
 - The `state` parameter ties the `code` to the originating session (CSRF) and routes it to the right instance.
 - In-memory entries auto-expire; no manual cleanup and no durable store of codes.
 
 ## Work breakdown (EPIC #20)
 
-- **#50 — relay**: the Go store-and-poll service + `mj-infra-flux` deploy at `relay.nerdsbythehour.com`.
-- **#51 — backend**: authorize-initiation + callback/poll endpoints, token exchange, encrypted token storage, scheduled refresh.
-- **#52 — frontend**: rename the `Lighthouse` identifiers to a neutral connect-gateway, point at the new relay, re-enable the "Add Source" connect UI.
-- **#49 — client**: the generic Go SMART-R4 client the backend drives (core merged; see the master plan).
+- __#50 — relay__: the Go store-and-poll service + `mj-infra-flux` deploy at `relay.nerdsbythehour.com`.
+- __#51 — backend__: authorize-initiation + callback/poll endpoints, token exchange, encrypted token storage, scheduled refresh.
+- __#52 — frontend__: rename the `Lighthouse` identifiers to a neutral connect-gateway, point at the new relay, re-enable the "Add Source" connect UI.
+- __#49 — client__: the generic Go SMART-R4 client the backend drives (core merged; see the master plan).
 
 ## Files that will change (in `jwilleke/yourphr`)
 

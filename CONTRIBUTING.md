@@ -1,24 +1,24 @@
 # Contributing to YourPHR
 
-**You don't have to be a developer to make YourPHR better.** Patients, clinicians, designers, writers, translators, FHIR/standards folks, and engineers all have a place here. This page is both an invitation and a map.
+__You don't have to be a developer to make YourPHR better.__ Patients, clinicians, designers, writers, translators, FHIR/standards folks, and engineers all have a place here. This page is both an invitation and a map.
 
-> **Mission: Your medical records, immediately and in your hands — for free.** YourPHR is a self-hosted personal/family health record viewer — a [community-maintained, standalone continuation](README.md) of Fasten OnPrem (GPL v3, attribution retained).
+> __Mission: Your medical records, immediately and in your hands — for free.__ YourPHR is a self-hosted personal/family health record viewer — a [community-maintained, standalone continuation](README.md) of Fasten OnPrem (GPL v3, attribution retained).
 
 ## Why contribute
 
-- **It matters.** People can't act on records they can't read. YourPHR exists to put your health *in your hands* in plain language — see the [patient-legible display north star](docs/your-phr-dashboard/patient-legible-display.md). Your work goes straight to that.
-- **It stays yours.** YourPHR is **community-owned and stays free** — GPL v3, self-hosted, your data never leaves your control and is never sold. This is a continuation that exists to keep a fully open-source build alive after upstream's sync moved into a commercial product; the whole point is that effort here compounds and won't be locked away.
-- **The problems are genuinely interesting** (see below).
+- __It matters.__ People can't act on records they can't read. YourPHR exists to put your health *in your hands* in plain language — see the [patient-legible display north star](docs/your-phr-dashboard/patient-legible-display.md). Your work goes straight to that.
+- __It stays yours.__ YourPHR is __community-owned and stays free__ — GPL v3, self-hosted, your data never leaves your control and is never sold. This is a continuation that exists to keep a fully open-source build alive after upstream's sync moved into a commercial product; the whole point is that effort here compounds and won't be locked away.
+- __The problems are genuinely interesting__ (see below).
 
 ## The interesting problems (if you want something meaty)
 
 This is real-world health-data engineering, not CRUD. A few of the juicy ones:
 
-- **Turn messy, vendor-specific FHIR into something a human can read.** Patient portals export non-conformant FHIR R4 (FollowMyHealth/Veradigm collapse social/lifestyle items into clinical `Condition`s, omit `Condition.category`, use proprietary code systems). We normalize it at read time and route it to legible patient sections — the **two-layer source-adapter / display-mapper** design in [classification-and-display-architecture.md](docs/your-phr-dashboard/classification-and-display-architecture.md).
-- **Reconcile "Current Medications" across resource types** — one drug scattered across `MedicationRequest` / `MedicationStatement` / `MedicationDispense`, no clean "is current" flag. A derived, de-duplicated, provenance-aware view ([#264](https://github.com/jwilleke/yourphr/issues/264)).
-- **Self-hosted SMART-on-FHIR without a commercial relay** — a tiny public store-and-poll OAuth `code` bouncer that never sees tokens, so a LAN instance can still sync ([relay README](backend/cmd/relay/README.md), [EPIC #20](https://github.com/jwilleke/yourphr/issues/20)).
-- **US Core 9.0.0 Must-Support display conformance** — a CI gate checks our display against the IG's own example resources ([docs/us-core/](docs/us-core/README.md)).
-- **Importing the formats portals actually give patients** — C-CDA/CCD XML ([#254](https://github.com/jwilleke/yourphr/issues/254)), PDFs ([#255](https://github.com/jwilleke/yourphr/issues/255)).
+- __Turn messy, vendor-specific FHIR into something a human can read.__ Patient portals export non-conformant FHIR R4 (FollowMyHealth/Veradigm collapse social/lifestyle items into clinical `Condition`s, omit `Condition.category`, use proprietary code systems). We normalize it at read time and route it to legible patient sections — the __two-layer source-adapter / display-mapper__ design in [classification-and-display-architecture.md](docs/your-phr-dashboard/classification-and-display-architecture.md).
+- __Reconcile "Current Medications" across resource types__ — one drug scattered across `MedicationRequest` / `MedicationStatement` / `MedicationDispense`, no clean "is current" flag. A derived, de-duplicated, provenance-aware view ([#264](https://github.com/jwilleke/yourphr/issues/264)).
+- __Self-hosted SMART-on-FHIR without a commercial relay__ — a tiny public store-and-poll OAuth `code` bouncer that never sees tokens, so a LAN instance can still sync ([relay README](backend/cmd/relay/README.md), [EPIC #20](https://github.com/jwilleke/yourphr/issues/20)).
+- __US Core 9.0.0 Must-Support display conformance__ — a CI gate checks our display against the IG's own example resources ([docs/us-core/](docs/us-core/README.md)).
+- __Importing the formats portals actually give patients__ — C-CDA/CCD XML ([#254](https://github.com/jwilleke/yourphr/issues/254)), PDFs ([#255](https://github.com/jwilleke/yourphr/issues/255)).
 
 Start with the [architecture overview](docs/architecture.md) for the whole map, then the [roadmap](docs/Roadmap.md) for where it's headed.
 
@@ -26,28 +26,28 @@ Start with the [architecture overview](docs/architecture.md) for the whole map, 
 
 | If you are a… | You can help with… | Start here |
 |---|---|---|
-| **Developer** (Go / Angular) | Backend FHIR handling, display models, the API, frontend cards & dashboards | [`good first issue`](https://github.com/jwilleke/yourphr/labels/good%20first%20issue) · [`help wanted`](https://github.com/jwilleke/yourphr/labels/help%20wanted) · the [dev setup](#development-environment) below |
-| **FHIR / health-IT / standards** person | US Core conformance, vendor-quirk mappings, value-set translation, SMART-on-FHIR | [docs/us-core/](docs/us-core/README.md), [docs/vendors/](docs/vendors/README.md), [#136](https://github.com/jwilleke/yourphr/issues/136) |
-| **Clinician / health professional** | Sanity-check that displays are *correct* and *legible*, validate medication/condition reconciliation | open a [feature/bug issue](https://github.com/jwilleke/yourphr/issues/new/choose) describing what's wrong or misleading |
-| **Designer / UX** | Make the dashboard and cards genuinely legible — the [patient-legible](docs/your-phr-dashboard/patient-legible-display.md) bar | [#262](https://github.com/jwilleke/yourphr/issues/262), [#244](https://github.com/jwilleke/yourphr/issues/244), the BS5 migration [#209](https://github.com/jwilleke/yourphr/issues/209) |
-| **Writer / plain-language** | Docs, the glossary that translates codes to words, READMEs, onboarding | the `documentation` label; the `glossary-lookup` component |
-| **Translator** | Make YourPHR usable in more languages | open an issue — i18n is welcome |
-| **Tester with real exports** | Run *your own* FHIR/CCD/PDF export through it and report what renders poorly (**never paste real PHI** — see below) | the display-gap path / a [bug report](https://github.com/jwilleke/yourphr/issues/new/choose) |
-| **Security / privacy** | Review auth, the SSRF guard, CSP, the relay; threat-model the self-hosted deployment | [SECURITY.md](SECURITY.md), [security review](docs/planning/architecture-security-review.md) |
-| **Ops / packaging** | Docker, k8s/Flux, the Nix flake, CI | the `dependencies` / build issues |
+| __Developer__ (Go / Angular) | Backend FHIR handling, display models, the API, frontend cards & dashboards | [`good first issue`](https://github.com/jwilleke/yourphr/labels/good%20first%20issue) · [`help wanted`](https://github.com/jwilleke/yourphr/labels/help%20wanted) · the [dev setup](#development-environment) below |
+| __FHIR / health-IT / standards__ person | US Core conformance, vendor-quirk mappings, value-set translation, SMART-on-FHIR | [docs/us-core/](docs/us-core/README.md), [docs/vendors/](docs/vendors/README.md), [#136](https://github.com/jwilleke/yourphr/issues/136) |
+| __Clinician / health professional__ | Sanity-check that displays are *correct* and *legible*, validate medication/condition reconciliation | open a [feature/bug issue](https://github.com/jwilleke/yourphr/issues/new/choose) describing what's wrong or misleading |
+| __Designer / UX__ | Make the dashboard and cards genuinely legible — the [patient-legible](docs/your-phr-dashboard/patient-legible-display.md) bar | [#262](https://github.com/jwilleke/yourphr/issues/262), [#244](https://github.com/jwilleke/yourphr/issues/244), the BS5 migration [#209](https://github.com/jwilleke/yourphr/issues/209) |
+| __Writer / plain-language__ | Docs, the glossary that translates codes to words, READMEs, onboarding | the `documentation` label; the `glossary-lookup` component |
+| __Translator__ | Make YourPHR usable in more languages | open an issue — i18n is welcome |
+| __Tester with real exports__ | Run *your own* FHIR/CCD/PDF export through it and report what renders poorly (__never paste real PHI__ — see below) | the display-gap path / a [bug report](https://github.com/jwilleke/yourphr/issues/new/choose) |
+| __Security / privacy__ | Review auth, the SSRF guard, CSP, the relay; threat-model the self-hosted deployment | [SECURITY.md](SECURITY.md), [security review](docs/planning/architecture-security-review.md) |
+| __Ops / packaging__ | Docker, k8s/Flux, the Nix flake, CI | the `dependencies` / build issues |
 
 New here and not sure? Open a [blank issue](https://github.com/jwilleke/yourphr/issues/new/choose) or say hello — "I'd like to help, where do I start?" is a perfectly good first message.
 
 ## Find something to work on
 
-- **Newcomers:** [`good first issue`](https://github.com/jwilleke/yourphr/labels/good%20first%20issue) — small, well-scoped, low-context.
-- **Want impact:** [`help wanted`](https://github.com/jwilleke/yourphr/labels/help%20wanted) — meatier work where an extra pair of hands moves the mission.
+- __Newcomers:__ [`good first issue`](https://github.com/jwilleke/yourphr/labels/good%20first%20issue) — small, well-scoped, low-context.
+- __Want impact:__ [`help wanted`](https://github.com/jwilleke/yourphr/labels/help%20wanted) — meatier work where an extra pair of hands moves the mission.
 - Comment on an issue to claim it (so two people don't duplicate effort), then open a PR that references it (`Fixes #123`).
 - Be kind: we follow the [Code of Conduct](CODE_OF_CONDUCT.md) (Contributor Covenant).
 
 ### A note on health data (important)
 
-YourPHR handles **Personal Health Information**. **Never** attach real patient data, real exports, secrets, or keys to an issue or PR — use *synthetic* (Synthea-generated) fixtures only. If you found a display bug in your own records, describe the *shape* of the problem and paste a small **synthetic** example, never the real thing. See the data rules in [AGENTS.md](AGENTS.md).
+YourPHR handles __Personal Health Information__. __Never__ attach real patient data, real exports, secrets, or keys to an issue or PR — use *synthetic* (Synthea-generated) fixtures only. If you found a display bug in your own records, describe the *shape* of the problem and paste a small __synthetic__ example, never the real thing. See the data rules in [AGENTS.md](AGENTS.md).
 
 ---
 
@@ -75,7 +75,7 @@ YourPHR handles **Personal Health Information**. **Never** attach real patient d
 
 ## Versioning
 
-YourPHR follows [SemVer](https://semver.org/): releases are cut on demand by a maintainer running the **release-please** workflow (not per commit), and each release is a **patch** bump by default (e.g. `1.1.3` → `1.1.4`). Write commits as [Conventional Commits](https://www.conventionalcommits.org/) (they drive the auto-generated `CHANGELOG.md`); for a **minor** or **major** release, add a `Release-As: 1.2.0` (or `2.0.0`) footer. Never hand-edit `backend/pkg/version/version.go` or `CHANGELOG.md`.
+YourPHR follows [SemVer](https://semver.org/): releases are cut on demand by a maintainer running the __release-please__ workflow (not per commit), and each release is a __patch__ bump by default (e.g. `1.1.3` → `1.1.4`). Write commits as [Conventional Commits](https://www.conventionalcommits.org/) (they drive the auto-generated `CHANGELOG.md`); for a __minor__ or __major__ release, add a `Release-As: 1.2.0` (or `2.0.0`) footer. Never hand-edit `backend/pkg/version/version.go` or `CHANGELOG.md`.
 
 ## Setup
 
@@ -113,7 +113,7 @@ make test-frontend   # Angular only (ChromeHeadless)
 make test-backend    # Go only
 ```
 
-**Note:** the first backend run takes a while (it vendors deps and generates code).
+__Note:__ the first backend run takes a while (it vendors deps and generates code).
 
 ## Start the dev environment
 
@@ -145,7 +145,7 @@ make serve-backend
 
 Open `http://localhost:4200`. The frontend dev server proxies API requests to the backend.
 
-*Modes:* YourPHR runs in **sandbox** (talks only to synthetic-data test servers — the default for dev) or **prod** (real servers).
+*Modes:* YourPHR runs in __sandbox__ (talks only to synthetic-data test servers — the default for dev) or __prod__ (real servers).
 
 ## Credentials
 
@@ -155,7 +155,7 @@ All user data is stored locally, including your account. On first start, registe
 
 See the [architecture overview](docs/architecture.md) for the high-level map and diagrams. In short:
 
-**Frontend** (`frontend/src/app/`)
+__Frontend__ (`frontend/src/app/`)
 
 ```
 ├── components      # shared/partial components reused across pages
@@ -165,7 +165,7 @@ See the [architecture overview](docs/architecture.md) for the high-level map and
 └── widgets         # dashboard widget components
 ```
 
-**Backend** (`backend/`)
+__Backend__ (`backend/`)
 
 ```
 ├── cmd
@@ -182,7 +182,7 @@ See the [architecture overview](docs/architecture.md) for the high-level map and
         └── server.go
 ```
 
-> **Generated code:** `fhir_*.go` and `frontend/.../models/patient-access-brands/*.ts` are generated. Re-run `make generate-backend` when their inputs (`search-parameters.json`, tygo-exported Go structs) change, and commit the result. Details in [AGENTS.md](AGENTS.md).
+> __Generated code:__ `fhir_*.go` and `frontend/.../models/patient-access-brands/*.ts` are generated. Re-run `make generate-backend` when their inputs (`search-parameters.json`, tygo-exported Go structs) change, and commit the result. Details in [AGENTS.md](AGENTS.md).
 
 ## FAQ
 

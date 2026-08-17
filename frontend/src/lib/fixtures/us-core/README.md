@@ -1,16 +1,16 @@
 # US Core official example fixtures
 
-Official **US Core 9.0.0** example resources, pinned verbatim from the published HL7 FHIR package and used as the **display-conformance** gate for [#248](https://github.com/jwilleke/yourphr/issues/248) (the client-appropriate verification workstream of epic [#136](https://github.com/jwilleke/yourphr/issues/136)).
+Official __US Core 9.0.0__ example resources, pinned verbatim from the published HL7 FHIR package and used as the __display-conformance__ gate for [#248](https://github.com/jwilleke/yourphr/issues/248) (the client-appropriate verification workstream of epic [#136](https://github.com/jwilleke/yourphr/issues/136)).
 
 These are the *authoritative* IG examples — the same conformant data Inferno would feed a server — not hand-made fixtures. Each carries a `meta.profile` declaring its US Core profile (with the `|9.0.0` version suffix, exactly as real conformant exports do).
 
 ## Why these are separate from the Synthea fixtures
 
-The fixtures under `frontend/src/lib/fixtures/r4/resources/` are synthetic Synthea-style data used for model-parsing unit tests. The files here are different: they are the **published US Core IG examples**, kept unmodified so the conformance harness verifies our display models against the spec's own data. Do not edit them — re-pin from the package instead (below).
+The fixtures under `frontend/src/lib/fixtures/r4/resources/` are synthetic Synthea-style data used for model-parsing unit tests. The files here are different: they are the __published US Core IG examples__, kept unmodified so the conformance harness verifies our display models against the spec's own data. Do not edit them — re-pin from the package instead (below).
 
 ## Provenance / licence
 
-- Package: `hl7.fhir.us.core` **9.0.0** (canonical `http://hl7.org/fhir/us/core`, published 2026-05-31).
+- Package: `hl7.fhir.us.core` __9.0.0__ (canonical `http://hl7.org/fhir/us/core`, published 2026-05-31).
 - Source tarball: <https://hl7.org/fhir/us/core/STU9/package.tgz> (`package/example/*.json`).
 - HL7 publishes these examples as part of the IG; they are synthetic (no PHI) and safe to commit.
 

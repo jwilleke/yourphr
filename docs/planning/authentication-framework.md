@@ -1,12 +1,12 @@
 # Authentication framework — planning
 
-> **Status: planning, not decided.** Nothing here is built. This records the shape we are converging on, the prior art it draws from, and the questions still open. Started 2026-08-12.
+> __Status: planning, not decided.__ Nothing here is built. This records the shape we are converging on, the prior art it draws from, and the questions still open. Started 2026-08-12.
 
 ## Scope
 
-**Authentication only** — proving *who* someone is. Everything below answers that one question.
+__Authentication only__ — proving *who* someone is. Everything below answers that one question.
 
-**Authorization is explicitly out of scope** — what an identity is *allowed to do*. That half is now drafted separately in [`authorization-framework.md`](authorization-framework.md). YourPHR already has authorization, in four scattered places: the `admin` role check inside each admin handler, `RequireAuth`, the demo guards ([#496](https://github.com/jwilleke/yourphr/issues/496), [#514](https://github.com/jwilleke/yourphr/issues/514), [#516](https://github.com/jwilleke/yourphr/issues/516)), and per-user isolation in the repository queries. Consolidating those is worth doing and is a **separate** piece of work. Mixing the two into one "auth manager" produces something that decides everything and explains nothing, and the authorization half is where the PHI risk actually lives.
+__Authorization is explicitly out of scope__ — what an identity is *allowed to do*. That half is now drafted separately in [`authorization-framework.md`](authorization-framework.md). YourPHR already has authorization, in four scattered places: the `admin` role check inside each admin handler, `RequireAuth`, the demo guards ([#496](https://github.com/jwilleke/yourphr/issues/496), [#514](https://github.com/jwilleke/yourphr/issues/514), [#516](https://github.com/jwilleke/yourphr/issues/516)), and per-user isolation in the repository queries. Consolidating those is worth doing and is a __separate__ piece of work. Mixing the two into one "auth manager" produces something that decides everything and explains nothing, and the authorization half is where the PHI risk actually lives.
 
 ## Where we are today
 
@@ -18,13 +18,13 @@
 | Access tokens | `handler/access_token.go` | create / list / delete — a second credential type entirely outside any abstraction |
 | Demo sign-in | `handler.AuthDemoSignin`, `AuthDemoAdminSignin` | config-gated, verifies a generated password server-side ([#515](https://github.com/jwilleke/yourphr/issues/515), [#516](https://github.com/jwilleke/yourphr/issues/516)) |
 
-**Three credential types already exist**, each hand-rolled in its own handler, each minting its own session token. This abstraction is not speculative — it is consolidating something that has already multiplied.
+__Three credential types already exist__, each hand-rolled in its own handler, each minting its own session token. This abstraction is not speculative — it is consolidating something that has already multiplied.
 
 ### What today's shape costs
 
-- **Every new method means another handler that mints a JWT.** Session creation has no single choke point, so rate limiting ([#509](https://github.com/jwilleke/yourphr/issues/509)), `last_login` tracking ([#512](https://github.com/jwilleke/yourphr/issues/512)), and sign-in audit ([#507](https://github.com/jwilleke/yourphr/issues/507)) each have to be implemented N times or forgotten N−1 times.
-- **Credentials live on the user row.** `users.password` is a column, so a second authentication method for the same person has nowhere to go.
-- **Nothing records *how* a session was established**, so "this action requires a fresh password, not a magic link clicked six days ago" is not expressible.
+- __Every new method means another handler that mints a JWT.__ Session creation has no single choke point, so rate limiting ([#509](https://github.com/jwilleke/yourphr/issues/509)), `last_login` tracking ([#512](https://github.com/jwilleke/yourphr/issues/512)), and sign-in audit ([#507](https://github.com/jwilleke/yourphr/issues/507)) each have to be implemented N times or forgotten N−1 times.
+- __Credentials live on the user row.__ `users.password` is a column, so a second authentication method for the same person has nowhere to go.
+- __Nothing records *how* a session was established__, so "this action requires a fresh password, not a magic link clicked six days ago" is not expressible.
 
 ## Prior art
 
@@ -34,18 +34,18 @@ Our own, and the closest fit. `AuthManager` registers providers, gates each on c
 
 Two details worth carrying over:
 
-- `AuthenticateResult.viaToken` carries the delegating token's id, name and scopes — and **deliberately omits roles**, which are resolved live from the user record so a token never holds a snapshot of authority. That is exactly right and we should copy it.
+- `AuthenticateResult.viaToken` carries the delegating token's id, name and scopes — and __deliberately omits roles__, which are resolved live from the user record so a token never holds a snapshot of authority. That is exactly right and we should copy it.
 - `required-factors` is declared but single-factor only. A caution, not a model: do not half-build MFA.
 
 ### `activescott/auth`
 
-TypeScript, passwordless-only, deliberately excludes OAuth/social. Architecture: an `Auth` core, a `SessionManager` owning JWT cookies, an `AuthProvider` interface, and **three separate stores** — `IdentityStore`, `UserStore`, `ChallengeStore`. Providers never write state directly; they delegate to the stores. Supports email magic links, email and SMS one-time codes, passkeys/WebAuthn, and identity linking across methods.
+TypeScript, passwordless-only, deliberately excludes OAuth/social. Architecture: an `Auth` core, a `SessionManager` owning JWT cookies, an `AuthProvider` interface, and __three separate stores__ — `IdentityStore`, `UserStore`, `ChallengeStore`. Providers never write state directly; they delegate to the stores. Supports email magic links, email and SMS one-time codes, passkeys/WebAuthn, and identity linking across methods.
 
 What we take:
 
-- **Identities separate from users.** The single most important idea here — see the data model below.
-- **Server-backed challenges.** Single-use codes and links live in a `ChallengeStore` rather than as a secret inside a token, which prevents replay and gives expiry an obvious home.
-- **The magic-link confirm step.** Their links require a `POST` confirmation because corporate email security scanners *prefetch* URLs and silently consume the single-use credential. This is a real bug that is very hard to reproduce once shipped.
+- __Identities separate from users.__ The single most important idea here — see the data model below.
+- __Server-backed challenges.__ Single-use codes and links live in a `ChallengeStore` rather than as a secret inside a token, which prevents replay and gives expiry an obvious home.
+- __The magic-link confirm step.__ Their links require a `POST` confirmation because corporate email security scanners *prefetch* URLs and silently consume the single-use credential. This is a real bug that is very hard to reproduce once shipped.
 
 What we do not take: their exclusion of OAuth. We cannot — see the trap below.
 
@@ -77,7 +77,7 @@ type Provider interface {
 
 ### The invariant that matters
 
-**A provider proves identity and never mints a session.** Only the manager issues JWTs.
+__A provider proves identity and never mints a session.__ Only the manager issues JWTs.
 
 Every auth defect this repository has had recently traces to that boundary being fuzzy. Demo sign-in came close to becoming "flag flipped ⇒ token issued", and the whole [#515](https://github.com/jwilleke/yourphr/issues/515) design turns on provisioning being a *separate step* from the flag, so that a mis-set boolean cannot be enough on its own. One choke point for session creation is also the only sane home for the throttle, the audit line, and `last_login`.
 
@@ -99,9 +99,9 @@ identities
 
 Migration: one row per existing user, `provider = "password"`, `subject = username`, `secret =` the current hash. `users.password` is then dropped in a later release once nothing reads it.
 
-**Do this early.** Adding a second authentication method with credentials still on the user row means either a second column or a rewrite under live data. It is much cheaper as phase one than as a prerequisite discovered during the passkey work.
+__Do this early.__ Adding a second authentication method with credentials still on the user row means either a second column or a rewrite under live data. It is much cheaper as phase one than as a prerequisite discovered during the passkey work.
 
-It also makes **account linking** expressible: the same human with a password today and a passkey next month is two `identities` rows pointing at one `users` row. Linking *policy* — who may link what, and what proves it is the same person — is an open question below, not something the schema decides.
+It also makes __account linking__ expressible: the same human with a password today and a passkey next month is two `identities` rows pointing at one `users` row. Linking *policy* — who may link what, and what proves it is the same person — is an open question below, not something the schema decides.
 
 ### Session claims
 
@@ -109,9 +109,9 @@ Add `Method` to the session claims. That is what makes step-up re-auth possible 
 
 ## Two traps specific to this codebase
 
-**OAuth means two opposite things here.** We are already an OAuth *client*: SMART on FHIR provider connect, where YourPHR fetches a patient's records from Epic or Blue Button. "Sign in with Google" is OAuth as *identity*, where YourPHR is a relying party. Same word, opposite direction, entirely different failure modes. If both end up as sibling "OAuth providers" in one registry, someone will eventually wire the wrong one into the wrong flow. Name them apart from the first commit: `oidc-google` for identity, and leave the existing source-connect path alone.
+__OAuth means two opposite things here.__ We are already an OAuth *client*: SMART on FHIR provider connect, where YourPHR fetches a patient's records from Epic or Blue Button. "Sign in with Google" is OAuth as *identity*, where YourPHR is a relying party. Same word, opposite direction, entirely different failure modes. If both end up as sibling "OAuth providers" in one registry, someone will eventually wire the wrong one into the wrong flow. Name them apart from the first commit: `oidc-google` for identity, and leave the existing source-connect path alone.
 
-**Magic link over SMS/RCS on a health record.** An SMS or email magic link makes the phone number or mailbox a complete account-takeover path, and SIM swap is not exotic. The asset here is a full medical history. If we ship it: opt-in per instance, never the only factor for an admin account, and excluded from the demo. It is also blocked on SMTP infrastructure that does not exist yet ([#507](https://github.com/jwilleke/yourphr/issues/507) deferred it).
+__Magic link over SMS/RCS on a health record.__ An SMS or email magic link makes the phone number or mailbox a complete account-takeover path, and SIM swap is not exotic. The asset here is a full medical history. If we ship it: opt-in per instance, never the only factor for an admin account, and excluded from the demo. It is also blocked on SMTP infrastructure that does not exist yet ([#507](https://github.com/jwilleke/yourphr/issues/507) deferred it).
 
 ## Methods under consideration
 
@@ -120,22 +120,22 @@ Add `Method` to the session claims. That is what makes step-up re-auth possible 
 | Password | exists | Moves onto the interface unchanged. Policy work is [#506](https://github.com/jwilleke/yourphr/issues/506) |
 | Access token | exists | Already a distinct credential; `Scopes` earns its place here. Feeds revocation ([#508](https://github.com/jwilleke/yourphr/issues/508)) |
 | Demo | exists | Already effectively a provider: config-gated, verifies server-side, mints nothing itself |
-| WebAuthn / passkeys | proposed | **This is what "webconnect" meant** (confirmed 2026-08-12). Phishing-resistant, no shared secret. The one method that materially *improves* security rather than adding another door |
+| WebAuthn / passkeys | proposed | __This is what "webconnect" meant__ (confirmed 2026-08-12). Phishing-resistant, no shared secret. The one method that materially *improves* security rather than adding another door |
 | OIDC identity | proposed | Must be named apart from SMART source-connect |
 | Magic link / OTP | proposed | Needs `ChallengeStore`, SMTP, the confirm-page step, and the risk decision above |
 
 ## Settled so far
 
-- **Scope is authentication only** (2026-08-12). Authorization is separate work.
-- **"webconnect" means WebAuthn / passkeys** (2026-08-12).
-- **Password policy is configuration, enforced server-side** ([#506](https://github.com/jwilleke/yourphr/issues/506), 2026-08-12). `auth.PasswordPolicy` is deliberately a value read from config rather than logic inside a handler, so the future password provider owns it by moving one file. It is applied at sign-up, admin user-create and change-password, and **never at sign-in** — validating a credential someone already holds locks them out over a rule they cannot act on until they are inside.
+- __Scope is authentication only__ (2026-08-12). Authorization is separate work.
+- __"webconnect" means WebAuthn / passkeys__ (2026-08-12).
+- __Password policy is configuration, enforced server-side__ ([#506](https://github.com/jwilleke/yourphr/issues/506), 2026-08-12). `auth.PasswordPolicy` is deliberately a value read from config rather than logic inside a handler, so the future password provider owns it by moving one file. It is applied at sign-up, admin user-create and change-password, and __never at sign-in__ — validating a credential someone already holds locks them out over a rule they cannot act on until they are inside.
 
 ## Open questions
 
-1. **Multi-factor.** Does the manager track partial-authentication state, or do we stay single-factor and say so? ngdpbase declares `required-factors` and implements one factor; that half-state is worth avoiding.
-2. **Account linking policy.** Who may add an identity to an existing account, and what proves it is the same person? Email-match alone is an account-takeover path if any provider's email is unverified.
-3. **Is demo a provider, or a configuration of the password provider?** It is a password check against a generated credential, so it may not need its own provider at all.
-4. **Self-hosted reality.** Every external provider (OIDC, SMS) adds a dependency a self-hoster must run or trust. Which of these are we willing to make available but off by default, and which do we decline outright?
+1. __Multi-factor.__ Does the manager track partial-authentication state, or do we stay single-factor and say so? ngdpbase declares `required-factors` and implements one factor; that half-state is worth avoiding.
+2. __Account linking policy.__ Who may add an identity to an existing account, and what proves it is the same person? Email-match alone is an account-takeover path if any provider's email is unverified.
+3. __Is demo a provider, or a configuration of the password provider?__ It is a password check against a generated credential, so it may not need its own provider at all.
+4. __Self-hosted reality.__ Every external provider (OIDC, SMS) adds a dependency a self-hoster must run or trust. Which of these are we willing to make available but off by default, and which do we decline outright?
 
 ## Sequencing
 

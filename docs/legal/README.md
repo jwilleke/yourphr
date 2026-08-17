@@ -2,7 +2,7 @@
 
 The Privacy Policy and Terms of Service sources moved to [`backend/pkg/legal/`](../../backend/pkg/legal/) in [#463](https://github.com/jwilleke/yourphr/issues/463).
 
-They live beside the Go package because they are **embedded into the binary** with `go:embed`, which cannot reach outside its own package directory. Embedding is what lets an instance serve its own policy with no external dependency — an offline home server still shows its terms, and there is no file to forget to mount.
+They live beside the Go package because they are __embedded into the binary__ with `go:embed`, which cannot reach outside its own package directory. Embedding is what lets an instance serve its own policy with no external dependency — an offline home server still shows its terms, and there is no file to forget to mount.
 
 | | |
 |---|---|

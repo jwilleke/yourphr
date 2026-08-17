@@ -1,12 +1,12 @@
 # Importing C-CDA / CCD (XML) documents
 
-Many patient portals — Epic MyChart in particular — export a **C-CDA** (Consolidated Clinical Document Architecture) XML document rather than a FHIR JSON bundle. YourPHR imports FHIR natively; C-CDA has to be converted first.
+Many patient portals — Epic MyChart in particular — export a __C-CDA__ (Consolidated Clinical Document Architecture) XML document rather than a FHIR JSON bundle. YourPHR imports FHIR natively; C-CDA has to be converted first.
 
-Conversion runs **entirely on your own server**, in a separate container. The raw document is PHI and is never sent to a third party.
+Conversion runs __entirely on your own server__, in a separate container. The raw document is PHI and is never sent to a third party.
 
 ## It works out of the box
 
-Since **v1.15.0** ([#404](https://github.com/jwilleke/yourphr/issues/404)) the shipped compose files start the converter automatically and `config.yaml` points the app at it. A stock install imports an Epic C-CDA export with no extra steps:
+Since __v1.15.0__ ([#404](https://github.com/jwilleke/yourphr/issues/404)) the shipped compose files start the converter automatically and `config.yaml` points the app at it. A stock install imports an Epic C-CDA export with no extra steps:
 
 ```bash
 docker compose up -d
@@ -28,7 +28,7 @@ YOURPHR_CDA_CONVERTER_ENABLED=false
 
 ## Running without the shipped compose files
 
-If you deploy the app by hand (a bare k8s Deployment, your own manifests), the sidecar will **not** exist just because the app expects it. Either:
+If you deploy the app by hand (a bare k8s Deployment, your own manifests), the sidecar will __not__ exist just because the app expects it. Either:
 
 - deploy it — see [`deploy/yourphr-cda-converter.example.yaml`](../../deploy/yourphr-cda-converter.example.yaml) — and set `YOURPHR_CDA_CONVERTER_URL` to its in-cluster address, or
 - set `YOURPHR_CDA_CONVERTER_ENABLED=false`.
@@ -39,7 +39,7 @@ Uploading XML with no reachable converter fails with an error naming the address
 
 If you already set `YOURPHR_CDA_CONVERTER_ENABLED` / `_URL`, they still work and continue to override the defaults — nothing to undo. If you were using `--profile cda`, the profile is gone: the service now starts with a plain `up`.
 
-> **Using a `docker-compose.yml` from before v1.13.4?** Update it, or these variables will be ignored ([#397](https://github.com/jwilleke/yourphr/issues/397)). Compose reads `.env` only to substitute `${...}` **inside the compose file** — it does not forward those values into the container. Earlier compose files passed through only `HOST_IP`/`HOST_PORT`, so `YOURPHR_*` settings in `.env` silently never reached the app. The current file fixes this with:
+> __Using a `docker-compose.yml` from before v1.13.4?__ Update it, or these variables will be ignored ([#397](https://github.com/jwilleke/yourphr/issues/397)). Compose reads `.env` only to substitute `${...}` __inside the compose file__ — it does not forward those values into the container. Earlier compose files passed through only `HOST_IP`/`HOST_PORT`, so `YOURPHR_*` settings in `.env` silently never reached the app. The current file fixes this with:
 >
 > ```yaml
 >     env_file:
@@ -53,11 +53,11 @@ If you already set `YOURPHR_CDA_CONVERTER_ENABLED` / `_URL`, they still work and
 
 ## Configuration reference
 
-The Convert dialog only offers a **Convert** button when the server reports the converter is ready, so if it shows setup steps instead, something below is wrong.
+The Convert dialog only offers a __Convert__ button when the server reports the converter is ready, so if it shows setup steps instead, something below is wrong.
 
 ### Watch the variable names
 
-This is the single most common failure ([#397](https://github.com/jwilleke/yourphr/issues/397)). The **config keys** are `cda_converter.enabled` and `cda_converter.url`. The **environment variables** are those keys upper-cased with a `YOURPHR_` prefix and `.` replaced by `_`:
+This is the single most common failure ([#397](https://github.com/jwilleke/yourphr/issues/397)). The __config keys__ are `cda_converter.enabled` and `cda_converter.url`. The __environment variables__ are those keys upper-cased with a `YOURPHR_` prefix and `.` replaced by `_`:
 
 | Config key | Environment variable |
 |---|---|
@@ -65,7 +65,7 @@ This is the single most common failure ([#397](https://github.com/jwilleke/yourp
 | `cda_converter.url` | `YOURPHR_CDA_CONVERTER_URL` |
 | `cda_converter.timeout_seconds` | `YOURPHR_CDA_CONVERTER_TIMEOUT_SECONDS` |
 
-`FASTEN_CDA_CONVERTER_ENABLED` and a bare `CDA_CONVERTER_ENABLED` are **silently ignored** — the prefix is `YOURPHR_`, and an unrecognized variable produces no warning.
+`FASTEN_CDA_CONVERTER_ENABLED` and a bare `CDA_CONVERTER_ENABLED` are __silently ignored__ — the prefix is `YOURPHR_`, and an unrecognized variable produces no warning.
 
 You can also set these in `config.yaml` instead of the environment:
 
@@ -85,7 +85,7 @@ curl -s -H "Authorization: Bearer $TOKEN" \
 ```
 
 - `enabled` — the opt-in flag alone.
-- `ready` — the flag **and** a converter address are both set. Only `ready: true` will convert.
+- `ready` — the flag __and__ a converter address are both set. Only `ready: true` will convert.
 
 If `enabled` is `true` but `ready` is `false`, the URL is missing — that half-configured state is easy to miss.
 

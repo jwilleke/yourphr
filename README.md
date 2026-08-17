@@ -4,25 +4,25 @@
 
 [![CI](https://github.com/jwilleke/yourphr/actions/workflows/ci.yaml/badge.svg)](https://github.com/jwilleke/yourphr/actions/workflows/ci.yaml)
 
-**YourPHR lets you create a secure, private personal health record that never leaves your hands** — self-hosted, open source, and yours. Project home: [yourphr.org](https://yourphr.org)
+__YourPHR lets you create a secure, private personal health record that never leaves your hands__ — self-hosted, open source, and yours. Project home: [yourphr.org](https://yourphr.org)
 
-**Mission: Your medical records, immediately and in your hands — for free.** Fulfilling the [21st Century Cures Act](https://www.healthit.gov/topic/oncs-cures-act-final-rule) (2016).
+__Mission: Your medical records, immediately and in your hands — for free.__ Fulfilling the [21st Century Cures Act](https://www.healthit.gov/topic/oncs-cures-act-final-rule) (2016).
 
 > [!NOTE]
-> **YourPHR is a standalone, community-maintained continuation of [Fasten OnPrem](https://github.com/fastenhealth/fasten-onprem)**, carried forward by [@jwilleke](https://github.com/jwilleke) to keep a fully open-source, self-hostable PHR going after upstream's hosted sync relay (Lighthouse) moved into the commercial *Fasten Connect* product — which broke provider sync in the open-source build.
+> __YourPHR is a standalone, community-maintained continuation of [Fasten OnPrem](https://github.com/fastenhealth/fasten-onprem)__, carried forward by [@jwilleke](https://github.com/jwilleke) to keep a fully open-source, self-hostable PHR going after upstream's hosted sync relay (Lighthouse) moved into the commercial *Fasten Connect* product — which broke provider sync in the open-source build.
 >
-> The original work is by **Jason Kulatunga ([@AnalogJ](https://github.com/AnalogJ))** and **Alex Szilagyi ([@alexszilagyi](https://github.com/alexszilagyi))** under the [GNU GPL v3 license](LICENSE.md). YourPHR remains GPL v3 and retains full attribution.
+> The original work is by __Jason Kulatunga ([@AnalogJ](https://github.com/AnalogJ))__ and __Alex Szilagyi ([@alexszilagyi](https://github.com/alexszilagyi))__ under the [GNU GPL v3 license](LICENSE.md). YourPHR remains GPL v3 and retains full attribution.
 >
-> **Focus:** a free, self-hosted Personal Health Record anyone can run — including improved display support for non-US-Core FHIR R4 exports (e.g. Veradigm/FollowMyHealth). See [`docs/Roadmap.md`](docs/Roadmap.md).
+> __Focus:__ a free, self-hosted Personal Health Record anyone can run — including improved display support for non-US-Core FHIR R4 exports (e.g. Veradigm/FollowMyHealth). See [`docs/Roadmap.md`](docs/Roadmap.md).
 
 ---
 
 > [!IMPORTANT]  
-> **YourPHR is an open-source, self-hosted [Personal Health Record](https://en.wikipedia.org/wiki/Personal_health_record) app** for managing and viewing your own medical data. It does not integrate with EHRs directly — you import FHIR R4 bundles exported from patient portals, or enter data manually.
+> __YourPHR is an open-source, self-hosted [Personal Health Record](https://en.wikipedia.org/wiki/Personal_health_record) app__ for managing and viewing your own medical data. It does not integrate with EHRs directly — you import FHIR R4 bundles exported from patient portals, or enter data manually.
 >
-> YourPHR is **not affiliated with** Fasten Health, Inc. or its commercial *Fasten Connect* product.
+> YourPHR is __not affiliated with__ Fasten Health, Inc. or its commercial *Fasten Connect* product.
 
-**[yourphr.org](https://yourphr.org)**
+__[yourphr.org](https://yourphr.org)__
 
 [![YourPHR screenshots](https://i.imgur.com/jfqv5Q5.png)](https://imgur.com/a/vfgojBD)
 
@@ -43,7 +43,7 @@ I wanted a single (private) location to store our medical records, and I just co
 
 So, I built it.
 
-**YourPHR is an open-source, self-hosted, personal/family electronic medical record viewer.** It continues the original project's vision (described above by its original author) as a community-maintained, standalone app.
+__YourPHR is an open-source, self-hosted, personal/family electronic medical record viewer.__ It continues the original project's vision (described above by its original author) as a community-maintained, standalone app.
 
 ## Features
 
@@ -76,14 +76,14 @@ To make your YourPHR instance discoverable by companion mobile apps and other de
 
 Here are the step-by-step instructions:
 
-1. **Download necessary files:**
+1. __Download necessary files:__
 
     ```bash
     curl https://raw.githubusercontent.com/jwilleke/yourphr/refs/heads/main/docker-compose-prod.yml -o docker-compose.yml
     curl https://raw.githubusercontent.com/jwilleke/yourphr/refs/heads/main/set_env.sh -o set_env.sh
     ```
 
-2. **Prepare and run the environment setup script:**
+2. __Prepare and run the environment setup script:__
     Make the script executable and run it to generate your `.env` file. This will configure network variables required for Docker Compose.
 
     ```bash
@@ -91,7 +91,7 @@ Here are the step-by-step instructions:
     ./set_env.sh
     ```
 
-3. **Start the application:**
+3. __Start the application:__
 
     ```bash
     docker compose up -d
@@ -101,18 +101,18 @@ Here are the step-by-step instructions:
 
 If you prefer not to run the `set_env.sh` script, you can configure the `.env` file manually. You will need to create a `.env` file and add the following variables:
 
-1. **Find your hostname:**
+1. __Find your hostname:__
 
     ```bash
     hostname
     ```
 
-2. **Find your local IP address:**
-    - **macOS:** `ifconfig | grep "inet " | grep -v 127.0.0.1 | cut -d' ' -f2`
-    - **Linux:** `hostname -I | awk '{print $1}'`
-    - **Windows (Command Prompt):** `ipconfig | findstr /i "ipv4"`
+2. __Find your local IP address:__
+    - __macOS:__ `ifconfig | grep "inet " | grep -v 127.0.0.1 | cut -d' ' -f2`
+    - __Linux:__ `hostname -I | awk '{print $1}'`
+    - __Windows (Command Prompt):__ `ipconfig | findstr /i "ipv4"`
 
-3. **Create and edit the `.env` file:**
+3. __Create and edit the `.env` file:__
     Create a file named `.env` in the same directory as your `docker-compose.yml` and add the following lines, replacing `<your_hostname>` and `<your_ip_address>` with the values you found:
 
     ```
@@ -125,21 +125,21 @@ Next, open a browser to `https://localhost:9090`
 
 ### Other deployment options & configuration
 
-The docker-compose flow above is the easy path, but **YourPHR is deployment-agnostic** — it is a single Go binary with an embedded SQLite database and **no required external services**, so it does not depend on any particular orchestrator. You can also run it via plain `docker run`, on bare metal, or in Kubernetes, and configure it via `.env`/`.env_custom`, `YOURPHR_*` environment variables, or the Admin → Configuration screen (layered, lowest → highest: shipped defaults < instance overrides in `<data>/config/app-custom-config.json` < `YOURPHR_*` env). See [`docs/configuration-system.md`](docs/configuration-system.md).
+The docker-compose flow above is the easy path, but __YourPHR is deployment-agnostic__ — it is a single Go binary with an embedded SQLite database and __no required external services__, so it does not depend on any particular orchestrator. You can also run it via plain `docker run`, on bare metal, or in Kubernetes, and configure it via `.env`/`.env_custom`, `YOURPHR_*` environment variables, or the Admin → Configuration screen (layered, lowest → highest: shipped defaults < instance overrides in `<data>/config/app-custom-config.json` < `YOURPHR_*` env). See [`docs/configuration-system.md`](docs/configuration-system.md).
 
-➡️ See **[`docs/deployment/README.md`](docs/deployment/README.md)** for every deployment option (docker-compose / `docker run` / bare metal / Kubernetes), the configuration model + precedence, the full config-key reference, and how secrets are handled (the DB encryption key, the auto-generated JWT key, and per-source OAuth `client_secret`s stored in the DB).
+➡️ See __[`docs/deployment/README.md`](docs/deployment/README.md)__ for every deployment option (docker-compose / `docker run` / bare metal / Kubernetes), the configuration model + precedence, the full config-key reference, and how secrets are handled (the DB encryption key, the auto-generated JWT key, and per-source OAuth `client_secret`s stored in the DB).
 
 ### 🔒 Using HTTPS and Trusting the Self-Signed Certificate
 
-By default, YourPHR runs with HTTPS enabled to ensure your data is secure. It uses a self-signed **TLS** certificate, which offers the same level of encryption as a commercially issued certificate. The first time you connect, your browser will display a security warning because it doesn't yet trust the certificate's issuer. The steps below will guide you through the simple, one-time process of telling your browser to trust the certificate, ensuring a secure connection without future warnings. Please note that the generated certificates can be replaced at any time with your own valid TLS certificates.
+By default, YourPHR runs with HTTPS enabled to ensure your data is secure. It uses a self-signed __TLS__ certificate, which offers the same level of encryption as a commercially issued certificate. The first time you connect, your browser will display a security warning because it doesn't yet trust the certificate's issuer. The steps below will guide you through the simple, one-time process of telling your browser to trust the certificate, ensuring a secure connection without future warnings. Please note that the generated certificates can be replaced at any time with your own valid TLS certificates.
 
 #### How it Works: The Chain of Trust
 
 To establish a secure connection, your browser needs to trust the server's TLS certificate. Here’s how the process works in YourPHR:
 
-1. **Root Certificate Authority (CA):** When the application first starts, it generates its own self-contained Certificate Authority, called `"YourPHR CA"`. Think of this as the highest level of trust. The public part of this CA is the `rootCA.pem` file.
-2. **Server Certificate:** The application then uses the `"YourPHR CA"` to issue and sign a specific certificate for the web server (e.g., for `localhost`).
-3. **Browser Verification:** When you connect to the server, it presents the server certificate to your browser. Your browser checks who signed it and sees it was `"YourPHR CA"`. The browser then asks, "Do I trust the 'YourPHR CA'?"
+1. __Root Certificate Authority (CA):__ When the application first starts, it generates its own self-contained Certificate Authority, called `"YourPHR CA"`. Think of this as the highest level of trust. The public part of this CA is the `rootCA.pem` file.
+2. __Server Certificate:__ The application then uses the `"YourPHR CA"` to issue and sign a specific certificate for the web server (e.g., for `localhost`).
+3. __Browser Verification:__ When you connect to the server, it presents the server certificate to your browser. Your browser checks who signed it and sees it was `"YourPHR CA"`. The browser then asks, "Do I trust the 'YourPHR CA'?"
 
 Initially, the answer is no, which is why you see a security warning. By following the steps below to import the `rootCA.pem` file, you are telling your browser or operating system to trust our self-generated CA. Once the CA is trusted, any certificates it signs—including the server certificate—will also be trusted, and the connection will be secure without any warnings.
 
@@ -147,7 +147,7 @@ Initially, the answer is no, which is why you see a security warning. By followi
 
 When you run the application using the production Docker Compose file (`docker-compose-prod.yml`), it automatically generates a `rootCA.pem` file. This file is located in the `certs` directory on your host machine.
 
-- **Certificate Path:** `certs/rootCA.pem`
+- __Certificate Path:__ `certs/rootCA.pem`
 
 #### 2. Import the Certificate
 
@@ -155,16 +155,16 @@ You will need to import this certificate into your operating system's or browser
 
 ##### macOS
 
-1. Open the **Keychain Access** application.
-2. Select the **System** keychain.
-3. Go to **File > Import Items** and select the `certs/rootCA.pem` file.
-4. Find the "YourPHR CA" certificate in the list, double-click it, and under the **Trust** section, set "When using this certificate" to **Always Trust**.
+1. Open the __Keychain Access__ application.
+2. Select the __System__ keychain.
+3. Go to __File > Import Items__ and select the `certs/rootCA.pem` file.
+4. Find the "YourPHR CA" certificate in the list, double-click it, and under the __Trust__ section, set "When using this certificate" to __Always Trust__.
 
 ##### Windows
 
 1. Double-click the `certs/rootCA.pem` file.
-2. Click **Install Certificate...** and choose **Local Machine**.
-3. Select **Place all certificates in the following store**, click **Browse**, and choose **Trusted Root Certification Authorities**.
+2. Click __Install Certificate...__ and choose __Local Machine__.
+3. Select __Place all certificates in the following store__, click __Browse__, and choose __Trusted Root Certification Authorities__.
 4. Complete the wizard to finish the import process.
 
 ##### Linux (Ubuntu/Debian)
@@ -185,10 +185,10 @@ You will need to import this certificate into your operating system's or browser
 
 Firefox has its own trust store. To import the certificate:
 
-1. Go to **Settings > Privacy & Security**.
-2. Scroll down to **Certificates** and click **View Certificates...**.
-3. In the **Authorities** tab, click **Import...** and select the `certs/rootCA.pem` file.
-4. Check the box for **Trust this CA to identify websites** and click **OK**.
+1. Go to __Settings > Privacy & Security__.
+2. Scroll down to __Certificates__ and click __View Certificates...__.
+3. In the __Authorities__ tab, click __Import...__ and select the `certs/rootCA.pem` file.
+4. Check the box for __Trust this CA to identify websites__ and click __OK__.
 
 ### 🧪 Develop
 
@@ -206,7 +206,7 @@ make serve-docker
 
 ℹ️ Requires a local clone of the repository.
 
-> ⚠️ **Warning:** Do not run both `docker compose up -d` / `(make serve-docker)` simultaneously. Choose one based on your deployment scenario.
+> ⚠️ __Warning:__ Do not run both `docker compose up -d` / `(make serve-docker)` simultaneously. Choose one based on your deployment scenario.
 
 ### Optional
 
@@ -228,15 +228,15 @@ Before you can use the YourPHR BETA, you'll need to [Create an Account](https://
 
 It can be as simple as
 
-- **Username:** `testuser`
-- **Password:** `testuser`
+- __Username:__ `testuser`
+- __Password:__ `testuser`
 
 > [!IMPORTANT]
-> **The first account you create owns the instance.** Whoever registers first on an empty database becomes the **owner and admin** — everyone after them is an ordinary user. That account controls configuration, the database (backup, restore, download), users, the provider catalog and the logs.
+> __The first account you create owns the instance.__ Whoever registers first on an empty database becomes the __owner and admin__ — everyone after them is an ordinary user. That account controls configuration, the database (backup, restore, download), users, the provider catalog and the logs.
 >
-> There is **no password-reset flow** and no seeded admin account, so record that password somewhere durable. If you lose it, the only ways back in are editing the database directly or starting over with an empty one.
+> There is __no password-reset flow__ and no seeded admin account, so record that password somewhere durable. If you lose it, the only ways back in are editing the database directly or starting over with an empty one.
 >
-> The app decides this by counting users, not by who you are or where you connect from. On an instance reachable from the internet, register **immediately** — otherwise whoever arrives first, including a bot, becomes your admin. Closing self-service signup afterwards is a setting (`signup.enabled`), and it deliberately never blocks that first account. See [`docs/deployment/README.md`](docs/deployment/README.md).
+> The app decides this by counting users, not by who you are or where you connect from. On an instance reachable from the internet, register __immediately__ — otherwise whoever arrives first, including a bot, becomes your admin. Closing self-service signup afterwards is a setting (`signup.enabled`), and it deliberately never blocks that first account. See [`docs/deployment/README.md`](docs/deployment/README.md).
 
 ## Using with multiple people
 

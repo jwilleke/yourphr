@@ -1,29 +1,29 @@
 # Third-party attributions
 
-**In-app:** `/attributions` (authenticated)  
-**Registry (source of truth for UI copy):** `frontend/src/app/models/fasten/attributions.ts`  
-**Related issues:** [#428](https://github.com/jwilleke/yourphr/issues/428) (CMS Blue Button notice), future partner notices.
+__In-app:__ `/attributions` (authenticated)  
+__Registry (source of truth for UI copy):__ `frontend/src/app/models/fasten/attributions.ts`  
+__Related issues:__ [#428](https://github.com/jwilleke/yourphr/issues/428) (CMS Blue Button notice), future partner notices.
 
 ## Approach
 
-YourPHR will integrate multiple third-party APIs and data sources (CMS Blue Button first; others over time). Each may require a **non-endorsement** or attribution statement that must not be buried only in product Terms.
+YourPHR will integrate multiple third-party APIs and data sources (CMS Blue Button first; others over time). Each may require a __non-endorsement__ or attribution statement that must not be buried only in product Terms.
 
-We use **one attributions catalog** for all partners, not a one-off hardcode per vendor forever.
+We use __one attributions catalog__ for all partners, not a one-off hardcode per vendor forever.
 
-**Related:** connection-level PP/ToS + pre-connect messaging for *all* medical sources is modular — see [`connection-policy.md`](connection-policy.md).
+__Related:__ connection-level PP/ToS + pre-connect messaging for *all* medical sources is modular — see [`connection-policy.md`](connection-policy.md).
 
 | Layer | Purpose |
 |---|---|
-| **Canonical registry** | Structured list of notices (`id`, title, full text, optional URL, `contexts` when to show) |
-| **Attributions page** | Full list — every notice readable in one place (`/attributions`) |
-| **Contextual display** | Same text (or a short pointer) on the journey CMS/demo requires — e.g. Medicare connect |
-| **Footer / Account Profile** | Discoverable link to the full page |
+| __Canonical registry__ | Structured list of notices (`id`, title, full text, optional URL, `contexts` when to show) |
+| __Attributions page__ | Full list — every notice readable in one place (`/attributions`) |
+| __Contextual display__ | Same text (or a short pointer) on the journey CMS/demo requires — e.g. Medicare connect |
+| __Footer / Account Profile__ | Discoverable link to the full page |
 
 ### What this is not
 
-- **Not** product Privacy Policy / Terms of Service (those live at yourphr.org and Account Profile consent — [#427](https://github.com/jwilleke/yourphr/issues/427)).
-- **Not** FHIR `Consent` resources (clinical/privacy directives — see [build.fhir.org Consent](https://build.fhir.org/consent.html#6.2)).
-- **Not** operator contact (Admin Instance card).
+- __Not__ product Privacy Policy / Terms of Service (those live at yourphr.org and Account Profile consent — [#427](https://github.com/jwilleke/yourphr/issues/427)).
+- __Not__ FHIR `Consent` resources (clinical/privacy directives — see [build.fhir.org Consent](https://build.fhir.org/consent.html#6.2)).
+- __Not__ operator contact (Admin Instance card).
 
 ### Contexts (`contexts` field)
 
@@ -33,7 +33,7 @@ We use **one attributions catalog** for all partners, not a one-off hardcode per
 | `medicare-connect` | Show near patient-facing Medicare / Blue Button connect |
 | `footer` | Optional short link or line in app footer (full text stays on the page) |
 
-Add new partners by appending an entry to the registry and choosing contexts. Prefer **not** dumping every full notice into the global footer.
+Add new partners by appending an entry to the registry and choosing contexts. Prefer __not__ dumping every full notice into the global footer.
 
 ## Current entries
 
@@ -43,8 +43,8 @@ Required by [Blue Button API Terms of Service — Attribution](https://bluebutto
 
 > This product uses the Blue Button APIs but is not endorsed or certified by the Centers for Medicare & Medicaid Services or the U.S. Department of Health and Human Services.
 
-- **Contexts:** `attributions-page`, `medicare-connect`
-- **Patient-facing source label** (separate from this notice): multi-source picker shows **Medicare** for Blue Button-class production sources ([#429](https://github.com/jwilleke/yourphr/issues/429)). Sandbox/admin may still say “Blue Button”. Architecture remains Blue Button / CARIN / FHIR.
+- __Contexts:__ `attributions-page`, `medicare-connect`
+- __Patient-facing source label__ (separate from this notice): multi-source picker shows __Medicare__ for Blue Button-class production sources ([#429](https://github.com/jwilleke/yourphr/issues/429)). Sandbox/admin may still say “Blue Button”. Architecture remains Blue Button / CARIN / FHIR.
 
 ## Adding a new attribution
 

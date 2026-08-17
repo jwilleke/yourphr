@@ -25,7 +25,7 @@ Canonical values to enter when registering the app with a provider (Epic at fhir
 
 Notes:
 
-- **Redirect URI is the relay, not the app.** `yourphr.nerdsbythehour.com` is internal/LAN behind Authentik and not publicly reachable; the relay (`backend/pkg/relay/relay.go`, `DefaultBaseURL`) is the one public piece. It must stay excluded from Authentik forward-auth (`/callback` is unauthenticated by design).
-- **Terms + Privacy** are public HTTPS (GitHub Pages, `gh-pages` branch) and finalized for production review — no placeholder banner. The Privacy Policy discloses the actual data flow (self-hosted, project never receives data, relay holds only a short-lived auth code, tokens encrypted on the user's instance).
-- **Client type:** public client (PKCE / S256), read-only patient scopes. No `client_secret` (BYO `client_id` model). An asymmetric `private_key_jwt` path exists in the code but is dormant.
+- __Redirect URI is the relay, not the app.__ `yourphr.nerdsbythehour.com` is internal/LAN behind Authentik and not publicly reachable; the relay (`backend/pkg/relay/relay.go`, `DefaultBaseURL`) is the one public piece. It must stay excluded from Authentik forward-auth (`/callback` is unauthenticated by design).
+- __Terms + Privacy__ are public HTTPS (GitHub Pages, `gh-pages` branch) and finalized for production review — no placeholder banner. The Privacy Policy discloses the actual data flow (self-hosted, project never receives data, relay holds only a short-lived auth code, tokens encrypted on the user's instance).
+- __Client type:__ public client (PKCE / S256), read-only patient scopes. No `client_secret` (BYO `client_id` model). An asymmetric `private_key_jwt` path exists in the code but is dormant.
 - For the eventual product, the relay can move to `relay.yourphr.org` (stateless — trivial to relocate).

@@ -9,24 +9,24 @@ Canonical agent/product brief: [`AGENTS.md`](../AGENTS.md). As-built SMART conne
 - Branding tagline: "Your medical records, immediately and in your hands — for free."
 - Branding text: "YourPHR"
 
-**Goal:** a complete self-hosted PHR with working display for non-US-Core FHIR data, reliable import of what portals actually export (FHIR JSON and C-CDA/XML), and live provider sync via a self-hosted OAuth relay.
+__Goal:__ a complete self-hosted PHR with working display for non-US-Core FHIR data, reliable import of what portals actually export (FHIR JSON and C-CDA/XML), and live provider sync via a self-hosted OAuth relay.
 
 > ## Staying focused
 >
-> Prioritize work that gets patients **more complete records, faster, in their own hands** — robust patient-portal/FHIR import (incl. non-US-Core), provider sync, and reliable display of real-world data. When weighing a feature, ask: *does this advance immediate patient access (the Cures Act mission)?* If not, defer it. Avoid scope creep and rabbit-holes.
+> Prioritize work that gets patients __more complete records, faster, in their own hands__ — robust patient-portal/FHIR import (incl. non-US-Core), provider sync, and reliable display of real-world data. When weighing a feature, ask: *does this advance immediate patient access (the Cures Act mission)?* If not, defer it. Avoid scope creep and rabbit-holes.
 
 ---
 
 ## Shipped (foundation)
 
-These are **done in main / released** — not open planning items. Details in `CHANGELOG.md` and the linked issues.
+These are __done in main / released__ — not open planning items. Details in `CHANGELOG.md` and the linked issues.
 
 | Capability | Status | Notes |
 |---|---|---|
 | Non-US-Core display fallbacks (e.g. Encounter) | ✅ Done | Prefer `class.code` / location when `type[]` absent (Veradigm-oriented) |
 | `sort_title` / `sort_date` generation | ✅ Done | Across major clinical resource types |
 | `fasten-sources` local stub | ✅ Done | Replaces private upstream package; vendor committed |
-| Generic SMART R4 client + store-and-poll **Go** OAuth relay | ✅ Done | EPIC [#20](https://github.com/jwilleke/yourphr/issues/20) plumbing: client, `backend/cmd/relay`, `backend/pkg/relay`. **Not** Fasten Lighthouse; **not** a Cloudflare Worker as the primary design. Map: [`SMART-flow-map.md`](SMART-flow-map.md) |
+| Generic SMART R4 client + store-and-poll __Go__ OAuth relay | ✅ Done | EPIC [#20](https://github.com/jwilleke/yourphr/issues/20) plumbing: client, `backend/cmd/relay`, `backend/pkg/relay`. __Not__ Fasten Lighthouse; __not__ a Cloudflare Worker as the primary design. Map: [`SMART-flow-map.md`](SMART-flow-map.md) |
 | Provider catalog connect UI | ✅ Done | Patient picker + admin sandbox; credentials stay server-side |
 | C-CDA / CCD XML import out of the box | ✅ Done | v1.15.0+; converter sidecar default-on in compose; multi-arch converter image v1.15.1 |
 | SQLCipher fail-closed at startup | ✅ Done | v1.13.4 — encryption cannot silently drop on a dep bump |
@@ -35,20 +35,20 @@ These are **done in main / released** — not open planning items. Details in `C
 | Angular 20 / Node 24 foundation | ✅ Done | Foundation epic path complete |
 | CI on standard GitHub Actions | ✅ Done | `docker/build-push-action`; release-gated image publish |
 
-**Rejected / superseded design (historical only):** a **Cloudflare Worker + KV** as the project OAuth relay. Decided against for an all-Go, self-hosted relay on existing infra. A Worker remains a possible *future* hosting option for a public product relay, not the current architecture. Design notes: [`planning/smart-on-fhir/oauth-gateway.md`](planning/smart-on-fhir/oauth-gateway.md).
+__Rejected / superseded design (historical only):__ a __Cloudflare Worker + KV__ as the project OAuth relay. Decided against for an all-Go, self-hosted relay on existing infra. A Worker remains a possible *future* hosting option for a public product relay, not the current architecture. Design notes: [`planning/smart-on-fhir/oauth-gateway.md`](planning/smart-on-fhir/oauth-gateway.md).
 
 ---
 
 ## Near-term focus (mission P1)
 
-Aligned with open **P1** labels (GitHub is source of truth; this table is a narrative snapshot).
+Aligned with open __P1__ labels (GitHub is source of truth; this table is a narrative snapshot).
 
 | Item | Issue | Notes |
 |---|---|---|
-| **Prove one production SMART provider** via catalog | [#408](https://github.com/jwilleke/yourphr/issues/408) | Plumbing works; mission needs a real (non-sandbox-only) end-to-end patient path. Related: Veradigm blocked [#53](https://github.com/jwilleke/yourphr/issues/53); Blue Button docs in-repo |
-| **Patients add their own records** | [#313](https://github.com/jwilleke/yourphr/issues/313) | Manual entry when portals cannot sync; related manual-records chain under P2 |
-| **Dynamic Client Registration (DCR)** | [#355](https://github.com/jwilleke/yourphr/issues/355) | Lower friction registering SMART apps |
-| **yarn.lock build-chain Dependabot** | [#416](https://github.com/jwilleke/yourphr/issues/416) | 12 open alerts tracked; no path to patient data in the served image — still needs a decision |
+| __Prove one production SMART provider__ via catalog | [#408](https://github.com/jwilleke/yourphr/issues/408) | Plumbing works; mission needs a real (non-sandbox-only) end-to-end patient path. Related: Veradigm blocked [#53](https://github.com/jwilleke/yourphr/issues/53); Blue Button docs in-repo |
+| __Patients add their own records__ | [#313](https://github.com/jwilleke/yourphr/issues/313) | Manual entry when portals cannot sync; related manual-records chain under P2 |
+| __Dynamic Client Registration (DCR)__ | [#355](https://github.com/jwilleke/yourphr/issues/355) | Lower friction registering SMART apps |
+| __yarn.lock build-chain Dependabot__ | [#416](https://github.com/jwilleke/yourphr/issues/416) | 12 open alerts tracked; no path to patient data in the served image — still needs a decision |
 
 Close-the-loop ops (not always P1-labeled but blocks “it works for users”):
 
@@ -101,7 +101,7 @@ Full open list: labels on GitHub or [`TODO.md`](../TODO.md) after `/pstatus`.
 
 ## Watching — upstream Fasten OnPrem PRs (optional merge)
 
-Large upstream PRs are **candidates**, not committed YourPHR roadmap phases. Mirror insurance and merge approach below.
+Large upstream PRs are __candidates__, not committed YourPHR roadmap phases. Mirror insurance and merge approach below.
 
 | Theme | Upstream | Notes |
 |---|---|---|
@@ -128,7 +128,7 @@ Related older upstream ideas still potentially useful: edit/delete records, dash
 
 ## Upstream PR merge strategy
 
-> **Insurance:** an archival mirror of `fastenhealth/fasten-onprem` lives at [`jwilleke/fasten-onprem-mirror`](https://github.com/jwilleke/fasten-onprem-mirror) (private), with the four target PRs pinned as branches **`pr-594` / `pr-613` / `pr-614` / `pr-609`**. So these merges stay possible even if upstream disappears. (A full Fasten→YourPHR rename is parked as deferred epic [#278](https://github.com/jwilleke/yourphr/issues/278) — only on committing to a hard fork, which would close this merge path.)
+> __Insurance:__ an archival mirror of `fastenhealth/fasten-onprem` lives at [`jwilleke/fasten-onprem-mirror`](https://github.com/jwilleke/fasten-onprem-mirror) (private), with the four target PRs pinned as branches __`pr-594` / `pr-613` / `pr-614` / `pr-609`__. So these merges stay possible even if upstream disappears. (A full Fasten→YourPHR rename is parked as deferred epic [#278](https://github.com/jwilleke/yourphr/issues/278) — only on committing to a hard fork, which would close this merge path.)
 
 Large feature PRs (#594, #613, #614, #609) are not merged directly because they would conflict with our `go.mod` replace directive, `vendor/` directory, and generated model changes. Approach:
 
@@ -141,6 +141,6 @@ Large feature PRs (#594, #613, #614, #609) are not merged directly because they 
 
 ## Delivery model (unchanged)
 
-- **Images** publish only on semver release tags `vX.Y.Z` (not on every `main` push).
+- __Images__ publish only on semver release tags `vX.Y.Z` (not on every `main` push).
 - Contract: [`deployment/deployment-contract.md`](deployment/deployment-contract.md).
 - Cutting a release: [`releasing.md`](releasing.md).

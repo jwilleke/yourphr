@@ -101,7 +101,7 @@ Both open a blank popup synchronously (`window.open('', '_blank')`), call author
 ### List
 
 - Patient: `GET /secure/provider-catalog/connectable`  
-  - Enabled entries only; **skips** `environment == sandbox`  
+  - Enabled entries only; __skips__ `environment == sandbox`  
   - Response is `ConnectableProvider` (id, display, logo) — no credentials  
   - `handler.ListConnectableProviders`
 - Admin sandbox page: `GET /secure/provider-catalog/sandbox` (admin required)  
@@ -112,7 +112,7 @@ Both open a blank popup synchronously (`window.open('', '_blank')`), call author
 
 1. Load enabled catalog entry by `:id` (`loadEnabledEntry`).
 2. If `redirect_uri` empty → `relay.CallbackURL(appConfig)`.
-3. Build `smart.Config` from **entry** fields (`ApiEndpointBaseUrl`, `ClientId`, `Scopes`).
+3. Build `smart.Config` from __entry__ fields (`ApiEndpointBaseUrl`, `ClientId`, `Scopes`).
 4. `cfg.Discover` → `GET {FHIRBaseURL}/.well-known/smart-configuration`.
 5. If `entry.AuthorizeUrlOverride` non-empty, replace `ep.Authorization` (token endpoint stays from discovery).
 6. `smart.GenerateVerifier()` + `uuid` state.
@@ -122,7 +122,7 @@ Both open a blank popup synchronously (`window.open('', '_blank')`), call author
 
 ### Connect — `handler.ConnectSourceFromCatalog`
 
-1. Load same enabled entry; require `code_verifier`; require `code` **or** `state`.
+1. Load same enabled entry; require `code_verifier`; require `code` __or__ `state`.
 2. Empty `redirect_uri` → `relay.CallbackURL(appConfig)` (must match authorize).
 3. If `code` empty: `relay.FromConfig` → `PollUntil(ctx, state, 1s, 30s)`.
 4. `smart.Config` from entry including `ClientSecret` (server-side only).
@@ -139,7 +139,7 @@ Frontend calls: `FastenApiService.authorizeSourceFromCatalog` / `connectSourceFr
 ## Path B — BYO (self-describing request body)
 
 Handlers: `AuthorizeSource`, `ConnectSource` in `source.go`.  
-Angular wrappers exist (`authorizeSource`, `connectSource`) but **no page component calls them**; both UIs use Path A.
+Angular wrappers exist (`authorizeSource`, `connectSource`) but __no page component calls them__; both UIs use Path A.
 
 ### Authorize request body (`SmartAuthorizeRequest`)
 
@@ -154,7 +154,7 @@ SSRF: `validatePublicHTTPSURL(api_endpoint_base_url)` before discovery.
 
 - `api_endpoint_base_url`, `client_id`, `code_verifier` required
 - `client_secret` optional
-- `code` **or** `state` required (if only `state`, relay poll)
+- `code` __or__ `state` required (if only `state`, relay poll)
 - `redirect_uri` optional (same default as authorize)
 - `display` optional
 
@@ -180,7 +180,7 @@ Same exchange / patient-id / `CreateSource` / background sync sequence as catalo
 
 ### Service (`backend/cmd/relay`)
 
-- In-memory store: `state → code`, TTL = `defaultTTL` = **60s**
+- In-memory store: `state → code`, TTL = `defaultTTL` = __60s__
 - `/callback`: require `code` + `state` (or show provider `error`); `put`; HTML “Connected”
 - `/pending`: constant-time secret compare on `X-Yourphr-Token`; `take` (single-use); JSON `{"code":…}` or 404
 - Janitor ticker every TTL; metrics on secondary port
@@ -199,7 +199,7 @@ Same exchange / patient-id / `CreateSource` / background sync sequence as catalo
 | `CallbackURL` | `PublicBaseURL + "/callback"` |
 | `FromConfig` | requires secret; poll base = `relay.url` or `DefaultBaseURL` |
 | `Poll` | `GET {BaseURL}/pending?state=` + `X-Yourphr-Token` |
-| `PollUntil` | interval + timeout; connect handlers use **1s / 30s** |
+| `PollUntil` | interval + timeout; connect handlers use __1s / 30s__ |
 | `Describe` | provenance for admin: `configured` / `inherited` / `default` / `unset`; `Ready = secret != ""` |
 
 Config defaults (`config.go`):
@@ -216,10 +216,10 @@ relay.url / relay.public_url / relay.secret = ""
 `medical-sources.component.ts` / `sandbox.component.ts` (same structure):
 
 1. Guard double-submit; open blank popup (fail if blocked).
-2. `authorizeSourceFromCatalog(id)` — **no** `redirect_uri` sent.
+2. `authorizeSourceFromCatalog(id)` — __no__ `redirect_uri` sent.
 3. Require `authorize_url`, `state`, `code_verifier`.
 4. `popup.location.href = authorize_url`.
-5. Login window: `login_wait_seconds * 1000` if > 0, else **4 minutes** (`catalogConnectWindowMs` / `sandboxConnectWindowMs`).
+5. Login window: `login_wait_seconds * 1000` if > 0, else __4 minutes__ (`catalogConnectWindowMs` / `sandboxConnectWindowMs`).
 6. Attempts = `ceil(windowMs / 30000)` — aligns with backend 30s `PollUntil`.
 7. Each attempt: `connectSourceFromCatalog` with `{ state, code_verifier, redirect_uri, display }`.
 8. Retry only if error message matches `/authorization code from relay|timed out/i`; other errors terminal.
@@ -254,7 +254,7 @@ Manual re-sync: `POST /secure/source/:sourceId/sync` → same job path.
 | Access / refresh tokens | Provider → backend only → `SourceCredential` / DB; not returned as the browser’s exchange job |
 | Relay shared secret | Relay env + app `relay.secret`; never in `GetRelayConfig` value field |
 
-Comments in `ConnectSource` / catalog connect: **browser never handles tokens**; relay path preferred so **code never touches the browser**.
+Comments in `ConnectSource` / catalog connect: __browser never handles tokens__; relay path preferred so __code never touches the browser__.
 
 ---
 
@@ -283,7 +283,7 @@ Comments in `ConnectSource` / catalog connect: **browser never handles tokens**;
 | Constant | Location | Value |
 |---|---|---|
 | Relay code TTL | `backend/cmd/relay/main.go` `defaultTTL` | 60s |
-| One connect poll | `web.smart_connect.relay_poll_seconds` (default **55**, cap 60) via `relayPollTimeout` | 55s |
+| One connect poll | `web.smart_connect.relay_poll_seconds` (default __55__, cap 60) via `relayPollTimeout` | 55s |
 | Default UI login wait | `web.smart_connect.login_wait_seconds` | 240 |
 | UI fallback window | `catalogConnectWindowMs` / `sandboxConnectWindowMs` | 4 min |
 | UI retries | only `error_code=relay_poll_timeout` (see `smart-connect-error.ts`) | across login wait |
@@ -293,5 +293,5 @@ Comments in `ConnectSource` / catalog connect: **browser never handles tokens**;
 
 ## Not on the live UI path
 
-- `frontend/src/app/services/connect-gateway.service.ts` — Fasten Lighthouse-style connect-gateway client; **not** used by `connectCatalogProvider` / sandbox connect.
-- `POST /secure/source/authorize` + `/connect` — implemented and tested; **no** current page wires them (catalog path is what the UI runs).
+- `frontend/src/app/services/connect-gateway.service.ts` — Fasten Lighthouse-style connect-gateway client; __not__ used by `connectCatalogProvider` / sandbox connect.
+- `POST /secure/source/authorize` + `/connect` — implemented and tested; __no__ current page wires them (catalog path is what the UI runs).

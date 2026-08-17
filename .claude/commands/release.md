@@ -8,7 +8,7 @@ Use this when:
 - The user explicitly asks "make a release" / "publish a release" / "cut the release for v3.x.y" on an already-tagged commit, OR
 - A `/semver` invocation was interrupted after Step 6 (tag pushed) but before Step 7 (GitHub release created), and you want to finish the release without rolling anything back.
 
-This skill **never bumps versions**, **never creates tags**, and **never touches the working tree**. It only calls `gh release create`.
+This skill __never bumps versions__, __never creates tags__, and __never touches the working tree__. It only calls `gh release create`.
 
 ## Usage
 
@@ -32,7 +32,7 @@ If the target tag isn't pushed to `origin` yet, push it first (`git push origin 
 
 ### Step 2: Find the previous release (for notes range)
 
-- For each target tag, the previous release is the most recent published GitHub release **older than** that tag's creation time.
+- For each target tag, the previous release is the most recent published GitHub release __older than__ that tag's creation time.
 - `gh release list --limit 20 --json tagName,createdAt --jq 'sort_by(.createdAt) | reverse'` then pick the first one with `createdAt < <target-tag-time>`.
 - Use this as `--notes-start-tag` so auto-generated notes don't accidentally span releases that exist already.
 
@@ -40,9 +40,9 @@ If the target tag isn't pushed to `origin` yet, push it first (`git push origin 
 
 Two strategies, in priority order:
 
-1. **Prefer auto-generated** — `gh release create <tag> --generate-notes --notes-start-tag <previous>` works well when the range has merged PRs with descriptive titles. This is the default.
+1. __Prefer auto-generated__ — `gh release create <tag> --generate-notes --notes-start-tag <previous>` works well when the range has merged PRs with descriptive titles. This is the default.
 
-2. **Hand-curated when consolidating** — when releasing a single tag that consolidates a multi-tag patch chain (e.g. one release covering v3.10.4 → v3.11.2), draft notes that:
+2. __Hand-curated when consolidating__ — when releasing a single tag that consolidates a multi-tag patch chain (e.g. one release covering v3.10.4 → v3.11.2), draft notes that:
    - Lead with headline outcomes grouped by issue (`#658 Contact endpoint`, etc.) rather than per-version
    - Include a per-version detail table (version | type | one-line headline)
    - Call out known limitations / open follow-ups explicitly (filed bugs that didn't land in this release)
@@ -55,7 +55,7 @@ Write the curated body to a temp file (`.release-notes.tmp` in repo root, gitign
 - `gh release create <tag> --title "<tag> — <one-line summary>" --notes-file <file>` (curated path), OR
 - `gh release create <tag> --title "<tag>" --generate-notes --notes-start-tag <previous>` (auto path)
 
-**Latest-flag gotcha:** GitHub picks the "Latest" release by **most-recent publish time**, not by semver. Backfilling an older tag (e.g. publishing v3.10.3 today when v3.11.2 is already out) will take the Latest crown away from the head release. After backfilling any release that isn't itself the current head, restore Latest:
+__Latest-flag gotcha:__ GitHub picks the "Latest" release by __most-recent publish time__, not by semver. Backfilling an older tag (e.g. publishing v3.10.3 today when v3.11.2 is already out) will take the Latest crown away from the head release. After backfilling any release that isn't itself the current head, restore Latest:
 
 ```bash
 gh release edit <current-head-tag> --latest

@@ -4,17 +4,17 @@ Implementation-ready spec for Phase 1 of the [classification & display architect
 
 ## Goal
 
-The dashboard's "Current Medical Concerns" must list **only active clinical problems**. FollowMyHealth's "Personal Health Conditions" (employment, education, marital status, lifestyle status, household, etc.) — which it exports as `Condition` — must be routed to a separate **Patient Profile** section, not shown as health problems and not discarded.
+The dashboard's "Current Medical Concerns" must list __only active clinical problems__. FollowMyHealth's "Personal Health Conditions" (employment, education, marital status, lifestyle status, household, etc.) — which it exports as `Condition` — must be routed to a separate __Patient Profile__ section, not shown as health problems and not discarded.
 
 ## Scope
 
-**In:**
+__In:__
 
-- A backend, pure, stateless **Condition classifier** (Layer 1) that synthesizes a standard `Condition.category` and a display tier from explicit record signals, non-destructively.
+- A backend, pure, stateless __Condition classifier__ (Layer 1) that synthesizes a standard `Condition.category` and a display tier from explicit record signals, non-destructively.
 - A `GET /api/secure/conditions/classified` endpoint, mirroring `GET /api/secure/medications/reconciled`.
 - Frontend: dashboard consumes the endpoint, fixes "Current Medical Concerns", adds a "Patient Profile" section.
 
-**Out (later phases):**
+__Out (later phases):__
 
 - Resolving the *named* practitioner for "who said this" — Phase 2 (Phase 1 sets only the `selfReported` flag).
 - Encounter/reference resolution (the `Encounter/<patient>_<id>` quirk) — Phase 2.
@@ -24,7 +24,7 @@ The dashboard's "Current Medical Concerns" must list **only active clinical prob
 
 ## Why classify, not reconcile
 
-Unlike medications, conditions are **not deduped or merged** (locked decision: report facts as the source provided them). So this is a *classifier*, not a reconciler — one output row per input `Condition`, never collapsed. Hence the package name `condition` / function `Classify` (not `Reconcile`) and the route `/conditions/classified` (not `/reconciled`).
+Unlike medications, conditions are __not deduped or merged__ (locked decision: report facts as the source provided them). So this is a *classifier*, not a reconciler — one output row per input `Condition`, never collapsed. Hence the package name `condition` / function `Classify` (not `Reconcile`) and the route `/conditions/classified` (not `/reconciled`).
 
 ## Backend
 
@@ -104,7 +104,7 @@ type ClassifiedCondition struct {
 func Classify(resources []InputResource, now time.Time) []ClassifiedCondition
 ```
 
-The endpoint returns a **flat list**; the frontend (Layer 2) groups it into sections. This keeps Layer 1 emitting standard-FHIR-categorized resources and Layer 2 owning the section mapping, per the architecture.
+The endpoint returns a __flat list__; the frontend (Layer 2) groups it into sections. This keeps Layer 1 emitting standard-FHIR-categorized resources and Layer 2 owning the section mapping, per the architecture.
 
 ### Signal extraction (per Condition)
 
@@ -128,16 +128,16 @@ All read from `Raw`; absent → zero value (never assumed):
 
 Evaluate in order; first match wins:
 
-1. `hasStandardCode || vendorTell == "HealthCondition"` → **Tier=clinician, Category=problem-list-item**
-2. `hasAnyCoding && assertedByPatient` → **Tier=self-reported, Category=problem-list-item, SelfReported=true**
-3. `!hasAnyCoding && vendorTell == "PersonalHealthConsideration" && !hasClinicianRecorder` → **Tier=profile, Category=sdoh**
-4. **Default (safety bias): Tier=clinician, Category=problem-list-item** — when signals are ambiguous, treat as a health item rather than bury a possible diagnosis under Profile.
+1. `hasStandardCode || vendorTell == "HealthCondition"` → __Tier=clinician, Category=problem-list-item__
+2. `hasAnyCoding && assertedByPatient` → __Tier=self-reported, Category=problem-list-item, SelfReported=true__
+3. `!hasAnyCoding && vendorTell == "PersonalHealthConsideration" && !hasClinicianRecorder` → __Tier=profile, Category=sdoh__
+4. __Default (safety bias): Tier=clinician, Category=problem-list-item__ — when signals are ambiguous, treat as a health item rather than bury a possible diagnosis under Profile.
 
 Rationale: rules 1–3 require *agreeing* explicit signals to demote something to Profile; anything that doesn't clearly meet the Profile bar (rule 3) falls through to rule 4 and stays a health item.
 
 ### State & verification-status determination
 
-`clinicalStatus` is the **primary** driver of `State`; `abatement[x]` is a date source (the date of resolution *or* remission, per FHIR con-4) and a safety-net override only for non-conformant data. `verificationStatus` gates first.
+`clinicalStatus` is the __primary__ driver of `State`; `abatement[x]` is a date source (the date of resolution *or* remission, per FHIR con-4) and a safety-net override only for non-conformant data. `verificationStatus` gates first.
 
 ```
 # 1. verificationStatus gate (before clinical status)
@@ -156,8 +156,8 @@ switch clinicalStatusCode:
 
 Notes:
 
-- `entered-in-error` is the one case we **omit** — honoring the record's own statement that it was a mistake (consistent with "report facts as given": the recorded fact *is* "this was an error").
-- `remission` stays a tracked current problem (improved/absent **but not fully resolved**; relapse/recurrence is the return from it) — display under Current with an "in remission since `<abatement>`" badge.
+- `entered-in-error` is the one case we __omit__ — honoring the record's own statement that it was a mistake (consistent with "report facts as given": the recorded fact *is* "this was an error").
+- `remission` stays a tracked current problem (improved/absent __but not fully resolved__; relapse/recurrence is the return from it) — display under Current with an "in remission since `<abatement>`" badge.
 - `abatement` present + `active` status is a FHIR con-4 violation (non-conformant export). The switch keeps `clinicalStatus` authoritative; only when status is absent does `abatement` imply `Resolved`. (If FMH is observed to emit active+abated in practice, revisit toward treating abatement as the end-signal.)
 - `provisional` / `unconfirmed` / `differential` do not change `State`; they are carried in `VerificationStatus` for a diagnostic-uncertainty badge on the card (display concern, Phase 3).
 
@@ -232,40 +232,40 @@ this.fastenApi.getConditionsClassified().subscribe({
 })
 ```
 
-- **Current Medical Concerns** section: render `currentConcerns`. Badges: **"Self-reported"** when `row.selfReported`; **"in remission since `<abated>`"** when `state === 'Remission'`; **"status not specified"** when `state === 'Unknown'`. Each row deep-links to the resource detail (`/explore/<sourceId>/resource/<sourceResourceId>`).
-- **Past Health Problems (N)** section (new): a collapsed expander directly under Current, rendering `pastProblems` with each item's date range (onset → abated), e.g. "Fractured wrist — 2015, resolved 2015". Honors "resolved ≠ deleted" without cluttering the at-a-glance view. Hide if `pastProblems.length === 0`.
-- **Patient Profile** section (new, additive — same markup pattern as Concerns): render `profileItems`, collapsed by default or below the tiles. Hide if `profileItems.length === 0`.
+- __Current Medical Concerns__ section: render `currentConcerns`. Badges: __"Self-reported"__ when `row.selfReported`; __"in remission since `<abated>`"__ when `state === 'Remission'`; __"status not specified"__ when `state === 'Unknown'`. Each row deep-links to the resource detail (`/explore/<sourceId>/resource/<sourceResourceId>`).
+- __Past Health Problems (N)__ section (new): a collapsed expander directly under Current, rendering `pastProblems` with each item's date range (onset → abated), e.g. "Fractured wrist — 2015, resolved 2015". Honors "resolved ≠ deleted" without cluttering the at-a-glance view. Hide if `pastProblems.length === 0`.
+- __Patient Profile__ section (new, additive — same markup pattern as Concerns): render `profileItems`, collapsed by default or below the tiles. Hide if `profileItems.length === 0`.
 - The existing tile grid is unchanged in Phase 1 (the "Health Issues" tile keeps routing to medical-history).
 
 `isActiveCondition` / `toActiveConcern` / the `ActiveConcern` interface and the raw `getResources('Condition')` call are removed from the component (logic now lives in the backend classifier).
 
 ### Label decision (small, optional)
 
-"Current Medical Concerns" over-promises (it implies prioritization). Recommend renaming to **"Current Health Problems"** or **"Active Health Problems"**. Default: keep the current label to minimize churn unless you want the rename now.
+"Current Medical Concerns" over-promises (it implies prioritization). Recommend renaming to __"Current Health Problems"__ or __"Active Health Problems"__. Default: keep the current label to minimize churn unless you want the rename now.
 
 ## Testing without PHI
 
-`backend/pkg/condition/testdata/fmh_conditions.json` — a **synthetic** Bundle/array with fake values, one entry per case. `classify_test.go` is a table test asserting `{tier, category, state, selfReported}` per entry (and that `entered-in-error` is omitted):
+`backend/pkg/condition/testdata/fmh_conditions.json` — a __synthetic__ Bundle/array with fake values, one entry per case. `classify_test.go` is a table test asserting `{tier, category, state, selfReported}` per entry (and that `entered-in-error` is omitted):
 
 | Fixture case | Signals | Expect `{tier, category, state}` |
 |---|---|---|
-| clinician active | ICD‑10 code, `HealthCondition` tell, `clinicalStatus=active`, Practitioner recorder | clinician / problem-list-item / **Active** |
-| clinician resolved | ICD code, `clinicalStatus=resolved`, `abatementDateTime` set | clinician / problem-list-item / **Resolved** |
-| remission | ICD code, `clinicalStatus=remission`, `abatementDateTime` set | clinician / problem-list-item / **Remission** |
-| abated, no status | ICD code, no `clinicalStatus`, `abatementDateTime` set | clinician / problem-list-item / **Resolved** (abatement implies ended) |
-| active + abated (con-4 violation) | ICD code, `clinicalStatus=active`, `abatementDateTime` set | clinician / problem-list-item / **Active** (clinicalStatus authoritative) |
+| clinician active | ICD‑10 code, `HealthCondition` tell, `clinicalStatus=active`, Practitioner recorder | clinician / problem-list-item / __Active__ |
+| clinician resolved | ICD code, `clinicalStatus=resolved`, `abatementDateTime` set | clinician / problem-list-item / __Resolved__ |
+| remission | ICD code, `clinicalStatus=remission`, `abatementDateTime` set | clinician / problem-list-item / __Remission__ |
+| abated, no status | ICD code, no `clinicalStatus`, `abatementDateTime` set | clinician / problem-list-item / __Resolved__ (abatement implies ended) |
+| active + abated (con-4 violation) | ICD code, `clinicalStatus=active`, `abatementDateTime` set | clinician / problem-list-item / __Active__ (clinicalStatus authoritative) |
 | self-reported | vendor-internal coding + display, `asserter=Patient`, no standard code, `clinicalStatus=active` | self-reported / problem-list-item / Active / selfReported=true |
 | profile | text-only, `PersonalHealthConsideration` tell, no recorder | profile / sdoh / (state per status) |
-| ambiguous (safety bias) | text-only, **no** vendor tell, no recorder | clinician / problem-list-item (defaulted, not buried) |
-| unknown status | active-family absent, no abatement, ICD code | clinician / problem-list-item / **Unknown** |
-| refuted | ICD code, `verificationStatus=refuted` | (any tier) / **RuledOut** |
-| entered-in-error | ICD code, `verificationStatus=entered-in-error` | **omitted from output entirely** |
+| ambiguous (safety bias) | text-only, __no__ vendor tell, no recorder | clinician / problem-list-item (defaulted, not buried) |
+| unknown status | active-family absent, no abatement, ICD code | clinician / problem-list-item / __Unknown__ |
+| refuted | ICD code, `verificationStatus=refuted` | (any tier) / __RuledOut__ |
+| entered-in-error | ICD code, `verificationStatus=entered-in-error` | __omitted from output entirely__ |
 
 Backend tests use real FHIR JSON fixtures per the project convention; keep all fixture values synthetic. The real export stays in `private/phi/` for manual validation.
 
 ## Acceptance criteria
 
-- `GET /api/secure/conditions/classified` returns one row per stored `Condition` **except `entered-in-error`** (omitted), each with `category`, `tier`, `state`, `selfReported`, `title`, dates, `note`, `standardCodings`, raw `clinicalStatus`/`verificationStatus`.
+- `GET /api/secure/conditions/classified` returns one row per stored `Condition` __except `entered-in-error`__ (omitted), each with `category`, `tier`, `state`, `selfReported`, `title`, dates, `note`, `standardCodings`, raw `clinicalStatus`/`verificationStatus`.
 - "Current Medical Concerns" shows only `category == problem-list-item` with `state ∈ {Active, Remission, Unknown}`; no social/administrative items appear; remission/unknown carry their badges.
 - "Past Health Problems" lists `state == Resolved` problems with their date range; nothing is silently dropped (only `entered-in-error` is intentionally omitted, and `refuted` is held out of Current).
 - Profile items appear under "Patient Profile".
@@ -274,5 +274,5 @@ Backend tests use real FHIR JSON fixtures per the project convention; keep all f
 
 ## Files touched
 
-- **New:** `backend/pkg/condition/{classify.go,fhir.go,classify_test.go}`, `backend/pkg/condition/testdata/fmh_conditions.json`, `backend/pkg/web/handler/conditions.go`, `frontend/src/app/models/fasten/classified-condition.ts`
-- **Edit:** `backend/pkg/web/server.go` (route), `frontend/src/app/services/fasten-api.service.ts` (client), `frontend/src/app/pages/dashboard/dashboard.component.{ts,html}` (consume + group + Patient Profile section), dashboard component spec.
+- __New:__ `backend/pkg/condition/{classify.go,fhir.go,classify_test.go}`, `backend/pkg/condition/testdata/fmh_conditions.json`, `backend/pkg/web/handler/conditions.go`, `frontend/src/app/models/fasten/classified-condition.ts`
+- __Edit:__ `backend/pkg/web/server.go` (route), `frontend/src/app/services/fasten-api.service.ts` (client), `frontend/src/app/pages/dashboard/dashboard.component.{ts,html}` (consume + group + Patient Profile section), dashboard component spec.

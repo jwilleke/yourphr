@@ -18,7 +18,7 @@
 
 ## Checklist
 
-- [ ] **No PHI/PII, secrets, keys, `.env`, real FHIR bundles, or `*.db` files** are included — only synthetic fixtures (this is a Personal Health Record app; a leak is irreversible).
+- [ ] __No PHI/PII, secrets, keys, `.env`, real FHIR bundles, or `*.db` files__ are included — only synthetic fixtures (this is a Personal Health Record app; a leak is irreversible).
 - [ ] Tests pass (`make test`) and I added/updated tests where it makes sense.
 - [ ] Lint passes (`make lint-frontend`; markdownlint for docs).
 - [ ] If I changed a tygo-exported Go struct or `search-parameters.json`, I re-ran `make generate-backend` and committed the regenerated files.

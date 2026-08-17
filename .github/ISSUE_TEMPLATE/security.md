@@ -5,8 +5,8 @@ title: "[SECURITY] "
 labels: ["security", "P0"]
 ---
 
-> ⚠️ **Sensitive vulnerability?** Do **not** file it here. Use private reporting
-> (the repo's **Security** tab → *Report a vulnerability*).
+> ⚠️ __Sensitive vulnerability?__ Do __not__ file it here. Use private reporting
+> (the repo's __Security__ tab → *Report a vulnerability*).
 
 ## Summary
 
