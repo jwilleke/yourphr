@@ -42,7 +42,7 @@
   "database.validation_mode": false,
   "cache.location": "/opt/fasten/cache/",
 
-  "_comment_backup": "Scheduled backup of the database. All empty/false/0 by default: the Admin Dashboard Database card persists the operator's real choices to .backup_settings.json, and these only seed a first run. backup.allowed-roots confines where a destination may point.",
+  "_comment_backup": "Scheduled backup of the database. All empty/false/0 by default. Since #545 these ARE the operator's settings: the Admin Database card saves straight into the config system (custom overlay), the ngdpbase pattern — the old .backup_settings.json side-store is migrated in once and retired. backup.allowed-roots confines where a destination may point.",
   "backup.auto-backup": false,
   "backup.auto-backup-time": "",
   "backup.auto-backup-days": "",

@@ -7,6 +7,13 @@
   <app-loading-spinner *ngIf="loading" loadingTitle="Loading database details..."></app-loading-spinner>
   <div *ngIf="!loading && errored" class="alert alert-danger">Could not load database details.</div>
 
+  <!-- #545: an instance that cannot back up says so persistently, not only when a backup is
+       attempted. The operator who never presses "Backup now" is exactly who must see this. -->
+  <div *ngIf="!loading && info?.backups_unavailable" class="alert alert-warning" role="alert">
+    <strong><i class="fas fa-exclamation-triangle"></i>&nbsp; No backups on this instance.</strong>
+    {{ info.backups_unavailable }}
+  </div>
+
   <div class="row" *ngIf="!loading && !errored && info">
     <!-- Details -->
     <div class="col-lg-5 mg-b-20">
@@ -16,6 +23,7 @@
           <div class="dl-row"><div class="k">Location on disk</div><div class="v">{{ info.location }}</div></div>
           <div class="dl-row"><div class="k">Encryption at rest</div><div class="v">
             <span class="badge" [ngClass]="info.encryption_enabled ? 'text-bg-success' : 'text-bg-warning'">{{ info.encryption_enabled ? 'Enabled' : 'Disabled' }}</span>
+            <small *ngIf="info.backups_unavailable" class="tx-gray-500 d-block mg-t-2">Encryption currently disables backups — see the warning above.</small>
           </div></div>
           <div class="dl-row"><div class="k">Size on disk</div><div class="v">{{ humanSize(info.size_bytes) }}</div></div>
           <div class="dl-row"><div class="k">Integrity check</div><div class="v">

@@ -227,3 +227,78 @@ func TestPruneBackups(t *testing.T) {
 		t.Errorf("remaining = %d, want 3", got)
 	}
 }
+
+// #545: the pre-#545 .backup_settings.json side-store migrates into the config system once, and the
+// file is renamed so migration never re-runs. An operator's saved schedule must survive the upgrade.
+func TestLoadBackupSettings_MigratesLegacySideStore(t *testing.T) {
+	dataDir := t.TempDir()
+	appConfig, err := config.Create()
+	if err != nil {
+		t.Fatal(err)
+	}
+	appConfig.Set("database.location", filepath.Join(dataDir, "fasten.db"))
+
+	legacy := filepath.Join(dataDir, ".backup_settings.json")
+	if err := os.WriteFile(legacy, []byte(`{"enabled":true,"time":"03:30","days":"weekly","destination":"","max_backups":5}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	s := LoadBackupSettings(appConfig)
+	if !s.Enabled || s.Time != "03:30" || s.Days != "weekly" || s.MaxBackups != 5 {
+		t.Fatalf("migrated settings wrong: %+v", s)
+	}
+	if _, err := os.Stat(legacy); !os.IsNotExist(err) {
+		t.Errorf("legacy file should be renamed after migration")
+	}
+	if _, err := os.Stat(legacy + ".migrated"); err != nil {
+		t.Errorf("expected %s.migrated to exist: %v", legacy, err)
+	}
+	// The values now live in the configuration system, not just the returned struct.
+	if !appConfig.GetBool("backup.auto-backup") || appConfig.GetString("backup.auto-backup-time") != "03:30" {
+		t.Errorf("config store did not absorb the migrated settings")
+	}
+	// A second load must not re-migrate or change anything.
+	again := LoadBackupSettings(appConfig)
+	if again != s {
+		t.Errorf("second load differs: %+v vs %+v", again, s)
+	}
+}
+
+// #545: saving writes the config system's custom overlay — the ngdpbase pattern — not a side file.
+func TestSaveBackupSettings_WritesConfigOverlay(t *testing.T) {
+	dataDir := t.TempDir()
+	appConfig, err := config.Create()
+	if err != nil {
+		t.Fatal(err)
+	}
+	appConfig.Set("database.location", filepath.Join(dataDir, "fasten.db"))
+
+	if err := SaveBackupSettings(appConfig, BackupSettings{Enabled: true, Time: "04:15", Days: "daily", MaxBackups: 3}); err != nil {
+		t.Fatal(err)
+	}
+	if appConfig.GetString("backup.auto-backup-time") != "04:15" || appConfig.GetInt("backup.max-backups") != 3 {
+		t.Errorf("running config did not pick up the save")
+	}
+	if _, err := os.Stat(config.CustomConfigPath(appConfig)); err != nil {
+		t.Errorf("expected the custom overlay file to exist: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(dataDir, ".backup_settings.json")); !os.IsNotExist(err) {
+		t.Errorf("save must not create the retired side-store")
+	}
+}
+
+// #545: the one-sentence unavailability reason exists exactly when the gate is up.
+func TestBackupsUnavailableReason(t *testing.T) {
+	appConfig, err := config.Create()
+	if err != nil {
+		t.Fatal(err)
+	}
+	appConfig.Set("database.encryption.enabled", false)
+	if r := BackupsUnavailableReason(appConfig); r != "" {
+		t.Errorf("expected no reason when encryption is off, got %q", r)
+	}
+	appConfig.Set("database.encryption.enabled", true)
+	if r := BackupsUnavailableReason(appConfig); r == "" {
+		t.Error("expected a reason while encryption is enabled")
+	}
+}

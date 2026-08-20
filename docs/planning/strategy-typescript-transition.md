@@ -35,6 +35,8 @@ A record displayed wrongly is a patient-safety problem, not a cosmetic one. Prop
 
 __Fix: security, data correctness, and anything that misrepresents a record. Freeze: new capability.__
 
+> __RATIFIED (2026-08-20), together with the Phase 2 proceed decision.__ Operator's words: "we will only do patches to Go code going forward and primary efforts are on the spike implementation." Operationally: Go changes ship as __patch releases__ (fix/security/data-correctness only); new capability is built in the TypeScript stack. A Go itch that is new capability gets an issue labelled `frozen` — visibly not-done, and it doubles as the TypeScript backlog.
+
 Under that rule today's work splits cleanly — [#529](https://github.com/jwilleke/yourphr/issues/529) and [#530](https://github.com/jwilleke/yourphr/issues/530) fixed, [#525](https://github.com/jwilleke/yourphr/issues/525) and [#528](https://github.com/jwilleke/yourphr/issues/528) fixed, [#524](https://github.com/jwilleke/yourphr/issues/524) Send to Email would __not__ have been built.
 
 ### 2. The freeze has to survive contact with annoyance
@@ -73,6 +75,8 @@ __Phase 0 — leave Fasten, stay on Go.__ Fold the stub in under YourPHR's own n
 __Phase 1 — the read stack in TypeScript, shadowing.__ Already built. Keep it honest by running the harness on the synthetic corpus in CI, and against a real snapshot after any storage change.
 
 __Phase 2 — sync, or stop. Due 2026-09-30__ ([#539](https://github.com/jwilleke/yourphr/issues/539), milestone *Phase 2 decision — TypeScript sync*). The decisive phase, attempted *before* anything is migrated for real, so that failing is cheap.
+
+> __OUTCOME (2026-08-20): DEMONSTRATED — the transition proceeds.__ All five gates cleared 2026-08-18, 43 days ahead of the stop date: SSRF tests that fail when the guard is removed (47 checks, sabotage-verified), a real PKCE S256 exchange and a real refresh grant against the SMART Health IT sandbox's authorization server, records fetched and stored with the differential harness agreeing (re-verified against 20,061 real records; 29/29 resource types match the Go stack exactly), and a resync on the refreshed token creating nothing new. Operator decision recorded on [#539](https://github.com/jwilleke/yourphr/issues/539): __proceed to Phase 3__. The real cut-over commitment remains Phase 5.
 
 The gate is a __sandbox__ provider, not production — [#408](https://github.com/jwilleke/yourphr/issues/408) has been open since July trying to prove a *production* provider end-to-end in Go, and holding TypeScript to a bar the working stack has not cleared would make this fail for the wrong reasons. Six sandboxes are already seeded.
 

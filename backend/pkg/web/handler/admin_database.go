@@ -34,6 +34,9 @@ type DatabaseInfoResponse struct {
 	Schedule          database.BackupSettings     `json:"schedule"`             // settable auto-backup settings
 	BackupHealth      database.BackupHealthStatus `json:"backup_health"`        // last scheduled/manual outcome (#434)
 	AllowedRoots      []string                    `json:"allowed_backup_roots"` // so operators see the allowlist
+	// BackupsUnavailable carries the one-sentence reason this instance cannot produce backups, ""
+	// when backups work. Persistent admin-UI banner, not just a 409 at attempt time (#545).
+	BackupsUnavailable string `json:"backups_unavailable"`
 }
 
 func gormRepoFromContext(c *gin.Context) (*database.GormRepository, bool) {
@@ -65,8 +68,9 @@ func GetDatabaseInfo(c *gin.Context) {
 		BackupDestination: dest,
 		Backups:           database.ListBackups(dest),
 		Schedule:          settings,
-		BackupHealth:      database.LoadBackupHealthStatus(appConfig),
-		AllowedRoots:      database.AllowedBackupRoots(appConfig),
+		BackupHealth:       database.LoadBackupHealthStatus(appConfig),
+		AllowedRoots:       database.AllowedBackupRoots(appConfig),
+		BackupsUnavailable: database.BackupsUnavailableReason(appConfig),
 	}
 	if fi, err := os.Stat(location); err == nil {
 		resp.SizeBytes = fi.Size()

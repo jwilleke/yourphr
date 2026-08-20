@@ -36,13 +36,27 @@ import (
 
 // ErrEncryptionEnabled gates backup + restore while at-rest encryption is on (#367 / #363). VACUUM INTO
 // would write a PLAINTEXT snapshot of an encrypted DB (PHI leak), and a restore couldn't be opened with
-// the cipher key — neither is handled yet. Refuse rather than silently leak/break. No-op when encryption
-// is disabled (the default + current deployment), so normal backup/restore is unaffected.
+// the cipher key — neither is handled yet. Refuse rather than silently leak/break.
+//
+// Encryption is ENABLED by default (#470), so this gate fires on a stock install — which composed into
+// #545: a default install had no backup path and nothing said so. The gate is now surfaced loudly (a
+// startup warning and a persistent admin-UI banner) rather than only at the moment a backup is
+// attempted. #461 (encrypted backups via sqlcipher_export) is what lifts it.
 var ErrEncryptionEnabled = errors.New("backup and restore are not available while at-rest database encryption is enabled")
 
 // BackupRestoreGated reports whether backup/restore must be refused (at-rest encryption enabled).
 func BackupRestoreGated(appConfig config.Interface) bool {
 	return appConfig.GetBool("database.encryption.enabled")
+}
+
+// BackupsUnavailableReason is the one sentence shown wherever the operator must learn that this
+// instance cannot produce backups ("" when backups work). One string, shared by the startup warning,
+// the admin API and the UI, so the wording cannot drift (#545).
+func BackupsUnavailableReason(appConfig config.Interface) string {
+	if !BackupRestoreGated(appConfig) {
+		return ""
+	}
+	return "Backups and restore are unavailable on this instance: at-rest database encryption is enabled, and a backup would be written as plaintext. Until encrypted backup ships (#461), keep an external copy of the data volume."
 }
 
 // BackupFileName builds the canonical date-first, label+version-stamped, gzip filename for time t.
@@ -101,10 +115,14 @@ func DefaultBackupDir(appConfig config.Interface) string {
 	return filepath.Join(dbDirFromConfig(appConfig), "backups")
 }
 
-// BackupSettings is the persisted, admin-settable backup configuration — a JSON file in the data dir so
-// it survives restarts AND is editable at runtime (the worker re-reads it, so a save takes effect with
-// no restart). Config values seed the initial defaults. Schedule model mirrors the ngdpbase
-// BackupManager: enable + time-of-day + days, plus destination + retention.
+// BackupSettings is the admin-settable backup configuration. Since #545 it lives in the
+// CONFIGURATION SYSTEM (the backup.* keys, persisted to app-custom-config.json via
+// config.SetCustomValues) rather than a private .backup_settings.json side-store — the ngdpbase
+// pattern, and the #472 rule: one config store, visible and editable in Admin → Configuration,
+// covered by whatever protects the config overlay. Saves apply to the running config immediately,
+// and the worker re-reads every tick, so a change still takes effect with no restart.
+// Schedule model mirrors the ngdpbase BackupManager: enable + time-of-day + days, plus
+// destination + retention.
 type BackupSettings struct {
 	Enabled     bool   `json:"enabled"`     // run scheduled backups
 	Time        string `json:"time"`        // "HH:MM" (server-local) — when the scheduled backup runs
@@ -117,8 +135,22 @@ func backupSettingsPath(appConfig config.Interface) string {
 	return filepath.Join(dbDirFromConfig(appConfig), ".backup_settings.json")
 }
 
-// LoadBackupSettings reads the persisted settings, falling back to config defaults then hard defaults.
+// backupSettingsKeys maps BackupSettings onto its configuration keys — the single place the two
+// shapes correspond, used by both load and save.
+func backupSettingsKeys(s BackupSettings) map[string]interface{} {
+	return map[string]interface{}{
+		"backup.auto-backup":      s.Enabled,
+		"backup.auto-backup-time": s.Time,
+		"backup.auto-backup-days": s.Days,
+		"backup.destination":      s.Destination,
+		"backup.max-backups":      s.MaxBackups,
+	}
+}
+
+// LoadBackupSettings reads the backup configuration from the config system (after migrating any
+// legacy side-store — see migrateLegacyBackupSettings), then fills hard defaults.
 func LoadBackupSettings(appConfig config.Interface) BackupSettings {
+	migrateLegacyBackupSettings(appConfig)
 	s := BackupSettings{
 		Enabled:     appConfig.GetBool("backup.auto-backup"),
 		Time:        appConfig.GetString("backup.auto-backup-time"),
@@ -126,22 +158,46 @@ func LoadBackupSettings(appConfig config.Interface) BackupSettings {
 		Destination: appConfig.GetString("backup.destination"),
 		MaxBackups:  appConfig.GetInt("backup.max-backups"),
 	}
-	settingsExist := false
-	if b, err := os.ReadFile(backupSettingsPath(appConfig)); err == nil {
-		_ = json.Unmarshal(b, &s)
-		settingsExist = true
-	}
-	// Migrate the legacy one-line .backup_dest marker (pre-v1.9.0) when there's no settings file and no
-	// configured destination, so an admin's custom destination isn't silently lost on upgrade (#368 #6).
-	if !settingsExist && strings.TrimSpace(s.Destination) == "" {
-		if b, err := os.ReadFile(filepath.Join(dbDirFromConfig(appConfig), ".backup_dest")); err == nil {
-			if p := strings.TrimSpace(string(b)); p != "" {
-				s.Destination = p
-			}
-		}
-	}
 	s.normalize()
 	return s
+}
+
+// migrateLegacyBackupSettings folds the two retired side-stores into the config overlay, once:
+//
+//   - .backup_settings.json — the pre-#545 Admin-UI store. Its values win over config seeds, exactly
+//     as they did when it was read live, so an operator's schedule survives the upgrade.
+//   - .backup_dest — the pre-v1.9.0 one-line destination marker (#368 #6), honoured only when no
+//     newer source names a destination.
+//
+// Each file is renamed to <name>.migrated after its values land, so this runs once per instance and
+// a failed config write leaves the file in place for the next attempt. Idempotent and cheap: two
+// os.Stat calls on the every-minute worker path once migration is done.
+func migrateLegacyBackupSettings(appConfig config.Interface) {
+	settingsFile := backupSettingsPath(appConfig)
+	if b, err := os.ReadFile(settingsFile); err == nil {
+		s := BackupSettings{
+			Enabled:     appConfig.GetBool("backup.auto-backup"),
+			Time:        appConfig.GetString("backup.auto-backup-time"),
+			Days:        appConfig.GetString("backup.auto-backup-days"),
+			Destination: appConfig.GetString("backup.destination"),
+			MaxBackups:  appConfig.GetInt("backup.max-backups"),
+		}
+		if json.Unmarshal(b, &s) == nil {
+			if err := config.SetCustomValues(appConfig, backupSettingsKeys(s)); err != nil {
+				return // keep the file; retry on the next load
+			}
+		}
+		_ = os.Rename(settingsFile, settingsFile+".migrated")
+	}
+	destFile := filepath.Join(dbDirFromConfig(appConfig), ".backup_dest")
+	if b, err := os.ReadFile(destFile); err == nil {
+		if p := strings.TrimSpace(string(b)); p != "" && strings.TrimSpace(appConfig.GetString("backup.destination")) == "" {
+			if err := config.SetCustomValues(appConfig, map[string]interface{}{"backup.destination": p}); err != nil {
+				return
+			}
+		}
+		_ = os.Rename(destFile, destFile+".migrated")
+	}
 }
 
 // normalize fills hard defaults. Single source of truth for defaulting, shared by LoadBackupSettings and
@@ -173,13 +229,18 @@ func ParseHHMM(v string) (hour, minute int, ok bool) {
 	return h, m, true
 }
 
-// SaveBackupSettings persists the settings.
+// SaveBackupSettings persists the settings into the config system (#545/#472): written to the
+// custom overlay and applied to the running configuration, so the worker's next tick sees them.
+//
+// A key pinned by the environment is refused with the same rule the configuration screen enforces:
+// env wins and a UI write would silently not apply, so saying no is the honest answer.
 func SaveBackupSettings(appConfig config.Interface, s BackupSettings) error {
-	b, err := json.MarshalIndent(s, "", "  ")
-	if err != nil {
-		return err
+	for key := range backupSettingsKeys(s) {
+		if config.IsSetByEnvironment(key) {
+			return fmt.Errorf("%s is set in the environment; remove the environment variable to manage backups here", key)
+		}
 	}
-	return os.WriteFile(backupSettingsPath(appConfig), b, 0o600)
+	return config.SetCustomValues(appConfig, backupSettingsKeys(s))
 }
 
 // ResolveDestination returns the configured destination, or the default folder when unset.
@@ -223,7 +284,8 @@ func AllowedBackupRoots(appConfig config.Interface) []string {
 	for _, r := range appConfig.GetStringSlice("backup.allowed-roots") {
 		add(r)
 	}
-	// Persisted Admin UI destination (read file directly — do not call LoadBackupSettings here).
+	// Legacy pre-#545 side-store, honoured until its one-time migration into the config overlay
+	// runs (after which backup.destination above covers it and this file no longer exists).
 	if b, err := os.ReadFile(backupSettingsPath(appConfig)); err == nil {
 		var s BackupSettings
 		if json.Unmarshal(b, &s) == nil {

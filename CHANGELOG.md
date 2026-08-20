@@ -1,5 +1,25 @@
 # Changelog
 
+## [2.10.2](https://github.com/jwilleke/yourphr/compare/v2.10.1...v2.10.2) (2026-08-20)
+
+Security patch — no features, no behavior changes.
+
+### Bug Fixes
+
+- __security: the Go runtime and its extended libraries are patched__ ([#575](https://github.com/jwilleke/yourphr/issues/575)). The backend was built on a Go toolchain carrying 24 published vulnerabilities its code actually reaches — including the HTTP server and TLS stack this app fronts the internet with. Toolchain moved to go1.26.6, `golang.org/x/image` and `golang.org/x/net` updated, and `golang.org/x/crypto`, `x/oauth2`, `x/mod` merged from dependency PRs. `govulncheck` now reports __zero__ vulnerabilities affecting the code.
+
+## [2.10.1](https://github.com/jwilleke/yourphr/compare/v2.10.0...v2.10.1) (2026-08-20)
+
+An instance that cannot make backups now says so, everywhere an operator could learn it.
+
+### Bug Fixes
+
+- __A default install has no backups — and now it tells you__ ([#545](https://github.com/jwilleke/yourphr/issues/545)). Encryption at rest is on by default, and backups are refused while encryption is on (a backup would be written unencrypted). Both choices are right; together they meant a stock install had __no backup path at all__, silently. The condition is now announced at every startup (`BACKUPS UNAVAILABLE` in the log), as a persistent warning on the Admin → Database page, and as a caveat under the Encryption badge — which used to present as pure good news. Making encrypted backups work is tracked in [#461](https://github.com/jwilleke/yourphr/issues/461); until then, keep an external copy of the data volume.
+
+### Changes
+
+- __Backup settings now live in the configuration system__ ([#545](https://github.com/jwilleke/yourphr/issues/545)). The Admin Database card's schedule, destination and retention save into the same configuration store as every other setting — visible in Admin → Configuration, applied without a restart. Settings previously kept in a private `.backup_settings.json` file migrate in automatically on first start; nothing is lost and nothing needs re-entering.
+
 ## [2.10.0](https://github.com/jwilleke/yourphr/compare/v2.9.0...v2.10.0) (2026-08-19)
 
 You can now see who has looked at your records, and a provider connection that used to quietly expire every half hour now stays connected.

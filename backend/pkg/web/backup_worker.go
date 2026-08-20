@@ -19,6 +19,13 @@ func (ae *AppEngine) startBackupWorker() {
 		return
 	}
 
+	// The #545 startup warning: an instance that cannot back up must say so at boot, loudly and
+	// every boot — not only at the moment somebody happens to press "Backup now". The worker keeps
+	// running so the message re-fires if encryption is later disabled and a schedule exists.
+	if reason := database.BackupsUnavailableReason(ae.Config); reason != "" {
+		ae.Logger.Warnf("BACKUPS UNAVAILABLE: %s", reason)
+	}
+
 	ae.Logger.Info("scheduled-backup worker started (checks backup settings every minute)")
 	ticker := time.NewTicker(time.Minute)
 	defer ticker.Stop()

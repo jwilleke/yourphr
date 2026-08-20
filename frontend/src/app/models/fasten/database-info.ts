@@ -32,6 +32,7 @@ export interface DatabaseInfo {
   schedule: BackupSettings;       // settable auto-backup settings
   backup_health?: BackupHealth;   // last scheduled/manual outcome (#434)
   allowed_backup_roots?: string[]; // operator-visible allowlist
+  backups_unavailable?: string;   // one-sentence reason backups are refused, "" when they work (#545)
 }
 
 // Mirrors handler.DirListing — server-folder browser (GET /admin/database/browse).
