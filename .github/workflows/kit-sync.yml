@@ -47,7 +47,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out this repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -55,7 +55,7 @@ jobs:
       # C++, Go, Python or Shell repo pays nothing to run the checker. Full
       # history because the kit's version comes from `git describe --tags`.
       - name: Check out the kit
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: jwilleke/mjs-project-template
           path: .kit-sync
