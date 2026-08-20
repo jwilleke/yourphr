@@ -81,7 +81,7 @@
     "@types/jasminewd2": "~2.0.13",
     "@types/qrcode": "^1.5.6",
     "angular-eslint": "21.0.1",
-    "chromatic": "^18.1.0",
+    "chromatic": "^18.2.0",
     "eslint": "^9.39.1",
     "fishery": "^2.4.0",
     "jasmine-core": "~5.13.0",
