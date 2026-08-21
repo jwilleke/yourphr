@@ -1,4 +1,6 @@
 import {Component, Input, OnInit} from '@angular/core';
+import {CommonModule} from '@angular/common';
+import {FormsModule} from '@angular/forms';
 import { NgbActiveModal, NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import {ResourceFhir} from '../../models/fasten/resource_fhir';
 import {FastenApiService} from '../../services/fasten-api.service';
@@ -22,7 +24,8 @@ class RelatedNode {
     selector: 'app-report-medical-history-editor',
     templateUrl: './report-medical-history-editor.component.html',
     styleUrls: ['./report-medical-history-editor.component.scss'],
-    standalone: false
+    standalone: true,
+    imports: [CommonModule, FormsModule]
 })
 export class ReportMedicalHistoryEditorComponent implements OnInit {
 

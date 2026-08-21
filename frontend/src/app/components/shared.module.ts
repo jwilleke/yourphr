@@ -15,7 +15,6 @@ import { NlmTypeaheadComponent } from './nlm-typeahead/nlm-typeahead.component';
 import { ReportHeaderComponent } from './report-header/report-header.component';
 import { ReportLabsObservationComponent } from './report-labs-observation/report-labs-observation.component';
 import { ReportMedicalHistoryConditionComponent } from './report-medical-history-condition/report-medical-history-condition.component';
-import { ReportMedicalHistoryEditorComponent } from './report-medical-history-editor/report-medical-history-editor.component';
 import { ReportMedicalHistoryExplanationOfBenefitComponent } from './report-medical-history-explanation-of-benefit/report-medical-history-explanation-of-benefit.component';
 import { ToastComponent } from './toast/toast.component';
 import {FormsModule, ReactiveFormsModule} from '@angular/forms';
@@ -75,7 +74,6 @@ import { RawResourceComponent } from './raw-resource/raw-resource.component';
     UtilitiesSidebarComponent,
     ToastComponent,
     ReportHeaderComponent,
-    ReportMedicalHistoryEditorComponent,
     ReportMedicalHistoryConditionComponent,
     ReportLabsObservationComponent,
     ReportMedicalHistoryTimelinePanelComponent,
@@ -95,7 +93,6 @@ import { RawResourceComponent } from './raw-resource/raw-resource.component';
         ReportHeaderComponent,
         ReportLabsObservationComponent,
         ReportMedicalHistoryConditionComponent,
-        ReportMedicalHistoryEditorComponent,
         ReportMedicalHistoryExplanationOfBenefitComponent,
         ToastComponent,
         UtilitiesSidebarComponent,
