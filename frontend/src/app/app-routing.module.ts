@@ -6,6 +6,8 @@ import { environment } from '../environments/environment';
 import { IsAdminAuthGuard } from './auth-guards/is-admin-auth-guard';
 import { IsAuthenticatedAuthGuard } from './auth-guards/is-authenticated-auth-guard';
 import { EncryptionStatusGuard } from './auth-guards/encryption-status.guard';
+import { SearchFeatureGuard } from './auth-guards/search-feature.guard';
+import { ChatFeatureGuard } from './auth-guards/chat-feature.guard';
 import { AuthSigninComponent } from './pages/auth-signin/auth-signin.component';
 import { DemoEntryComponent } from './pages/demo-entry/demo-entry.component';
 import { AuthSignupWizardComponent } from './pages/auth-signup-wizard/auth-signup-wizard.component';
@@ -47,6 +49,9 @@ import { PractitionerHistoryComponent } from "./pages/practitioner-history/pract
 import { SettingsComponent } from './pages/settings/settings.component';
 import { GetEncryptionKeyWizardComponent } from './pages/get-encryption-key-wizard/get-encryption-key-wizard.component';
 import { SetupEncryptionKeyComponent } from './pages/setup-encryption-key/setup-encryption-key.component';
+import { ViewRawResourceDetailsComponent } from "./pages/view-raw-resource-details/view-raw-resource-details.component";
+import { ResourceSearchTableComponent } from "./pages/resource-search-table/resource-search-table.component";
+import { ChatComponent } from './pages/chat/chat.component';
 
 const routes: Routes = [
   { path: 'auth/signup/wizard', component: AuthSignupWizardComponent },
@@ -79,6 +84,8 @@ const routes: Routes = [
   { path: 'resource/create', component: ResourceCreatorComponent, canActivate: [ IsAuthenticatedAuthGuard ] },
   // Patient-generated data (#313) — home vitals first; visit wizard at resource/create
   { path: 'resource/add', component: PatientEntryComponent, canActivate: [ IsAuthenticatedAuthGuard ] },
+  { path: 'resource/summary', component: ResourceSearchTableComponent, canActivate: [ IsAuthenticatedAuthGuard, SearchFeatureGuard ] },
+  { path: 'resource/view/:id',component: ViewRawResourceDetailsComponent, canActivate: [ IsAuthenticatedAuthGuard, SearchFeatureGuard ]},
 
   { path: 'desktop/callback/:state', component: DesktopCallbackComponent, canActivate: [ IsAuthenticatedAuthGuard ] },
 
@@ -122,7 +129,8 @@ const routes: Routes = [
   { path: 'practitioners/edit/:id', component: PractitionerEditPageComponent, canActivate: [ IsAuthenticatedAuthGuard ] },
   { path: 'practitioner-history/:id', component: PractitionerHistoryComponent, canActivate: [ IsAuthenticatedAuthGuard ] },
 
-  { path: 'settings', component: SettingsComponent, canActivate: [ IsAuthenticatedAuthGuard] },
+  { path: 'settings', component: SettingsComponent, canActivate: [ IsAuthenticatedAuthGuard ] },
+  { path: 'chat', component: ChatComponent, canActivate: [ IsAuthenticatedAuthGuard, ChatFeatureGuard ] },
 
   // { path: 'general-pages', loadChildren: () => import('./general-pages/general-pages.module').then(m => m.GeneralPagesModule) },
   // { path: 'ui-elements', loadChildren: () => import('./ui-elements/ui-elements.module').then(m => m.UiElementsModule) },

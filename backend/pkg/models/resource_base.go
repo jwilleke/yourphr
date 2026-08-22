@@ -38,8 +38,16 @@ func (s *ResourceBase) SetSortTitle(sortTitle *string) {
 	s.SortTitle = sortTitle
 }
 
+func (s *ResourceBase) GetSortTitle() *string {
+	return s.SortTitle
+}
+
 func (s *ResourceBase) SetSortDate(sortDate *time.Time) {
 	s.SortDate = sortDate
+}
+
+func (s *ResourceBase) GetSortDate() *time.Time {
+	return s.SortDate
 }
 
 func (s *ResourceBase) SetResourceRaw(resourceRaw datatypes.JSON) {
@@ -51,4 +59,8 @@ func (s *ResourceBase) GetResourceRaw() datatypes.JSON {
 
 func (s *ResourceBase) SetSourceUri(sourceUri *string) {
 	s.SourceUri = sourceUri
+}
+
+func (s *ResourceBase) GetSourceUri() *string {
+	return s.SourceUri
 }

@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"runtime"
 	"strings"
 	"time"
@@ -83,7 +84,19 @@ func (ae *AppEngine) Setup() (*gin.RouterGroup, *gin.Engine) {
 	// covers the SPA + API. The report-only strict script-src is computed once here from the
 	// served index.html, so the inline-script hashes can never drift from the served bytes.
 	reportOnlyScriptSrc := middleware.ComputeReportOnlyScriptSrc(ae.readFrontendIndexHTML())
-	r.Use(middleware.SecurityHeadersMiddleware(ae.Config.GetBool("web.listen.https.enabled"), reportOnlyScriptSrc))
+
+	// search.enabled (fasten-onprem#594) has the browser talk to Typesense directly, so its port
+	// needs a connect-src allowance or every chat/search request is silently blocked by CSP
+	// rather than a network error — which is exactly what happened before this was added: the
+	// port was reachable, Typesense could reach the configured LLM fine, and the browser still
+	// reported "Could not get a response" because it never even attempted the connection.
+	var typesensePort string
+	if ae.Config.GetBool("search.enabled") {
+		if searchURL, err := url.Parse(ae.Config.GetString("search.uri")); err == nil {
+			typesensePort = searchURL.Port()
+		}
+	}
+	r.Use(middleware.SecurityHeadersMiddleware(ae.Config.GetBool("web.listen.https.enabled"), reportOnlyScriptSrc, typesensePort))
 
 	if !ae.StandbyMode {
 		r.Use(middleware.RepositoryMiddleware(ae.deviceRepo))
@@ -225,6 +238,8 @@ func (ae *AppEngine) Setup() (*gin.RouterGroup, *gin.Engine) {
 				// tour, and doubly inert on a real install.
 				demoGroup.POST("/demo-signin/admin", handler.AuthDemoAdminSignin)
 
+				api.GET("/settings", handler.GetSettings)
+
 				//whitelisted CORS PROXY
 				api.GET("/cors/:endpointId/*proxyPath", handler.CORSProxy)
 				api.POST("/cors/:endpointId/*proxyPath", handler.CORSProxy)
@@ -351,6 +366,9 @@ func (ae *AppEngine) Setup() (*gin.RouterGroup, *gin.Engine) {
 					// Patient-generated data (#313) — first slice: home vitals on the fasten source.
 					secure.POST("/resource/patient-entry", handler.CreatePatientEntry)
 					secure.DELETE("/encounter/:encounterId/related/:resourceType/:resourceId", handler.EncounterUnlinkResource)
+					secure.GET("/resource/search", handler.SearchResourcesHandler)
+					secure.GET("/resource/search/:id", handler.GetResourceByIDHandler)
+					secure.GET("/resource/summary", handler.GetResourceSummaryHandler)
 
 					secure.GET("/dashboards", handler.GetDashboard)
 					secure.POST("/dashboards", handler.AddDashboardLocation)

@@ -1,6 +1,7 @@
 import { BrowserModule } from '@angular/platform-browser';
-import { NgModule, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { APP_INITIALIZER, NgModule, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { DragDropModule } from '@angular/cdk/drag-drop';
+import { SettingsService } from './services/settings.service';
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { HTTP_INTERCEPTORS, HttpClient, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
@@ -48,6 +49,10 @@ import { PractitionerHistoryComponent } from './pages/practitioner-history/pract
 import { SettingsComponent } from './pages/settings/settings.component';
 import { SetupEncryptionKeyComponent } from './pages/setup-encryption-key/setup-encryption-key.component';
 import { GetEncryptionKeyWizardComponent } from './pages/get-encryption-key-wizard/get-encryption-key-wizard.component';
+import { ViewRawResourceDetailsComponent } from './pages/view-raw-resource-details/view-raw-resource-details.component';
+import { ResourceSearchTableComponent } from './pages/resource-search-table/resource-search-table.component';
+import { ResourceSearchDatatableModule } from './components/resource-search-datatable/resource-search-datatable.module';
+import { ChatComponent } from './pages/chat/chat.component';
 
 @NgModule({ declarations: [
         AppComponent,
@@ -76,6 +81,9 @@ import { GetEncryptionKeyWizardComponent } from './pages/get-encryption-key-wiza
         PractitionerHistoryComponent,
         SetupEncryptionKeyComponent,
         GetEncryptionKeyWizardComponent,
+        ViewRawResourceDetailsComponent,
+        ResourceSearchTableComponent,
+        ChatComponent,
     ],
     exports: [],
     bootstrap: [AppComponent],
@@ -86,6 +94,7 @@ import { GetEncryptionKeyWizardComponent } from './pages/get-encryption-key-wiza
         SharedModule,
         FhirCardModule,
         FhirDatatableModule,
+        ResourceSearchDatatableModule,
         AppRoutingModule,
         NgbModule,
         BaseChartDirective,
@@ -101,6 +110,12 @@ import { GetEncryptionKeyWizardComponent } from './pages/get-encryption-key-wiza
         {
             provide: HTTP_CLIENT_TOKEN,
             useClass: HttpClient,
+        },
+        {
+            provide: APP_INITIALIZER,
+            useFactory: (settingsService: SettingsService) => () => settingsService.load(),
+            deps: [SettingsService],
+            multi: true
         },
         {
             provide: HTTP_INTERCEPTORS,

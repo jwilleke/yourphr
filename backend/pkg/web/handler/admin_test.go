@@ -43,6 +43,7 @@ func (suite *AdminHandlerTestSuite) SetupSuite() {
 	cfg.EXPECT().GetString("log.level").Return("INFO").AnyTimes()
 	cfg.EXPECT().GetBool("database.validation_mode").Return(false).AnyTimes()
 	cfg.EXPECT().GetBool("database.encryption.enabled").Return(false).AnyTimes()
+	cfg.EXPECT().GetBool("search.enabled").Return(false).AnyTimes()
 	suite.AppConfig = cfg
 
 	repo, err := database.NewRepository(cfg, logrus.WithField("test", suite.T().Name()), event_bus.NewNoopEventBusServer())

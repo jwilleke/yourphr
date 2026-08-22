@@ -100,6 +100,7 @@ func TestConnectSource_HappyPath(t *testing.T) {
 	cfg.EXPECT().GetString("log.level").Return("INFO").AnyTimes()
 	cfg.EXPECT().GetBool("database.validation_mode").Return(false).AnyTimes()
 	cfg.EXPECT().GetBool("database.encryption.enabled").Return(false).AnyTimes()
+	cfg.EXPECT().GetBool("search.enabled").Return(false).AnyTimes()
 	// The request below omits redirect_uri, so ConnectSource derives it from the relay config (#399).
 	// Both unset → relay.ResolvePublicBaseURL falls back to the project relay.
 	cfg.EXPECT().GetString("relay.public_url").Return("").AnyTimes()

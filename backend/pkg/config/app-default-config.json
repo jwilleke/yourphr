@@ -71,6 +71,17 @@
   "medications.rxterms_enrich": false,
   "medications.rxterms_api_fallback": false,
 
+  "_comment_search": "AI-assisted record search/chat via a Typesense index plus an external LLM (vllm-compatible endpoint). OFF by default, matching cda_converter/metrics: it depends on two services this instance may not have (a Typesense server and an LLM endpoint), so a stock install must not try to reach either. Turning it on with no reachable Typesense server fails the same way an unreachable cda-converter does: a clear error naming what to fix, nothing else affected. search.api_key is the shared secret between this backend and the Typesense server's own config (e.g. its TYPESENSE_API_KEY) — not a credential Typesense issues, so there is nothing to auto-generate; an operator enabling search must set the same value on both sides.",
+  "search.enabled": false,
+  "search.uri": "http://typesense:8108",
+  "search.api_key": "",
+  "search.collection_name": "resources",
+  "search.chat.conversation_collection_name": "conversation_store",
+  "search.chat.model.id": "conv-model-1",
+  "search.chat.model.name": "",
+  "search.chat.model.vllm_url": "",
+  "search.chat.model.max_bytes": 28672,
+
   "_comment_sync": "Background refresh of provider access tokens. Set to 0 or less to disable the worker.",
   "sync.token_refresh.interval_minutes": 30,
 
@@ -151,7 +162,8 @@
     "sandbox.athena.client_secret",
     "demo.password",
     "demo.admin.password",
-    "mail.smtp.pass"
+    "mail.smtp.pass",
+    "search.api_key"
   ],
 
   "_comment_mail": "Outbound email (#524). OFF by default and CONSOLE by default, which together mean a fresh instance never sends anything and never fails trying — a message with nowhere to go is written to the log instead. That matters twice over here: the public demo must not email strangers, and development and the E2E suite need no relay at all. Design and the provider table below are adapted from jwilleke/ngdpbase docs/admin/email-setup.md, which solved the same problem for a wiki; SMTP is the stable part, so only the transport differs (Go net/smtp rather than nodemailer). Set provider to \"smtp\" AND enabled to true before anything leaves the instance. NOTE mail from a home IP is usually dropped or spam-filed, so in practice mail.smtp.host points at a relay the operator already has: smtp.resend.com (user \"resend\", pass = API key), smtp.sendgrid.net (user \"apikey\"), smtp.gmail.com (requires a Google APP PASSWORD, not the account password), region-specific AWS SES (IAM SMTP credentials, not AWS keys), or localhost:1025 for Mailhog in development. Sending from your own domain also needs SPF, DKIM and DMARC records or recipients will reject it.",

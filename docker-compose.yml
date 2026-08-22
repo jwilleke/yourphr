@@ -52,3 +52,37 @@ services:
     restart: unless-stopped
     expose:
       - "8080"
+
+  # Typesense powers the optional AI-assisted "Search" and "Chat" features (search.enabled,
+  # OFF by default — see backend/pkg/config/app-default-config.json). Present in compose so
+  # enabling the feature is just flipping the app config; unused, it costs an idle container.
+  # Full setup: docs/deployment/search-and-chat.md
+  #
+  # Don't want it? `docker compose up --scale typesense=0`, or leave YOURPHR_SEARCH_ENABLED unset.
+  #
+  # PUBLISHED, not just `expose`'d — matching upstream fasten-onprem#594. The frontend's
+  # TypesenseService talks to Typesense DIRECTLY from the browser (typesense.service.ts), not
+  # through the fasten backend, so the port must be reachable from wherever the browser runs, not
+  # just from inside the compose network. `fasten` also reaches it at http://typesense:8108.
+  # TYPESENSE_API_KEY must match YOURPHR_SEARCH_API_KEY on the fasten service.
+  #
+  # Security tradeoff, inherited from upstream and not yet resolved: this reopens exactly what the
+  # earlier `expose`-only setup was closing — FHIR-derived records become queryable by anyone who
+  # can reach this port. And `search.api_key` is returned in plaintext by the unauthenticated
+  # GET /api/settings, so the key alone is not a meaningful barrier. Fine for a trusted single-user
+  # dev box; anyone running search/chat on a shared network should route this through an
+  # authenticated backend proxy instead before relying on it.
+  typesense:
+    image: typesense/typesense:29.0
+    restart: unless-stopped
+    ports:
+      - "8108:8108"
+    volumes:
+      - typesense-data:/data
+    environment:
+      - TYPESENSE_API_KEY=${YOURPHR_SEARCH_API_KEY:-xyz123}
+      - TYPESENSE_DATA_DIR=/data
+      - TYPESENSE_ENABLE_CORS=true
+
+volumes:
+  typesense-data:

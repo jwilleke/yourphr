@@ -5,6 +5,7 @@ import {FastenApiService} from '../../services/fasten-api.service';
 import * as fhirpath from 'fhirpath';
 import {PractitionerModel} from '../../../lib/models/resources/practitioner-model';
 import {Summary} from '../../../app/models/fasten/summary';
+import { SettingsService } from 'src/app/services/settings.service';
 
 @Component({
     selector: 'report-header',
@@ -16,6 +17,7 @@ export class ReportHeaderComponent implements OnInit {
   patient: ResourceFhir = null
   primaryCare: PractitionerModel = null
   lastUpdated: Date = null
+  searchEnabled: boolean = false
   @Input() reportHeaderTitle = ""
   @Input() reportHeaderSubTitle = "Organized by condition and encounters"
   @ViewChild('saveReportWarning') saveReportWarning: TemplateRef<any>
@@ -36,9 +38,11 @@ export class ReportHeaderComponent implements OnInit {
   constructor(
     private fastenApi: FastenApiService,
     private modalService: NgbModal,
+    private settingsService: SettingsService,
   ) { }
 
   ngOnInit(): void {
+    this.searchEnabled = !!this.settingsService.get('search')?.enabled;
     this.fastenApi.getSummary().subscribe((summary: Summary) => {
       if (summary.sources && summary.sources.length > 0) {
         this.lastUpdated = summary.sources.reduce((latest, source) => {

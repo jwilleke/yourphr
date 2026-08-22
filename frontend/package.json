@@ -47,7 +47,7 @@
     "bootstrap": "^5.3.8",
     "chart.js": "^4.4.2",
     "dwv": "^0.31.0",
-    "fhirpath": "^3.3.0",
+    "fhirpath": "3.3.0",
     "gridstack": "8.1.1",
     "humanize-duration": "^3.27.3",
     "idb": "^7.1.0",
@@ -62,6 +62,7 @@
     "rtf.js": "^3.0.9",
     "rxjs": "^7.8.1",
     "tslib": "^2.0.0",
+    "typesense": "^2.1.0-11",
     "webcrypto-liner": "^1.4.0",
     "zone.js": "~0.15.1"
   },

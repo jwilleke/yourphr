@@ -35,6 +35,7 @@ import { MedicalRecordWizardAddEncounterComponent } from './medical-record-wizar
 import { MedicalRecordWizardAddLabResultsComponent } from './medical-record-wizard-add-lab-results/medical-record-wizard-add-lab-results.component';
 import { FormRequestHealthSystemComponent } from './form-request-health-system/form-request-health-system.component';
 import { RawResourceComponent } from './raw-resource/raw-resource.component';
+import { ResourceSearchDatatableModule } from './resource-search-datatable/resource-search-datatable.module';
 
 @NgModule({
   imports: [
@@ -54,6 +55,7 @@ import { RawResourceComponent } from './raw-resource/raw-resource.component';
     DirectivesModule,
     FhirCardModule,
     FhirDatatableModule,
+    ResourceSearchDatatableModule,
 
     //standalone components
     GlossaryLookupComponent,

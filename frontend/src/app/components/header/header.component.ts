@@ -7,6 +7,7 @@ import {BackgroundJob} from '../../models/fasten/background-job';
 import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 import {SupportRequest} from '../../models/fasten/support-request';
 import {environment} from '../../../environments/environment';
+import { SettingsService } from 'src/app/services/settings.service';
 import {versionInfo} from '../../../environments/versions';
 import {Subscription} from 'rxjs';
 import {ToastNotification, ToastType} from '../../models/fasten/toast';
@@ -44,6 +45,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
   isDarkModeSubscription: Subscription = null
 
   is_environment_desktop: boolean = environment.environment_desktop
+  chatEnabled: boolean = false
 
   isAdmin = false;
 
@@ -56,7 +58,8 @@ export class HeaderComponent implements OnInit, OnDestroy {
     private router: Router,
     private fastenApi: FastenApiService,
     private modalService: NgbModal,
-    private themeService: ThemeService) {
+    private themeService: ThemeService,
+    private settingsService: SettingsService) {
     }
 
   ngOnInit() {
@@ -64,6 +67,9 @@ export class HeaderComponent implements OnInit, OnDestroy {
     this.authService.GetCurrentUser()
       .then((claims) => this.current_user_claims = claims)
       .catch(() => this.current_user_claims = new UserRegisteredClaims())
+
+    const search = this.settingsService.get('search');
+    this.chatEnabled = !!search?.enabled && !!search?.chat?.conversation_collection_name;
 
     this.authService.IsAdmin().then((isAdmin) => this.isAdmin = isAdmin);
 
@@ -110,7 +116,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
     event.preventDefault();
     document.querySelector('body').classList.toggle('az-header-menu-show');
   }
-  
+
   toggleTheme() {
     this.themeService.setDarkMode(!this.isDarkMode);
   }

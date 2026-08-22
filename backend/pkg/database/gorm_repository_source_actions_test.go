@@ -35,6 +35,7 @@ func TestSourceActions_DisconnectRemoveDelete(t *testing.T) {
 	fakeConfig.EXPECT().GetString("log.level").Return("INFO").AnyTimes()
 	fakeConfig.EXPECT().GetBool("database.validation_mode").Return(false).AnyTimes()
 	fakeConfig.EXPECT().GetBool("database.encryption.enabled").Return(false).AnyTimes()
+	fakeConfig.EXPECT().GetBool("search.enabled").Return(false).AnyTimes()
 
 	dbRepo, err := NewRepository(fakeConfig, logrus.WithField("test", t.Name()), event_bus.NewNoopEventBusServer())
 	require.NoError(t, err)

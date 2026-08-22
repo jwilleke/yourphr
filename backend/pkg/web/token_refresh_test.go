@@ -54,6 +54,7 @@ func TestRefreshExpiringTokens(t *testing.T) {
 	cfg.EXPECT().GetString("log.level").Return("INFO").AnyTimes()
 	cfg.EXPECT().GetBool("database.validation_mode").Return(false).AnyTimes()
 	cfg.EXPECT().GetBool("database.encryption.enabled").Return(false).AnyTimes()
+	cfg.EXPECT().GetBool("search.enabled").Return(false).AnyTimes()
 
 	logger := logrus.WithField("test", t.Name())
 	repo, err := database.NewRepository(cfg, logger, event_bus.NewNoopEventBusServer())
@@ -117,6 +118,7 @@ func TestRefreshExpiringTokens_ErrorIsSkipped(t *testing.T) {
 	cfg.EXPECT().GetString("log.level").Return("INFO").AnyTimes()
 	cfg.EXPECT().GetBool("database.validation_mode").Return(false).AnyTimes()
 	cfg.EXPECT().GetBool("database.encryption.enabled").Return(false).AnyTimes()
+	cfg.EXPECT().GetBool("search.enabled").Return(false).AnyTimes()
 
 	logger := logrus.WithField("test", t.Name())
 	repo, err := database.NewRepository(cfg, logger, event_bus.NewNoopEventBusServer())

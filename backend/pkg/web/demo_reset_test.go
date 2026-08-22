@@ -40,6 +40,7 @@ func resetEngine(t *testing.T, opts resetEngineOptions) *AppEngine {
 	cfg.EXPECT().GetBool("demo.reset_on_restart").Return(opts.resetOnRestart).AnyTimes()
 	cfg.EXPECT().GetBool("demo.enabled").Return(opts.demoEnabled).AnyTimes()
 	cfg.EXPECT().GetBool("database.encryption.enabled").Return(opts.encryption).AnyTimes()
+	cfg.EXPECT().GetBool("search.enabled").Return(false).AnyTimes()
 	cfg.EXPECT().GetString("demo.username").Return(opts.demoUsername).AnyTimes()
 	cfg.EXPECT().GetString("demo.admin.username").Return(opts.demoAdminUser).AnyTimes()
 	cfg.EXPECT().GetString("bootstrap.admin.username").Return(opts.bootstrapAdmin).AnyTimes()

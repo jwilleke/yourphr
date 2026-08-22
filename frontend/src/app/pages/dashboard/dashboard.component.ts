@@ -10,6 +10,7 @@ import {Summary} from '../../models/fasten/summary';
 import {ClassifiedCondition} from '../../models/fasten/classified-condition';
 import {ClassifiedAllergy} from '../../models/fasten/classified-allergy';
 import {ResourceListItem} from '../../models/fasten/resource-list-item';
+import { SettingsService } from 'src/app/services/settings.service';
 
 // The palette a patient can pick a tile color from (matches the SCSS .tile-color-* classes).
 export const TILE_PALETTE = ['amber', 'blue', 'red', 'green', 'teal', 'purple', 'pink', 'gray']
@@ -61,6 +62,8 @@ export const DEFAULT_TILES: DashboardTile[] = [
 export class DashboardComponent implements OnInit, OnDestroy {
   loading = false
 
+  searchEnabled: boolean = false
+
   lastUpdated: Date = null
   sourceCount = 0
 
@@ -89,9 +92,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
     private authService: AuthService,
     private dashboardPreferences: DashboardPreferencesService,
     private router: Router,
+    private settingsService: SettingsService,
   ) { }
 
   ngOnInit() {
+    this.searchEnabled = !!this.settingsService.get('search')?.enabled;
     this.loading = true
     this.greeting = this.timeOfDayGreeting()
     this.loadPatientName()

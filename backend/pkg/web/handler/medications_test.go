@@ -46,6 +46,7 @@ func (suite *MedicationsHandlerTestSuite) SetupSuite() {
 	appConfig.EXPECT().GetString("log.level").Return("INFO").AnyTimes()
 	appConfig.EXPECT().GetBool("database.validation_mode").Return(false).AnyTimes()
 	appConfig.EXPECT().GetBool("database.encryption.enabled").Return(false).AnyTimes()
+	appConfig.EXPECT().GetBool("search.enabled").Return(false).AnyTimes()
 	appConfig.EXPECT().GetBool("medications.rxterms_enrich").Return(false).AnyTimes() // #387: off in tests (no external calls)
 	suite.AppConfig = appConfig
 

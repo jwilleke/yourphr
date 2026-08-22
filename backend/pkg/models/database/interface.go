@@ -13,8 +13,11 @@ type IFhirResourceModel interface {
 	SetResourceRaw(resourceRaw datatypes.JSON)
 	GetResourceRaw() datatypes.JSON
 	SetSortTitle(sortTitle *string)
+	GetSortTitle() *string
 	SetSortDate(sortDate *time.Time)
+	GetSortDate() *time.Time
 	SetSourceUri(sourceUri *string)
+	GetSourceUri() *string
 	GetSearchParameters() map[string]string
 	PopulateAndExtractSearchParameters(rawResource json.RawMessage) error
 }

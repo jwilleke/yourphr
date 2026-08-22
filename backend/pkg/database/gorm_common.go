@@ -15,6 +15,7 @@ import (
 	"github.com/fastenhealth/fasten-onprem/backend/pkg/event_bus"
 	"github.com/fastenhealth/fasten-onprem/backend/pkg/models"
 	databaseModel "github.com/fastenhealth/fasten-onprem/backend/pkg/models/database"
+	"github.com/fastenhealth/fasten-onprem/backend/pkg/search"
 	"github.com/fastenhealth/fasten-onprem/backend/pkg/utils"
 	sourceModel "github.com/fastenhealth/fasten-onprem/backend/pkg/sources/clients/models"
 	"github.com/gin-gonic/gin"
@@ -497,8 +498,44 @@ func (gr *GormRepository) UpsertRawResource(ctx context.Context, sourceCredentia
 		}
 	}
 
-	return gr.UpsertResource(ctx, wrappedResourceModel)
+	success, err := gr.UpsertResource(ctx, wrappedResourceModel)
+	if err != nil {
+		return false, err
+	}
 
+	// Add nil checks before launching goroutine
+	if wrappedResourceModel == nil {
+		gr.Logger.Warn("Cannot index nil resource in Typesense")
+		return success, nil
+	}
+
+	if search.Client == nil {
+		gr.Logger.Warn("Search client is nil, skipping indexing")
+		return success, nil
+	}
+
+	indexer := &search.IndexerService{Client: search.Client}
+
+	// Launch goroutine with proper error handling
+	go func(resource *models.ResourceBase) {
+		// Additional safety check inside goroutine
+		if resource == nil {
+			gr.Logger.Warn("Resource is nil in indexing goroutine")
+			return
+		}
+
+		if indexer == nil {
+			gr.Logger.Warn("IndexerService is nil in indexing goroutine")
+			return
+		}
+
+		err := indexer.IndexResource(resource)
+		if err != nil {
+			gr.Logger.Warnf("Failed to index resource: %v", err)
+		}
+	}(wrappedResourceModel)
+
+	return success, nil
 }
 
 // followMyHealthCompoundIDSuffix returns the bare resource id embedded in a
@@ -591,6 +628,16 @@ func (gr *GormRepository) UpsertResource(ctx context.Context, wrappedResourceMod
 
 	//TODO: this takes too long, we need to find a way to do this processing faster or in the background async.
 	err = wrappedFhirResourceModel.PopulateAndExtractSearchParameters(json.RawMessage(wrappedResourceModel.ResourceRaw))
+
+	// PopulateAndExtractSearchParameters computes SortTitle/SortDate/SourceUri onto
+	// wrappedFhirResourceModel, a SEPARATE object from wrappedResourceModel. The caller indexes
+	// wrappedResourceModel (by pointer) into Typesense right after this call returns, so without
+	// copying these back it always indexes an empty sort_title — search would never match anything
+	// by title.
+	wrappedResourceModel.SortTitle = wrappedFhirResourceModel.GetSortTitle()
+	wrappedResourceModel.SortDate = wrappedFhirResourceModel.GetSortDate()
+	wrappedResourceModel.SourceUri = wrappedFhirResourceModel.GetSourceUri()
+
 	if err != nil {
 		gr.Logger.Warnf("ignoring: an error occurred while extracting SearchParameters using FHIRPath (%s/%s): %v", wrappedResourceModel.SourceResourceType, wrappedResourceModel.SourceResourceID, err)
 		//wrappedFhirResourceModel.SetResourceRaw(wrappedResourceModel.ResourceRaw)
@@ -679,6 +726,50 @@ func (gr *GormRepository) ListResources(ctx context.Context, queryOptions models
 		//there is no FHIR Resource name specified, so we're querying across all FHIR resources
 		return gr.getResourcesFromAllTables(queryBuilder, queryParam)
 	}
+}
+
+// Used to query all resources across all tables and use them for Typesense indexing
+func (gr *GormRepository) ListAllResources(ctx context.Context, queryOptions models.ListResourceQueryOptions) ([]models.ResourceBase, error) {
+	queryParam := models.OriginBase{}
+
+	if len(queryOptions.SourceResourceType) > 0 {
+		queryParam.SourceResourceType = queryOptions.SourceResourceType
+	}
+	if len(queryOptions.SourceID) > 0 {
+		sourceUUID, err := uuid.Parse(queryOptions.SourceID)
+		if err != nil {
+			return nil, err
+		}
+		queryParam.SourceID = sourceUUID
+	}
+	if len(queryOptions.SourceResourceID) > 0 {
+		queryParam.SourceResourceID = queryOptions.SourceResourceID
+	}
+
+	queryBuilder := gr.GormClient.WithContext(ctx)
+	if len(queryOptions.SourceResourceType) > 0 {
+		tableName, err := databaseModel.GetTableNameByResourceType(queryOptions.SourceResourceType)
+		if err != nil {
+			return nil, err
+		}
+		queryBuilder = queryBuilder.
+			Where(queryParam).
+			Table(tableName)
+
+		if queryOptions.Limit > 0 {
+			queryBuilder = queryBuilder.Limit(queryOptions.Limit).Offset(queryOptions.Offset)
+		}
+
+		var wrappedResourceModels []models.ResourceBase
+		err = queryBuilder.Find(&wrappedResourceModels).Error
+		return wrappedResourceModels, err
+	}
+
+	// Query all resources across all tables
+	if queryOptions.Limit > 0 {
+		queryBuilder = queryBuilder.Limit(queryOptions.Limit).Offset(queryOptions.Offset)
+	}
+	return gr.getResourcesFromAllTables(queryBuilder, queryParam)
 }
 
 // TODO: should this be deprecated? (replaced by ListResources)

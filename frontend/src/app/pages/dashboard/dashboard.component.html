@@ -10,6 +10,7 @@
             <ng-container *ngIf="lastUpdated"> · last import {{lastUpdated | date:'MMM d, yyyy'}}</ng-container>
           </p>
         </div>
+        <a *ngIf="searchEnabled" [routerLink]="'/resource/summary'" class="btn btn-az-primary"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i> Search Records</a>
         <a [routerLink]="'/sources'" class="btn btn-az-primary"><i class="fa-solid fa-plus" aria-hidden="true"></i> Add records</a>
       </div>
 

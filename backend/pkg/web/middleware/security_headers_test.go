@@ -11,10 +11,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func newSecurityHeadersEngine(httpsEnabled bool, reportOnlyScriptSrc string) *gin.Engine {
+func newSecurityHeadersEngine(httpsEnabled bool, reportOnlyScriptSrc string, typesensePort string) *gin.Engine {
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
-	r.Use(SecurityHeadersMiddleware(httpsEnabled, reportOnlyScriptSrc))
+	r.Use(SecurityHeadersMiddleware(httpsEnabled, reportOnlyScriptSrc, typesensePort))
 	r.GET("/", func(c *gin.Context) { c.String(http.StatusOK, "ok") })
 	return r
 }
@@ -22,7 +22,7 @@ func newSecurityHeadersEngine(httpsEnabled bool, reportOnlyScriptSrc string) *gi
 func Test_SecurityHeadersMiddleware(t *testing.T) {
 	w := httptest.NewRecorder()
 	reportOnly := "script-src 'self' 'sha256-abc'"
-	newSecurityHeadersEngine(true, reportOnly).ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/", nil))
+	newSecurityHeadersEngine(true, reportOnly, "").ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/", nil))
 
 	require.Equal(t, "nosniff", w.Header().Get("X-Content-Type-Options"))
 	require.Equal(t, "DENY", w.Header().Get("X-Frame-Options"))
@@ -46,7 +46,7 @@ func Test_SecurityHeadersMiddleware(t *testing.T) {
 
 func Test_SecurityHeadersMiddleware_NoHSTSWithoutHTTPS(t *testing.T) {
 	w := httptest.NewRecorder()
-	newSecurityHeadersEngine(false, "script-src 'self'").ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/", nil))
+	newSecurityHeadersEngine(false, "script-src 'self'", "").ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/", nil))
 
 	// HSTS must be omitted over plain HTTP.
 	require.Empty(t, w.Header().Get("Strict-Transport-Security"))
@@ -57,11 +57,41 @@ func Test_SecurityHeadersMiddleware_NoHSTSWithoutHTTPS(t *testing.T) {
 
 func Test_SecurityHeadersMiddleware_EmptyReportOnlyOmitsHeader(t *testing.T) {
 	w := httptest.NewRecorder()
-	newSecurityHeadersEngine(true, "").ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/", nil))
+	newSecurityHeadersEngine(true, "", "").ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/", nil))
 
 	require.Empty(t, w.Header().Get("Content-Security-Policy-Report-Only"))
 	// Enforcing CSP is still set.
 	require.NotEmpty(t, w.Header().Get("Content-Security-Policy"))
+}
+
+func Test_SecurityHeadersMiddleware_NoTypesensePortLeavesConnectSrcUnchanged(t *testing.T) {
+	w := httptest.NewRecorder()
+	newSecurityHeadersEngine(true, "", "").ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/", nil))
+
+	csp := w.Header().Get("Content-Security-Policy")
+	require.Contains(t, csp, "connect-src 'self' https://wallet.hello.coop https://issuer.hello.coop;")
+}
+
+func Test_SecurityHeadersMiddleware_TypesensePortAddsRequestHostOrigin(t *testing.T) {
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	req.Host = "example.com:9090"
+	newSecurityHeadersEngine(false, "", "8108").ServeHTTP(w, req)
+
+	// Same host the browser used, http (httpsEnabled=false), Typesense's port — matching how
+	// typesense.service.ts derives its own target (location.hostname + search.uri's port).
+	csp := w.Header().Get("Content-Security-Policy")
+	require.Contains(t, csp, "connect-src 'self' https://wallet.hello.coop https://issuer.hello.coop http://example.com:8108;")
+}
+
+func Test_SecurityHeadersMiddleware_TypesensePortHonorsHTTPS(t *testing.T) {
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	req.Host = "phr.example.com"
+	newSecurityHeadersEngine(true, "", "8108").ServeHTTP(w, req)
+
+	csp := w.Header().Get("Content-Security-Policy")
+	require.Contains(t, csp, "https://phr.example.com:8108")
 }
 
 func Test_ComputeReportOnlyScriptSrc(t *testing.T) {
