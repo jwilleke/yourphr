@@ -40,7 +40,7 @@ require (
 	github.com/google/go-github/v54 v54.0.0
 	github.com/google/uuid v1.6.0
 	github.com/iancoleman/strcase v0.3.0
-	github.com/johnfercher/maroto/v2 v2.4.0
+	github.com/johnfercher/maroto/v2 v2.4.1
 	github.com/lestrrat-go/jwx/v2 v2.1.7
 	github.com/samber/lo v1.53.0
 	github.com/sirupsen/logrus v1.10.0
