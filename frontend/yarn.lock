@@ -4385,10 +4385,10 @@ ast-types@^0.16.1:
   dependencies:
     tslib "^2.0.1"
 
-autocomplete-lhc@^20.1.0:
-  version "20.1.0"
-  resolved "https://registry.yarnpkg.com/autocomplete-lhc/-/autocomplete-lhc-20.1.0.tgz#45dc5a3583fe1d74c34bbf988a598edfd9a30958"
-  integrity sha512-sYDx6dKGD2pS0FM/y9uR7BjMiNCCZNdb6BO8i26piCJlXIc0eeAsU00bDH0aEaRaQCwwpvr8V0BZxJ35L4T+9A==
+autocomplete-lhc@^20.1.2:
+  version "20.1.2"
+  resolved "https://registry.yarnpkg.com/autocomplete-lhc/-/autocomplete-lhc-20.1.2.tgz#490e18e6fba97d1a38760c9f4ffcb037a71706ab"
+  integrity sha512-JqeHVl14npf5DrtTp6HNe9Ucm+yJaXz0XGCxmf9JW2+umaFR0wzFBE+K005iPtZWycODUfSXroA9ywANTipSHA==
 
 autoprefixer@10.4.21:
   version "10.4.21"
@@ -7637,10 +7637,10 @@ levn@^0.4.1:
     prelude-ls "^1.2.1"
     type-check "~0.4.0"
 
-lforms@43.0.0:
-  version "43.0.0"
-  resolved "https://registry.yarnpkg.com/lforms/-/lforms-43.0.0.tgz#b2fc4528d7e9ac341f97c13fe1ae6362f973cde4"
-  integrity sha512-kaFDxGL5aZ7Ydo3yQ1YJNZHmnYeEkCPJsZgZUeQNodZkSV8FnGCI7cBGNgU0LRLjtneiBcXv0RXrtaajDhlGMw==
+lforms@43.1.0:
+  version "43.1.0"
+  resolved "https://registry.yarnpkg.com/lforms/-/lforms-43.1.0.tgz#8bfe28adc2295e7bdc1f3f53e534b5088f8ec7d8"
+  integrity sha512-Kt9KcVi2dZYWhUWoZk/DAOXX4/y/9jG0V51cbEMuxRYx6VrzlWlCOqzg3WkWW91rnwnF58pbmJcKkPLbfaMKxw==
   dependencies:
     "@angular/animations" "^20.3.25"
     "@angular/common" "^20.3.25"
@@ -7653,7 +7653,7 @@ lforms@43.0.0:
     "@angular/router" "^20.3.25"
     "@lhncbc/ucum-lhc" "^7.1.3"
     "@types/jquery" "^3.5.33"
-    autocomplete-lhc "^20.1.0"
+    autocomplete-lhc "^20.1.2"
     deep-equal "^2.2.3"
     fast-copy "^3.0.1"
     fhirpath "^4.8.0"
