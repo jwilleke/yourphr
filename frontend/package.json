@@ -46,7 +46,7 @@
     "asmcrypto.js": "^2.3.2",
     "bootstrap": "^5.3.8",
     "chart.js": "^4.4.2",
-    "dwv": "^0.31.0",
+    "dwv": "^0.36.4",
     "fhirpath": "^3.3.0",
     "gridstack": "8.1.1",
     "humanize-duration": "^3.27.3",
