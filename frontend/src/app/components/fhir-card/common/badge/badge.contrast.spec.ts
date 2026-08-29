@@ -88,7 +88,12 @@ describe('BadgeComponent contrast (yourphr#486)', () => {
   }
 
   function measure(status: string): { ratio: number; fg: string; bg: string; cls: string } {
-    component.status = status;
+    // setInput, not `component.status = ...`. Assigning to an @Input on an already-rendered
+    // fixture and calling detectChanges() moves the binding after Angular has checked it, which
+    // Angular 22 reports as NG0100 (ExpressionChangedAfterItHasBeenCheckedError). setInput is the
+    // supported way to change an input on a fixture: it marks the component dirty first, so the
+    // new value is what gets checked rather than a second value discovered mid-cycle.
+    fixture.componentRef.setInput('status', status);
     fixture.detectChanges();
     const span: HTMLElement = fixture.nativeElement.querySelector('span');
     const fg = parseRgb(getComputedStyle(span).color);

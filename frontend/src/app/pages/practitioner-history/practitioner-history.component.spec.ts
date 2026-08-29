@@ -7,6 +7,7 @@ import { ReportHeaderComponent } from 'src/app/components/report-header/report-h
 import { ActivatedRoute } from '@angular/router';
 import { HTTP_CLIENT_TOKEN } from 'src/app/dependency-injection';
 import { HttpClient, provideHttpClient, withInterceptorsFromDi, withXhr } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { MedicalHistoryComponent } from '../medical-history/medical-history.component';
 
 describe('PractitionerHistoryComponent', () => {
@@ -37,7 +38,11 @@ describe('PractitionerHistoryComponent', () => {
             provide: HTTP_CLIENT_TOKEN,
             useClass: HttpClient,
         },
-        provideHttpClient(withXhr(), withInterceptorsFromDi()),
+        provideHttpClient(withInterceptorsFromDi()),
+        // The TESTING backend: without it these specs fire real XHRs at the karma server, which
+        // 404. Angular 22 surfaces those unhandled responses as an error thrown in afterAll, which
+        // tears down the whole browser session rather than failing one spec.
+        provideHttpClientTesting(),
     ]
 }).compileComponents();
     mockedFastenApiService.getResourceGraph.and.returnValue(

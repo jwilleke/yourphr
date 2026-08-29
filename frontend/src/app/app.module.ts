@@ -120,7 +120,6 @@ import { GetEncryptionKeyWizardComponent } from './pages/get-encryption-key-wiza
             provide: HIGHLIGHT_OPTIONS,
             useValue: {
                 coreLibraryLoader: () => import('highlight.js/lib/core'),
-                lineNumbersLoader: () => import('highlightjs-line-numbers.js'), // Optional, only if you want the line numbers
                 languages: {
                     json: () => import('highlight.js/lib/languages/json')
                 },

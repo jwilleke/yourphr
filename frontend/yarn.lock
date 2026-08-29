@@ -246,14 +246,7 @@
   dependencies:
     "@angular-eslint/bundled-angular-compiler" "21.0.1"
 
-"@angular/animations@20.3.29", "@angular/animations@^20.3.25":
-  version "20.3.29"
-  resolved "https://registry.yarnpkg.com/@angular/animations/-/animations-20.3.29.tgz#cd677a71aea2a1ef895d41da9cdcf8b4f489cb04"
-  integrity sha512-4ailq4Mg9I+GlcR8hk8gTcIFFpzyPEPvYwbYLSHIzpSJHKAq1kFZ17UEg0Bq+oJiyTylKHeV3CpYCS+I7sVaGg==
-  dependencies:
-    tslib "^2.3.0"
-
-"@angular/animations@^22.1.4":
+"@angular/animations@22.1.4", "@angular/animations@^20.3.25", "@angular/animations@^22.1.4":
   version "22.1.4"
   resolved "https://registry.yarnpkg.com/@angular/animations/-/animations-22.1.4.tgz#2e44ef334ecdd7ab82f940cad34c92efa83d4f86"
   integrity sha512-DZqSHhmSRBVfLlrFxNLQj6PYVhu1w8vj1iUdD6fmlhfGGafuiw/VcUpBgYmy2YNcXmGmwbZsKr1oeJP7fT8zNQ==
@@ -330,14 +323,7 @@
     yargs "18.1.0"
     zod "4.4.3"
 
-"@angular/common@20.3.29", "@angular/common@^20.3.25":
-  version "20.3.29"
-  resolved "https://registry.yarnpkg.com/@angular/common/-/common-20.3.29.tgz#ad275f9ea6ac762ab548f473a803cad181996f63"
-  integrity sha512-tlX353N11Uu9Cqn7EssfQNh7zjML9ddHRzhlo+3rsaxd+ngqsFpXieogBUSoo5yDhY3ACam/Bls9aGMfklr2SA==
-  dependencies:
-    tslib "^2.3.0"
-
-"@angular/common@^22.1.4":
+"@angular/common@22.1.4", "@angular/common@^20.3.25", "@angular/common@^22.1.4":
   version "22.1.4"
   resolved "https://registry.yarnpkg.com/@angular/common/-/common-22.1.4.tgz#76c1a1effe87f94cc69275c3df4bf339f0f59dba"
   integrity sha512-UtWCloA/d0I5twV9Lu/Fcc7T6uQb40f/k0Hj5HLohIsiLTyvXVxWINBfa7LWWLtcq/0UOIY/yCs9Zq9Sj4dWqA==
@@ -358,49 +344,28 @@
     tslib "^2.3.0"
     yargs "^18.0.0"
 
-"@angular/compiler@20.3.29", "@angular/compiler@^20.3.25":
-  version "20.3.29"
-  resolved "https://registry.yarnpkg.com/@angular/compiler/-/compiler-20.3.29.tgz#425b4034ed093c5f1ef9e26730977732bbeffe53"
-  integrity sha512-AgR6Wq9ht5mpliSkJoUvWBILVLFdM7cEQ42pQIlPfGivmVp6Pe0eFqZezsmdDqlu4lsfWBei/FpzQbwak46DLw==
-  dependencies:
-    tslib "^2.3.0"
-
-"@angular/compiler@^22.1.4":
+"@angular/compiler@22.1.4", "@angular/compiler@^20.3.25", "@angular/compiler@^22.1.4":
   version "22.1.4"
   resolved "https://registry.yarnpkg.com/@angular/compiler/-/compiler-22.1.4.tgz#55f97056e814c910c334c9c68dff1ef5a3506cd9"
   integrity sha512-o+W0shjR5KmPPWchFmqN9bLINYAy14zIW//g9T5WqKDMOqjt4IbeY6AKOoE1db/dXffprLEH9nyPOmi19iKNxg==
   dependencies:
     tslib "^2.3.0"
 
-"@angular/core@20.3.29", "@angular/core@^20.3.25":
-  version "20.3.29"
-  resolved "https://registry.yarnpkg.com/@angular/core/-/core-20.3.29.tgz#c3ca128f2de414a66f7c3c51facf5594f2b8dd39"
-  integrity sha512-aOgEd1+YxC1bcn6Mju0rfz/2/yJyOGd38qY+DEaRDIS24nB6Epr6i0fY6OUW2uDG/nQUyY9kt1L7xjg+1aVitQ==
-  dependencies:
-    tslib "^2.3.0"
-
-"@angular/core@^22.1.4":
+"@angular/core@22.1.4", "@angular/core@^20.3.25", "@angular/core@^22.1.4":
   version "22.1.4"
   resolved "https://registry.yarnpkg.com/@angular/core/-/core-22.1.4.tgz#b01d0e74065bc1d1f01ec052489cbd67fc00234f"
   integrity sha512-0dW+lw8nHo6RGBUOXtjs02vjHIPJ8rEbw4fd0NH3Dii4p+gIB4ZaTw+o7Se3Nf4m1oZ8+2qAYmWVHXlfhKcCDg==
   dependencies:
     tslib "^2.3.0"
 
-"@angular/elements@20.3.29", "@angular/elements@^20.3.25":
-  version "20.3.29"
-  resolved "https://registry.yarnpkg.com/@angular/elements/-/elements-20.3.29.tgz#9dc20708ad31bfc273a7e461f57df41febc98ca9"
-  integrity sha512-9Gx7RhqxlbUyhs/4OoLP3XK5ENQcNY3L9huXVfQmWjQV0hnMW6FtiRrwPjYKu+ZnkzuUqn9OkdX+j0qrmODG4Q==
+"@angular/elements@22.1.4", "@angular/elements@^20.3.25":
+  version "22.1.4"
+  resolved "https://registry.yarnpkg.com/@angular/elements/-/elements-22.1.4.tgz#5e95fea391841a526e6dbc6fefea6eddf674fe23"
+  integrity sha512-W8Oa8RdW7KXYpe7NYCFUCXjJzjWIdGzCMwcdfi51mbwxXjMEx44VwcccZHb+j+0sXLX9J2EE6wCx3WIVQydgLw==
   dependencies:
     tslib "^2.3.0"
 
-"@angular/forms@20.3.29", "@angular/forms@^20.3.25":
-  version "20.3.29"
-  resolved "https://registry.yarnpkg.com/@angular/forms/-/forms-20.3.29.tgz#84640e93e1c1c2c47959849a375dabb41b3f6235"
-  integrity sha512-SK2wW2o7LMoMvzScihs4H4L03PPy5lS3/vNfB3J53C5BW9g1fm3NIvkIHzww2pTvildTvVdRAcdWDDYTCkxcyw==
-  dependencies:
-    tslib "^2.3.0"
-
-"@angular/forms@^22.1.4":
+"@angular/forms@22.1.4", "@angular/forms@^20.3.25", "@angular/forms@^22.1.4":
   version "22.1.4"
   resolved "https://registry.yarnpkg.com/@angular/forms/-/forms-22.1.4.tgz#b69316eac6669544ddecbc11dd5c6c08844c32ca"
   integrity sha512-w8ZXe4oURrb/DS5zAFrR4AmGXC84sdLeOKXRM76ndRRgSCzyRLEe4wDU1KHnDejNVIGvoSZYJJjOajG1lpj8TA==
@@ -423,42 +388,21 @@
     tinyglobby "^0.2.12"
     yargs "^18.0.0"
 
-"@angular/platform-browser-dynamic@20.3.29", "@angular/platform-browser-dynamic@^20.3.25":
-  version "20.3.29"
-  resolved "https://registry.yarnpkg.com/@angular/platform-browser-dynamic/-/platform-browser-dynamic-20.3.29.tgz#6410b063b7eb4ae938d1f5444439d81191dc407e"
-  integrity sha512-R5/vu37FZ1talowvQCHg5oXvRyeIew2pJcso3GMXRtj4RW6/nJPSNFQUGBKrfT6UBJEfkVFX5X+FGkRDHTzoUg==
-  dependencies:
-    tslib "^2.3.0"
-
-"@angular/platform-browser-dynamic@^22.1.4":
+"@angular/platform-browser-dynamic@22.1.4", "@angular/platform-browser-dynamic@^20.3.25", "@angular/platform-browser-dynamic@^22.1.4":
   version "22.1.4"
   resolved "https://registry.yarnpkg.com/@angular/platform-browser-dynamic/-/platform-browser-dynamic-22.1.4.tgz#a7f13b35f6a88ce7b2263ff296cdcea92eeadfa8"
   integrity sha512-gtaQ05csHot468owe3AOXJYd2/VPlIQFr3tyXV8O2vhkfTokAyynpaMLc2q7EWbrDDuMvzETR2sBKBhgqIul+A==
   dependencies:
     tslib "^2.3.0"
 
-"@angular/platform-browser@20.3.29", "@angular/platform-browser@^20.3.25":
-  version "20.3.29"
-  resolved "https://registry.yarnpkg.com/@angular/platform-browser/-/platform-browser-20.3.29.tgz#88a85bb2b392abc3590fbab3429dac6236c82eb3"
-  integrity sha512-Mrk4Clmi1bTDTn6YBHfb4Fa9t2o6T8ml5DgooZPz2XCun/UlqYFwz+xBWQvWTEyzvDF9g7fu+Gpe4b/LHYHEYg==
-  dependencies:
-    tslib "^2.3.0"
-
-"@angular/platform-browser@^22.1.4":
+"@angular/platform-browser@22.1.4", "@angular/platform-browser@^20.3.25", "@angular/platform-browser@^22.1.4":
   version "22.1.4"
   resolved "https://registry.yarnpkg.com/@angular/platform-browser/-/platform-browser-22.1.4.tgz#0c2942f8ca21ad0c0b69212d21cf131ea114dce7"
   integrity sha512-zhEWnRShG6GjnEvCVROD68XfnrV6+HJ9bPjwZx4LsAz7spX823Nhiml8Uqpvijsa1w7UdWLU7nK/magr9IEMOQ==
   dependencies:
     tslib "^2.3.0"
 
-"@angular/router@20.3.29", "@angular/router@^20.3.25":
-  version "20.3.29"
-  resolved "https://registry.yarnpkg.com/@angular/router/-/router-20.3.29.tgz#a1d219010c274926b664bb321db7c8618af3d1ed"
-  integrity sha512-42KOJH35PEUYJ31b8xRHEMPiosNO21YzC43cojvzt39lAqEOAtM6aCDPn9QHcvQXj6JrELLvwmfOXD6gNb2u+g==
-  dependencies:
-    tslib "^2.3.0"
-
-"@angular/router@^22.1.4":
+"@angular/router@22.1.4", "@angular/router@^20.3.25", "@angular/router@^22.1.4":
   version "22.1.4"
   resolved "https://registry.yarnpkg.com/@angular/router/-/router-22.1.4.tgz#44bfac87495a3400f4d94b1f7a492de505ad29df"
   integrity sha512-vCwJLRnFBSRH5LxSF8OXKBhdmJ526hVGb/5sfeLTQW/oWCdcfXb2RvHfB077m5cdqKX9sBwFVlkJ8Z8kgx/pLQ==
@@ -5835,6 +5779,11 @@ es-object-atoms@^1.0.0, es-object-atoms@^1.1.1:
   dependencies:
     es-errors "^1.3.0"
 
+es-toolkit@^1.39.7:
+  version "1.52.0"
+  resolved "https://registry.yarnpkg.com/es-toolkit/-/es-toolkit-1.52.0.tgz#71eaf1a8b18834ef77637eccbb885ba4c03cd6dd"
+  integrity sha512-XTNEJQh1tY1ZJVcf6ayP/2n4ZPyaHlW2FWs7xvw5ddPuhUVjLD3olQVQS7kf58JbAB48iL0uL/jerTrjtV3lDA==
+
 es6-shim@^0.35.8:
   version "0.35.8"
   resolved "https://registry.yarnpkg.com/es6-shim/-/es6-shim-0.35.8.tgz#89216f6fbf8bacba3f897c8c0e814d2a41c05fb7"
@@ -6657,15 +6606,10 @@ he@^1.2.0:
   resolved "https://registry.npmjs.org/he/-/he-1.2.0.tgz#84ae65fa7eafb165fddb61566ae14baf05664f0f"
   integrity sha512-F/1DnUGPopORZi0ni+CvrCgHQ5FyEAHRLSApuYWMmrbSwoN2Mn/7k+Gl38gJnR7yyDZk6WLXwiGod1JOWNDKGw==
 
-highlight.js@^11.5.1:
-  version "11.7.0"
-  resolved "https://registry.npmjs.org/highlight.js/-/highlight.js-11.7.0.tgz#3ff0165bc843f8c9bce1fd89e2fda9143d24b11e"
-  integrity sha512-1rRqesRFhMO/PRF+G86evnyJkCgaZFOI+Z6kdj15TA18funfoqJXvgPCLSf0SWq3SRfg1j3HlDs8o4s3EGq1oQ==
-
-highlightjs-line-numbers.js@^2.8.0:
-  version "2.8.0"
-  resolved "https://registry.npmjs.org/highlightjs-line-numbers.js/-/highlightjs-line-numbers.js-2.8.0.tgz#479ea8cff0c31fadc1578a66fa03e38b801f9ca6"
-  integrity sha512-TEf1gw0c8mb8nan0QwliqS7obT4cpUd9hzsGzsZLweteNnWea/VIqy5/aQqsa5wnz9lnvmtAkS1ZtDTjB/goYQ==
+highlight.js@^11.11.1:
+  version "11.12.0"
+  resolved "https://registry.yarnpkg.com/highlight.js/-/highlight.js-11.12.0.tgz#470d918fd556a76debc40fe5e4b540b6b9cb9890"
+  integrity sha512-nbfWpyRMcMrPMmDwJB+dhX/eiaPKtc2RB+0QZskqJ3WjRA/FDS0e9hZrx8EC/lbEv8gXy98FcDbNa/dspAaJMg==
 
 hmac-drbg@^1.0.1:
   version "1.0.1"
@@ -7697,11 +7641,6 @@ locate-path@^6.0.0:
   dependencies:
     p-locate "^5.0.0"
 
-lodash-es@^4.17.15:
-  version "4.18.1"
-  resolved "https://registry.yarnpkg.com/lodash-es/-/lodash-es-4.18.1.tgz#b962eeb80d9d983a900bf342961fb7418ca10b1d"
-  integrity sha512-J8xewKD/Gk22OZbhpOVSwcs60zhd95ESDwezOFuA3/099925PdHJ7OFHNTGtajL3AlZkykD32HykiMo+BIBI8A==
-
 lodash.debounce@^4.0.8:
   version "4.0.8"
   resolved "https://registry.npmjs.org/lodash.debounce/-/lodash.debounce-4.0.8.tgz#82d79bff30a67c4005ffd5e2515300ad9ca4d7af"
@@ -8181,22 +8120,21 @@ ng-zorro-antd@^20.4.1:
     date-fns "^2.16.1"
     tslib "^2.3.0"
 
-ng2-charts@9:
-  version "9.0.0"
-  resolved "https://registry.yarnpkg.com/ng2-charts/-/ng2-charts-9.0.0.tgz#797da7c9b8082bd9438e336ecdc255596dbd8f87"
-  integrity sha512-oG4VLbwDmWtSCaBoiuoi14LZR2DrOgG5WKtGm12eAQHrA32l0dc0XwKurY/dilc9bgKAiJgL/qy2hy/rcb8yog==
+ng2-charts@^10.0.0:
+  version "10.0.0"
+  resolved "https://registry.yarnpkg.com/ng2-charts/-/ng2-charts-10.0.0.tgz#ccdc8b2f3cf7f90558d5590ed828d97e4897b626"
+  integrity sha512-mdL75XJrk/0s0YO2ySPQpAHPja85ECDEGNWFlcElJiy/bYliTNGEpeCtctAqZuozTff/E2CwGjyfPFM1ScP2og==
   dependencies:
-    lodash-es "^4.17.15"
+    es-toolkit "^1.39.7"
     tslib "^2.3.0"
 
-ngx-highlightjs@^7.0.1:
-  version "7.0.1"
-  resolved "https://registry.npmjs.org/ngx-highlightjs/-/ngx-highlightjs-7.0.1.tgz#52bef4e26a9707893cc2bbee20fbaff2a5f9a77a"
-  integrity sha512-ZmA6RUBRB0tqAlsGYR21kCna9ror51FZwpV7Y94yCuyVv24u5bhg9nfLnFPDBJJ1u1vfNKV1R1TNTXUm/SiRjw==
+ngx-highlightjs@^14.0.1:
+  version "14.0.1"
+  resolved "https://registry.yarnpkg.com/ngx-highlightjs/-/ngx-highlightjs-14.0.1.tgz#78b4799a34c75537cbfa39dcb5cf8936d52e6867"
+  integrity sha512-pa4YPChIho+Qs6P036oMvTt8pmTlMwberz/kGBojKVMEHSj9t4PT1YzBplM+RMK0VWgLK4zRbJbxivQrLPr1fQ==
   dependencies:
-    highlight.js "^11.5.1"
-    highlightjs-line-numbers.js "^2.8.0"
-    tslib "^2.0.0"
+    highlight.js "^11.11.1"
+    tslib "^2.3.0"
 
 ngx-infinite-scroll@^22.0.0:
   version "22.0.0"

@@ -84,12 +84,17 @@ describe('ClaimComponent', () => {
   });
 
   it('should survive a claim with no line items or total', () => {
-    component.displayModel = new ClaimModel({resourceType: 'Claim', status: 'draft'}, fhirVersions.R4);
-    component.ngOnInit();
-    fixture.detectChanges();
+    // A FRESH fixture, not the one beforeEach already rendered. This component derives its view
+    // state in ngOnInit, so testing a different input means INITIALISING with it. Swapping
+    // displayModel on a rendered component and calling ngOnInit() by hand moves `heading` after
+    // Angular has already checked it, which Angular 22 reports as NG0100
+    // (ExpressionChangedAfterItHasBeenCheckedError) rather than tolerating as Angular 20 did.
+    const bare = TestBed.createComponent(ClaimComponent);
+    bare.componentInstance.displayModel = new ClaimModel({resourceType: 'Claim', status: 'draft'}, fhirVersions.R4);
+    bare.detectChanges();
 
-    expect(component.lineItems).toEqual([]);
-    expect(component.amountClaimed).toEqual('');
-    expect(component.heading).toEqual('Claim');
+    expect(bare.componentInstance.lineItems).toEqual([]);
+    expect(bare.componentInstance.amountClaimed).toEqual('');
+    expect(bare.componentInstance.heading).toEqual('Claim');
   });
 });

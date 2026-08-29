@@ -25,7 +25,11 @@ describe('ReportLabsComponent', () => {
     })
     .compileComponents();
     mockedFastenApiService.getResources.and.returnValue(of([]));
-    mockedFastenApiService.queryResources.and.returnValue(of([]));
+    // A ResponseWrapper, not a bare array: findLabResultCodesSortedByLatest() pipes
+    // `response.data`, so `of([])` handed it undefined and `data.map(...)` threw. That throw
+    // happened in a subscription outliving the spec, so Angular 22 reports it as an error in
+    // afterAll — which tears down the whole browser session rather than failing one test.
+    mockedFastenApiService.queryResources.and.returnValue(of({data: []}));
     mockedFastenApiService.getSummary.and.returnValue(of({sources: []}));
 
     fixture = TestBed.createComponent(ReportLabsComponent);
