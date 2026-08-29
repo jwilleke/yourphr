@@ -51,6 +51,10 @@ describe('MedicalSourcesComponent', () => {
       { id: 'a', display: 'Medicare — Blue Button 2.0 (Sandbox)' },
       { id: 'b', display: 'Epic (Sandbox)' },
     ]});
+    // markForCheck(): flush() delivers the response OUTSIDE change detection, and Angular 22's
+    // detectChanges() no longer marks the fixture dirty implicitly, so the first pass would
+    // render the stale value and the verification pass reports NG0100 (yourphr#482).
+    fixture.changeDetectorRef.markForCheck();
     fixture.detectChanges();
 
     expect(component.connectableProviders.length).toBe(2);

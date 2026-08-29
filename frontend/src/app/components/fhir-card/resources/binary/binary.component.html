@@ -52,7 +52,10 @@
   <fhir-markdown [displayModel]="displayModel"></fhir-markdown>
 </ng-template>
 <ng-template #showHighlight>
-  <pre><code [languages]="['json', 'xml']" [highlight]="displayModel.content"></code></pre>
+  <!-- highlightAuto, not highlight: this content's language is not known ahead of time, so it is
+       detected from the candidates. In ngx-highlightjs 14 `[highlight]` REQUIRES a `language`, and
+       `[languages]` belongs to the auto-detecting directive (yourphr#482). -->
+  <pre><code [languages]="['json', 'xml']" [highlightAuto]="displayModel.content"></code></pre>
 </ng-template>
 <ng-template #showText>
   <fhir-binary-text [displayModel]="displayModel"></fhir-binary-text>

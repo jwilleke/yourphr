@@ -7,7 +7,7 @@
 
   @if (debugMode) {
     <div class="alert alert-warning">
-      <pre><code  [highlight]="organizationForm.getRawValue() | json"></code></pre>
+      <pre><code  language="json" [highlight]="organizationForm.getRawValue() | json"></code></pre>
       <strong>Edit Organization Form Status: {{ organizationForm.status }}</strong>
     </div>
   }

@@ -50,7 +50,10 @@ describe('BadgeComponent', () => {
   });
 
   it('renders the contrast class alongside the static badge classes', () => {
-    component.status = 'unknown';
+    // setInput, not `component.status = ...` — beforeEach has already rendered this fixture, so
+    // assigning to an @Input and re-running detectChanges moves the binding after Angular checked
+    // it, which Angular 22 reports as NG0100 (yourphr#482).
+    fixture.componentRef.setInput('status', 'unknown');
     fixture.detectChanges();
 
     const span: HTMLElement = fixture.nativeElement.querySelector('span');

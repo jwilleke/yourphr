@@ -89,7 +89,7 @@
       <div class="col-6">{{selectedBackgroundJob.done_time | date:'yyyy-MM-dd HH:mm'}}</div>
     </div>
 
-    <pre><code  [highlight]="selectedBackgroundJob.data | json"></code></pre>
+    <pre><code  language="json" [highlight]="selectedBackgroundJob.data | json"></code></pre>
   </div>
   <div class="modal-footer">
     <button type="button" class="btn btn-outline-secondary" (click)="modal.close('Close click')">Close</button>

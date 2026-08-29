@@ -93,7 +93,12 @@
   <!-- Production and Sandbox shown as separate groups. The secret is never displayed (only whether the
   provider is enabled — its Status); the credential stays server-side. -->
   @if (!loading && entries.length) {
-    @for (group of environmentGroups; track group) {
+    <!-- track group.env, NOT `group`: environmentGroups is a getter that builds NEW objects on every
+       call, so identity tracking recreates both groups on every change detection — Angular warns
+       NG0956 ("track by identity caused re-creation of the entire collection") and the recreated
+       views then evaluate after their parent was checked, reported as NG0100 (yourphr#482). The
+       env is stable and unique across the two groups. -->
+  @for (group of environmentGroups; track group.env) {
       <div class="mg-b-30">
         <h5 class="mg-b-2">
           {{ group.label }}

@@ -29,6 +29,10 @@ describe('FhirResourceComponent', () => {
     // No source_resource_type → typeLookup returns null → no dynamic card loaded, just the provenance line.
     component.displayModel = {provenance: {kind: 'source', display: 'Source: FollowMyHealth', level: 4}} as any;
     component.ngOnChanges({} as any);
+    // markForCheck(): Angular 22's fixture.detectChanges() no longer marks the fixture
+    // dirty implicitly, so an input assigned straight onto the instance renders stale on
+    // the first pass and trips the verification pass as NG0100 (yourphr#482).
+    fixture.changeDetectorRef.markForCheck();
     fixture.detectChanges();
     const el: HTMLElement = fixture.nativeElement;
     expect(el.querySelector('.fhir-ui-reported-by')?.textContent).toContain('Source: FollowMyHealth');
@@ -37,6 +41,10 @@ describe('FhirResourceComponent', () => {
   it('shows no provenance line when the model has none', () => {
     component.displayModel = {source_resource_type: undefined} as any;
     component.ngOnChanges({} as any);
+    // markForCheck(): Angular 22's fixture.detectChanges() no longer marks the fixture
+    // dirty implicitly, so an input assigned straight onto the instance renders stale on
+    // the first pass and trips the verification pass as NG0100 (yourphr#482).
+    fixture.changeDetectorRef.markForCheck();
     fixture.detectChanges();
     const el: HTMLElement = fixture.nativeElement;
     expect(el.querySelector('.fhir-ui-reported-by')).toBeNull();
@@ -45,6 +53,10 @@ describe('FhirResourceComponent', () => {
   it('renders the classified summary badges when the model carries a classification', () => {
     component.displayModel = {classified: {state: 'Active', verification: 'Confirmed'}} as any;
     component.ngOnChanges({} as any);
+    // markForCheck(): Angular 22's fixture.detectChanges() no longer marks the fixture
+    // dirty implicitly, so an input assigned straight onto the instance renders stale on
+    // the first pass and trips the verification pass as NG0100 (yourphr#482).
+    fixture.changeDetectorRef.markForCheck();
     fixture.detectChanges();
     const text = (fixture.nativeElement as HTMLElement).textContent || '';
     expect(text).toContain('Active');

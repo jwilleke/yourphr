@@ -57,6 +57,10 @@ describe('ExploreComponent', () => {
   async function init(): Promise<void> {
     fixture.detectChanges();
     await fixture.whenStable();
+    // markForCheck(): the awaited data arrives OUTSIDE change detection, and Angular 22's
+    // fixture.detectChanges() no longer marks the fixture dirty implicitly — so the first
+    // pass renders the stale value and the verification pass reports NG0100 (yourphr#482).
+    fixture.changeDetectorRef.markForCheck();
     fixture.detectChanges();
   }
 

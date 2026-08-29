@@ -144,6 +144,11 @@ describe('AdminDashboardComponent', () => {
     fixture.componentInstance.instance.contact_email = 'new@example.org';
     fixture.componentInstance.instance.contact_url = '';
     fixture.componentInstance.saveInstance();
+    // markForCheck(): the fields above and saveInstance()'s result are set straight on the
+    // instance, outside change detection. Angular 22's detectChanges() no longer marks the fixture
+    // dirty implicitly, so the first pass renders the old name and the verification pass reports
+    // NG0100 (yourphr#482).
+    fixture.changeDetectorRef.markForCheck();
     fixture.detectChanges();
     expect(api.setInstanceSettings).toHaveBeenCalled();
     expect(fixture.componentInstance.instanceSaved).toBeTrue();

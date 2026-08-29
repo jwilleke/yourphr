@@ -12,5 +12,14 @@ const config: StorybookConfig = {
     name: "@storybook/angular",
     options: {},
   },
+  // webcrypto-liner's build references node's `util`, and webpack 5 stopped polyfilling node core
+  // modules. The Angular application builder handles this itself; Storybook's webpack does not, so
+  // it is declared here (yourphr#482). `false` supplies an empty module rather than pulling a
+  // browser polyfill in: the code path that would use it is node-only and never taken in a browser.
+  webpackFinal: async (config) => {
+    config.resolve = config.resolve ?? {};
+    config.resolve.fallback = { ...(config.resolve.fallback ?? {}), util: false };
+    return config;
+  },
 };
 export default config;

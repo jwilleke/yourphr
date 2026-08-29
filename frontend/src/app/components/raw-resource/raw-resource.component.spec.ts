@@ -17,7 +17,7 @@ describe('RawResourceComponent', () => {
 
     fixture = TestBed.createComponent(RawResourceComponent);
     component = fixture.componentInstance;
-    component.raw = {resourceType: 'Condition', id: 'abc'};
+    fixture.componentRef.setInput('raw', {resourceType: 'Condition', id: 'abc'});
     fixture.detectChanges();
   });
 
@@ -38,6 +38,11 @@ describe('RawResourceComponent', () => {
 
   it('should reveal the resource and the copy button when expanded', () => {
     component.toggle();
+    // markForCheck() before detectChanges(): Angular 22's fixture.detectChanges() no longer marks
+    // the fixture dirty implicitly, so state mutated directly on the instance (rather than through
+    // an input or a DOM event) renders STALE on the first pass and the verification pass then sees
+    // it change — reported as NG0100 (yourphr#482).
+    fixture.changeDetectorRef.markForCheck();
     fixture.detectChanges();
 
     expect(text()).toContain('Hide raw data');
@@ -68,7 +73,7 @@ describe('RawResourceComponent', () => {
 
   // A record with nothing stored should not offer an empty panel.
   it('should render nothing without a resource', () => {
-    component.raw = null;
+    fixture.componentRef.setInput('raw', null);
     fixture.detectChanges();
 
     expect(text()).not.toContain('Show raw data');

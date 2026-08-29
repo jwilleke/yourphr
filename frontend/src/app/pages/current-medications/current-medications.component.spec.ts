@@ -90,6 +90,10 @@ describe('CurrentMedicationsComponent', () => {
     ];
     (component as any).applyView();
     component.toggleExpanded('a');
+    // markForCheck(): Angular 22's fixture.detectChanges() no longer marks the fixture dirty
+    // implicitly, so state mutated directly on the instance renders stale on the first pass
+    // and trips the verification pass as NG0100 (yourphr#482).
+    fixture.changeDetectorRef.markForCheck();
     fixture.detectChanges();
 
     const el: HTMLElement = fixture.nativeElement;
@@ -103,6 +107,10 @@ describe('CurrentMedicationsComponent', () => {
     ];
     (component as any).applyView();
     component.toggleExpanded('b');
+    // markForCheck(): Angular 22's fixture.detectChanges() no longer marks the fixture dirty
+    // implicitly, so state mutated directly on the instance renders stale on the first pass
+    // and trips the verification pass as NG0100 (yourphr#482).
+    fixture.changeDetectorRef.markForCheck();
     fixture.detectChanges();
 
     const el: HTMLElement = fixture.nativeElement;
