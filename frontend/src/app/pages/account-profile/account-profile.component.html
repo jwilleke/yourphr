@@ -11,316 +11,353 @@
         </p>
       </div>
 
-      <div *ngIf="!loading.page; else isLoadingTemplate">
-        <div class="row">
-
-          <!-- Account identity -->
-          <div class="col-lg-4 mg-b-20">
-            <div class="card h-100">
-              <div class="card-header">
-                <h6 class="card-title mg-b-0"><i class="fas fa-id-card"></i>&nbsp; Account</h6>
-              </div>
-              <div class="card-body">
-                <div class="d-flex align-items-center mg-b-15">
-                  <div class="az-img-user mg-r-15"><span class="az-img-initials">{{ initials }}</span></div>
-                  <div>
-                    <h5 class="mg-b-0">{{ user.full_name || user.username || '—' }}</h5>
-                    <span class="tx-gray-500">{{ (user.role || '') | titlecase }}</span>
-                  </div>
+      @if (!loading.page) {
+        <div>
+          <div class="row">
+            <!-- Account identity -->
+            <div class="col-lg-4 mg-b-20">
+              <div class="card h-100">
+                <div class="card-header">
+                  <h6 class="card-title mg-b-0"><i class="fas fa-id-card"></i>&nbsp; Account</h6>
                 </div>
-                <table class="table table-sm table-borderless mg-b-0">
-                  <tbody>
-                    <tr>
-                      <th class="tx-gray-500 tx-medium" scope="row">Username</th>
-                      <td>{{ user.username || '—' }}</td>
-                    </tr>
-                    <tr>
-                      <th class="tx-gray-500 tx-medium" scope="row">Full name</th>
-                      <td>{{ user.full_name || '—' }}</td>
-                    </tr>
-                    <tr>
-                      <th class="tx-gray-500 tx-medium" scope="row">Email</th>
-                      <td>{{ user.email || '—' }}</td>
-                    </tr>
-                    <!-- #512: so you can answer "has anyone else been in my record?" without asking
-                         an admin. No address or device is recorded — only when, and how many times. -->
-                    <tr>
-                      <th class="tx-gray-500 tx-medium" scope="row">Last sign-in</th>
-                      <td>{{ user.last_login ? (user.last_login | date:'medium') : 'Never' }}</td>
-                    </tr>
-                    <tr>
-                      <th class="tx-gray-500 tx-medium" scope="row">Sign-ins</th>
-                      <td>{{ user.login_count || 0 }}</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-
-          <!-- Privacy & terms consent (#427) -->
-          <div class="col-lg-4 mg-b-20">
-            <div class="card h-100">
-              <div class="card-header d-flex justify-content-between align-items-center">
-                <h6 class="card-title mg-b-0"><i class="fas fa-file-contract"></i>&nbsp; Privacy &amp; terms</h6>
-                <span *ngIf="legalConsent?.accepted" class="badge text-bg-success">Accepted</span>
-                <span *ngIf="legalConsent && !legalConsent.accepted" class="badge text-bg-secondary">Not accepted</span>
-              </div>
-              <div class="card-body">
-                <p class="tx-gray-500 mg-b-10">
-                  Required before connecting medical records (catalog providers). Active opt-in is saved to your account. Rare providers may be configured to skip this.
-                </p>
-                <p class="mg-b-15">
-                  <a routerLink="/privacy">Privacy Policy</a>
-                  &nbsp;·&nbsp;
-                  <a routerLink="/terms">Terms of Service</a>
-                </p>
-
-                <div *ngIf="legalConsentLoading" class="tx-gray-500">Loading…</div>
-                <div *ngIf="legalConsentError" class="alert alert-danger tx-13 mg-b-10">{{ legalConsentError }}</div>
-                <div *ngIf="legalConsentMsg" class="alert alert-success tx-13 mg-b-10">{{ legalConsentMsg }}</div>
-
-                <ng-container *ngIf="!legalConsentLoading && legalConsent">
-                  <p *ngIf="legalConsent.accepted && legalConsent.accepted_at" class="tx-gray-500 tx-12 mg-b-10">
-                    Accepted {{ legalConsent.accepted_at }}
-                  </p>
-                  <p *ngIf="!legalConsent.accepted" class="tx-gray-500 tx-12 mg-b-10">
-                    Medical source connects are blocked until you agree.
-                  </p>
-
-                  <div *ngIf="!legalConsent.accepted" class="form-check mg-b-15">
-                    <input class="form-check-input" type="checkbox" id="legalOptIn" [(ngModel)]="legalOptInChecked" name="legalOptIn">
-                    <label class="form-check-label" for="legalOptIn">
-                      I have read and agree to the Privacy Policy and Terms of Service.
-                    </label>
+                <div class="card-body">
+                  <div class="d-flex align-items-center mg-b-15">
+                    <div class="az-img-user mg-r-15"><span class="az-img-initials">{{ initials }}</span></div>
+                    <div>
+                      <h5 class="mg-b-0">{{ user.full_name || user.username || '—' }}</h5>
+                      <span class="tx-gray-500">{{ (user.role || '') | titlecase }}</span>
+                    </div>
                   </div>
-
-                  <button *ngIf="!legalConsent.accepted" type="button" class="btn btn-az-primary"
-                          (click)="grantLegalConsent()" [disabled]="legalConsentBusy || !legalOptInChecked">
-                    <i class="fas fa-check mg-r-5"></i>{{ legalConsentBusy ? 'Saving…' : 'Grant consent' }}
-                  </button>
-                  <button *ngIf="legalConsent.accepted" type="button" class="btn btn-outline-danger"
-                          (click)="revokeLegalConsent()" [disabled]="legalConsentBusy">
-                    <i class="fas fa-ban mg-r-5"></i>{{ legalConsentBusy ? 'Revoking…' : 'Revoke consent' }}
-                  </button>
-                  <p *ngIf="legalConsent.accepted" class="tx-gray-500 tx-12 mg-t-10 mg-b-0">
-                    Revoking blocks new Medicare connections and <strong>disconnects</strong> Medicare-class sources
-                    (clears tokens; imported records stay until you use Remove data on Sources).
-                  </p>
-                </ng-container>
-              </div>
-            </div>
-          </div>
-
-          <!-- Change password -->
-          <div class="col-lg-4 mg-b-20">
-            <div class="card h-100">
-              <div class="card-header">
-                <h6 class="card-title mg-b-0"><i class="fas fa-key"></i>&nbsp; Change password</h6>
-              </div>
-              <div class="card-body">
-                <p class="tx-gray-500 mg-b-15">Update the password for this YourPHR account.</p>
-                <!-- Public demo (#514): this account is SHARED, so changing its password here would
-                     lock every other visitor out of the demo. The notice is left visible rather than
-                     hidden, so a visitor still sees the real flow. It says only that the control is
-                     disabled: the earlier wording claimed the password was "published", which stopped
-                     being true at #515 — it is generated per instance and shown to nobody. -->
-                <div *ngIf="user?.demo_account" class="alert alert-info tx-13" role="status">
-                  <strong>Disabled in the public demo.</strong>
-                </div>
-                <div *ngIf="pwSuccess" class="alert alert-success tx-13">Your password has been changed.</div>
-                <div *ngIf="pwError" class="alert alert-danger tx-13">{{ pwError }}</div>
-                <form (ngSubmit)="changePassword()" #pwForm="ngForm" autocomplete="off">
-                  <div class="form-group">
-                    <label class="tx-12 tx-uppercase tx-gray-500" for="pw-current">Current password</label>
-                    <input id="pw-current" name="pw-current" type="password" class="form-control" [(ngModel)]="pw.current" autocomplete="current-password" required>
-                  </div>
-                  <div class="form-group">
-                    <label class="tx-12 tx-uppercase tx-gray-500" for="pw-next">New password</label>
-                    <input id="pw-next" name="pw-next" type="password" class="form-control" [(ngModel)]="pw.next" autocomplete="new-password" required>
-                  </div>
-                  <div class="form-group">
-                    <label class="tx-12 tx-uppercase tx-gray-500" for="pw-confirm">Confirm new password</label>
-                    <input id="pw-confirm" name="pw-confirm" type="password" class="form-control" [(ngModel)]="pw.confirm" autocomplete="new-password" required>
-                  </div>
-                  <button type="submit" class="btn btn-az-primary" [disabled]="pwSubmitting || user?.demo_account"
-                          [title]="user?.demo_account ? 'Disabled in the public demo — the account is shared' : ''">
-                    <span *ngIf="pwSubmitting" class="spinner-border spinner-border-sm mg-r-5" role="status" aria-hidden="true"></span>
-                    <i *ngIf="!pwSubmitting" class="fas fa-save mg-r-5"></i>
-                    Change password
-                  </button>
-                  <p class="tx-11 tx-gray-500 mg-t-10 mg-b-0">
-                    Changing your password also signs out every other device — so if somebody else has
-                    your session, this ends it.
-                  </p>
-                </form>
-
-                <!-- Sign out everywhere (#508). Separate from the password form on purpose: it is
-                     useful WITHOUT changing a password (a laptop left signed in at a clinic), and it
-                     signs THIS browser out too, which the confirm step makes explicit. -->
-                <hr class="mg-y-20">
-                <h6 class="tx-13 tx-semibold mg-b-5">Sign out everywhere</h6>
-                <p class="tx-gray-500 tx-13 mg-b-10">
-                  Ends every signed-in session for this account, including this one. You will need to
-                  sign in again.
-                </p>
-                <div *ngIf="signOutError" class="alert alert-danger tx-13">{{ signOutError }}</div>
-                <button type="button" class="btn btn-outline-danger btn-sm" [disabled]="signOutSubmitting || user?.demo_account"
-                        [title]="user?.demo_account ? 'Disabled in the public demo — the account is shared' : ''"
-                        (click)="signOutEverywhere()">
-                  <span *ngIf="signOutSubmitting" class="spinner-border spinner-border-sm mg-r-5" role="status" aria-hidden="true"></span>
-                  <i *ngIf="!signOutSubmitting" class="fas fa-sign-out-alt mg-r-5"></i>
-                  Sign out everywhere
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Enrollee data controls (#431). Connections live on /sources — not as cards here. -->
-          <div class="col-lg-4 mg-b-20">
-            <div class="card h-100">
-              <div class="card-header">
-                <h6 class="card-title mg-b-0"><i class="fas fa-user-shield"></i>&nbsp; Your data controls</h6>
-              </div>
-              <div class="card-body">
-                <p class="tx-gray-500 mg-b-10">
-                  <strong>Connected medical sources</strong> (add, sync, disconnect) live on
-                  <a routerLink="/sources">Sources</a> — not as separate cards on this page.
-                </p>
-                <ul class="tx-13 mg-b-15 ps-3">
-                  <li class="mg-b-5">
-                    <strong>Sources</strong> — connect a provider; manage connected cards; Actions →
-                    <em>Disconnect</em> (clear tokens, keep records), <em>Remove data</em> (delete imported records),
-                    or <em>Disconnect &amp; remove data</em> (both + remove the card).
-                  </li>
-                  <li class="mg-b-5">
-                    <strong>Revoke Privacy &amp; Terms</strong> (card above) — blocks new medical-source connects
-                    and <em>disconnects</em> Medicare-class sources (tokens only; records stay until you remove them).
-                  </li>
-                  <li>
-                    <strong>Delete account</strong> (below) — permanently deletes your account and all of your data on this instance.
-                  </li>
-                </ul>
-                <a routerLink="/sources" class="btn btn-az-primary mg-r-10">
-                  <i class="fas fa-plug mg-r-5"></i> Go to Sources
-                </a>
-                <a routerLink="/privacy" class="btn btn-outline-secondary">
-                  Privacy Policy
-                </a>
-              </div>
-            </div>
-          </div>
-
-          <!-- Connected devices -->
-          <div class="col-lg-4 mg-b-20">
-            <div class="card h-100">
-              <div class="card-header">
-                <h6 class="card-title mg-b-0"><i class="fas fa-mobile-alt"></i>&nbsp; Connected devices</h6>
-              </div>
-              <div class="card-body">
-                <p class="tx-gray-500 mg-b-15">Pair companion apps and manage the access tokens devices use to reach your records.</p>
-                <a [routerLink]="'/settings'" class="btn btn-az-primary">
-                  <i class="fas fa-mobile-alt mg-r-5"></i> Manage connected devices
-                </a>
-              </div>
-            </div>
-          </div>
-
-          <!-- Third-party attributions (#428) -->
-          <div class="col-lg-4 mg-b-20">
-            <div class="card h-100">
-              <div class="card-header">
-                <h6 class="card-title mg-b-0"><i class="fas fa-balance-scale"></i>&nbsp; Attributions</h6>
-              </div>
-              <div class="card-body">
-                <p class="tx-gray-500 mg-b-15">
-                  Third-party API and product notices (including CMS Blue Button non-endorsement). Separate from Privacy &amp; Terms above.
-                </p>
-                <a routerLink="/attributions" class="btn btn-az-primary">
-                  <i class="fas fa-balance-scale mg-r-5"></i> View attributions
-                </a>
-              </div>
-            </div>
-          </div>
-
-          <!-- Access log (#563) — the complete record of who accessed this account's records.
-               Shown unfiltered: this table is what makes "you can see everyone who accessed your
-               data" a true statement. No IP addresses, no device fingerprints — who, what, when. -->
-          <div class="col-12 mg-b-20">
-            <div class="card">
-              <div class="card-header">
-                <h6 class="card-title mg-b-0"><i class="fas fa-eye"></i>&nbsp; Access log</h6>
-              </div>
-              <div class="card-body">
-                <p class="tx-gray-500 mg-b-15">
-                  Everyone who has viewed or exported records in this account, by day. YourPHR records who and when — never network addresses or devices.
-                </p>
-                <div *ngIf="accessLogError" class="alert alert-warning tx-13" role="alert">{{ accessLogError }}</div>
-                <app-loading-spinner *ngIf="accessLogLoading" [loadingTitle]="'Loading access log...'"></app-loading-spinner>
-                <p *ngIf="!accessLogLoading && !accessLogError && accessLog.length === 0" class="tx-gray-500 mg-b-0">
-                  No record access has been logged yet. Entries appear as records are viewed.
-                </p>
-                <div *ngIf="!accessLogLoading && accessLog.length > 0" class="table-responsive">
-                  <table class="table table-sm table-striped mg-b-0">
-                    <thead>
-                      <tr>
-                        <th scope="col">Day</th>
-                        <th scope="col">Who</th>
-                        <th scope="col">What</th>
-                        <th scope="col" class="text-end">Times</th>
-                        <th scope="col">Last access</th>
-                      </tr>
-                    </thead>
+                  <table class="table table-sm table-borderless mg-b-0">
                     <tbody>
-                      <tr *ngFor="let event of accessLog">
-                        <td>{{ event.day }}</td>
-                        <td>{{ event.actor_username }}</td>
-                        <td>{{ event.category }}</td>
-                        <td class="text-end">{{ event.count }}</td>
-                        <td>{{ event.last_at | date:'short' }}</td>
+                      <tr>
+                        <th class="tx-gray-500 tx-medium" scope="row">Username</th>
+                        <td>{{ user.username || '—' }}</td>
+                      </tr>
+                      <tr>
+                        <th class="tx-gray-500 tx-medium" scope="row">Full name</th>
+                        <td>{{ user.full_name || '—' }}</td>
+                      </tr>
+                      <tr>
+                        <th class="tx-gray-500 tx-medium" scope="row">Email</th>
+                        <td>{{ user.email || '—' }}</td>
+                      </tr>
+                      <!-- #512: so you can answer "has anyone else been in my record?" without asking
+                      an admin. No address or device is recorded — only when, and how many times. -->
+                      <tr>
+                        <th class="tx-gray-500 tx-medium" scope="row">Last sign-in</th>
+                        <td>{{ user.last_login ? (user.last_login | date:'medium') : 'Never' }}</td>
+                      </tr>
+                      <tr>
+                        <th class="tx-gray-500 tx-medium" scope="row">Sign-ins</th>
+                        <td>{{ user.login_count || 0 }}</td>
                       </tr>
                     </tbody>
                   </table>
                 </div>
               </div>
             </div>
-          </div>
-
-          <!-- Delete account (danger) -->
-          <div class="col-lg-4 mg-b-20">
-            <div class="card h-100 border-danger">
-              <div class="card-header">
-                <h6 class="card-title mg-b-0 tx-danger"><i class="fas fa-exclamation-triangle"></i>&nbsp; Delete account</h6>
-              </div>
-              <div class="card-body">
-                <p class="tx-gray-500 mg-b-15">
-                  Permanently delete your YourPHR account and all personal and medical data on this instance. This cannot be undone.
-                </p>
-                <!-- Public demo (#514): deleting the shared account leaves the one-click sign-in
-                     with nothing to sign in to, for everyone, until an operator resets it. -->
-                <div *ngIf="user?.demo_account" class="alert alert-info tx-13" role="status">
-                  <strong>Disabled in the public demo.</strong>
-                  This account is shared — deleting it would take the demo down for everyone.
+            <!-- Privacy & terms consent (#427) -->
+            <div class="col-lg-4 mg-b-20">
+              <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                  <h6 class="card-title mg-b-0"><i class="fas fa-file-contract"></i>&nbsp; Privacy &amp; terms</h6>
+                  @if (legalConsent?.accepted) {
+                    <span class="badge text-bg-success">Accepted</span>
+                  }
+                  @if (legalConsent && !legalConsent.accepted) {
+                    <span class="badge text-bg-secondary">Not accepted</span>
+                  }
                 </div>
-                <button (click)="openDeleteModal(deleteModalRef)" type="button" class="btn btn-outline-danger"
-                        [disabled]="user?.demo_account"
-                        [title]="user?.demo_account ? 'Disabled in the public demo — the account is shared' : ''">
-                  <i class="fas fa-trash mg-r-5"></i> Delete Account
-                </button>
+                <div class="card-body">
+                  <p class="tx-gray-500 mg-b-10">
+                    Required before connecting medical records (catalog providers). Active opt-in is saved to your account. Rare providers may be configured to skip this.
+                  </p>
+                  <p class="mg-b-15">
+                    <a routerLink="/privacy">Privacy Policy</a>
+                    &nbsp;·&nbsp;
+                    <a routerLink="/terms">Terms of Service</a>
+                  </p>
+                  @if (legalConsentLoading) {
+                    <div class="tx-gray-500">Loading…</div>
+                  }
+                  @if (legalConsentError) {
+                    <div class="alert alert-danger tx-13 mg-b-10">{{ legalConsentError }}</div>
+                  }
+                  @if (legalConsentMsg) {
+                    <div class="alert alert-success tx-13 mg-b-10">{{ legalConsentMsg }}</div>
+                  }
+                  @if (!legalConsentLoading && legalConsent) {
+                    @if (legalConsent.accepted && legalConsent.accepted_at) {
+                      <p class="tx-gray-500 tx-12 mg-b-10">
+                        Accepted {{ legalConsent.accepted_at }}
+                      </p>
+                    }
+                    @if (!legalConsent.accepted) {
+                      <p class="tx-gray-500 tx-12 mg-b-10">
+                        Medical source connects are blocked until you agree.
+                      </p>
+                    }
+                    @if (!legalConsent.accepted) {
+                      <div class="form-check mg-b-15">
+                        <input class="form-check-input" type="checkbox" id="legalOptIn" [(ngModel)]="legalOptInChecked" name="legalOptIn">
+                        <label class="form-check-label" for="legalOptIn">
+                          I have read and agree to the Privacy Policy and Terms of Service.
+                        </label>
+                      </div>
+                    }
+                    @if (!legalConsent.accepted) {
+                      <button type="button" class="btn btn-az-primary"
+                        (click)="grantLegalConsent()" [disabled]="legalConsentBusy || !legalOptInChecked">
+                        <i class="fas fa-check mg-r-5"></i>{{ legalConsentBusy ? 'Saving…' : 'Grant consent' }}
+                      </button>
+                    }
+                    @if (legalConsent.accepted) {
+                      <button type="button" class="btn btn-outline-danger"
+                        (click)="revokeLegalConsent()" [disabled]="legalConsentBusy">
+                        <i class="fas fa-ban mg-r-5"></i>{{ legalConsentBusy ? 'Revoking…' : 'Revoke consent' }}
+                      </button>
+                    }
+                    @if (legalConsent.accepted) {
+                      <p class="tx-gray-500 tx-12 mg-t-10 mg-b-0">
+                        Revoking blocks new Medicare connections and <strong>disconnects</strong> Medicare-class sources
+                        (clears tokens; imported records stay until you use Remove data on Sources).
+                      </p>
+                    }
+                  }
+                </div>
+              </div>
+            </div>
+            <!-- Change password -->
+            <div class="col-lg-4 mg-b-20">
+              <div class="card h-100">
+                <div class="card-header">
+                  <h6 class="card-title mg-b-0"><i class="fas fa-key"></i>&nbsp; Change password</h6>
+                </div>
+                <div class="card-body">
+                  <p class="tx-gray-500 mg-b-15">Update the password for this YourPHR account.</p>
+                  <!-- Public demo (#514): this account is SHARED, so changing its password here would
+                  lock every other visitor out of the demo. The notice is left visible rather than
+                  hidden, so a visitor still sees the real flow. It says only that the control is
+                  disabled: the earlier wording claimed the password was "published", which stopped
+                  being true at #515 — it is generated per instance and shown to nobody. -->
+                  @if (user?.demo_account) {
+                    <div class="alert alert-info tx-13" role="status">
+                      <strong>Disabled in the public demo.</strong>
+                    </div>
+                  }
+                  @if (pwSuccess) {
+                    <div class="alert alert-success tx-13">Your password has been changed.</div>
+                  }
+                  @if (pwError) {
+                    <div class="alert alert-danger tx-13">{{ pwError }}</div>
+                  }
+                  <form (ngSubmit)="changePassword()" #pwForm="ngForm" autocomplete="off">
+                    <div class="form-group">
+                      <label class="tx-12 tx-uppercase tx-gray-500" for="pw-current">Current password</label>
+                      <input id="pw-current" name="pw-current" type="password" class="form-control" [(ngModel)]="pw.current" autocomplete="current-password" required>
+                    </div>
+                    <div class="form-group">
+                      <label class="tx-12 tx-uppercase tx-gray-500" for="pw-next">New password</label>
+                      <input id="pw-next" name="pw-next" type="password" class="form-control" [(ngModel)]="pw.next" autocomplete="new-password" required>
+                    </div>
+                    <div class="form-group">
+                      <label class="tx-12 tx-uppercase tx-gray-500" for="pw-confirm">Confirm new password</label>
+                      <input id="pw-confirm" name="pw-confirm" type="password" class="form-control" [(ngModel)]="pw.confirm" autocomplete="new-password" required>
+                    </div>
+                    <button type="submit" class="btn btn-az-primary" [disabled]="pwSubmitting || user?.demo_account"
+                      [title]="user?.demo_account ? 'Disabled in the public demo — the account is shared' : ''">
+                      @if (pwSubmitting) {
+                        <span class="spinner-border spinner-border-sm mg-r-5" role="status" aria-hidden="true"></span>
+                      }
+                      @if (!pwSubmitting) {
+                        <i class="fas fa-save mg-r-5"></i>
+                      }
+                      Change password
+                    </button>
+                    <p class="tx-11 tx-gray-500 mg-t-10 mg-b-0">
+                      Changing your password also signs out every other device — so if somebody else has
+                      your session, this ends it.
+                    </p>
+                  </form>
+                  <!-- Sign out everywhere (#508). Separate from the password form on purpose: it is
+                  useful WITHOUT changing a password (a laptop left signed in at a clinic), and it
+                  signs THIS browser out too, which the confirm step makes explicit. -->
+                  <hr class="mg-y-20">
+                  <h6 class="tx-13 tx-semibold mg-b-5">Sign out everywhere</h6>
+                  <p class="tx-gray-500 tx-13 mg-b-10">
+                    Ends every signed-in session for this account, including this one. You will need to
+                    sign in again.
+                  </p>
+                  @if (signOutError) {
+                    <div class="alert alert-danger tx-13">{{ signOutError }}</div>
+                  }
+                  <button type="button" class="btn btn-outline-danger btn-sm" [disabled]="signOutSubmitting || user?.demo_account"
+                    [title]="user?.demo_account ? 'Disabled in the public demo — the account is shared' : ''"
+                    (click)="signOutEverywhere()">
+                    @if (signOutSubmitting) {
+                      <span class="spinner-border spinner-border-sm mg-r-5" role="status" aria-hidden="true"></span>
+                    }
+                    @if (!signOutSubmitting) {
+                      <i class="fas fa-sign-out-alt mg-r-5"></i>
+                    }
+                    Sign out everywhere
+                  </button>
+                </div>
+              </div>
+            </div>
+            <!-- Enrollee data controls (#431). Connections live on /sources — not as cards here. -->
+            <div class="col-lg-4 mg-b-20">
+              <div class="card h-100">
+                <div class="card-header">
+                  <h6 class="card-title mg-b-0"><i class="fas fa-user-shield"></i>&nbsp; Your data controls</h6>
+                </div>
+                <div class="card-body">
+                  <p class="tx-gray-500 mg-b-10">
+                    <strong>Connected medical sources</strong> (add, sync, disconnect) live on
+                    <a routerLink="/sources">Sources</a> — not as separate cards on this page.
+                  </p>
+                  <ul class="tx-13 mg-b-15 ps-3">
+                    <li class="mg-b-5">
+                      <strong>Sources</strong> — connect a provider; manage connected cards; Actions →
+                      <em>Disconnect</em> (clear tokens, keep records), <em>Remove data</em> (delete imported records),
+                      or <em>Disconnect &amp; remove data</em> (both + remove the card).
+                    </li>
+                    <li class="mg-b-5">
+                      <strong>Revoke Privacy &amp; Terms</strong> (card above) — blocks new medical-source connects
+                      and <em>disconnects</em> Medicare-class sources (tokens only; records stay until you remove them).
+                    </li>
+                    <li>
+                      <strong>Delete account</strong> (below) — permanently deletes your account and all of your data on this instance.
+                    </li>
+                  </ul>
+                  <a routerLink="/sources" class="btn btn-az-primary mg-r-10">
+                    <i class="fas fa-plug mg-r-5"></i> Go to Sources
+                  </a>
+                  <a routerLink="/privacy" class="btn btn-outline-secondary">
+                    Privacy Policy
+                  </a>
+                </div>
+              </div>
+            </div>
+            <!-- Connected devices -->
+            <div class="col-lg-4 mg-b-20">
+              <div class="card h-100">
+                <div class="card-header">
+                  <h6 class="card-title mg-b-0"><i class="fas fa-mobile-alt"></i>&nbsp; Connected devices</h6>
+                </div>
+                <div class="card-body">
+                  <p class="tx-gray-500 mg-b-15">Pair companion apps and manage the access tokens devices use to reach your records.</p>
+                  <a [routerLink]="'/settings'" class="btn btn-az-primary">
+                    <i class="fas fa-mobile-alt mg-r-5"></i> Manage connected devices
+                  </a>
+                </div>
+              </div>
+            </div>
+            <!-- Third-party attributions (#428) -->
+            <div class="col-lg-4 mg-b-20">
+              <div class="card h-100">
+                <div class="card-header">
+                  <h6 class="card-title mg-b-0"><i class="fas fa-balance-scale"></i>&nbsp; Attributions</h6>
+                </div>
+                <div class="card-body">
+                  <p class="tx-gray-500 mg-b-15">
+                    Third-party API and product notices (including CMS Blue Button non-endorsement). Separate from Privacy &amp; Terms above.
+                  </p>
+                  <a routerLink="/attributions" class="btn btn-az-primary">
+                    <i class="fas fa-balance-scale mg-r-5"></i> View attributions
+                  </a>
+                </div>
+              </div>
+            </div>
+            <!-- Access log (#563) — the complete record of who accessed this account's records.
+            Shown unfiltered: this table is what makes "you can see everyone who accessed your
+            data" a true statement. No IP addresses, no device fingerprints — who, what, when. -->
+            <div class="col-12 mg-b-20">
+              <div class="card">
+                <div class="card-header">
+                  <h6 class="card-title mg-b-0"><i class="fas fa-eye"></i>&nbsp; Access log</h6>
+                </div>
+                <div class="card-body">
+                  <p class="tx-gray-500 mg-b-15">
+                    Everyone who has viewed or exported records in this account, by day. YourPHR records who and when — never network addresses or devices.
+                  </p>
+                  @if (accessLogError) {
+                    <div class="alert alert-warning tx-13" role="alert">{{ accessLogError }}</div>
+                  }
+                  @if (accessLogLoading) {
+                    <app-loading-spinner [loadingTitle]="'Loading access log...'"></app-loading-spinner>
+                  }
+                  @if (!accessLogLoading && !accessLogError && accessLog.length === 0) {
+                    <p class="tx-gray-500 mg-b-0">
+                      No record access has been logged yet. Entries appear as records are viewed.
+                    </p>
+                  }
+                  @if (!accessLogLoading && accessLog.length > 0) {
+                    <div class="table-responsive">
+                      <table class="table table-sm table-striped mg-b-0">
+                        <thead>
+                          <tr>
+                            <th scope="col">Day</th>
+                            <th scope="col">Who</th>
+                            <th scope="col">What</th>
+                            <th scope="col" class="text-end">Times</th>
+                            <th scope="col">Last access</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          @for (event of accessLog; track event) {
+                            <tr>
+                              <td>{{ event.day }}</td>
+                              <td>{{ event.actor_username }}</td>
+                              <td>{{ event.category }}</td>
+                              <td class="text-end">{{ event.count }}</td>
+                              <td>{{ event.last_at | date:'short' }}</td>
+                            </tr>
+                          }
+                        </tbody>
+                      </table>
+                    </div>
+                  }
+                </div>
+              </div>
+            </div>
+            <!-- Delete account (danger) -->
+            <div class="col-lg-4 mg-b-20">
+              <div class="card h-100 border-danger">
+                <div class="card-header">
+                  <h6 class="card-title mg-b-0 tx-danger"><i class="fas fa-exclamation-triangle"></i>&nbsp; Delete account</h6>
+                </div>
+                <div class="card-body">
+                  <p class="tx-gray-500 mg-b-15">
+                    Permanently delete your YourPHR account and all personal and medical data on this instance. This cannot be undone.
+                  </p>
+                  <!-- Public demo (#514): deleting the shared account leaves the one-click sign-in
+                  with nothing to sign in to, for everyone, until an operator resets it. -->
+                  @if (user?.demo_account) {
+                    <div class="alert alert-info tx-13" role="status">
+                      <strong>Disabled in the public demo.</strong>
+                      This account is shared — deleting it would take the demo down for everyone.
+                    </div>
+                  }
+                  <button (click)="openDeleteModal(deleteModalRef)" type="button" class="btn btn-outline-danger"
+                    [disabled]="user?.demo_account"
+                    [title]="user?.demo_account ? 'Disabled in the public demo — the account is shared' : ''">
+                    <i class="fas fa-trash mg-r-5"></i> Delete Account
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-
         </div>
-      </div>
-
-      <ng-template #isLoadingTemplate>
+      } @else {
         <div class="row">
           <div class="col-12">
             <app-loading-spinner [loadingTitle]="'Please wait, loading account...'"></app-loading-spinner>
           </div>
         </div>
-      </ng-template>
+      }
+
 
     </div>
   </div>
@@ -337,7 +374,9 @@
   </div>
   <div class="modal-footer">
     <button type="button" (click)="deleteAccount()" class="btn btn-danger">
-      <span *ngIf="loading.delete" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+      @if (loading.delete) {
+        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+      }
       Delete
     </button>
     <button (click)="modal.dismiss('Close click')" type="button" class="btn btn-outline-secondary">Close</button>

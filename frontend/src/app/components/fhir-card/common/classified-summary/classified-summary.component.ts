@@ -1,5 +1,5 @@
 import {Component, Input} from '@angular/core';
-import {CommonModule} from '@angular/common';
+
 import {Classified} from '../../../../../lib/models/fasten/classified';
 
 // A standalone, patient-legible summary strip of the Layer-1 synthesized fields (state, verification,
@@ -8,7 +8,7 @@ import {Classified} from '../../../../../lib/models/fasten/classified';
 // /medical-history rows (#315/#351). All values come from the backend classifiers — never re-derived.
 @Component({
   standalone: true,
-  imports: [CommonModule],
+  imports: [],
   selector: 'fhir-ui-classified-summary',
   templateUrl: './classified-summary.component.html',
 })

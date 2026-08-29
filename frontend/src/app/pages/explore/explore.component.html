@@ -6,33 +6,38 @@
       <report-header [reportHeaderTitle]="'Explore'" [reportHeaderSubTitle]="'Explore your Medical Records'"></report-header>
 
       <!-- Admin-only: sandbox sources (from /sandbox connect) are hidden by default so Explore stays patient-facing. -->
-      <div *ngIf="isAdmin && sandboxSourceCount > 0 && !loading" class="mg-b-15 d-flex align-items-center flex-wrap gap-2">
-        <div class="form-check form-switch mg-b-0">
-          <input
-            class="form-check-input"
-            type="checkbox"
-            id="exploreShowSandbox"
-            [checked]="showSandboxSources"
-            (change)="onShowSandboxChange($any($event.target).checked)"
-          >
-          <label class="form-check-label" for="exploreShowSandbox">
-            Show sandbox sources
-            <span class="tx-gray-600 tx-12">({{ sandboxSourceCount }} connected)</span>
-          </label>
+      @if (isAdmin && sandboxSourceCount > 0 && !loading) {
+        <div class="mg-b-15 d-flex align-items-center flex-wrap gap-2">
+          <div class="form-check form-switch mg-b-0">
+            <input
+              class="form-check-input"
+              type="checkbox"
+              id="exploreShowSandbox"
+              [checked]="showSandboxSources"
+              (change)="onShowSandboxChange($any($event.target).checked)"
+              >
+            <label class="form-check-label" for="exploreShowSandbox">
+              Show sandbox sources
+              <span class="tx-gray-600 tx-12">({{ sandboxSourceCount }} connected)</span>
+            </label>
+          </div>
+          @if (showSandboxSources) {
+            <span class="badge bg-warning text-dark">Sandbox visible</span>
+          }
         </div>
-        <span *ngIf="showSandboxSources" class="badge bg-warning text-dark">Sandbox visible</span>
-      </div>
+      }
 
       <ng-container [ngTemplateOutlet]="loading ? isLoadingTemplate :
       (connectedSources.length == 0) ? emptyReport : report"></ng-container>
 
       <ng-template #report>
         <div class="row">
-          <app-medical-sources-card class="col-sm-3 mg-b-20 px-3"
-                                    *ngFor="let sourceData of connectedSources"
-                                    [sourceInfo]="sourceData"
-                                    (onClick)="exploreSource($event)"
-          ></app-medical-sources-card>
+          @for (sourceData of connectedSources; track sourceData) {
+            <app-medical-sources-card class="col-sm-3 mg-b-20 px-3"
+              [sourceInfo]="sourceData"
+              (onClick)="exploreSource($event)"
+            ></app-medical-sources-card>
+          }
         </div>
       </ng-template>
 
@@ -40,18 +45,26 @@
         <div class="d-flex align-items-center" style="height:100%">
           <div class="modal-body tx-center pd-y-20 pd-x-20">
             <h4 class="tx-purple mg-b-20">No Sources Found!</h4>
-            <p class="mg-b-20 mg-x-20" *ngIf="isAdmin && sandboxSourceCount > 0 && !showSandboxSources">
-              You have {{ sandboxSourceCount }} sandbox source(s) hidden.
-              Turn on <strong>Show sandbox sources</strong> above, or connect a production source under Sources.
-            </p>
-            <p class="mg-b-20 mg-x-20" *ngIf="!(isAdmin && sandboxSourceCount > 0 && !showSandboxSources)">
-              YourPHR was unable to find any connected sources. You will need to connect a medical source before you can use this page.
-            </p>
-            <p class="mg-b-20 mg-x-20" *ngIf="!(isAdmin && sandboxSourceCount > 0 && !showSandboxSources)">
-              Click below to add a new healthcare provider to YourPHR.
-            </p>
+            @if (isAdmin && sandboxSourceCount > 0 && !showSandboxSources) {
+              <p class="mg-b-20 mg-x-20">
+                You have {{ sandboxSourceCount }} sandbox source(s) hidden.
+                Turn on <strong>Show sandbox sources</strong> above, or connect a production source under Sources.
+              </p>
+            }
+            @if (!(isAdmin && sandboxSourceCount > 0 && !showSandboxSources)) {
+              <p class="mg-b-20 mg-x-20">
+                YourPHR was unable to find any connected sources. You will need to connect a medical source before you can use this page.
+              </p>
+            }
+            @if (!(isAdmin && sandboxSourceCount > 0 && !showSandboxSources)) {
+              <p class="mg-b-20 mg-x-20">
+                Click below to add a new healthcare provider to YourPHR.
+              </p>
+            }
             <button [routerLink]="'/sources'" type="button" class="btn btn-az-primary pd-x-25">Add Source</button>
-            <button *ngIf="isAdmin" [routerLink]="'/sandbox'" type="button" class="btn btn-outline-secondary mg-l-10 pd-x-25">Sandbox testing</button>
+            @if (isAdmin) {
+              <button [routerLink]="'/sandbox'" type="button" class="btn btn-outline-secondary mg-l-10 pd-x-25">Sandbox testing</button>
+            }
             <button [routerLink]="'/resource/add'" type="button" class="btn btn-az-primary mg-l-10 pd-x-25">Add record</button>
 
           </div><!-- modal-body -->

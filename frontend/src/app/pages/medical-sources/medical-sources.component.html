@@ -17,27 +17,33 @@
         <br/>
         If you have feedback regarding healthcare sources, please <a href="https://github.com/jwilleke/yourphr/issues" externalLink>file a ticket <i class="fab fa-github"></i></a>
 
-        <span *ngIf="environment_name == 'sandbox'">
-          <br/>
-          <br/>
-        In <strong>Sandbox mode</strong> YourPHR cannot access real patient information. You must use Sandbox credentials when authenticating to healthcare sources.
-          <a href="https://yourphr.org" externalLink>These credentials are available in our Sandbox Guide</a>
-        </span>
+        @if (environment_name == 'sandbox') {
+          <span>
+            <br/>
+            <br/>
+            In <strong>Sandbox mode</strong> YourPHR cannot access real patient information. You must use Sandbox credentials when authenticating to healthcare sources.
+            <a href="https://yourphr.org" externalLink>These credentials are available in our Sandbox Guide</a>
+          </span>
+        }
       </div>
 
-      <app-medical-sources-connected *ngIf="showConnectedList" environment="production"></app-medical-sources-connected>
+      @if (showConnectedList) {
+        <app-medical-sources-connected environment="production"></app-medical-sources-connected>
+      }
 
 
       <h2 class="az-content-title mg-t-40">Medical Record Sources</h2>
 
       <!-- Public demo (#496): the demo account is SHARED, so anything imported here would be
-           visible to the next visitor. Said plainly rather than silently hiding the controls. -->
-      <div *ngIf="isDemoAccount" class="alert alert-info mg-t-20 mg-b-20" role="status">
-        <strong>You are signed in to the public demo.</strong>
-        Connecting a provider and uploading records are disabled here, because everyone shares this
-        account — anything you imported would be visible to the next visitor. Everything else works:
-        browse the synthetic records, open a resource, explore the sections. The data resets nightly.
-      </div>
+      visible to the next visitor. Said plainly rather than silently hiding the controls. -->
+      @if (isDemoAccount) {
+        <div class="alert alert-info mg-t-20 mg-b-20" role="status">
+          <strong>You are signed in to the public demo.</strong>
+          Connecting a provider and uploading records are disabled here, because everyone shares this
+          account — anything you imported would be visible to the next visitor. Everything else works:
+          browse the synthetic records, open a resource, explore the sections. The data resets nightly.
+        </div>
+      }
 
       <div class="az-content-label mg-b-5">Manual Upload</div>
       <p class="mg-b-20">YourPHR also supports manually uploaded electronic medical records (EMR/EHR). Click below to upload.</p>
@@ -45,98 +51,136 @@
       <div class="row row-sm">
         <div class="col-lg">
           <div class="upload-dropzone" [class.drag-active]="dragActive && !isDemoAccount"
-               [class.disabled]="isDemoAccount" role="button" [attr.tabindex]="isDemoAccount ? -1 : 0"
-               [attr.aria-disabled]="isDemoAccount ? 'true' : null"
-               [title]="isDemoAccount ? 'Disabled in the public demo — the account is shared' : ''"
-               (click)="!isDemoAccount && bundleInput.click()" (keydown.enter)="!isDemoAccount && bundleInput.click()"
-               (dragover)="$event.preventDefault(); dragActive = !isDemoAccount"
-               (dragleave)="dragActive = false"
-               (drop)="!isDemoAccount && onBundleDrop($event)">
+            [class.disabled]="isDemoAccount" role="button" [attr.tabindex]="isDemoAccount ? -1 : 0"
+            [attr.aria-disabled]="isDemoAccount ? 'true' : null"
+            [title]="isDemoAccount ? 'Disabled in the public demo — the account is shared' : ''"
+            (click)="!isDemoAccount && bundleInput.click()" (keydown.enter)="!isDemoAccount && bundleInput.click()"
+            (dragover)="$event.preventDefault(); dragActive = !isDemoAccount"
+            (dragleave)="dragActive = false"
+            (drop)="!isDemoAccount && onBundleDrop($event)">
             <input #bundleInput type="file" class="d-none"
-                   accept=".json,.phr,.ndjson,.jsonl,.xml,.ccd,.ccda,.cda"
-                   (change)="onBundleInput(bundleInput)">
-            <ng-container *ngIf="!uploadedFile.length; else selectedFiles">
+              accept=".json,.phr,.ndjson,.jsonl,.xml,.ccd,.ccda,.cda"
+              (change)="onBundleInput(bundleInput)">
+            @if (!uploadedFile.length) {
               <i class="fas fa-cloud-upload-alt"></i>
               <span>Select or drop your EMR/EHR bundle. Must be in JSON or XML format.</span>
-            </ng-container>
+            } @else {
+              @for (f of uploadedFile; track f) {
+                <span>{{ f.name }} ({{ f.type || 'unknown type' }})</span>
+              }
+            }
             <ng-template #selectedFiles>
-              <span *ngFor="let f of uploadedFile">{{ f.name }} ({{ f.type || 'unknown type' }})</span>
+              @for (f of uploadedFile; track f) {
+                <span>{{ f.name }} ({{ f.type || 'unknown type' }})</span>
+              }
             </ng-template>
           </div>
 
-          <div *ngIf="uploadInProgress" class="alert alert-info mt-3" role="alert">
-            <i class="fas fa-spinner fa-spin me-2"></i>
-            <strong>Starting import…</strong> Uploading your bundle and queuing the import. Large exports can take several minutes — progress then appears on your Connected Sources above, and you don't need to wait on this page.
-          </div>
+          @if (uploadInProgress) {
+            <div class="alert alert-info mt-3" role="alert">
+              <i class="fas fa-spinner fa-spin me-2"></i>
+              <strong>Starting import…</strong> Uploading your bundle and queuing the import. Large exports can take several minutes — progress then appears on your Connected Sources above, and you don't need to wait on this page.
+            </div>
+          }
 
-          <div *ngIf="uploadErrorMsg" class="alert alert-danger mt-3" role="alert">
-            <strong>Error:</strong> {{uploadErrorMsg}}
-          </div>
+          @if (uploadErrorMsg) {
+            <div class="alert alert-danger mt-3" role="alert">
+              <strong>Error:</strong> {{uploadErrorMsg}}
+            </div>
+          }
         </div><!-- col -->
       </div><!-- row -->
 
       <!--
-        Patient-facing provider directory (#306 / #291): a picker of providers the admin has
-        pre-configured. The patient picks one and logs in with their provider account — they never
-        see a client_id/secret (the backend resolves them via authorizeSourceFromCatalog /
-        connectSourceFromCatalog). Admin sandbox testing is the same catalog path on /sandbox
-        (env-seeded entries); there is no free-form BYO client_id form in the UI (see #407).
+      Patient-facing provider directory (#306 / #291): a picker of providers the admin has
+      pre-configured. The patient picks one and logs in with their provider account — they never
+      see a client_id/secret (the backend resolves them via authorizeSourceFromCatalog /
+      connectSourceFromCatalog). Admin sandbox testing is the same catalog path on /sandbox
+      (env-seeded entries); there is no free-form BYO client_id form in the UI (see #407).
       -->
       <div class="az-content-label mg-b-5 mg-t-40">Connect a provider</div>
 
-      <div *ngIf="connectErrorMsg" class="alert alert-danger mt-2" role="alert">
-        <strong>Error:</strong> {{connectErrorMsg}}
-      </div>
-      <div *ngIf="connectSuccessMsg" class="alert alert-success mt-2" role="alert">
-        {{connectSuccessMsg}}
-      </div>
+      @if (connectErrorMsg) {
+        <div class="alert alert-danger mt-2" role="alert">
+          <strong>Error:</strong> {{connectErrorMsg}}
+        </div>
+      }
+      @if (connectSuccessMsg) {
+        <div class="alert alert-success mt-2" role="alert">
+          {{connectSuccessMsg}}
+        </div>
+      }
 
-      <ng-container *ngIf="connectableProviders.length; else noProviders">
+      @if (connectableProviders.length) {
         <p class="mg-b-15 tx-gray-600">Pick your provider and sign in with your provider account — you'll never be asked for a client ID or secret.</p>
-        <div *ngIf="showConsentBanner" class="alert alert-info mg-b-15" role="alert">
-          Connecting medical records requires you to accept the
-          <a routerLink="/privacy">Privacy Policy</a>
-          and
-          <a routerLink="/terms">Terms of Service</a>
-          first.
-          <a routerLink="/account-profile">Open Account Profile</a> to grant consent (unchecked by default — active opt-in).
-        </div>
+        @if (showConsentBanner) {
+          <div class="alert alert-info mg-b-15" role="alert">
+            Connecting medical records requires you to accept the
+            <a routerLink="/privacy">Privacy Policy</a>
+            and
+            <a routerLink="/terms">Terms of Service</a>
+            first.
+            <a routerLink="/account-profile">Open Account Profile</a> to grant consent (unchecked by default — active opt-in).
+          </div>
+        }
         <!-- CMS Blue Button attribution when Medicare-class providers are listed — #428 -->
-        <ng-container *ngIf="showMedicareAttribution">
-          <div *ngFor="let notice of medicareAttributions"
-               class="alert alert-secondary mg-b-15" role="note">
-            <strong>{{ notice.title }}</strong>
-            <p class="mg-b-5 mg-t-5">{{ notice.body }}</p>
-            <p class="mg-b-0 tx-12">
-              <a routerLink="/attributions">All attributions</a>
-              <span *ngIf="notice.sourceUrl">
-                · <a [href]="notice.sourceUrl" target="_blank" rel="noopener noreferrer">Source terms</a>
-              </span>
-            </p>
-          </div>
-        </ng-container>
+        @if (showMedicareAttribution) {
+          @for (notice of medicareAttributions; track notice) {
+            <div
+              class="alert alert-secondary mg-b-15" role="note">
+              <strong>{{ notice.title }}</strong>
+              <p class="mg-b-5 mg-t-5">{{ notice.body }}</p>
+              <p class="mg-b-0 tx-12">
+                <a routerLink="/attributions">All attributions</a>
+                @if (notice.sourceUrl) {
+                  <span>
+                    · <a [href]="notice.sourceUrl" target="_blank" rel="noopener noreferrer">Source terms</a>
+                  </span>
+                }
+              </p>
+            </div>
+          }
+        }
         <div class="row">
-          <div class="col-md-6 col-lg-4 mg-b-15" *ngFor="let provider of connectableProviders">
-            <button type="button" class="btn btn-outline-az-primary btn-block d-flex align-items-center justify-content-center"
-                    [disabled]="connectingProviderId || needsLegalConsent(provider) || isDemoAccount"
-                    (click)="connectCatalogProvider(provider)"
-                    [title]="isDemoAccount ? 'Disabled in the public demo — the account is shared, so imported records would be visible to everyone' : (needsLegalConsent(provider) ? 'Accept Privacy Policy and Terms on Account Profile first' : '')">
-              <img *ngIf="provider.brand_logo_url" [src]="provider.brand_logo_url" alt="" height="20" class="mg-r-10" />
-              <span *ngIf="connectingProviderId === provider.id"><i class="fas fa-spinner fa-spin mg-r-5"></i> Connecting…</span>
-              <span *ngIf="connectingProviderId !== provider.id"><i class="fas fa-plug mg-r-5"></i> {{provider.display}}</span>
-            </button>
-            <p *ngIf="needsLegalConsent(provider)" class="tx-gray-500 tx-12 mg-t-5 mg-b-0">
-              Requires consent —
-              <a routerLink="/account-profile">Account Profile</a>
-            </p>
-          </div>
+          @for (provider of connectableProviders; track provider) {
+            <div class="col-md-6 col-lg-4 mg-b-15">
+              <button type="button" class="btn btn-outline-az-primary btn-block d-flex align-items-center justify-content-center"
+                [disabled]="connectingProviderId || needsLegalConsent(provider) || isDemoAccount"
+                (click)="connectCatalogProvider(provider)"
+                [title]="isDemoAccount ? 'Disabled in the public demo — the account is shared, so imported records would be visible to everyone' : (needsLegalConsent(provider) ? 'Accept Privacy Policy and Terms on Account Profile first' : '')">
+                @if (provider.brand_logo_url) {
+                  <img [src]="provider.brand_logo_url" alt="" height="20" class="mg-r-10" />
+                }
+                @if (connectingProviderId === provider.id) {
+                  <span><i class="fas fa-spinner fa-spin mg-r-5"></i> Connecting…</span>
+                }
+                @if (connectingProviderId !== provider.id) {
+                  <span><i class="fas fa-plug mg-r-5"></i> {{provider.display}}</span>
+                }
+              </button>
+              @if (needsLegalConsent(provider)) {
+                <p class="tx-gray-500 tx-12 mg-t-5 mg-b-0">
+                  Requires consent —
+                  <a routerLink="/account-profile">Account Profile</a>
+                </p>
+              }
+            </div>
+          }
         </div>
-      </ng-container>
+      } @else {
+        @if (!connectableLoading) {
+          <p class="mg-b-20 tx-gray-600">
+            No connectable providers are configured yet. For now, use <strong>Manual Upload</strong> above to import a downloaded records bundle. (An administrator can add providers from the Sandbox page.)
+          </p>
+        }
+      }
 
       <ng-template #noProviders>
-        <p class="mg-b-20 tx-gray-600" *ngIf="!connectableLoading">
-          No connectable providers are configured yet. For now, use <strong>Manual Upload</strong> above to import a downloaded records bundle. (An administrator can add providers from the Sandbox page.)
-        </p>
+        @if (!connectableLoading) {
+          <p class="mg-b-20 tx-gray-600">
+            No connectable providers are configured yet. For now, use <strong>Manual Upload</strong> above to import a downloaded records bundle. (An administrator can add providers from the Sandbox page.)
+          </p>
+        }
       </ng-template>
 
     </div><!-- az-content-body -->
@@ -151,9 +195,11 @@
       <img class="modal-header-media-image mg-sm-r-20 mg-b-20 mg-sm-b-0" [src]="'assets/sources/'+(modalSelectedBrandListItem?.id +'.png')" [alt]="modalSelectedBrandListItem?.name">
       <div class="media-body">
         <h6>{{modalSelectedBrandListItem?.name}}</h6>
-        <a *ngIf="modalSelectedBrandListItem?.brand_website"
-           [href]="modalSelectedBrandListItem?.brand_website"
-           class="mg-b-0" externalLink>{{modalSelectedBrandListItem?.brand_website | shortDomain}}</a>
+        @if (modalSelectedBrandListItem?.brand_website) {
+          <a
+            [href]="modalSelectedBrandListItem?.brand_website"
+          class="mg-b-0" externalLink>{{modalSelectedBrandListItem?.brand_website | shortDomain}}</a>
+        }
       </div><!-- media-body -->
     </div><!-- media -->
     <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss('Cross click')"></button>
@@ -172,21 +218,25 @@
     </p>
 
 
-    <div *ngFor="let portal of modalSelectedBrandListItem?.portals" class="list-group">
-      <ng-container *ngFor="let endpoint of portal?.endpoints">
-        <div (click)="connectHandler($event, modalSelectedBrandListItem.id, portal.id, endpoint.id)" class="list-group-item list-group-item-action flex-column align-items-start cursor-pointer">
-          <div class="d-flex w-100 justify-content-between align-items-center">
-            <h5 class="mb-1">
-              <span *ngIf="status[endpoint.id] == 'authorize'" class="spinner-border spinner-border-sm text-primary" role="status" aria-hidden="true"></span>
-              {{portal.name}}
-            </h5>
-            <span class="badge bg-primary rounded-pill">{{endpoint.platform_type}}</span>
+    @for (portal of modalSelectedBrandListItem?.portals; track portal) {
+      <div class="list-group">
+        @for (endpoint of portal?.endpoints; track endpoint) {
+          <div (click)="connectHandler($event, modalSelectedBrandListItem.id, portal.id, endpoint.id)" class="list-group-item list-group-item-action flex-column align-items-start cursor-pointer">
+            <div class="d-flex w-100 justify-content-between align-items-center">
+              <h5 class="mb-1">
+                @if (status[endpoint.id] == 'authorize') {
+                  <span class="spinner-border spinner-border-sm text-primary" role="status" aria-hidden="true"></span>
+                }
+                {{portal.name}}
+              </h5>
+              <span class="badge bg-primary rounded-pill">{{endpoint.platform_type}}</span>
+            </div>
+            <p class="mb-1">{{portal.description}}</p>
+            <small>{{portal.portal_website | shortDomain}}</small>
           </div>
-          <p class="mb-1">{{portal.description}}</p>
-          <small>{{portal.portal_website | shortDomain}}</small>
-        </div>
-      </ng-container>
-    </div>
+        }
+      </div>
+    }
   </div>
 </ng-template>
 
@@ -202,8 +252,8 @@
     <h6>YourPHR does not natively support <a href="https://en.wikipedia.org/wiki/Consolidated_Clinical_Document_Architecture"  externalLink >CCDA</a> Health Records</h6>
 
     <!-- Converter unavailable on this server: show the operator what to turn on, instead of a
-         Convert button that fails with a config error after the upload (#397). -->
-    <ng-container *ngIf="cdaConverterStatus && !cdaConverterStatus.ready; else ccdaConvertAvailable">
+    Convert button that fails with a config error after the upload (#397). -->
+    @if (cdaConverterStatus && !cdaConverterStatus.ready) {
       <p>
         C-CDA conversion is <strong>not turned on for this server</strong>, so this file can't be
         imported yet. It runs in a separate container that is off by default.
@@ -213,59 +263,84 @@
       <p class="small text-muted mb-0">
         Your data is converted on this server and will <strong>NEVER</strong> be shared with any third parties.
       </p>
-    </ng-container>
-
-    <ng-template #ccdaConvertAvailable>
+    } @else {
       <p>However we can convert it automatically using <a href="https://github.com/metriport/metriport/tree/master/packages/fhir-converter" externalLink>open-source software</a> generously provided by the team at <a href="https://www.metriport.com/"  externalLink>Metriport</a>.<br/><br/>
-        Your data will <strong>NEVER</strong> be shared with any third parties.
-      </p>
-
-      <div class="d-flex h-100">
-        <div class="mx-auto my-auto">
-          <a href="https://www.metriport.com/"  externalLink>
-            <img style="height:50px" src="assets/images/metriport-logo.png">
-          </a>
-        </div>
+      Your data will <strong>NEVER</strong> be shared with any third parties.
+    </p>
+    <div class="d-flex h-100">
+      <div class="mx-auto my-auto">
+        <a href="https://www.metriport.com/"  externalLink>
+          <img style="height:50px" src="assets/images/metriport-logo.png">
+        </a>
       </div>
-    </ng-template>
+    </div>
+  }
 
+  <ng-template #ccdaConvertAvailable>
+    <p>However we can convert it automatically using <a href="https://github.com/metriport/metriport/tree/master/packages/fhir-converter" externalLink>open-source software</a> generously provided by the team at <a href="https://www.metriport.com/"  externalLink>Metriport</a>.<br/><br/>
+    Your data will <strong>NEVER</strong> be shared with any third parties.
+  </p>
+
+  <div class="d-flex h-100">
+    <div class="mx-auto my-auto">
+      <a href="https://www.metriport.com/"  externalLink>
+        <img style="height:50px" src="assets/images/metriport-logo.png">
+      </a>
+    </div>
   </div>
-  <div class="modal-footer">
-    <button *ngIf="!cdaConverterStatus || cdaConverterStatus.ready" (click)="modal.close('convert')" type="button" class="btn btn-az-primary">Convert</button>
-    <button (click)="modal.dismiss('cancel')" type="button" class="btn btn-outline-secondary">{{ (cdaConverterStatus && !cdaConverterStatus.ready) ? 'Close' : 'Cancel' }}</button>
-  </div>
+</ng-template>
+
+</div>
+<div class="modal-footer">
+  @if (!cdaConverterStatus || cdaConverterStatus.ready) {
+    <button (click)="modal.close('convert')" type="button" class="btn btn-az-primary">Convert</button>
+  }
+  <button (click)="modal.dismiss('cancel')" type="button" class="btn btn-outline-secondary">{{ (cdaConverterStatus && !cdaConverterStatus.ready) ? 'Close' : 'Cancel' }}</button>
+</div>
 </ng-template>
 
 <!-- Pre-connect informed messaging — all medical sources by default; copy by profile. -->
 <ng-template #preConnectModalRef let-modal>
-  <div class="modal-header" *ngIf="preConnectCopy as copy">
-    <h5 class="modal-title" id="preconnect-title">{{ copy.title }}</h5>
-    <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss('cancel')"></button>
-  </div>
-  <div class="modal-body" *ngIf="preConnectCopy as copy">
-    <p class="mg-b-15">{{ copy.intro }}</p>
-    <ul class="mg-b-15">
-      <li *ngFor="let line of copy.bullets">{{ line }}</li>
-    </ul>
-    <p class="tx-gray-500 tx-12 mg-b-10" *ngIf="copy.showMedicareAttribution && medicareAttributions.length">
-      <span *ngFor="let notice of medicareAttributions">{{ notice.body }}</span>
-    </p>
-    <p class="tx-12 mg-b-0">
-      <a routerLink="/privacy">Privacy Policy</a>
-      ·
-      <a routerLink="/terms">Terms of Service</a>
-      ·
-      <a routerLink="/attributions" (click)="modal.dismiss('cancel')">Attributions</a>
-    </p>
-  </div>
-  <div class="modal-footer" *ngIf="preConnectCopy as copy">
-    <button type="button" class="btn btn-outline-secondary" (click)="modal.dismiss('cancel')">
-      {{ copy.cancelLabel }}
-    </button>
-    <button type="button" class="btn btn-az-primary" (click)="confirmPreConnect(modal)">
-      {{ copy.continueLabel }}
-    </button>
-  </div>
+  @if (preConnectCopy; as copy) {
+    <div class="modal-header">
+      <h5 class="modal-title" id="preconnect-title">{{ copy.title }}</h5>
+      <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss('cancel')"></button>
+    </div>
+  }
+  @if (preConnectCopy; as copy) {
+    <div class="modal-body">
+      <p class="mg-b-15">{{ copy.intro }}</p>
+      <ul class="mg-b-15">
+        @for (line of copy.bullets; track line) {
+          <li>{{ line }}</li>
+        }
+      </ul>
+      @if (copy.showMedicareAttribution && medicareAttributions.length) {
+        <p class="tx-gray-500 tx-12 mg-b-10">
+          @for (notice of medicareAttributions; track notice) {
+            <span>{{ notice.body }}</span>
+          }
+        </p>
+      }
+      <p class="tx-12 mg-b-0">
+        <a routerLink="/privacy">Privacy Policy</a>
+        ·
+        <a routerLink="/terms">Terms of Service</a>
+        ·
+        <a routerLink="/attributions" (click)="modal.dismiss('cancel')">Attributions</a>
+      </p>
+    </div>
+  }
+  @if (preConnectCopy; as copy) {
+    <div class="modal-footer">
+      <button type="button" class="btn btn-outline-secondary" (click)="modal.dismiss('cancel')">
+        {{ copy.cancelLabel }}
+      </button>
+      <button type="button" class="btn btn-az-primary" (click)="confirmPreConnect(modal)">
+        {{ copy.continueLabel }}
+      </button>
+    </div>
+  }
 </ng-template>
 
 

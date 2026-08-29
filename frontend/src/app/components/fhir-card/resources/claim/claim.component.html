@@ -2,39 +2,53 @@
   <div class="card-header" (click)="isCollapsed = !isCollapsed">
     <div>
       <h6 class="card-title">{{ heading }}</h6>
-      <p class="card-text tx-gray-400" *ngIf="displayModel?.created"><strong>Submitted</strong> {{ displayModel?.created }}</p>
+      @if (displayModel?.created) {
+        <p class="card-text tx-gray-400"><strong>Submitted</strong> {{ displayModel?.created }}</p>
+      }
     </div>
     <fhir-ui-badge class="float-end" [status]="displayModel?.status">{{ displayModel?.status }}</fhir-ui-badge>
   </div>
   <div #collapse="ngbCollapse" [(ngbCollapse)]="isCollapsed" class="card-body">
     <!--
-      Says what this document IS before what it contains. A Claim and an ExplanationOfBenefit arrive
-      for the same care, and without this line a reader has no way to tell which one is the bill they
-      might owe — and neither of them is.
+    Says what this document IS before what it contains. A Claim and an ExplanationOfBenefit arrive
+    for the same care, and without this line a reader has no way to tell which one is the bill they
+    might owe — and neither of them is.
     -->
     <p class="tx-12 tx-gray-600 mg-b-15">
       This is a bill your provider sent to your insurance. It is not a statement of what you owe.
     </p>
 
-    <div *ngIf="amountClaimed" class="d-flex justify-content-between border-bottom pd-y-5 mg-b-15">
-      <span class="tx-gray-600">Amount claimed</span>
-      <strong>{{ amountClaimed }}</strong>
-    </div>
+    @if (amountClaimed) {
+      <div class="d-flex justify-content-between border-bottom pd-y-5 mg-b-15">
+        <span class="tx-gray-600">Amount claimed</span>
+        <strong>{{ amountClaimed }}</strong>
+      </div>
+    }
 
     <fhir-ui-table [displayModel]="displayModel" [tableData]="tableData"></fhir-ui-table>
 
-    <div *ngIf="lineItems.length" class="mg-t-15">
-      <h6 class="az-content-label tx-11 tx-gray-600 mg-b-10">Services billed</h6>
-      <div *ngFor="let item of lineItems" class="d-flex justify-content-between border-bottom pd-y-5">
-        <span>
-          {{ item.description }}
-          <span class="tx-gray-400 tx-11" *ngIf="item.date"> — {{ item.date }}</span>
-        </span>
-        <span *ngIf="item.amount">{{ item.amount }}</span>
+    @if (lineItems.length) {
+      <div class="mg-t-15">
+        <h6 class="az-content-label tx-11 tx-gray-600 mg-b-10">Services billed</h6>
+        @for (item of lineItems; track item) {
+          <div class="d-flex justify-content-between border-bottom pd-y-5">
+            <span>
+              {{ item.description }}
+              @if (item.date) {
+                <span class="tx-gray-400 tx-11"> — {{ item.date }}</span>
+              }
+            </span>
+            @if (item.amount) {
+              <span>{{ item.amount }}</span>
+            }
+          </div>
+        }
       </div>
+    }
+  </div>
+  @if (showDetails) {
+    <div class="card-footer">
+      <a class="float-end" [routerLink]="['/explore', displayModel?.source_id, 'resource', displayModel?.source_resource_id]">details</a>
     </div>
-  </div>
-  <div *ngIf="showDetails" class="card-footer">
-    <a class="float-end" [routerLink]="['/explore', displayModel?.source_id, 'resource', displayModel?.source_resource_id]">details</a>
-  </div>
+  }
 </div>

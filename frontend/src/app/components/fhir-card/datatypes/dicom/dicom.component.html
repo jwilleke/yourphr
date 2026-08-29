@@ -18,20 +18,20 @@
 </div>
 
 <div id="dwv">
-<!--  <mat-progress-bar mode="determinate" value="{{ loadProgress }}"></mat-progress-bar>-->
-<!--  <div class="button-row">-->
-<!--    <mat-button-toggle-group name="tool" [disabled]="!dataLoaded">-->
-<!--      <mat-button-toggle value="{{ tool }}" color="primary"-->
-<!--                         *ngFor="let tool of toolNames"-->
-<!--                         title="{{ tool }}"-->
-<!--                         (click)="onChangeTool(tool)"-->
-<!--                         [disabled]="!dataLoaded || !canRunTool(tool)">-->
-<!--        <mat-icon>{{ getToolIcon(tool) }}</mat-icon>-->
+  <!--  <mat-progress-bar mode="determinate" value="{{ loadProgress }}"></mat-progress-bar>-->
+  <!--  <div class="button-row">-->
+  <!--    <mat-button-toggle-group name="tool" [disabled]="!dataLoaded">-->
+  <!--      <mat-button-toggle value="{{ tool }}" color="primary"-->
+  <!--                         *ngFor="let tool of toolNames"-->
+  <!--                         title="{{ tool }}"-->
+  <!--                         (click)="onChangeTool(tool)"-->
+  <!--                         [disabled]="!dataLoaded || !canRunTool(tool)">-->
+  <!--        <mat-icon>{{ getToolIcon(tool) }}</mat-icon>-->
 <!--      </mat-button-toggle>-->
 <!--    </mat-button-toggle-group>-->
-  <div id="layerGroup0" class="layerGroup pd-t-10">
-    <div id="dropBox"></div>
-  </div>
+<div id="layerGroup0" class="layerGroup pd-t-10">
+  <div id="dropBox"></div>
+</div>
 </div>
 
 
@@ -45,18 +45,20 @@
     <div class="table-responsive">
       <table class="table table-striped mg-b-0">
         <thead>
-        <tr>
-          <th>ID</th>
-          <th>Name</th>
-          <th>Value</th>
-        </tr>
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Value</th>
+          </tr>
         </thead>
         <tbody>
-        <tr *ngFor="let row of visibleMetaData">
-          <th scope="row">{{row.id}}</th>
-          <td>{{row.name}}</td>
-          <td>{{row.value}}</td>
-        </tr>
+          @for (row of visibleMetaData; track row) {
+            <tr>
+              <th scope="row">{{row.id}}</th>
+              <td>{{row.name}}</td>
+              <td>{{row.value}}</td>
+            </tr>
+          }
         </tbody>
       </table>
     </div>
@@ -69,7 +71,7 @@
       [maxSize]="15"
       [pageSize]="tagsPageSize"
       (pageChange)="refreshTags()"
-    >
+      >
     </ngb-pagination>
     <button type="button" class="btn btn-outline-secondary" (click)="modal.close('Close click')">Close</button>
   </div>

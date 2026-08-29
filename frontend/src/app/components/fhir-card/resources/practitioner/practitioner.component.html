@@ -2,7 +2,9 @@
   <div class="card-header" (click)="isCollapsed = ! isCollapsed">
     <div>
       <h6 class="card-title">{{displayModel?.sort_title || displayModel?.name?.[0]?.displayName}}</h6>
-      <p class="card-text tx-gray-400" *ngIf="displayModel?.sort_date"><strong>Date</strong>{{displayModel?.sort_date}}</p>
+      @if (displayModel?.sort_date) {
+        <p class="card-text tx-gray-400"><strong>Date</strong>{{displayModel?.sort_date}}</p>
+      }
     </div>
     <div>
       <fhir-ui-badge [status]="displayModel?.status">{{displayModel?.status}}</fhir-ui-badge>
@@ -12,12 +14,16 @@
   <div #collapse="ngbCollapse" [(ngbCollapse)]="isCollapsed" class="card-body">
     <p class="az-content-text mg-b-20">A person who is directly or indirectly involved in the provisioning of healthcare.</p>
     <fhir-ui-table [displayModel]="displayModel" [tableData]="tableData"></fhir-ui-table>
-    <div *ngIf="isEditable" class="action-buttons">
-      <button type="button" (click)="onEditClicked()" class="btn btn-az-primary">Edit</button>
-      <button type="button" (click)="onUnlinkClicked()" class="btn btn-danger">Delete</button>
+    @if (isEditable) {
+      <div class="action-buttons">
+        <button type="button" (click)="onEditClicked()" class="btn btn-az-primary">Edit</button>
+        <button type="button" (click)="onUnlinkClicked()" class="btn btn-danger">Delete</button>
+      </div>
+    }
+  </div>
+  @if (showDetails) {
+    <div class="card-footer">
+      <a class="float-end" [routerLink]="['/explore', displayModel?.source_id, 'resource', displayModel?.source_resource_id]">details</a>
     </div>
-  </div>
-  <div *ngIf="showDetails" class="card-footer">
-    <a class="float-end" [routerLink]="['/explore', displayModel?.source_id, 'resource', displayModel?.source_resource_id]">details</a>
-  </div>
+  }
 </div>

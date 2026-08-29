@@ -1,4 +1,8 @@
-<div *ngIf="label" class="fhir-ui-reported-by tx-gray-500" title="Who said this">
-  <i class="fas mg-r-3" [ngClass]="iconClass"></i>{{ label }}
-  <span *ngIf="provenance?.recorded" class="tx-gray-400"> · {{ provenance?.recorded | date }}</span>
-</div>
+@if (label) {
+  <div class="fhir-ui-reported-by tx-gray-500" title="Who said this">
+    <i class="fas mg-r-3" [ngClass]="iconClass"></i>{{ label }}
+    @if (provenance?.recorded) {
+      <span class="tx-gray-400"> · {{ provenance?.recorded | date }}</span>
+    }
+  </div>
+}

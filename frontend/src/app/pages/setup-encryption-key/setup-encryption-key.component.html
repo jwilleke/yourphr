@@ -19,9 +19,11 @@
             <label for="encryptionKey">Encryption Key</label>
             <input type="text" id="encryptionKey" formControlName="encryptionKey" class="form-control"
               [ngClass]="{ 'is-invalid': error }" placeholder="Paste your encryption key here" required [disabled]="isProcessing" />
-            <div *ngIf="error" class="invalid-feedback">
-              {{ statusMessage }}
-            </div>
+            @if (error) {
+              <div class="invalid-feedback">
+                {{ statusMessage }}
+              </div>
+            }
           </div>
 
           <div class="mt-3">
@@ -29,13 +31,25 @@
               [disabled]="isProcessing"
               (click)="handleButtonClick()">
               <span class="button-content-wrapper">
-                <span *ngIf="isProcessing && !isValidated" class="spinner-border spinner-border-sm me-2"></span>
-                <fa-icon *ngIf="isValidated" [icon]="['fas', 'check-circle']" class="me-2"></fa-icon>
+                @if (isProcessing && !isValidated) {
+                  <span class="spinner-border spinner-border-sm me-2"></span>
+                }
+                @if (isValidated) {
+                  <fa-icon [icon]="['fas', 'check-circle']" class="me-2"></fa-icon>
+                }
                 <span>
-                  <ng-container *ngIf="!isProcessing && !isValidated && !error">Validate Key</ng-container>
-                  <ng-container *ngIf="isProcessing && !isValidated">{{ statusMessage }}</ng-container>
-                  <ng-container *ngIf="isValidated">{{ statusMessage }} ({{ countdown }}s)</ng-container>
-                  <ng-container *ngIf="error"><span>Try Again</span></ng-container>
+                  @if (!isProcessing && !isValidated && !error) {
+                    Validate Key
+                  }
+                  @if (isProcessing && !isValidated) {
+                    {{ statusMessage }}
+                  }
+                  @if (isValidated) {
+                    {{ statusMessage }} ({{ countdown }}s)
+                  }
+                  @if (error) {
+                    <span>Try Again</span>
+                  }
                 </span>
               </span>
             </button>

@@ -5,27 +5,31 @@
 </div>
 <div class="modal-body">
 
-  <div *ngIf="debugMode" class="alert alert-warning">
-    <pre><code  [highlight]="organizationForm.getRawValue() | json"></code></pre>
-    <strong>Edit Organization Form Status: {{ organizationForm.status }}</strong>
-  </div>
+  @if (debugMode) {
+    <div class="alert alert-warning">
+      <pre><code  [highlight]="organizationForm.getRawValue() | json"></code></pre>
+      <strong>Edit Organization Form Status: {{ organizationForm.status }}</strong>
+    </div>
+  }
 
   <div class="row row-sm pd-t-15">
     <div class="col-12">
       <p class="mg-b-10">Name<span ngbTooltip="required" class="text-danger">*</span></p>
       <form [formGroup]="organizationTypeaheadForm">
         <app-nlm-typeahead formControlName="data" searchType="MedicalContactOrganization"
-          [debugMode]="debugMode"></app-nlm-typeahead>
+        [debugMode]="debugMode"></app-nlm-typeahead>
       </form>
-      <span *ngFor="let extId of organizationForm.get('identifier').getRawValue()"
+      @for (extId of organizationForm.get('identifier').getRawValue(); track extId) {
+        <span
         class="badge rounded-pill bg-primary">{{extId.type?.coding[0].code}}: {{extId.value}}</span>
+      }
     </div>
 
     <ng-container [formGroup]="organizationForm">
       <div class="col-6 mg-t-10 mg-lg-t-0">
         <p class="mg-b-10">Type<span ngbTooltip="required" class="text-danger">*</span></p>
         <app-nlm-typeahead formControlName="type" searchType="MedicalContactOrganizationType"
-          [debugMode]="debugMode"></app-nlm-typeahead>
+        [debugMode]="debugMode"></app-nlm-typeahead>
       </div><!-- col -->
       <div class="col-6 mg-t-10 mg-lg-t-0">
         <p class="mg-b-10">Telephone</p>
@@ -62,7 +66,7 @@
         <div class="col-6 mg-t-10 mg-lg-t-0">
           <p class="mg-b-10">Country</p>
           <app-nlm-typeahead formControlName="country" searchType="Countries"
-            [debugMode]="debugMode"></app-nlm-typeahead>
+          [debugMode]="debugMode"></app-nlm-typeahead>
         </div><!-- col -->
       </ng-container>
     </ng-container>
@@ -77,12 +81,13 @@
      }" type="button" class="btn float-start" (click)="debugMode = !debugMode">
     <i class="fas fa-bug"></i>
   </button>
-  <button *ngIf="!loading; else spinnerButton" type="button" [class.disabled]="!submitEnabled"
+  @if (!loading) {
+    <button type="button" [class.disabled]="!submitEnabled"
     class="btn btn-az-primary" (click)="submit()">Edit Organization</button>
-  <ng-template #spinnerButton>
+  } @else {
     <button class="btn btn-az-primary" type="button" disabled>
       <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
       <span class="visually-hidden">Loading...</span>
     </button>
-  </ng-template>
+  }
 </div>

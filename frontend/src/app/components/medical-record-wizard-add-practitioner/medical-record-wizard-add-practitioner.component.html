@@ -14,10 +14,12 @@
 </div>
 <div class="modal-body">
 
-  <div *ngIf="debugMode" class="alert alert-warning">
-    <pre><code  [highlight]="newPractitionerForm.getRawValue() | json"></code></pre>
-    <strong>New Practitioner Form Status: {{ newPractitionerForm.status }}</strong>
-  </div>
+  @if (debugMode) {
+    <div class="alert alert-warning">
+      <pre><code  [highlight]="newPractitionerForm.getRawValue() | json"></code></pre>
+      <strong>New Practitioner Form Status: {{ newPractitionerForm.status }}</strong>
+    </div>
+  }
 
   <div ngbNav #nav="ngbNav" [(activeId)]="activeId">
     <ng-container ngbNavItem="find">
@@ -42,7 +44,9 @@
             <form [formGroup]="newPractitionerTypeaheadForm">
               <app-nlm-typeahead formControlName="data" searchType="MedicalContactIndividual" [debugMode]="debugMode"></app-nlm-typeahead>
             </form>
-            <span *ngFor="let extId of newPractitionerForm.controls.identifier.getRawValue()" class="badge rounded-pill bg-primary">{{extId.type?.coding[0].code}}: {{extId.value}}</span>
+            @for (extId of newPractitionerForm.controls.identifier.getRawValue(); track extId) {
+              <span class="badge rounded-pill bg-primary">{{extId.type?.coding[0].code}}: {{extId.value}}</span>
+            }
           </div><!-- col -->
           <ng-container [formGroup]="newPractitionerForm">
             <div class="col-6 mg-t-10 mg-lg-t-0">

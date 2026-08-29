@@ -17,37 +17,41 @@
                 <div class="col-12">
                   <table id="order-listing" class="table" cellspacing="0" width="100%">
                     <thead>
-                    <tr class="text-white">
-                      <th></th>
-                      <th>Job Type</th>
-                      <th>Created At</th>
-                      <th>Status</th>
-                      <th>Last Updated</th>
-                      <th>Completed At</th>
-                      <th>Actions</th>
-                    </tr>
+                      <tr class="text-white">
+                        <th></th>
+                        <th>Job Type</th>
+                        <th>Created At</th>
+                        <th>Status</th>
+                        <th>Last Updated</th>
+                        <th>Completed At</th>
+                        <th>Actions</th>
+                      </tr>
                     </thead>
                     <tbody>
-                      <tr *ngFor="let backgroundJob of backgroundJobs" [class.border-left-danger]="backgroundJob.job_status == 'STATUS_FAILED'">
-                        <td>
-                          <img imageFallback style="max-height:30px" [src]="'assets/sources/'+(backgroundJob?.data?.brand_id + '.png')" [alt]="backgroundJob?.data?.brand_id" class="img-fluid">
-                        </td>
-                        <td>{{backgroundJob.job_type}}</td>
-                        <td container="body" [ngbTooltip]="backgroundJob.created_at | date:'yyyy-MM-dd HH:mm'">{{backgroundJob.created_at | date:'longDate'}}</td>
+                      @for (backgroundJob of backgroundJobs; track backgroundJob) {
+                        <tr [class.border-left-danger]="backgroundJob.job_status == 'STATUS_FAILED'">
+                          <td>
+                            <img imageFallback style="max-height:30px" [src]="'assets/sources/'+(backgroundJob?.data?.brand_id + '.png')" [alt]="backgroundJob?.data?.brand_id" class="img-fluid">
+                          </td>
+                          <td>{{backgroundJob.job_type}}</td>
+                          <td container="body" [ngbTooltip]="backgroundJob.created_at | date:'yyyy-MM-dd HH:mm'">{{backgroundJob.created_at | date:'longDate'}}</td>
                         <td><label class="badge rounded-pill" [ngClass]="{
                                       'bg-secondary': backgroundJob.job_status == 'STATUS_READY',
                                      'bg-success': backgroundJob.job_status == 'STATUS_DONE',
                                      'bg-warning': backgroundJob.job_status == 'STATUS_LOCKED',
                                      'bg-danger': backgroundJob.job_status == 'STATUS_FAILED'
                         }">{{backgroundJob.job_status}}</label></td>
-                        <td container="body" [ngbTooltip]="backgroundJob.locked_time | date:'yyyy-MM-dd HH:mm'">{{backgroundJob.locked_time | timeAgo}}</td>
-                        <td container="body">
-                          <span *ngIf="backgroundJob.done_time" [ngbTooltip]="backgroundJob.done_time | date:'yyyy-MM-dd HH:mm'">{{backgroundJob.done_time | timeAgo}}</span>
-                        </td>
-                        <td>
-                          <button (click)="openModal(content, backgroundJob)" class="btn btn-outline-secondary btn-with-icon btn-rounded"><i class="fa fa-info-circle"></i> Details</button>
-                        </td>
-                      </tr>
+                          <td container="body" [ngbTooltip]="backgroundJob.locked_time | date:'yyyy-MM-dd HH:mm'">{{backgroundJob.locked_time | timeAgo}}</td>
+                          <td container="body">
+                            @if (backgroundJob.done_time) {
+                              <span [ngbTooltip]="backgroundJob.done_time | date:'yyyy-MM-dd HH:mm'">{{backgroundJob.done_time | timeAgo}}</span>
+                            }
+                          </td>
+                          <td>
+                            <button (click)="openModal(content, backgroundJob)" class="btn btn-outline-secondary btn-with-icon btn-rounded"><i class="fa fa-info-circle"></i> Details</button>
+                          </td>
+                        </tr>
+                      }
 
                     </tbody>
                   </table>

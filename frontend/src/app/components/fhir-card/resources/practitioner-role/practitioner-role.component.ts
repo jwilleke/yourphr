@@ -1,6 +1,6 @@
 import {ChangeDetectorRef, Component, Input, OnInit} from '@angular/core';
 import {NgbCollapseModule} from '@ng-bootstrap/ng-bootstrap';
-import {CommonModule} from '@angular/common';
+
 import {Router, RouterModule} from '@angular/router';
 import {BadgeComponent} from '../../common/badge/badge.component';
 import {TableComponent} from '../../common/table/table.component';
@@ -9,7 +9,7 @@ import {FhirCardComponentInterface} from '../../fhir-card/fhir-card-component-in
 import {PractitionerRoleModel} from '../../../../../lib/models/resources/practitioner-role-model';
 
 @Component({
-    imports: [NgbCollapseModule, CommonModule, BadgeComponent, TableComponent, RouterModule],
+    imports: [NgbCollapseModule, BadgeComponent, TableComponent, RouterModule],
     selector: 'fhir-practitioner-role',
     templateUrl: './practitioner-role.component.html',
     styleUrls: ['./practitioner-role.component.scss']

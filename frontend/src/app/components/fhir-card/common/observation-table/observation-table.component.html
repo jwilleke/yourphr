@@ -3,17 +3,23 @@
   <table class="table">
     <thead>
       <tr>
-        <th *ngFor="let header of headers">
-          {{header}}
-        </th>
+        @for (header of headers; track header) {
+          <th>
+            {{header}}
+          </th>
+        }
       </tr>
     </thead>
     <tbody>
-      <tr *ngFor="let row of rows">
-        <td *ngFor="let data of row">
-          {{data}}
-        </td>
-      </tr>
+      @for (row of rows; track row) {
+        <tr>
+          @for (data of row; track data) {
+            <td>
+              {{data}}
+            </td>
+          }
+        </tr>
+      }
     </tbody>
   </table>
 

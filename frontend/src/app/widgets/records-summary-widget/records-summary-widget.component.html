@@ -20,23 +20,29 @@
           <div class="table-responsive">
             <table class="table mg-b-0">
               <tbody>
-                <tr *ngFor="let groupInfo of groupLookup">
-                <td>
-                  <div class="az-img-user"><img src="assets/icons/{{groupInfo.imageName}}.svg" alt=""></div>
-                </td>
-                <td>
-                  <h6 class="mg-b-0 tx-inverse">{{groupInfo.displayName}}</h6>
-                  <small class="tx-11 tx-gray-500" *ngIf="groupInfo.includedResourceTypes.length > 1">
-                    <span *ngFor="let resourceTypes of groupInfo.includedResourceTypes">
-                      {{resourceTypes}}<br/>
-                    </span>
-                  </small>
-                </td>
-                <td>
-                  <h6 class="mg-b-0 tx-inverse">{{groupInfo.count}}</h6>
-                  <small class="tx-11 tx-gray-500">Records</small>
-                </td>
-              </tr>
+                @for (groupInfo of groupLookup; track groupInfo) {
+                  <tr>
+                    <td>
+                      <div class="az-img-user"><img src="assets/icons/{{groupInfo.imageName}}.svg" alt=""></div>
+                    </td>
+                    <td>
+                      <h6 class="mg-b-0 tx-inverse">{{groupInfo.displayName}}</h6>
+                      @if (groupInfo.includedResourceTypes.length > 1) {
+                        <small class="tx-11 tx-gray-500">
+                          @for (resourceTypes of groupInfo.includedResourceTypes; track resourceTypes) {
+                            <span>
+                              {{resourceTypes}}<br/>
+                            </span>
+                          }
+                        </small>
+                      }
+                    </td>
+                    <td>
+                      <h6 class="mg-b-0 tx-inverse">{{groupInfo.count}}</h6>
+                      <small class="tx-11 tx-gray-500">Records</small>
+                    </td>
+                  </tr>
+                }
               </tbody>
             </table>
           </div>

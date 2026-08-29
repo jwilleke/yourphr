@@ -12,59 +12,83 @@
         sandboxes. Their credentials (<code>client_id</code> / <code>client_secret</code>) are supplied
         on the server from a secret — you never type or see them here. Patients never see this page;
         their connect path is the provider directory on the <a routerLink="/sources">Sources</a> page.
-        <span *ngIf="environment_name == 'sandbox'">
-          <br/><br/>
-          You are in <strong>Sandbox mode</strong>: synthetic data only — never real PHI.
-        </span>
+        @if (environment_name == 'sandbox') {
+          <span>
+            <br/><br/>
+            You are in <strong>Sandbox mode</strong>: synthetic data only — never real PHI.
+          </span>
+        }
       </div>
 
       <h2 class="az-content-title mg-t-20">Sandbox sources</h2>
       <p class="mg-b-10">Connect a configured sandbox provider. You log in at the provider in a popup window; YourPHR never sees the password or tokens, and the sandbox credentials never leave the server.</p>
       <p class="mg-b-20 tx-gray-600">Need to change a base URL, scopes, or client ID? Edit the entry in the <a routerLink="/admin/provider-catalog">Provider Catalog</a> (admin-only). Your edits persist across restarts.</p>
 
-      <div *ngIf="errorMsg" class="alert alert-danger" role="alert">{{errorMsg}}</div>
-      <div *ngIf="successMsg" class="alert alert-success" role="alert">{{successMsg}}</div>
+      @if (errorMsg) {
+        <div class="alert alert-danger" role="alert">{{errorMsg}}</div>
+      }
+      @if (successMsg) {
+        <div class="alert alert-success" role="alert">{{successMsg}}</div>
+      }
 
-      <div *ngIf="loading" class="tx-gray-600 mg-b-20">
-        <span class="spinner-border spinner-border-sm text-primary mg-r-5" role="status" aria-hidden="true"></span>
-        Loading configured sandboxes…
-      </div>
+      @if (loading) {
+        <div class="tx-gray-600 mg-b-20">
+          <span class="spinner-border spinner-border-sm text-primary mg-r-5" role="status" aria-hidden="true"></span>
+          Loading configured sandboxes…
+        </div>
+      }
 
-      <div *ngIf="!loading && sandboxProviders.length === 0" class="alert alert-info" role="alert">
-        No sandbox providers are configured on this server. An administrator configures them by setting
-        the sandbox credential environment variables (e.g. <code>YOURPHR_SANDBOX_BLUEBUTTON_CLIENT_ID</code>)
-        from the deployment secret — see
-        <a href="https://github.com/jwilleke/yourphr/blob/main/docs/test-sandboxes.md" externalLink>docs/test-sandboxes.md</a>.
-      </div>
+      @if (!loading && sandboxProviders.length === 0) {
+        <div class="alert alert-info" role="alert">
+          No sandbox providers are configured on this server. An administrator configures them by setting
+          the sandbox credential environment variables (e.g. <code>YOURPHR_SANDBOX_BLUEBUTTON_CLIENT_ID</code>)
+          from the deployment secret — see
+          <a href="https://github.com/jwilleke/yourphr/blob/main/docs/test-sandboxes.md" externalLink>docs/test-sandboxes.md</a>.
+        </div>
+      }
 
-      <div class="row row-sm" *ngIf="!loading && sandboxProviders.length > 0">
-        <div class="col-lg-6 mg-b-10" *ngFor="let provider of sandboxProviders">
-          <div class="card">
-            <div class="card-body d-flex align-items-center justify-content-between">
-              <div class="d-flex align-items-center">
-                <img *ngIf="provider.brand_logo_url" [src]="provider.brand_logo_url" alt="" width="32" height="32" class="mg-r-10">
-                <span class="tx-medium">{{provider.display}}</span>
+      @if (!loading && sandboxProviders.length > 0) {
+        <div class="row row-sm">
+          @for (provider of sandboxProviders; track provider) {
+            <div class="col-lg-6 mg-b-10">
+              <div class="card">
+                <div class="card-body d-flex align-items-center justify-content-between">
+                  <div class="d-flex align-items-center">
+                    @if (provider.brand_logo_url) {
+                      <img [src]="provider.brand_logo_url" alt="" width="32" height="32" class="mg-r-10">
+                    }
+                    <span class="tx-medium">{{provider.display}}</span>
+                  </div>
+                  <button type="button" class="btn btn-az-primary" aria-label="Connect"
+                    (click)="connectSandboxProvider(provider)"
+                    [disabled]="connectingProviderId">
+                    @if (connectingProviderId === provider.id) {
+                      <span class="spinner-border spinner-border-sm mg-r-5" role="status" aria-hidden="true"></span>
+                    }
+                    @if (connectingProviderId !== provider.id) {
+                      <i class="fas fa-plug mg-r-5" aria-hidden="true"></i>
+                    }
+                    Connect
+                  </button>
+                </div>
               </div>
-              <button type="button" class="btn btn-az-primary" aria-label="Connect"
-                      (click)="connectSandboxProvider(provider)"
-                      [disabled]="connectingProviderId">
-                <span *ngIf="connectingProviderId === provider.id" class="spinner-border spinner-border-sm mg-r-5" role="status" aria-hidden="true"></span>
-                <i *ngIf="connectingProviderId !== provider.id" class="fas fa-plug mg-r-5" aria-hidden="true"></i>
-                Connect
-              </button>
             </div>
+            }<!-- col -->
           </div>
-        </div><!-- col -->
-      </div><!-- row -->
+          }<!-- row -->
 
-      <p *ngIf="connectingProviderId" class="tx-gray-600 mg-t-10">
-        Waiting for you to complete login in the popup window, then importing records…
-      </p>
+          @if (connectingProviderId) {
+            <p class="tx-gray-600 mg-t-10">
+              Waiting for you to complete login in the popup window, then importing records…
+            </p>
+          }
 
-      <h2 class="az-content-title mg-t-40">Connected Sources</h2>
-      <p class="mg-b-20">The sandbox sources you've connected here. Click a tile to Sync, Download, or Explore its records. (Production sources live on the <a routerLink="/sources">Sources</a> page.)</p>
-      <app-medical-sources-connected *ngIf="showConnectedList" environment="sandbox"></app-medical-sources-connected>
+          <h2 class="az-content-title mg-t-40">Connected Sources</h2>
+          <p class="mg-b-20">The sandbox sources you've connected here. Click a tile to Sync, Download, or Explore its records. (Production sources live on the <a routerLink="/sources">Sources</a> page.)</p>
+          @if (showConnectedList) {
+            <app-medical-sources-connected environment="sandbox"></app-medical-sources-connected>
+          }
 
-    </div><!-- az-content-body -->
-  </div><!-- container -->
-</div><!-- az-content -->
+        </div><!-- az-content-body -->
+      </div><!-- container -->
+    </div><!-- az-content -->

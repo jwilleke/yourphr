@@ -3,85 +3,111 @@
     <h1 class="az-logo">YourPHR</h1>
     <div class="az-signin-header">
       <h2>{{showExternalIdP ? "Welcome!" : "Welcome back!"}}</h2>
-      <h4 *ngIf="!loading">Please sign in to continue</h4>
+      @if (!loading) {
+        <h4>Please sign in to continue</h4>
+      }
 
-      <form *ngIf="showExternalIdP">
-        <div class="pt-4 pb-3" *ngIf="!loading else isLoadingTemplate">
-          <p class="pb-3">You can use the button below to create an account or signin to your existing YourPHR account.</p>
-          <div class="hello-container">
-            <button (click)="idpConnectHello($event)" class="hello-btn"></button>
-            <button class="hello-about"></button>
-          </div>
-        </div>
-        <ng-template #isLoadingTemplate>
-          <div class="text-center">
-            <p class="pb-3">Please wait, connecting account...</p>
-            <div class="spinner-border" role="status">
-              <span class="visually-hidden">Loading...</span>
+      @if (showExternalIdP) {
+        <form>
+          @if (!loading) {
+            <div class="pt-4 pb-3">
+              <p class="pb-3">You can use the button below to create an account or signin to your existing YourPHR account.</p>
+              <div class="hello-container">
+                <button (click)="idpConnectHello($event)" class="hello-btn"></button>
+                <button class="hello-about"></button>
+              </div>
             </div>
-          </div>
-        </ng-template>
-      </form>
+          } @else {
+            <div class="text-center">
+              <p class="pb-3">Please wait, connecting account...</p>
+              <div class="spinner-border" role="status">
+                <span class="visually-hidden">Loading...</span>
+              </div>
+            </div>
+          }
+        </form>
+      }
 
       <!-- Public demo instance (#495): the primary action is entering the demo, not signing in.
-           Shown only when the instance published demo.enabled. -->
-      <div *ngIf="demoEnabled && !showExternalIdP" class="pb-3">
-        <button (click)="demoSignin()" [disabled]="demoLoading" type="button" class="btn btn-az-primary w-100">
-          {{demoLoading ? "Opening the demo..." : "Explore the demo"}}
-        </button>
-        <!-- The read-only admin tour (#516). Second, and visually secondary: the patient view is
-             what the product IS, and this answers "what is it like to run one?". -->
-        <button *ngIf="demoAdminEnabled" (click)="demoAdminSignin()" [disabled]="demoLoading" type="button" class="btn btn-outline-secondary w-100 mt-2">
-          {{demoLoading ? "Opening..." : "See the admin view"}}
-        </button>
-        <p class="mt-2 mb-0 tx-12 tx-gray-600">
-          Public demo with synthetic records — no sign-up, nothing to enter. It is reset periodically, so anything you change here is temporary.<span *ngIf="demoAdminEnabled"> The admin view is read-only.</span>
+      Shown only when the instance published demo.enabled. -->
+      @if (demoEnabled && !showExternalIdP) {
+        <div class="pb-3">
+          <button (click)="demoSignin()" [disabled]="demoLoading" type="button" class="btn btn-az-primary w-100">
+            {{demoLoading ? "Opening the demo..." : "Explore the demo"}}
+          </button>
+          <!-- The read-only admin tour (#516). Second, and visually secondary: the patient view is
+          what the product IS, and this answers "what is it like to run one?". -->
+          @if (demoAdminEnabled) {
+            <button (click)="demoAdminSignin()" [disabled]="demoLoading" type="button" class="btn btn-outline-secondary w-100 mt-2">
+              {{demoLoading ? "Opening..." : "See the admin view"}}
+            </button>
+          }
+          <p class="mt-2 mb-0 tx-12 tx-gray-600">
+            Public demo with synthetic records — no sign-up, nothing to enter. It is reset periodically, so anything you change here is temporary.@if (demoAdminEnabled) {
+            <span> The admin view is read-only.</span>
+          }
         </p>
         <hr>
-      </div>
-
-      <form  *ngIf="!showExternalIdP" (ngSubmit)="signinSubmit()" #userForm="ngForm">
-        <div class="mb-3">
-          <label>Username</label>
-          <!-- SIGN-IN VALIDATES ONLY "did you type something" (#506). A length rule here refuses an
-               account that predates the policy, or predates an operator raising it — locking someone
-               out of their own records over a rule they cannot act on until they are inside. The
-               server decides; this form just collects. (It also used to enforce 2 while telling the
-               user 4, and reject usernames the server had happily created.) -->
-          <input [(ngModel)]="existingUser.username" name="username" #username="ngModel" required autocapitalize="none" type="text" class="form-control" placeholder="Enter your username">
-
-          <div *ngIf="username.invalid && (username.dirty || username.touched)" class="alert alert-danger">
-            <div *ngIf="username.errors?.['required']">
-              Username is required.
-            </div>
-          </div>
-        </div><!-- mb-3 -->
-        <div class="mb-3">
-          <label>Password</label>
-          <!-- Same reasoning: the minlength here is what refused the published demo password after
-               the signup API had accepted it (#505). You either know your password or you do not. -->
-          <input [(ngModel)]="existingUser.password" name="password" #password="ngModel" required type="password" class="form-control" placeholder="Enter your password">
-
-          <div *ngIf="password.invalid && (password.dirty || password.touched)" class="alert alert-danger">
-            <div *ngIf="password.errors?.['required']">
-              Password is required.
-            </div>
-          </div>
-        </div><!-- mb-3 -->
-        <button [disabled]="!userForm.form.valid || loading" type="submit" class="btn btn-az-primary w-100">Sign In</button>
-
-        <div *ngIf="errorMsg" class="alert alert-danger mt-3" role="alert">
-          <strong>Error</strong> {{errorMsg}}
         </div>
-      </form>
+      }
+
+      @if (!showExternalIdP) {
+        <form  (ngSubmit)="signinSubmit()" #userForm="ngForm">
+          <div class="mb-3">
+            <label>Username</label>
+            <!-- SIGN-IN VALIDATES ONLY "did you type something" (#506). A length rule here refuses an
+            account that predates the policy, or predates an operator raising it — locking someone
+            out of their own records over a rule they cannot act on until they are inside. The
+            server decides; this form just collects. (It also used to enforce 2 while telling the
+            user 4, and reject usernames the server had happily created.) -->
+            <input [(ngModel)]="existingUser.username" name="username" #username="ngModel" required autocapitalize="none" type="text" class="form-control" placeholder="Enter your username">
+            @if (username.invalid && (username.dirty || username.touched)) {
+              <div class="alert alert-danger">
+                @if (username.errors?.['required']) {
+                  <div>
+                    Username is required.
+                  </div>
+                }
+              </div>
+            }
+          </div><!-- mb-3 -->
+          <div class="mb-3">
+            <label>Password</label>
+            <!-- Same reasoning: the minlength here is what refused the published demo password after
+            the signup API had accepted it (#505). You either know your password or you do not. -->
+            <input [(ngModel)]="existingUser.password" name="password" #password="ngModel" required type="password" class="form-control" placeholder="Enter your password">
+            @if (password.invalid && (password.dirty || password.touched)) {
+              <div class="alert alert-danger">
+                @if (password.errors?.['required']) {
+                  <div>
+                    Password is required.
+                  </div>
+                }
+              </div>
+            }
+          </div><!-- mb-3 -->
+          <button [disabled]="!userForm.form.valid || loading" type="submit" class="btn btn-az-primary w-100">Sign In</button>
+          @if (errorMsg) {
+            <div class="alert alert-danger mt-3" role="alert">
+              <strong>Error</strong> {{errorMsg}}
+            </div>
+          }
+        </form>
+      }
 
     </div><!-- az-signin-header -->
-    <div *ngIf="!showExternalIdP" class="az-signin-footer">
-      <p><a ngbTooltip="not yet implemented">Forgot password?</a></p>
-      <!-- Hidden when the instance closed self-service signup (#498). The backend refuses either
-           way; this stops us offering a link that fails. -->
-      <p *ngIf="signupEnabled">Don't have an account? <a routerLink="/auth/signup">Create an Account</a></p>
-      <p *ngIf="!signupEnabled" class="tx-12 tx-gray-600">This instance does not offer self-service accounts. Ask its operator for one.</p>
-    </div><!-- az-signin-footer -->
-  </div><!-- az-card-signin -->
-</div><!-- az-signin-wrapper -->
+    @if (!showExternalIdP) {
+      <div class="az-signin-footer">
+        <p><a ngbTooltip="not yet implemented">Forgot password?</a></p>
+        <!-- Hidden when the instance closed self-service signup (#498). The backend refuses either
+        way; this stops us offering a link that fails. -->
+        @if (signupEnabled) {
+          <p>Don't have an account? <a routerLink="/auth/signup">Create an Account</a></p>
+        }
+        @if (!signupEnabled) {
+          <p class="tx-12 tx-gray-600">This instance does not offer self-service accounts. Ask its operator for one.</p>
+        }
+      </div>
+      }<!-- az-signin-footer -->
+    </div><!-- az-card-signin -->
+  </div><!-- az-signin-wrapper -->

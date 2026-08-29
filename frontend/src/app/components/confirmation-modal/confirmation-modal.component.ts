@@ -1,10 +1,10 @@
 import { Component, Input } from '@angular/core';
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
-import { CommonModule } from '@angular/common';
+
 
 @Component({
     selector: 'confirmation-modal',
-    imports: [CommonModule],
+    imports: [],
     templateUrl: './confirmation-modal.component.html',
     styleUrls: ['./confirmation-modal.component.scss']
 })

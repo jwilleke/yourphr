@@ -1,5 +1,5 @@
 import {Component} from '@angular/core';
-import {CommonModule} from '@angular/common';
+
 import {FormsModule} from '@angular/forms';
 import {Router, RouterModule} from '@angular/router';
 import {FastenApiService} from '../../services/fasten-api.service';
@@ -8,7 +8,7 @@ import {extractErrorFromResponse} from '../../../lib/utils/error_extract';
 /** Simple patient-entered home vitals (#313 first slice). Full visit wizard remains at /resource/create. */
 @Component({
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [FormsModule, RouterModule],
   selector: 'app-patient-entry',
   templateUrl: './patient-entry.component.html',
 })

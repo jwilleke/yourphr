@@ -1,6 +1,6 @@
 import {ChangeDetectorRef, Component, Input, OnInit} from '@angular/core';
 import {NgbCollapseModule} from '@ng-bootstrap/ng-bootstrap';
-import {CommonModule} from '@angular/common';
+
 import {BadgeComponent} from '../../common/badge/badge.component';
 import {TableComponent} from '../../common/table/table.component';
 import {Router, RouterModule} from '@angular/router';
@@ -11,7 +11,7 @@ import * as _ from 'lodash';
 import {LocationModel} from '../../../../../lib/models/resources/location-model';
 
 @Component({
-    imports: [NgbCollapseModule, CommonModule, BadgeComponent, TableComponent, RouterModule],
+    imports: [NgbCollapseModule, BadgeComponent, TableComponent, RouterModule],
     selector: 'fhir-location',
     templateUrl: './location.component.html',
     styleUrls: ['./location.component.scss']

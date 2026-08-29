@@ -22,27 +22,32 @@
   </div>
 
   <div class="related-tree">
-    <ng-container *ngFor="let node of nodes">
+    @for (node of nodes; track node) {
       <ng-container *ngTemplateOutlet="treeNode; context: { $implicit: node, depth: 0 }"></ng-container>
-    </ng-container>
+    }
   </div>
 
   <ng-template #treeNode let-node let-depth="depth">
     <div class="tree-node" [style.padding-left.px]="depth * 20">
-      <button *ngIf="node.children?.length; else toggleSpacer" type="button" class="tree-toggle"
-              (click)="node.expanded = !node.expanded" [attr.aria-expanded]="node.expanded">
-        <i class="fas" [ngClass]="node.expanded ? 'fa-caret-down' : 'fa-caret-right'"></i>
-      </button>
-      <ng-template #toggleSpacer><span class="tree-toggle"></span></ng-template>
-      <input *ngIf="node.show_checkbox" type="checkbox" class="tree-checkbox"
-             (change)="onResourceCheckboxClick($event, node)">
+      @if (node.children?.length) {
+        <button type="button" class="tree-toggle"
+          (click)="node.expanded = !node.expanded" [attr.aria-expanded]="node.expanded">
+          <i class="fas" [ngClass]="node.expanded ? 'fa-caret-down' : 'fa-caret-right'"></i>
+        </button>
+      } @else {
+        <span class="tree-toggle"></span>
+      }
+      @if (node.show_checkbox) {
+        <input type="checkbox" class="tree-checkbox"
+          (change)="onResourceCheckboxClick($event, node)">
+      }
       <span class="tree-label">{{ node.name }}</span>
     </div>
-    <ng-container *ngIf="node.expanded">
-      <ng-container *ngFor="let child of node.children">
+    @if (node.expanded) {
+      @for (child of node.children; track child) {
         <ng-container *ngTemplateOutlet="treeNode; context: { $implicit: child, depth: depth + 1 }"></ng-container>
-      </ng-container>
-    </ng-container>
+      }
+    }
   </ng-template>
 </div>
 <div class="modal-footer">

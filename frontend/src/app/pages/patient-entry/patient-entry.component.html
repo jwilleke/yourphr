@@ -12,13 +12,19 @@
     </a>
   </div>
 
-  <div *ngIf="error" class="alert alert-danger">{{ error }}</div>
-  <div *ngIf="successMsg" class="alert alert-success">
-    {{ successMsg }}
-    <button *ngIf="lastResourceId" type="button" class="btn btn-sm btn-outline-success mg-l-10" (click)="viewInExplore()">
-      View in Explore
-    </button>
-  </div>
+  @if (error) {
+    <div class="alert alert-danger">{{ error }}</div>
+  }
+  @if (successMsg) {
+    <div class="alert alert-success">
+      {{ successMsg }}
+      @if (lastResourceId) {
+        <button type="button" class="btn btn-sm btn-outline-success mg-l-10" (click)="viewInExplore()">
+          View in Explore
+        </button>
+      }
+    </div>
+  }
 
   <div class="card">
     <div class="card-body">
@@ -34,12 +40,14 @@
           </select>
         </div>
 
-        <div class="col-md-3 mg-b-15" *ngIf="needsSingleValue">
-          <label class="form-label" for="vital-value">Value</label>
-          <input id="vital-value" type="number" step="any" class="form-control" [(ngModel)]="value" name="value" required />
-        </div>
+        @if (needsSingleValue) {
+          <div class="col-md-3 mg-b-15">
+            <label class="form-label" for="vital-value">Value</label>
+            <input id="vital-value" type="number" step="any" class="form-control" [(ngModel)]="value" name="value" required />
+          </div>
+        }
 
-        <ng-container *ngIf="!needsSingleValue">
+        @if (!needsSingleValue) {
           <div class="col-md-2 mg-b-15">
             <label class="form-label" for="vital-sys">Systolic</label>
             <input id="vital-sys" type="number" step="any" class="form-control" [(ngModel)]="systolic" name="systolic" required />
@@ -48,12 +56,14 @@
             <label class="form-label" for="vital-dia">Diastolic</label>
             <input id="vital-dia" type="number" step="any" class="form-control" [(ngModel)]="diastolic" name="diastolic" required />
           </div>
-        </ng-container>
+        }
 
-        <div class="col-md-2 mg-b-15" *ngIf="needsSingleValue">
-          <label class="form-label" for="vital-unit">Unit <span class="tx-gray-500 tx-11">(optional)</span></label>
-          <input id="vital-unit" type="text" class="form-control" [(ngModel)]="unit" name="unit" [placeholder]="defaultUnitHint" />
-        </div>
+        @if (needsSingleValue) {
+          <div class="col-md-2 mg-b-15">
+            <label class="form-label" for="vital-unit">Unit <span class="tx-gray-500 tx-11">(optional)</span></label>
+            <input id="vital-unit" type="text" class="form-control" [(ngModel)]="unit" name="unit" [placeholder]="defaultUnitHint" />
+          </div>
+        }
 
         <div class="col-md-3 mg-b-15">
           <label class="form-label" for="vital-date">Date</label>

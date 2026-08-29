@@ -1,23 +1,32 @@
-<div *ngIf="loading">
-  <div class="text-center mg-b-20">
-    <div class="spinner-border" role="status">
-      <span class="visually-hidden">Loading...</span>
+@if (loading) {
+  <div>
+    <div class="text-center mg-b-20">
+      <div class="spinner-border" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
     </div>
   </div>
-</div>
+}
 
 
 
-<div *ngIf="!loading && loadError" class="alert alert-warning" role="alert">
-  This document could not be retrieved. It may not have been downloaded yet, or was too large to store.
-  <span *ngIf="attachmentModel?.contentType"> ({{attachmentModel?.contentType}})</span>
-</div>
+@if (!loading && loadError) {
+  <div class="alert alert-warning" role="alert">
+    This document could not be retrieved. It may not have been downloaded yet, or was too large to store.
+    @if (attachmentModel?.contentType) {
+      <span> ({{attachmentModel?.contentType}})</span>
+    }
+  </div>
+}
 
-<div *ngIf="!loading && !loadError && hasContent" class="d-flex justify-content-end mg-b-10">
-  <button type="button" class="btn btn-sm btn-outline-secondary" (click)="download()">Download</button>
-</div>
+@if (!loading && !loadError && hasContent) {
+  <div class="d-flex justify-content-end mg-b-10">
+    <button type="button" class="btn btn-sm btn-outline-secondary" (click)="download()">Download</button>
+  </div>
+}
 
-<ng-container *ngIf="!loading && !loadError" [ngTemplateOutlet]="
+@if (!loading && !loadError) {
+<ng-container [ngTemplateOutlet]="
   displayModel?.content_type == 'application/pdf' ? showPdf :
   displayModel?.content_type == 'text/markdown' ? showMarkdown :
   displayModel?.content_type == 'text/plain' ? showText :
@@ -28,6 +37,7 @@
   (displayModel?.content_type == 'image/jpeg' || displayModel?.content_type == 'image/png') ? showImg :
   showEmpty
 "></ng-container>
+}
 
 <ng-template #showPdf>
   <fhir-pdf [displayModel]="displayModel"></fhir-pdf>

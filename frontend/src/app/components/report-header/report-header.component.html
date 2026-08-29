@@ -10,133 +10,145 @@
         <h6>{{lastUpdated ? (lastUpdated | date:'MMM d, yyyy') : ''}}</h6>
       </div><!-- media-body -->
     </div><!-- media -->
-    <div *ngIf="primaryCare" class="media">
-      <div class="media-body">
-        <label>Primary Care</label>
-        <h6 class="cursor-pointer" [ngbPopover]="primaryCarePopoverContent" placement="bottom" >{{primaryCare?.name?.[0]?.displayName }}</h6>
-      </div><!-- media-body -->
-    </div><!-- media -->
-    <div class="media">
-      <div class="media-body">
-        <label>Selected Sources</label>
-        <h6>All Sources</h6>
-      </div><!-- media-body -->
-    </div><!-- media -->
-    <a [routerLink]="'/sources'" class="btn btn-az-primary">Add Source</a>
-    <a [routerLink]="'/resource/add'" class="btn btn-az-primary mg-l-10">Add record</a>
+    @if (primaryCare) {
+      <div class="media">
+        <div class="media-body">
+          <label>Primary Care</label>
+          <h6 class="cursor-pointer" [ngbPopover]="primaryCarePopoverContent" placement="bottom" >{{primaryCare?.name?.[0]?.displayName }}</h6>
+        </div><!-- media-body -->
+      </div>
+      }<!-- media -->
+      <div class="media">
+        <div class="media-body">
+          <label>Selected Sources</label>
+          <h6>All Sources</h6>
+        </div><!-- media-body -->
+      </div><!-- media -->
+      <a [routerLink]="'/sources'" class="btn btn-az-primary">Add Source</a>
+      <a [routerLink]="'/resource/add'" class="btn btn-az-primary mg-l-10">Add record</a>
+    </div>
+  </div><!-- az-dashboard-one-title -->
+
+  <div class="az-dashboard-nav">
+    <nav class="nav">
+    </nav>
+
+    <nav class="nav">
+      <a class="nav-link cursor-pointer" (click)="saveReport($event)"><i class="far fa-save"></i> Save Report</a>
+      <a class="nav-link" (click)="getIPSExport($event)"><i class="far fa-file-pdf"></i> Export to PDF</a>
+      <a class="nav-link cursor-pointer" (click)="sendToEmail($event)"><i class="far fa-envelope"></i> Send to Email</a>
+      <a class="nav-link disabled tx-gray-400" ngbTooltip="not yet implemented"><i class="fas fa-ellipsis-h"></i></a>
+    </nav>
   </div>
-</div><!-- az-dashboard-one-title -->
 
-<div class="az-dashboard-nav">
-  <nav class="nav">
-  </nav>
-
-  <nav class="nav">
-    <a class="nav-link cursor-pointer" (click)="saveReport($event)"><i class="far fa-save"></i> Save Report</a>
-    <a class="nav-link" (click)="getIPSExport($event)"><i class="far fa-file-pdf"></i> Export to PDF</a>
-    <a class="nav-link cursor-pointer" (click)="sendToEmail($event)"><i class="far fa-envelope"></i> Send to Email</a>
-    <a class="nav-link disabled tx-gray-400" ngbTooltip="not yet implemented"><i class="fas fa-ellipsis-h"></i></a>
-  </nav>
-</div>
-
-<!--
+  <!--
   Shown before the download starts, not after. The file is the patient's whole record in the clear;
   saying so once is the difference between an informed export and a surprise (#523).
--->
-<ng-template #saveReportWarning let-modal>
-  <div class="modal-header">
-    <h5 class="modal-title" id="save-report-title">Save your report</h5>
-    <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss()"></button>
-  </div>
-  <div class="modal-body">
-    <div class="form-group mg-b-15">
-      <label class="d-block">Download as</label>
-      <div class="form-check">
-        <input class="form-check-input" type="radio" id="saveFormatHtml" value="html" [(ngModel)]="saveFormat">
-        <label class="form-check-label" for="saveFormatHtml">
-          <strong>Web page</strong> — open it in any browser, or print it
-        </label>
-      </div>
-      <div class="form-check">
-        <input class="form-check-input" type="radio" id="saveFormatJson" value="json" [(ngModel)]="saveFormat">
-        <label class="form-check-label" for="saveFormatJson">
-          <strong>FHIR file</strong> — for a doctor's office or app to import into their system
-        </label>
-      </div>
+  -->
+  <ng-template #saveReportWarning let-modal>
+    <div class="modal-header">
+      <h5 class="modal-title" id="save-report-title">Save your report</h5>
+      <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss()"></button>
     </div>
+    <div class="modal-body">
+      <div class="form-group mg-b-15">
+        <label class="d-block">Download as</label>
+        <div class="form-check">
+          <input class="form-check-input" type="radio" id="saveFormatHtml" value="html" [(ngModel)]="saveFormat">
+          <label class="form-check-label" for="saveFormatHtml">
+            <strong>Web page</strong> — open it in any browser, or print it
+          </label>
+        </div>
+        <div class="form-check">
+          <input class="form-check-input" type="radio" id="saveFormatJson" value="json" [(ngModel)]="saveFormat">
+          <label class="form-check-label" for="saveFormatJson">
+            <strong>FHIR file</strong> — for a doctor's office or app to import into their system
+          </label>
+        </div>
+      </div>
 
-    <p>This downloads your medical record as a single file you can open, keep, or pass on.</p>
-    <p class="mg-b-0">
-      <strong>The file is not protected.</strong> It contains your health information in readable form,
-      with no password and no expiry — anyone who can open the file, or the backup it ends up in, can
-      read it. Save it somewhere you would keep a paper copy of your records.
-    </p>
-  </div>
-  <div class="modal-footer">
-    <button type="button" class="btn btn-outline-secondary" (click)="modal.dismiss()">Cancel</button>
-    <button type="button" class="btn btn-az-primary" (click)="modal.close('download')">Download report</button>
-  </div>
-</ng-template>
+      <p>This downloads your medical record as a single file you can open, keep, or pass on.</p>
+      <p class="mg-b-0">
+        <strong>The file is not protected.</strong> It contains your health information in readable form,
+        with no password and no expiry — anyone who can open the file, or the backup it ends up in, can
+        read it. Save it somewhere you would keep a paper copy of your records.
+      </p>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-outline-secondary" (click)="modal.dismiss()">Cancel</button>
+      <button type="button" class="btn btn-az-primary" (click)="modal.close('download')">Download report</button>
+    </div>
+  </ng-template>
 
-<!--
+  <!--
   Same shape as the Save Report warning, deliberately stronger: a download sits on the patient's own
   machine, while an email lands in somebody else's mailbox provider and cannot be recalled (#524).
--->
-<ng-template #sendEmailDialog let-modal>
-  <div class="modal-header">
-    <h5 class="modal-title" id="send-email-title">Send your records by email</h5>
-    <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss()"></button>
-  </div>
-
-  <div class="modal-body" *ngIf="!emailSentTo">
-    <div class="form-group mg-b-15">
-      <label for="emailRecipient">Send to</label>
-      <input id="emailRecipient" type="email" class="form-control" placeholder="name@example.com"
-             [(ngModel)]="emailRecipient" [disabled]="emailSending" autocomplete="off">
+  -->
+  <ng-template #sendEmailDialog let-modal>
+    <div class="modal-header">
+      <h5 class="modal-title" id="send-email-title">Send your records by email</h5>
+      <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss()"></button>
     </div>
 
-    <div class="form-group mg-b-15">
-      <label class="d-block">Send as</label>
-      <div class="form-check">
-        <input class="form-check-input" type="radio" id="emailFormatPdf" value="pdf"
-               [(ngModel)]="emailFormat" [disabled]="emailSending">
-        <label class="form-check-label" for="emailFormatPdf">
-          <strong>PDF</strong> — a document to read or print
-        </label>
+    @if (!emailSentTo) {
+      <div class="modal-body">
+        <div class="form-group mg-b-15">
+          <label for="emailRecipient">Send to</label>
+          <input id="emailRecipient" type="email" class="form-control" placeholder="name@example.com"
+            [(ngModel)]="emailRecipient" [disabled]="emailSending" autocomplete="off">
+        </div>
+        <div class="form-group mg-b-15">
+          <label class="d-block">Send as</label>
+          <div class="form-check">
+            <input class="form-check-input" type="radio" id="emailFormatPdf" value="pdf"
+              [(ngModel)]="emailFormat" [disabled]="emailSending">
+            <label class="form-check-label" for="emailFormatPdf">
+              <strong>PDF</strong> — a document to read or print
+            </label>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="radio" id="emailFormatJson" value="json"
+              [(ngModel)]="emailFormat" [disabled]="emailSending">
+            <label class="form-check-label" for="emailFormatJson">
+              <strong>FHIR file</strong> — for a doctor's office or app to import into their system
+            </label>
+          </div>
+        </div>
+        <p class="mg-b-0">
+          <strong>Email is not private and cannot be taken back.</strong> The file has no password, and a
+          copy will stay in the recipient's mailbox — and with their email provider — indefinitely. Send
+          it only to someone you would hand a paper copy of your records.
+        </p>
+        @if (emailError) {
+          <div class="alert alert-danger mg-t-15 mg-b-0">{{ emailError }}</div>
+        }
       </div>
-      <div class="form-check">
-        <input class="form-check-input" type="radio" id="emailFormatJson" value="json"
-               [(ngModel)]="emailFormat" [disabled]="emailSending">
-        <label class="form-check-label" for="emailFormatJson">
-          <strong>FHIR file</strong> — for a doctor's office or app to import into their system
-        </label>
+    }
+
+    @if (emailSentTo) {
+      <div class="modal-body">
+        <div class="alert alert-success mg-b-0">Sent to {{ emailSentTo }}.</div>
       </div>
-    </div>
-    <p class="mg-b-0">
-      <strong>Email is not private and cannot be taken back.</strong> The file has no password, and a
-      copy will stay in the recipient's mailbox — and with their email provider — indefinitely. Send
-      it only to someone you would hand a paper copy of your records.
-    </p>
+    }
 
-    <div *ngIf="emailError" class="alert alert-danger mg-t-15 mg-b-0">{{ emailError }}</div>
-  </div>
+    @if (!emailSentTo) {
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" (click)="modal.dismiss()" [disabled]="emailSending">Cancel</button>
+        <button type="button" class="btn btn-az-primary" (click)="confirmSendEmail()" [disabled]="emailSending">
+          @if (emailSending) {
+            <span class="spinner-border spinner-border-sm mg-r-5"></span>
+          }
+          {{ emailSending ? 'Sending…' : 'Send records' }}
+        </button>
+      </div>
+    }
+    @if (emailSentTo) {
+      <div class="modal-footer">
+        <button type="button" class="btn btn-az-primary" (click)="modal.close()">Done</button>
+      </div>
+    }
+  </ng-template>
 
-  <div class="modal-body" *ngIf="emailSentTo">
-    <div class="alert alert-success mg-b-0">Sent to {{ emailSentTo }}.</div>
-  </div>
-
-  <div class="modal-footer" *ngIf="!emailSentTo">
-    <button type="button" class="btn btn-outline-secondary" (click)="modal.dismiss()" [disabled]="emailSending">Cancel</button>
-    <button type="button" class="btn btn-az-primary" (click)="confirmSendEmail()" [disabled]="emailSending">
-      <span *ngIf="emailSending" class="spinner-border spinner-border-sm mg-r-5"></span>
-      {{ emailSending ? 'Sending…' : 'Send records' }}
-    </button>
-  </div>
-  <div class="modal-footer" *ngIf="emailSentTo">
-    <button type="button" class="btn btn-az-primary" (click)="modal.close()">Done</button>
-  </div>
-</ng-template>
-
-<ng-template #primaryCarePopoverContent>
-  <fhir-card [displayModel]="primaryCare"></fhir-card>
-</ng-template>
+  <ng-template #primaryCarePopoverContent>
+    <fhir-card [displayModel]="primaryCare"></fhir-card>
+  </ng-template>

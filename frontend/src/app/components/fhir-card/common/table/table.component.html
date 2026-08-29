@@ -1,40 +1,44 @@
 <div class="table-responsive">
   <table class="table">
     <tbody>
-    <!--
+      <!--
       Honour `enabled`. Every card sets it — "only show this row if the resource actually carries the
       field" — and the table used to ignore it, so a missing optional field rendered as a blank row
       and an absent Reference CRASHED the card on `rowItem.data.reference` (found via #521).
       Undefined counts as visible, since older cards omit the flag entirely.
-    -->
-    <tr *ngFor="let rowItem of tableData" [hidden]="rowItem.enabled === false">
-      <td>
-        <strong>{{rowItem.label}}</strong>
-      </td>
-      <td>
-
+      -->
+      @for (rowItem of tableData; track rowItem) {
+        <tr [hidden]="rowItem.enabled === false">
+          <td>
+            <strong>{{rowItem.label}}</strong>
+          </td>
+          <td>
         <ng-container [ngTemplateOutlet]="rowItem.data_type == 'reference' ? dataTypeReference :
          rowItem.data_type == 'coding'? dataTypeCoding :
          rowItem.data_type == 'codingList'? dataTypeCodingList :
          rowItem.data_type == 'codableConcept'? dataTypeCodableConcept :
          dataTypeString"></ng-container>
-
-        <ng-template #dataTypeCodableConcept>
-          <fhir-codable-concept [codableConcept]="rowItem.data"></fhir-codable-concept>
-        </ng-template>
-        <ng-template #dataTypeCoding>
-          <fhir-coding [coding]="rowItem.data"></fhir-coding>
-        </ng-template>
-        <ng-template #dataTypeCodingList>
-          <fhir-coding *ngFor="let coding of rowItem.data" [coding]="coding"></fhir-coding>
-        </ng-template>
-        <ng-template #dataTypeReference>
-          <!-- Guarded: an absent reference must render nothing, not throw and take the whole card with it. -->
-          <a *ngIf="rowItem.data?.reference" [routerLink]="['/explore', displayModel?.source_id, 'resource', rowItem.data.reference]">{{rowItem.data.display || rowItem.data.reference}}</a>
-        </ng-template>
-        <ng-template #dataTypeString>{{rowItem.data}}</ng-template>
-      </td>
-    </tr>
+            <ng-template #dataTypeCodableConcept>
+              <fhir-codable-concept [codableConcept]="rowItem.data"></fhir-codable-concept>
+            </ng-template>
+            <ng-template #dataTypeCoding>
+              <fhir-coding [coding]="rowItem.data"></fhir-coding>
+            </ng-template>
+            <ng-template #dataTypeCodingList>
+              @for (coding of rowItem.data; track coding) {
+                <fhir-coding [coding]="coding"></fhir-coding>
+              }
+            </ng-template>
+            <ng-template #dataTypeReference>
+              <!-- Guarded: an absent reference must render nothing, not throw and take the whole card with it. -->
+              @if (rowItem.data?.reference) {
+                <a [routerLink]="['/explore', displayModel?.source_id, 'resource', rowItem.data.reference]">{{rowItem.data.display || rowItem.data.reference}}</a>
+              }
+            </ng-template>
+            <ng-template #dataTypeString>{{rowItem.data}}</ng-template>
+          </td>
+        </tr>
+      }
     </tbody>
   </table>
 

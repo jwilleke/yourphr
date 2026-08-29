@@ -2,46 +2,57 @@
   <div class="card-header" (click)="isCollapsed = ! isCollapsed">
     <div>
       <h6 class="card-title">{{displayModel?.title}}</h6>
-      <p class="card-text tx-gray-400" *ngIf="displayModel?.effective_datetime || displayModel?.effective_period_start"><strong>Date</strong> {{(displayModel?.effective_datetime || displayModel?.effective_period_start) | date}}</p>
+      @if (displayModel?.effective_datetime || displayModel?.effective_period_start) {
+        <p class="card-text tx-gray-400"><strong>Date</strong> {{(displayModel?.effective_datetime || displayModel?.effective_period_start) | date}}</p>
+      }
     </div>
     <fhir-ui-badge class="float-end" [status]="displayModel?.status">{{displayModel?.status}}</fhir-ui-badge>
     <!--    <div class="btn-group">-->
     <!--      <button class="btn active">Day</button>-->
     <!--      <button class="btn">Week</button>-->
     <!--      <button class="btn">Month</button>-->
-    <!--    </div>-->
-  </div>
-  <div #collapse="ngbCollapse" [(ngbCollapse)]="isCollapsed" class="card-body">
-    <p class="az-content-text mg-b-20" *ngIf="!(resourceCode && resourceCodeSystem); else lookupCode">An action that is or was performed on or for a patient, practitioner, device, organization, or location. For example, this can be a physical intervention on a patient like an operation, or less invasive like long term services, counseling, or hypnotherapy.</p>
-    <fhir-ui-table [displayModel]="displayModel" [tableData]="tableData"></fhir-ui-table>
+  <!--    </div>-->
+</div>
+<div #collapse="ngbCollapse" [(ngbCollapse)]="isCollapsed" class="card-body">
+  @if (!(resourceCode && resourceCodeSystem)) {
+    <p class="az-content-text mg-b-20">An action that is or was performed on or for a patient, practitioner, device, organization, or location. For example, this can be a physical intervention on a patient like an operation, or less invasive like long term services, counseling, or hypnotherapy.</p>
+  } @else {
+    <app-glossary-lookup class="az-content-text mg-b-20" [code]="resourceCode" [codeSystem]="resourceCodeSystem"></app-glossary-lookup>
+  }
+  <fhir-ui-table [displayModel]="displayModel" [tableData]="tableData"></fhir-ui-table>
 
-    <div *ngIf="!showDetails">
-
-      <ng-container *ngIf="displayModel?.presented_form?.length > 1; else showSingle">
+  @if (!showDetails) {
+    <div>
+      @if (displayModel?.presented_form?.length > 1) {
         <ul ngbNav #nav="ngbNav" [(activeId)]="active" class="nav-tabs">
-          <li *ngFor="let attachmentModel of displayModel.presented_form; index as i" [ngbNavItem]="i">
-            <a ngbNavLink>{{attachmentModel.contentType}}</a>
-            <ng-template ngbNavContent>
-              <fhir-binary [attachmentModel]="attachmentModel" [attachmentSourceId]="displayModel?.source_id" ></fhir-binary>
-            </ng-template>
-          </li>
+          @for (attachmentModel of displayModel.presented_form; track attachmentModel; let i = $index) {
+            <li [ngbNavItem]="i">
+              <a ngbNavLink>{{attachmentModel.contentType}}</a>
+              <ng-template ngbNavContent>
+                <fhir-binary [attachmentModel]="attachmentModel" [attachmentSourceId]="displayModel?.source_id" ></fhir-binary>
+              </ng-template>
+            </li>
+          }
         </ul>
         <div [ngbNavOutlet]="nav" class="mt-2"></div>
-      </ng-container>
-      <ng-template #showSingle>
-        <fhir-binary *ngIf="displayModel?.presented_form?.length == 1"  [attachmentModel]="displayModel?.presented_form?.[0]" [attachmentSourceId]="displayModel?.source_id" ></fhir-binary>
-      </ng-template>
+      } @else {
+        @if (displayModel?.presented_form?.length == 1) {
+          <fhir-binary  [attachmentModel]="displayModel?.presented_form?.[0]" [attachmentSourceId]="displayModel?.source_id" ></fhir-binary>
+        }
+      }
     </div>
-    <div *ngIf="isEditable" class="action-buttons">
+  }
+  @if (isEditable) {
+    <div class="action-buttons">
       <button type="button" (click)="onEditClicked()" class="btn btn-az-primary">Edit</button>
       <button type="button" (click)="onUnlinkClicked()" class="btn btn-danger">Delete</button>
     </div>
-  </div>
-  <div *ngIf="showDetails" class="card-footer">
+  }
+</div>
+@if (showDetails) {
+  <div class="card-footer">
     <a class="float-end" [routerLink]="['/explore', displayModel?.source_id, 'resource', displayModel?.source_resource_id]">details</a>
   </div>
+}
 </div>
 
-<ng-template #lookupCode>
-  <app-glossary-lookup class="az-content-text mg-b-20" [code]="resourceCode" [codeSystem]="resourceCodeSystem"></app-glossary-lookup>
-</ng-template>

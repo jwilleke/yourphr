@@ -1,8 +1,8 @@
 import { Component, OnInit } from '@angular/core';
-import {CommonModule} from '@angular/common';
+
 
 @Component({
-    imports: [CommonModule],
+    imports: [],
     selector: 'loading-widget',
     templateUrl: './loading-widget.component.html',
     styleUrls: ['./loading-widget.component.scss']

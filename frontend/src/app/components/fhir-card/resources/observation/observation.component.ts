@@ -1,6 +1,6 @@
 import {ChangeDetectorRef, Component, Input, OnInit} from '@angular/core';
 import { NgbCollapseModule } from '@ng-bootstrap/ng-bootstrap';
-import {CommonModule} from '@angular/common';
+
 import {BadgeComponent} from '../../common/badge/badge.component';
 import {TableComponent} from '../../common/table/table.component';
 import {Router, RouterModule} from '@angular/router';
@@ -10,7 +10,7 @@ import {observationProfileLabel} from '../../../../../lib/models/resources/obser
 import { ObservationVisualizationComponent } from '../../common/observation-visualization/observation-visualization.component';
 
 @Component({
-    imports: [CommonModule, BadgeComponent, TableComponent, RouterModule, NgbCollapseModule, ObservationVisualizationComponent],
+    imports: [BadgeComponent, TableComponent, RouterModule, NgbCollapseModule, ObservationVisualizationComponent],
     providers: [],
     selector: 'fhir-observation',
     templateUrl: './observation.component.html',

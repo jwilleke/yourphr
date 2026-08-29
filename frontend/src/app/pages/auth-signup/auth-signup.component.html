@@ -24,59 +24,83 @@
           <label>Your name</label>
           <input [(ngModel)]="newUser.full_name" name="full_name" #full_name="ngModel" required minlength="2" type="text" class="form-control" placeholder="Enter your firstname and lastname">
 
-          <div *ngIf="full_name.invalid && (full_name.dirty || full_name.touched)" class="alert alert-danger">
-            <div *ngIf="full_name.errors?.['required']">
-              Name is required.
+          @if (full_name.invalid && (full_name.dirty || full_name.touched)) {
+            <div class="alert alert-danger">
+              @if (full_name.errors?.['required']) {
+                <div>
+                  Name is required.
+                </div>
+              }
+              @if (full_name.errors?.['minlength']) {
+                <div>
+                  Name must be at least 2 characters long.
+                </div>
+              }
             </div>
-            <div *ngIf="full_name.errors?.['minlength']">
-              Name must be at least 2 characters long.
-            </div>
-          </div>
+          }
         </div><!-- mb-3 -->
 
         <div class="mb-3">
           <label>Username</label>
           <!-- minlength and the message both come from the published policy (#506), so the form
-               cannot drift from what the server enforces. It used to say 4 while sign-in said 2. -->
+          cannot drift from what the server enforces. It used to say 4 while sign-in said 2. -->
           <input [(ngModel)]="newUser.username" name="username" #username="ngModel" required [minlength]="policy.username_min_length" type="text" class="form-control" autocapitalize="none" placeholder="Enter your username">
 
-          <div *ngIf="username.invalid && (username.dirty || username.touched)" class="alert alert-danger">
-            <div *ngIf="username.errors?.['required']">
-              Username is required.
+          @if (username.invalid && (username.dirty || username.touched)) {
+            <div class="alert alert-danger">
+              @if (username.errors?.['required']) {
+                <div>
+                  Username is required.
+                </div>
+              }
+              @if (username.errors?.['minlength']) {
+                <div>
+                  Username must be at least {{policy.username_min_length}} characters long.
+                </div>
+              }
             </div>
-            <div *ngIf="username.errors?.['minlength']">
-              Username must be at least {{policy.username_min_length}} characters long.
-            </div>
-          </div>
+          }
 
         </div><!-- mb-3 -->
         <div class="mb-3">
           <label>Password</label>
           <input [(ngModel)]="newUser.password" name="password" #password="ngModel" required [minlength]="policy.password_min_length" [maxlength]="policy.password_max_length" type="password" class="form-control" placeholder="Enter your password">
 
-          <div *ngIf="password.invalid && (password.dirty || password.touched)" class="alert alert-danger">
-            <div *ngIf="password.errors?.['required']">
-              Password is required.
+          @if (password.invalid && (password.dirty || password.touched)) {
+            <div class="alert alert-danger">
+              @if (password.errors?.['required']) {
+                <div>
+                  Password is required.
+                </div>
+              }
+              @if (password.errors?.['minlength']) {
+                <div>
+                  Password must be at least {{policy.password_min_length}} characters long.
+                </div>
+              }
             </div>
-            <div *ngIf="password.errors?.['minlength']">
-              Password must be at least {{policy.password_min_length}} characters long.
-            </div>
-          </div>
+          }
           <!-- The server checks these too, and its answer is the one that counts — this only saves a
-               round trip. No composition rules, deliberately: NIST SP 800-63B advises against them. -->
+          round trip. No composition rules, deliberately: NIST SP 800-63B advises against them. -->
           <small class="tx-12 tx-gray-600">
-            At least {{policy.password_min_length}} characters.<span *ngIf="policy.password_deny_username"> Must not contain your username.</span><span *ngIf="policy.password_deny_common"> Commonly-breached passwords are refused.</span>
-          </small>
-        </div><!-- mb-3 -->
-        <button [disabled]="!userForm.form.valid || loading" type="submit" class="btn btn-az-primary w-100">Create Account</button>
+            At least {{policy.password_min_length}} characters.@if (policy.password_deny_username) {
+            <span> Must not contain your username.</span>
+            }@if (policy.password_deny_common) {
+            <span> Commonly-breached passwords are refused.</span>
+          }
+        </small>
+      </div><!-- mb-3 -->
+      <button [disabled]="!userForm.form.valid || loading" type="submit" class="btn btn-az-primary w-100">Create Account</button>
 
-        <div *ngIf="errorMsg" class="alert alert-danger mt-3" role="alert">
+      @if (errorMsg) {
+        <div class="alert alert-danger mt-3" role="alert">
           <strong>Error</strong> {{errorMsg}}
         </div>
-      </form>
-    </div><!-- az-signup-header -->
-    <div class="az-signup-footer">
-      <p>Already have an account? <a routerLink="/auth/signin">Sign In</a></p>
-    </div><!-- az-signin-footer -->
-  </div><!-- az-column-signup -->
+      }
+    </form>
+  </div><!-- az-signup-header -->
+  <div class="az-signup-footer">
+    <p>Already have an account? <a routerLink="/auth/signin">Sign In</a></p>
+  </div><!-- az-signin-footer -->
+</div><!-- az-column-signup -->
 </div><!-- az-signup-wrapper -->

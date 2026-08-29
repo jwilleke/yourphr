@@ -1,12 +1,12 @@
 import { Component, Input, OnInit } from '@angular/core';
 import { ObservationModel } from '../../../../../lib/models/resources/observation-model';
-import { CommonModule } from '@angular/common';
+
 import { ObservationBarChartComponent } from '../observation-bar-chart/observation-bar-chart.component';
 import { ObservationTableComponent } from '../observation-table/observation-table.component';
 
 @Component({
     selector: 'observation-visualization',
-    imports: [CommonModule, ObservationBarChartComponent, ObservationTableComponent],
+    imports: [ObservationBarChartComponent, ObservationTableComponent],
     templateUrl: './observation-visualization.component.html',
     styleUrls: ['./observation-visualization.component.scss']
 })

@@ -1,18 +1,21 @@
 <div class="az-content">
 
-  <div *ngIf="selectedPatient" class="container bg-light mb-4 p-2">
+  @if (selectedPatient) {
+    <div class="container bg-light mb-4 p-2">
       <div class="az-content-body">
         <div class="panel panel-default patient col-xs-12">
           <div class="row">
-            <div *ngIf="isExternal()" class="col-xs-2 col-sm-2 col-md-1">
-              <div class="">
-                <div class="patient-image-wrap">
-                  <img [src]="'assets/sources/'+selectedSource?.brand_id+'.png'"
-                       alt="{{selectedSource?.endpoint_id}}"
-                       class="img-fluid">
+            @if (isExternal()) {
+              <div class="col-xs-2 col-sm-2 col-md-1">
+                <div class="">
+                  <div class="patient-image-wrap">
+                    <img [src]="'assets/sources/'+selectedSource?.brand_id+'.png'"
+                      alt="{{selectedSource?.endpoint_id}}"
+                      class="img-fluid">
+                  </div>
                 </div>
               </div>
-            </div>
+            }
             <div class="col-xs-10 col-md-11">
               <div class="patient-row row">
                 <div class="col-7 patient-name"><h3 class="pull-left text-primary">{{getPatientName()}}</h3></div>
@@ -35,7 +38,9 @@
                 <div class="col-xs-8 col-sm-3 col-lg-3 text-start p-0">{{getPatientPhone()}}</div>
                 <div class="col-xs-4 col-sm-2 col-lg-1 text-end text-muted">Address:</div>
                 <div class="col-xs-8 col-sm-5 col-lg-3 text-start p-0">
-                  <div *ngFor="let line of getPatientAddress()">{{line}}</div>
+                  @for (line of getPatientAddress(); track line) {
+                    <div>{{line}}</div>
+                  }
                 </div>
                 <div class="col-xs-4 col-sm-2 col-lg-1 text-end text-muted">ID:</div>
                 <div class="col-xs-8 col-sm-3 col-lg-3 text-start p-0 text-overflow-ellipsis ">{{selectedPatient?.source_resource_id}}</div>
@@ -46,7 +51,8 @@
           </div>
         </div>
       </div>
-  </div>
+    </div>
+  }
 
   <div class="container">
     <div class="az-content-left">
@@ -57,9 +63,11 @@
       </div>
 
       <ul class="list-group">
-        <li *ngFor="let resourceGroup of resourceTypeCounts | keyvalue" (click)="selectResourceType(resourceGroup.key)" class="list-group-item d-flex justify-content-between align-items-center cursor-pointer">
-          {{resourceGroup.key | resourceTypeLabel}} <span class="badge bg-primary rounded-pill">{{resourceGroup.value}}</span>
-        </li>
+        @for (resourceGroup of resourceTypeCounts | keyvalue; track resourceGroup) {
+          <li (click)="selectResourceType(resourceGroup.key)" class="list-group-item d-flex justify-content-between align-items-center cursor-pointer">
+            {{resourceGroup.key | resourceTypeLabel}} <span class="badge bg-primary rounded-pill">{{resourceGroup.value}}</span>
+          </li>
+        }
       </ul>
     </div>
     <div class="az-content-body pd-lg-l-40 d-flex flex-column">

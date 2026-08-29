@@ -4,10 +4,12 @@
 </div>
 <div class="modal-body">
 
-  <div *ngIf="debugMode" class="alert alert-warning">
-    <!--    <pre><code  [highlight]="newAttachmentForm.getRawValue() | json"></code></pre>-->
-    <!--    <strong>New Attachment Form Status: {{ newAttachmentForm.status }}</strong>-->
-  </div>
+  @if (debugMode) {
+    <div class="alert alert-warning">
+      <!--    <pre><code  [highlight]="newAttachmentForm.getRawValue() | json"></code></pre>-->
+      <!--    <strong>New Attachment Form Status: {{ newAttachmentForm.status }}</strong>-->
+    </div>
+  }
 
   <div class="row mg-b-15">
     <div class="col-md-12">
@@ -20,18 +22,21 @@
 
 
 
-  <div *ngIf="questionnaire" class="row">
-    <wc-lhc-form
-      #lhcForm
-      [(questionnaire)]="questionnaire"
-      [options]="options"
-      [fhirVersion]="format"
-      (onFormReady)="onFormReady($event)"
-      (onError)="onError($event)"
-
-    ></wc-lhc-form>
-  </div>
-  <app-loading-spinner *ngIf="loading"></app-loading-spinner>
+  @if (questionnaire) {
+    <div class="row">
+      <wc-lhc-form
+        #lhcForm
+        [(questionnaire)]="questionnaire"
+        [options]="options"
+        [fhirVersion]="format"
+        (onFormReady)="onFormReady($event)"
+        (onError)="onError($event)"
+      ></wc-lhc-form>
+    </div>
+  }
+  @if (loading) {
+    <app-loading-spinner></app-loading-spinner>
+  }
 </div>
 <div class="modal-footer">
   <button type="button" class="btn btn-az-primary" (click)="submit()">Edit Lab Results</button>

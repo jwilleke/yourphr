@@ -1,12 +1,13 @@
 <div style="overflow:hidden;height: 95vh;" class="row">
-  <div *ngFor="let img of gridImages" class="col-1 nopadding">
-
-    <div class="d-flex h-100">
-      <div class="mx-auto my-auto">
-        <img src="assets/sources/{{img}}" class="rounded img-fluid opacity-20">
+  @for (img of gridImages; track img) {
+    <div class="col-1 nopadding">
+      <div class="d-flex h-100">
+        <div class="mx-auto my-auto">
+          <img src="assets/sources/{{img}}" class="rounded img-fluid opacity-20">
+        </div>
       </div>
     </div>
-  </div>
+  }
 </div>
 
 <div class="outer-div">
@@ -22,58 +23,86 @@
             <div class="mb-3">
               <input [(ngModel)]="newUser.full_name" name="full_name" #full_name="ngModel" required minlength="2" type="text" class="form-control" placeholder="Name">
 
-              <div *ngIf="full_name.invalid && (full_name.dirty || full_name.touched)" class="alert alert-danger">
-                <div *ngIf="full_name.errors?.['required']">
-                  Name is required.
+              @if (full_name.invalid && (full_name.dirty || full_name.touched)) {
+                <div class="alert alert-danger">
+                  @if (full_name.errors?.['required']) {
+                    <div>
+                      Name is required.
+                    </div>
+                  }
+                  @if (full_name.errors?.['minlength']) {
+                    <div>
+                      Name must be at least 2 characters long.
+                    </div>
+                  }
                 </div>
-                <div *ngIf="full_name.errors?.['minlength']">
-                  Name must be at least 2 characters long.
-                </div>
-              </div>
+              }
             </div><!-- mb-3 -->
             <div class="mb-3">
               <!-- From the published policy (#506), not hardcoded — see auth-signup.component.html. -->
               <input [(ngModel)]="newUser.username" name="username" #username="ngModel" required [minlength]="policy.username_min_length" type="text" class="form-control" autocapitalize="none" placeholder="Username">
-              <div *ngIf="username.invalid && (username.dirty || username.touched)" class="alert alert-danger">
-                <div *ngIf="username.errors?.['required']">
-                  Username is required.
+              @if (username.invalid && (username.dirty || username.touched)) {
+                <div class="alert alert-danger">
+                  @if (username.errors?.['required']) {
+                    <div>
+                      Username is required.
+                    </div>
+                  }
+                  @if (username.errors?.['minlength']) {
+                    <div>
+                      Username must be at least {{policy.username_min_length}} characters long.
+                    </div>
+                  }
                 </div>
-                <div *ngIf="username.errors?.['minlength']">
-                  Username must be at least {{policy.username_min_length}} characters long.
-                </div>
-              </div>
+              }
             </div><!-- mb-3 -->
             <div class="mb-3">
               <input [(ngModel)]="newUser.email" name="email" #email="ngModel" required email minlength="4" type="email" class="form-control" autocapitalize="none" placeholder="Email Address">
-              <div *ngIf="email.invalid && (email.dirty || email.touched)" class="alert alert-danger">
-                <div *ngIf="email.errors?.['required']">
-                  Email is required.
+              @if (email.invalid && (email.dirty || email.touched)) {
+                <div class="alert alert-danger">
+                  @if (email.errors?.['required']) {
+                    <div>
+                      Email is required.
+                    </div>
+                  }
+                  @if (email.errors?.['minlength']) {
+                    <div>
+                      Email must be at least 4 characters long.
+                    </div>
+                  }
+                  @if (email.errors?.['email']) {
+                    <div>
+                      Email must be a valid email address.
+                    </div>
+                  }
                 </div>
-                <div *ngIf="email.errors?.['minlength']">
-                  Email must be at least 4 characters long.
-                </div>
-                <div *ngIf="email.errors?.['email']">
-                  Email must be a valid email address.
-                </div>
-              </div>
+              }
             </div><!-- mb-3 -->
             <div class="mb-3">
               <input [(ngModel)]="newUser.password" name="password" #password="ngModel" required [minlength]="policy.password_min_length" [maxlength]="policy.password_max_length" type="password" class="form-control" placeholder="Password">
-              <div *ngIf="password.invalid && (password.dirty || password.touched)" class="alert alert-danger">
-                <div *ngIf="password.errors?.['required']">
-                  Password is required.
+              @if (password.invalid && (password.dirty || password.touched)) {
+                <div class="alert alert-danger">
+                  @if (password.errors?.['required']) {
+                    <div>
+                      Password is required.
+                    </div>
+                  }
+                  @if (password.errors?.['minlength']) {
+                    <div>
+                      Password must be at least {{policy.password_min_length}} characters long.
+                    </div>
+                  }
                 </div>
-                <div *ngIf="password.errors?.['minlength']">
-                  Password must be at least {{policy.password_min_length}} characters long.
-                </div>
-              </div>
+              }
             </div><!-- mb-3 -->
 
             <button [disabled]="!userForm.form.valid || loading" type="submit" class="btn btn-az-primary w-100">Create Account</button>
 
-            <div *ngIf="errorMsg" class="alert alert-danger mt-3" role="alert">
-              <strong>Error</strong> {{errorMsg}}
-            </div>
+            @if (errorMsg) {
+              <div class="alert alert-danger mt-3" role="alert">
+                <strong>Error</strong> {{errorMsg}}
+              </div>
+            }
           </form>
 
         </div><!-- az-signin-header -->

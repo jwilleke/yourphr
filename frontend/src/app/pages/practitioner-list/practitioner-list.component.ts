@@ -1,5 +1,5 @@
 import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { Router } from '@angular/router';
 import { FastenApiService } from '../../services/fasten-api.service';
 import { Practitioner } from 'src/app/models/fasten/practitioner';
@@ -19,7 +19,7 @@ export interface Favorite {
     selector: 'app-practitioner-list',
     templateUrl: './practitioner-list.component.html',
     styleUrls: ['./practitioner-list.component.scss'],
-    imports: [CommonModule]
+    imports: []
 })
 export class PractitionerListComponent implements OnInit, OnDestroy {
   practitioners: Practitioner[] = [];
@@ -56,7 +56,10 @@ export class PractitionerListComponent implements OnInit, OnDestroy {
     this.isTouchEnabled = window.matchMedia('(any-pointer: coarse)').matches;
   }
 
-  @HostListener('window:resize', ['$event'])
+  // No `['$event']`: Angular 21 type-checks HostListener arguments against the handler, and
+  // onResize() takes none — it only re-reads the media queries. Passing an argument the method
+  // does not accept is now TS2554 rather than silently ignored.
+  @HostListener('window:resize')
   onResize() {
     this.checkDeviceCapabilities();
   }

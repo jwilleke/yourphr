@@ -1,10 +1,10 @@
 import {Component, Input, OnInit} from '@angular/core';
 import {BinaryModel} from '../../../../../lib/models/resources/binary-model';
 import {DomSanitizer, SafeUrl} from '@angular/platform-browser';
-import {CommonModule} from "@angular/common";
+
 
 @Component({
-    imports: [CommonModule],
+    imports: [],
     selector: 'fhir-pdf',
     templateUrl: './pdf.component.html',
     styleUrls: ['./pdf.component.scss']

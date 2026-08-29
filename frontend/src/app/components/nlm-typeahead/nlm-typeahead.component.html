@@ -1,5 +1,7 @@
 <ng-template #rt let-r="result" let-t="term">
-  <span>{{r.text}}</span> <span *ngIf="r.subtext">&nbsp;({{r.subtext}})</span>
+  <span>{{r.text}}</span> @if (r.subtext) {
+  <span>&nbsp;({{r.subtext}})</span>
+}
 </ng-template>
 
 <input
@@ -16,10 +18,16 @@
   placeholder="Search"
   #instance="ngbTypeahead"
   [disabled]="disabled"
-/>
-<small *ngIf="searching" class="form-text text-muted">searching...</small>
-<div class="invalid-feedback" *ngIf="searchFailed">Sorry, suggestions could not be loaded.</div>
+  />
+@if (searching) {
+  <small class="form-text text-muted">searching...</small>
+}
+@if (searchFailed) {
+  <div class="invalid-feedback">Sorry, suggestions could not be loaded.</div>
+}
 
-<div *ngIf="debugMode" class="alert alert-warning">
-  <pre><code [highlight]="searchResult | json"></code></pre>
-</div>
+@if (debugMode) {
+  <div class="alert alert-warning">
+    <pre><code [highlight]="searchResult | json"></code></pre>
+  </div>
+}

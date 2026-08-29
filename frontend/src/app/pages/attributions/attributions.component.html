@@ -10,25 +10,30 @@
     </p>
   </div>
 
-  <div class="row" *ngIf="notices.length; else empty">
-    <div class="col-lg-6 mg-b-20" *ngFor="let notice of notices">
-      <div class="card h-100">
-        <div class="card-header">
-          <h6 class="card-title mg-b-0"><i class="fas fa-info-circle"></i>&nbsp; {{ notice.title }}</h6>
+  @if (notices.length) {
+    <div class="row">
+      @for (notice of notices; track notice) {
+        <div class="col-lg-6 mg-b-20">
+          <div class="card h-100">
+            <div class="card-header">
+              <h6 class="card-title mg-b-0"><i class="fas fa-info-circle"></i>&nbsp; {{ notice.title }}</h6>
+            </div>
+            <div class="card-body">
+              <blockquote class="attribution-body mg-b-15">{{ notice.body }}</blockquote>
+              @if (notice.sourceUrl) {
+                <p class="mg-b-0">
+                  <a [href]="notice.sourceUrl" target="_blank" rel="noopener noreferrer">Source / terms</a>
+                </p>
+              }
+            </div>
+          </div>
         </div>
-        <div class="card-body">
-          <blockquote class="attribution-body mg-b-15">{{ notice.body }}</blockquote>
-          <p class="mg-b-0" *ngIf="notice.sourceUrl">
-            <a [href]="notice.sourceUrl" target="_blank" rel="noopener noreferrer">Source / terms</a>
-          </p>
-        </div>
-      </div>
+      }
     </div>
-  </div>
-
-  <ng-template #empty>
+  } @else {
     <p class="tx-gray-500">No third-party attributions are registered.</p>
-  </ng-template>
+  }
+
 
   <p class="tx-gray-500 tx-12 mg-t-10">
     Maintainers: add partners in the attributions registry — see

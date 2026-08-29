@@ -1,19 +1,22 @@
 <!--
-  Placement is part of the contract, not decoration: the toggle sits BELOW the formatted record on
-  every screen that offers it (#526), so the patient-legible view is always what you meet first.
+Placement is part of the contract, not decoration: the toggle sits BELOW the formatted record on
+every screen that offers it (#526), so the patient-legible view is always what you meet first.
 -->
-<div class="mg-t-15" *ngIf="raw">
-  <button type="button" class="btn btn-sm btn-outline-secondary" (click)="toggle()">
-    <i class="fas fa-code mg-r-5"></i>{{ expanded ? 'Hide raw data' : 'Show raw data' }}
-  </button>
-
-  <div *ngIf="expanded" class="mg-t-10">
-    <div class="tx-11 tx-gray-500 mg-b-5">
-      This is the record exactly as your provider sent it, in a format called FHIR.
-    </div>
-    <button type="button" class="btn btn-sm btn-outline-secondary mg-b-5" (click)="copy()">
-      <i class="fas fa-copy mg-r-5"></i>{{ copied ? 'Copied!' : 'Copy to clipboard' }}
+@if (raw) {
+  <div class="mg-t-15">
+    <button type="button" class="btn btn-sm btn-outline-secondary" (click)="toggle()">
+      <i class="fas fa-code mg-r-5"></i>{{ expanded ? 'Hide raw data' : 'Show raw data' }}
     </button>
-    <pre class="tx-11 bg-light pd-10 rounded" style="max-height: 360px; overflow: auto;">{{ raw | json }}</pre>
+    @if (expanded) {
+      <div class="mg-t-10">
+        <div class="tx-11 tx-gray-500 mg-b-5">
+          This is the record exactly as your provider sent it, in a format called FHIR.
+        </div>
+        <button type="button" class="btn btn-sm btn-outline-secondary mg-b-5" (click)="copy()">
+          <i class="fas fa-copy mg-r-5"></i>{{ copied ? 'Copied!' : 'Copy to clipboard' }}
+        </button>
+        <pre class="tx-11 bg-light pd-10 rounded" style="max-height: 360px; overflow: auto;">{{ raw | json }}</pre>
+      </div>
+    }
   </div>
-</div>
+}

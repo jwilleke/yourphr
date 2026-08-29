@@ -5,14 +5,23 @@
   <a routerLink="/account-profile">Account Profile</a>.
 </p>
 
-<div *ngIf="!loading else isLoadingTemplate" class="row">
-  <app-medical-sources-card class="col-sm-3 mg-b-20 px-3"
-                            *ngFor="let sourceData of visibleSourceList"
-                            [sourceInfo]="sourceData"
-                            [status]="status[sourceData.source?.id] || status[sourceData.brand?.id]"
-                            (onClick)="openModal(contentModalRef, $event)"
-  ></app-medical-sources-card>
-</div>
+@if (!loading) {
+  <div class="row">
+    @for (sourceData of visibleSourceList; track sourceData) {
+      <app-medical-sources-card class="col-sm-3 mg-b-20 px-3"
+        [sourceInfo]="sourceData"
+        [status]="status[sourceData.source?.id] || status[sourceData.brand?.id]"
+        (onClick)="openModal(contentModalRef, $event)"
+      ></app-medical-sources-card>
+    }
+  </div>
+} @else {
+  <div class="row">
+    <div class="col-12">
+      <app-loading-spinner [loadingTitle]="'Please wait, loading sources...'"></app-loading-spinner>
+    </div>
+  </div>
+}
 
 
 <ng-template #contentModalRef let-modal>
@@ -21,23 +30,24 @@
     <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss('Cross click')"></button>
   </div>
 
-  <div *ngIf="modalSelectedSourceListItem?.source?.platform_type != 'fasten'; else fastenSourceDescription" class="modal-body">
-    <h6>Manage source</h6>
-    <p class="tx-gray-500">You control this connection and the records imported from it on this YourPHR instance.</p>
-    <ul>
-      <li><p><strong>Sync</strong> — Download updated records from this provider into YourPHR</p></li>
-      <li><p><strong>Download</strong> — Export every record retrieved from this provider as a FHIR Bundle (.json)</p></li>
-      <li><p><strong>Reconnect</strong> — If the connection expired or you disconnected, sign in again at the provider</p></li>
-      <li><p><strong>Disconnect</strong> — Clear OAuth tokens so this instance stops syncing. Imported records stay until you remove them. Does not change data held by Medicare/CMS or your provider.</p></li>
-      <li><p><strong>Remove data</strong> — Delete records imported from this source on this instance. Connection/tokens can remain (or reconnect later).</p></li>
-      <li><p><strong>Disconnect &amp; remove data</strong> — Both at once: clear tokens and delete imported records, and remove the source card. Does not delete your whole YourPHR account.</p></li>
-    </ul>
-    <p class="tx-12 tx-gray-500 mg-b-0">
-      Account-wide controls (Privacy &amp; Terms revoke, delete account):
-      <a routerLink="/account-profile">Account Profile</a>.
-    </p>
-  </div>
-  <ng-template #fastenSourceDescription>
+  @if (modalSelectedSourceListItem?.source?.platform_type != 'fasten') {
+    <div class="modal-body">
+      <h6>Manage source</h6>
+      <p class="tx-gray-500">You control this connection and the records imported from it on this YourPHR instance.</p>
+      <ul>
+        <li><p><strong>Sync</strong> — Download updated records from this provider into YourPHR</p></li>
+        <li><p><strong>Download</strong> — Export every record retrieved from this provider as a FHIR Bundle (.json)</p></li>
+        <li><p><strong>Reconnect</strong> — If the connection expired or you disconnected, sign in again at the provider</p></li>
+        <li><p><strong>Disconnect</strong> — Clear OAuth tokens so this instance stops syncing. Imported records stay until you remove them. Does not change data held by Medicare/CMS or your provider.</p></li>
+        <li><p><strong>Remove data</strong> — Delete records imported from this source on this instance. Connection/tokens can remain (or reconnect later).</p></li>
+        <li><p><strong>Disconnect &amp; remove data</strong> — Both at once: clear tokens and delete imported records, and remove the source card. Does not delete your whole YourPHR account.</p></li>
+      </ul>
+      <p class="tx-12 tx-gray-500 mg-b-0">
+        Account-wide controls (Privacy &amp; Terms revoke, delete account):
+        <a routerLink="/account-profile">Account Profile</a>.
+      </p>
+    </div>
+  } @else {
     <div class="modal-body">
       <h6>YourPHR</h6>
       <p>This source contains all medical records that are created manually in the YourPHR app.
@@ -46,38 +56,39 @@
         <li><p><strong>Explore</strong> - View the medical records that you have created</p></li>
       </ul>
     </div>
-  </ng-template>
+  }
 
   <div class="modal-footer">
 
     <a [routerLink]="['/explore', modalSelectedSourceListItem?.source?.id]" (click)="modal.close()" class="btn btn-az-primary me-auto">Explore</a>
 
 
-    <div *ngIf="modalSelectedSourceListItem?.source?.platform_type != 'fasten'" class="d-inline-block" ngbDropdown>
-      <button
-        type="button"
-        class="btn btn-outline-secondary"
-        id="dropdownManual"
-        ngbDropdownToggle>
-        Actions
-      </button>
-      <div ngbDropdownMenu aria-labelledby="dropdownManual">
-        <button *ngIf="modalSelectedSourceListItem?.source?.platform_type != 'manual'" ngbDropdownItem (click)="sourceSyncHandler(modalSelectedSourceListItem?.source)" type="button" class="btn btn-az-primary">Sync</button>
-        <button ngbDropdownItem (click)="sourceExportHandler(modalSelectedSourceListItem?.source)" type="button" class="btn btn-az-primary">Download</button>
-        <button *ngIf="modalSelectedSourceListItem?.source?.platform_type != 'manual'" ngbDropdownItem (click)="sourceReconnectHandler(modalSelectedSourceListItem)" type="button" class="btn btn-outline-secondary">Reconnect</button>
-        <button *ngIf="modalSelectedSourceListItem?.source?.platform_type != 'manual'" ngbDropdownItem (click)="sourceDisconnectHandler()" type="button" class="btn btn-outline-danger">Disconnect</button>
-        <button ngbDropdownItem (click)="sourceRemoveDataHandler()" type="button" class="btn btn-outline-danger">Remove data</button>
-        <button ngbDropdownItem (click)="sourceDeleteHandler()" type="button" class="btn btn-danger">Disconnect &amp; remove data</button>
+    @if (modalSelectedSourceListItem?.source?.platform_type != 'fasten') {
+      <div class="d-inline-block" ngbDropdown>
+        <button
+          type="button"
+          class="btn btn-outline-secondary"
+          id="dropdownManual"
+          ngbDropdownToggle>
+          Actions
+        </button>
+        <div ngbDropdownMenu aria-labelledby="dropdownManual">
+          @if (modalSelectedSourceListItem?.source?.platform_type != 'manual') {
+            <button ngbDropdownItem (click)="sourceSyncHandler(modalSelectedSourceListItem?.source)" type="button" class="btn btn-az-primary">Sync</button>
+          }
+          <button ngbDropdownItem (click)="sourceExportHandler(modalSelectedSourceListItem?.source)" type="button" class="btn btn-az-primary">Download</button>
+          @if (modalSelectedSourceListItem?.source?.platform_type != 'manual') {
+            <button ngbDropdownItem (click)="sourceReconnectHandler(modalSelectedSourceListItem)" type="button" class="btn btn-outline-secondary">Reconnect</button>
+          }
+          @if (modalSelectedSourceListItem?.source?.platform_type != 'manual') {
+            <button ngbDropdownItem (click)="sourceDisconnectHandler()" type="button" class="btn btn-outline-danger">Disconnect</button>
+          }
+          <button ngbDropdownItem (click)="sourceRemoveDataHandler()" type="button" class="btn btn-outline-danger">Remove data</button>
+          <button ngbDropdownItem (click)="sourceDeleteHandler()" type="button" class="btn btn-danger">Disconnect &amp; remove data</button>
+        </div>
       </div>
-    </div>
+    }
     <button (click)="modal.dismiss('Close click')" type="button" class="btn btn-outline-secondary">Close</button>
   </div>
 </ng-template>
 
-<ng-template #isLoadingTemplate>
-  <div class="row">
-    <div class="col-12">
-      <app-loading-spinner [loadingTitle]="'Please wait, loading sources...'"></app-loading-spinner>
-    </div>
-  </div>
-</ng-template>

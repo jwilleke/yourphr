@@ -4,10 +4,12 @@
 </div>
 <div class="modal-body">
 
-  <div *ngIf="debugMode" class="alert alert-warning">
-    <pre><code  [highlight]="newAttachmentForm.getRawValue() | json"></code></pre>
-    <strong>New Attachment Form Status: {{ newAttachmentForm.status }}</strong>
-  </div>
+  @if (debugMode) {
+    <div class="alert alert-warning">
+      <pre><code  [highlight]="newAttachmentForm.getRawValue() | json"></code></pre>
+      <strong>New Attachment Form Status: {{ newAttachmentForm.status }}</strong>
+    </div>
+  }
 
   <div class="row row-sm">
     <ng-container [formGroup]="newAttachmentForm">

@@ -12,65 +12,85 @@
           <li><strong>Age:</strong> {{ displayModel.patient_age }}</li>
           <li><strong>Gender:</strong> {{ displayModel.patient_gender | titlecase }}</li>
           <li><strong>Birth Sex:</strong> {{ displayModel.birth_sex }}</li>
-          <li *ngIf="displayModel.individual_sex"><strong>Sex:</strong> {{ displayModel.individual_sex }}</li>
+          @if (displayModel.individual_sex) {
+            <li><strong>Sex:</strong> {{ displayModel.individual_sex }}</li>
+          }
           <li><strong>Marital Status:</strong> {{ displayModel.marital_status }}</li>
           <li><strong>Race:</strong> {{ displayModel.race }}</li>
           <li><strong>Ethnicity:</strong> {{ displayModel.ethnicity }}</li>
-          <li *ngIf="displayModel.tribal_affiliation"><strong>Tribal Affiliation:</strong> {{ displayModel.tribal_affiliation }}<span *ngIf="displayModel.tribal_enrolled !== undefined"> ({{ displayModel.tribal_enrolled ? 'enrolled' : 'not enrolled' }})</span></li>
-          <li *ngIf="displayModel.interpreter_needed"><strong>Interpreter Needed:</strong> {{ displayModel.interpreter_needed }}</li>
-        </ul>
-      </div>
-
-      <!-- Contact Information -->
-      <div class="col-md-6 mb-4">
-        <h3 class="h5 mb-3">Contact Information</h3>
-        <ul class="list-unstyled">
-          <li><strong>Address:</strong>
-            <address class="mb-0 ms-3">
-              <div *ngFor="let line of displayModel.patient_address">{{line}}</div>
-            </address>
-          </li>
-          <li><strong>Phone{{ displayModel.patient_phones.length > 0 ? '' : 's' }}:</strong>
-            <ul class="list-unstyled ms-3">
-              <li *ngFor="let phone of displayModel.patient_phones">{{ phone.value }} ({{ phone.use }})</li>
-            </ul>
-          </li>
-          <li><strong>Language{{ displayModel.communication_languages.length > 0 ? '' : 's' }}:</strong>
-            <span *ngFor="let language of displayModel.communication_languages; let last = last">
-              {{ language.display }}{{last ? '' : ', '}}
-            </span>
-          </li>
-        </ul>
-      </div>
-
-      <!-- Additional Information -->
-      <div class="col-md-6 mb-4">
-        <h3 class="h5 mb-3">Additional Information</h3>
-        <ul class="list-unstyled">
-          <li><strong>Mother's Maiden Name:</strong> {{ displayModel.mothers_maiden_name }}</li>
-          <li><strong>Birth Place:</strong> {{ displayModel.birth_place }}</li>
-          <li><strong>Multiple Birth:</strong> {{ displayModel.multiple_birth ? 'Yes' : 'No' }}</li>
-        </ul>
-      </div>
-
-      <!-- Identifiers -->
-      <div class="col-md-6 mb-4">
-        <h3 class="h5 mb-3">Identifiers</h3>
-        <ul class="list-unstyled">
-          <li *ngIf="displayModel.mrn"><strong>Medical Record Number:</strong> <code class="ms-2 text-muted">{{ displayModel.mrn }}</code></li>
-          <li *ngIf="displayModel.ssn"><strong>SSN:</strong> <code class="ms-2 text-muted">{{ displayModel.ssn }}</code></li>
-        </ul>
-        <ng-container *ngIf="displayModel.identifiers && displayModel.identifiers.length > 0">
-          <h4 class="h6 mt-3">Other Identifiers:</h4>
-          <ul class="list-unstyled ms-3">
-            <li *ngFor="let identifier of displayModel.identifiers">
-              <strong>{{ identifier.type }}:</strong> <code class="ms-2 text-muted">{{ identifier.value }}</code>
-            </li>
-          </ul>
-        </ng-container>
-      </div>
-
-
+          @if (displayModel.tribal_affiliation) {
+            <li><strong>Tribal Affiliation:</strong> {{ displayModel.tribal_affiliation }}@if (displayModel.tribal_enrolled !== undefined) {
+            <span> ({{ displayModel.tribal_enrolled ? 'enrolled' : 'not enrolled' }})</span>
+          }</li>
+        }
+        @if (displayModel.interpreter_needed) {
+          <li><strong>Interpreter Needed:</strong> {{ displayModel.interpreter_needed }}</li>
+        }
+      </ul>
     </div>
-  </div>
+
+    <!-- Contact Information -->
+    <div class="col-md-6 mb-4">
+      <h3 class="h5 mb-3">Contact Information</h3>
+      <ul class="list-unstyled">
+        <li><strong>Address:</strong>
+        <address class="mb-0 ms-3">
+          @for (line of displayModel.patient_address; track line) {
+            <div>{{line}}</div>
+          }
+        </address>
+      </li>
+      <li><strong>Phone{{ displayModel.patient_phones.length > 0 ? '' : 's' }}:</strong>
+      <ul class="list-unstyled ms-3">
+        @for (phone of displayModel.patient_phones; track phone) {
+          <li>{{ phone.value }} ({{ phone.use }})</li>
+        }
+      </ul>
+    </li>
+    <li><strong>Language{{ displayModel.communication_languages.length > 0 ? '' : 's' }}:</strong>
+    @for (language of displayModel.communication_languages; track language; let last = $last) {
+      <span>
+        {{ language.display }}{{last ? '' : ', '}}
+      </span>
+    }
+  </li>
+</ul>
+</div>
+
+<!-- Additional Information -->
+<div class="col-md-6 mb-4">
+  <h3 class="h5 mb-3">Additional Information</h3>
+  <ul class="list-unstyled">
+    <li><strong>Mother's Maiden Name:</strong> {{ displayModel.mothers_maiden_name }}</li>
+    <li><strong>Birth Place:</strong> {{ displayModel.birth_place }}</li>
+    <li><strong>Multiple Birth:</strong> {{ displayModel.multiple_birth ? 'Yes' : 'No' }}</li>
+  </ul>
+</div>
+
+<!-- Identifiers -->
+<div class="col-md-6 mb-4">
+  <h3 class="h5 mb-3">Identifiers</h3>
+  <ul class="list-unstyled">
+    @if (displayModel.mrn) {
+      <li><strong>Medical Record Number:</strong> <code class="ms-2 text-muted">{{ displayModel.mrn }}</code></li>
+    }
+    @if (displayModel.ssn) {
+      <li><strong>SSN:</strong> <code class="ms-2 text-muted">{{ displayModel.ssn }}</code></li>
+    }
+  </ul>
+  @if (displayModel.identifiers && displayModel.identifiers.length > 0) {
+    <h4 class="h6 mt-3">Other Identifiers:</h4>
+    <ul class="list-unstyled ms-3">
+      @for (identifier of displayModel.identifiers; track identifier) {
+        <li>
+          <strong>{{ identifier.type }}:</strong> <code class="ms-2 text-muted">{{ identifier.value }}</code>
+        </li>
+      }
+    </ul>
+  }
+</div>
+
+
+</div>
+</div>
 </div>

@@ -9,8 +9,10 @@
     <div class="d-flex align-items-center mg-t-5">
       <label class="form-label mg-b-0 mg-r-10 tx-13" for="log-level">Log level</label>
       <select id="log-level" class="form-control form-control-sm wd-auto mg-r-10"
-              [ngModel]="level" (ngModelChange)="onLevelChange($event)" [disabled]="levelSaving || loading">
-        <option *ngFor="let lvl of logs?.valid_levels" [value]="lvl">{{ lvl }}</option>
+        [ngModel]="level" (ngModelChange)="onLevelChange($event)" [disabled]="levelSaving || loading">
+        @for (lvl of logs?.valid_levels; track lvl) {
+          <option [value]="lvl">{{ lvl }}</option>
+        }
       </select>
       <button class="btn btn-sm mg-r-5" [ngClass]="live ? 'btn-az-primary' : 'btn-outline-secondary'" (click)="toggleLive()">
         <i class="fas mg-r-5" [ngClass]="live ? 'fa-circle' : 'fa-pause'"></i> {{ live ? 'Live' : 'Paused' }}
@@ -19,15 +21,25 @@
     </div>
   </div>
 
-  <div *ngIf="levelMsg" class="alert alert-info py-2">{{ levelMsg }}</div>
+  @if (levelMsg) {
+    <div class="alert alert-info py-2">{{ levelMsg }}</div>
+  }
 
-  <app-loading-spinner *ngIf="loading" loadingTitle="Loading logs..."></app-loading-spinner>
+  @if (loading) {
+    <app-loading-spinner loadingTitle="Loading logs..."></app-loading-spinner>
+  }
 
-  <div *ngIf="!loading && errored" class="alert alert-danger">Could not load server logs.</div>
+  @if (!loading && errored) {
+    <div class="alert alert-danger">Could not load server logs.</div>
+  }
 
-  <ng-container *ngIf="!loading && !errored">
+  @if (!loading && !errored) {
     <p class="tx-gray-500 tx-12 mg-b-5">running level <strong>{{ level }}</strong> · last {{ logs?.lines?.length || 0 }} lines</p>
-    <pre *ngIf="logs?.lines?.length" class="admin-logs">{{ logs?.lines?.join('\n') }}</pre>
-    <p *ngIf="!logs?.lines?.length" class="tx-gray-500 mg-b-0">No log lines captured yet. Activity will appear here as the server logs — lower the level to <code>debug</code> for more detail.</p>
-  </ng-container>
+    @if (logs?.lines?.length) {
+      <pre class="admin-logs">{{ logs?.lines?.join('\n') }}</pre>
+    }
+    @if (!logs?.lines?.length) {
+      <p class="tx-gray-500 mg-b-0">No log lines captured yet. Activity will appear here as the server logs — lower the level to <code>debug</code> for more detail.</p>
+    }
+  }
 </div>

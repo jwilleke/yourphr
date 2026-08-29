@@ -15,17 +15,19 @@
       <span class="card-text">{{widgetConfig.description_text}}</span>
     </div><!-- card-header -->
     <div class="card-body row row-sm">
-      <div *ngFor="let chartDataset of chartDatasets; index as ndx" class="col-6">
-        <div class="d-flex align-items-center">
-          <div class="mg-b-10 mg-sm-b-0 mg-sm-r-10 wd-50">
-            <canvas baseChart [type]="'doughnut'" [datasets]="[chartDataset]" [labels]="chartLabels" [options]="chartOptions" height="45"></canvas>
-          </div>
-          <div>
-            <label>{{chartDataset.label}}</label>
-            <h4>{{chartDataset | datasetLatestEntry: 0:'value'  }}</h4>
+      @for (chartDataset of chartDatasets; track chartDataset; let ndx = $index) {
+        <div class="col-6">
+          <div class="d-flex align-items-center">
+            <div class="mg-b-10 mg-sm-b-0 mg-sm-r-10 wd-50">
+              <canvas baseChart [type]="'doughnut'" [datasets]="[chartDataset]" [labels]="chartLabels" [options]="chartOptions" height="45"></canvas>
+            </div>
+            <div>
+              <label>{{chartDataset.label}}</label>
+              <h4>{{chartDataset | datasetLatestEntry: 0:'value'  }}</h4>
+            </div>
           </div>
         </div>
-      </div><!-- col -->
-    </div><!-- card-body -->
-  </div>
-</ng-template><!-- card-dashboard-five -->
+        }<!-- col -->
+      </div><!-- card-body -->
+    </div>
+  </ng-template><!-- card-dashboard-five -->

@@ -4,174 +4,223 @@
   <h4 class="mg-b-5"><i class="fas fa-database"></i>&nbsp; Database</h4>
   <p class="tx-gray-500">Details about the running database, and on-demand backups.</p>
 
-  <app-loading-spinner *ngIf="loading" loadingTitle="Loading database details..."></app-loading-spinner>
-  <div *ngIf="!loading && errored" class="alert alert-danger">Could not load database details.</div>
+  @if (loading) {
+    <app-loading-spinner loadingTitle="Loading database details..."></app-loading-spinner>
+  }
+  @if (!loading && errored) {
+    <div class="alert alert-danger">Could not load database details.</div>
+  }
 
   <!-- #545: an instance that cannot back up says so persistently, not only when a backup is
-       attempted. The operator who never presses "Backup now" is exactly who must see this. -->
-  <div *ngIf="!loading && info?.backups_unavailable" class="alert alert-warning" role="alert">
-    <strong><i class="fas fa-exclamation-triangle"></i>&nbsp; No backups on this instance.</strong>
-    {{ info.backups_unavailable }}
-  </div>
+  attempted. The operator who never presses "Backup now" is exactly who must see this. -->
+  @if (!loading && info?.backups_unavailable) {
+    <div class="alert alert-warning" role="alert">
+      <strong><i class="fas fa-exclamation-triangle"></i>&nbsp; No backups on this instance.</strong>
+      {{ info.backups_unavailable }}
+    </div>
+  }
 
-  <div class="row" *ngIf="!loading && !errored && info">
-    <!-- Details -->
-    <div class="col-lg-5 mg-b-20">
-      <div class="card">
-        <div class="card-header"><h6 class="card-title mg-b-0">Details</h6></div>
-        <div class="card-body">
-          <div class="dl-row"><div class="k">Location on disk</div><div class="v">{{ info.location }}</div></div>
-          <div class="dl-row"><div class="k">Encryption at rest</div><div class="v">
+  @if (!loading && !errored && info) {
+    <div class="row">
+      <!-- Details -->
+      <div class="col-lg-5 mg-b-20">
+        <div class="card">
+          <div class="card-header"><h6 class="card-title mg-b-0">Details</h6></div>
+          <div class="card-body">
+            <div class="dl-row"><div class="k">Location on disk</div><div class="v">{{ info.location }}</div></div>
+            <div class="dl-row"><div class="k">Encryption at rest</div><div class="v">
             <span class="badge" [ngClass]="info.encryption_enabled ? 'text-bg-success' : 'text-bg-warning'">{{ info.encryption_enabled ? 'Enabled' : 'Disabled' }}</span>
-            <small *ngIf="info.backups_unavailable" class="tx-gray-500 d-block mg-t-2">Encryption currently disables backups — see the warning above.</small>
+            @if (info.backups_unavailable) {
+              <small class="tx-gray-500 d-block mg-t-2">Encryption currently disables backups — see the warning above.</small>
+            }
           </div></div>
           <div class="dl-row"><div class="k">Size on disk</div><div class="v">{{ humanSize(info.size_bytes) }}</div></div>
           <div class="dl-row"><div class="k">Integrity check</div><div class="v">
-            <span class="badge" [ngClass]="info.integrity_ok ? 'text-bg-success' : 'text-bg-danger'">{{ info.integrity_ok ? 'OK' : 'FAILED' }}</span>
-          </div></div>
-          <div class="dl-row"><div class="k">Users</div><div class="v">{{ info.users }}</div></div>
-          <div class="dl-row"><div class="k">Connected sources</div><div class="v">{{ info.sources }}</div></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Backup -->
-    <div class="col-lg-7 mg-b-20">
-      <div class="card">
-        <div class="card-header"><h6 class="card-title mg-b-0">Backup</h6></div>
-        <div class="card-body">
-          <div class="alert alert-warning tx-13">
-            <i class="fas fa-triangle-exclamation mg-r-5"></i>
-            A backup is the <strong>entire database</strong> — <strong>every user's</strong> complete medical records (PHI). Keep the destination secure.
-          </div>
-
-          <!-- Health from durable .backup_health.json (#434) — visible without tailing logs -->
-          <div *ngIf="info.backup_health as health"
-               class="alert tx-13"
-               [ngClass]="health.ok ? 'alert-success' : 'alert-danger'">
-            <i class="fas mg-r-5" [ngClass]="health.ok ? 'fa-circle-check' : 'fa-triangle-exclamation'"></i>
-            <strong>{{ health.summary }}</strong>
-            <span *ngIf="health.last_success_at" class="d-block mg-t-5 tx-12">
-              Last success: {{ health.last_success_at | date:'medium' }}
-              <span *ngIf="health.days_since_success != null"> ({{ health.days_since_success }} day(s) ago)</span>
-            </span>
-            <span *ngIf="health.last_error" class="d-block mg-t-5 tx-12">
-              Last error ({{ health.consecutive_failures }} consecutive): {{ health.last_error }}
-            </span>
-            <span *ngIf="!health.ok && health.schedule_enabled" class="d-block mg-t-5 tx-12">
-              Check destination path, disk space, and <code>backup.allowed-roots</code> in config if the path is outside the data volume.
-            </span>
-          </div>
-
-          <!-- On-demand: download (the browser Save dialog chooses where it lands) -->
-          <button type="button" class="btn btn-az-primary mg-b-5" (click)="downloadBackup()" [disabled]="downloading">
-            <span *ngIf="downloading" class="spinner-border spinner-border-sm mg-r-5"></span>
-            <i *ngIf="!downloading" class="fas fa-download mg-r-5"></i>{{ downloading ? 'Preparing download…' : 'Download backup' }}
-          </button>
-          <p class="tx-gray-500 tx-12 mg-t-0">Streams a compressed backup to your browser — your Save dialog picks the location. Stay on this page until it finishes.</p>
-
-          <!-- Server-side: fire-and-forget to the configured folder; you can leave the page -->
-          <button type="button" class="btn btn-outline-secondary mg-t-10" (click)="backup()" [disabled]="backingUp">
-            <span *ngIf="backingUp" class="spinner-border spinner-border-sm mg-r-5"></span>{{ backingUp ? 'Backing up…' : 'Back up to server now' }}
-          </button>
-          <p class="tx-gray-500 tx-12 mg-t-5">Writes to the destination folder below; you can leave the page. Gzip-compressed; filename <code>YYYY-MM-DDTHH-MM-SSZ-yourphr-backup.db.gz</code>.</p>
-
-          <div *ngIf="backupResult" class="alert alert-success tx-13 mg-t-10 mg-b-0"><i class="fas fa-check mg-r-5"></i>{{ backupResult }}</div>
-          <div *ngIf="backupError" class="text-danger tx-13 mg-t-10">{{ backupError }}</div>
-
-          <!-- Automatic schedule (settable) -->
-          <hr/>
-          <strong class="tx-12 tx-uppercase tx-gray-500">Automatic backups</strong>
-          <div class="form-check mg-t-10">
-            <input class="form-check-input" type="checkbox" id="autoBackup" [(ngModel)]="schedule.enabled">
-            <label class="form-check-label" for="autoBackup">Enable scheduled backups</label>
-          </div>
-          <div class="row mg-t-10">
-            <div class="col-sm-3">
-              <label class="tx-12 tx-gray-600">Time (server)</label>
-              <input type="time" class="form-control" [(ngModel)]="schedule.time">
-            </div>
-            <div class="col-sm-3">
-              <label class="tx-12 tx-gray-600">Frequency</label>
-              <select class="form-control" [(ngModel)]="schedule.days">
-                <option value="daily">Daily</option>
-                <option value="weekly">Weekly (Sun)</option>
-              </select>
-            </div>
-            <div class="col-sm-3">
-              <label class="tx-12 tx-gray-600">Keep last</label>
-              <input type="number" min="1" class="form-control" [(ngModel)]="schedule.max_backups">
-            </div>
-          </div>
-          <label class="tx-12 tx-gray-600 mg-t-10 d-block">Destination folder (server)</label>
-          <div class="d-flex">
-            <input type="text" class="form-control mg-r-10" [(ngModel)]="schedule.destination" (ngModelChange)="destinationTest = null" placeholder="default: {{ info.backup_destination }}">
-            <button type="button" class="btn btn-outline-secondary btn-sm text-nowrap mg-r-5" (click)="openBrowser()"><i class="fas fa-folder-open mg-r-5"></i>Browse</button>
-            <button type="button" class="btn btn-outline-primary btn-sm text-nowrap" (click)="testDestination()" [disabled]="testingDestination">
-              <i class="fas fa-vial mg-r-5"></i>{{ testingDestination ? 'Testing…' : 'Test path' }}
-            </button>
-          </div>
-          <p class="tx-gray-500 tx-12 mg-t-5 mg-b-0">
-            Writes a small test file, reads it back and removes it — never a backup, so nothing sensitive is written to a folder you have not proved yet.
-            Turning the schedule <strong>on</strong> runs this same check and is refused if it fails.
-          </p>
-          <div *ngIf="destinationTest" class="alert tx-12 mg-t-10 mg-b-0"
-               [ngClass]="destinationTest.writable ? 'alert-success' : 'alert-danger'">
-            <i class="fas mg-r-5" [ngClass]="destinationTest.writable ? 'fa-check-circle' : 'fa-exclamation-triangle'"></i>
-            <ng-container *ngIf="destinationTest.writable">
-              <code>{{ destinationTest.destination }}</code> is writable. A scheduled backup can use it.
-            </ng-container>
-            <ng-container *ngIf="!destinationTest.writable">
-              <code>{{ destinationTest.destination }}</code> cannot be used: {{ destinationTest.error }}
-            </ng-container>
-          </div>
-          <div *ngIf="browsing" class="card mg-t-10">
-            <div class="card-body pd-15">
-              <div class="d-flex justify-content-between align-items-center mg-b-10">
-                <code class="tx-13 text-truncate">{{ browse?.path }}</code>
-                <button type="button" class="btn-close btn-sm" (click)="browsing = false"></button>
-              </div>
-              <div *ngIf="browseError" class="text-danger tx-12 mg-b-10">{{ browseError }}</div>
-              <ul class="list-group list-group-flush" style="max-height: 220px; overflow-y: auto;">
-                <li *ngIf="browse?.parent" class="list-group-item py-1 cursor-pointer" (click)="navigateUp()"><i class="fas fa-level-up-alt mg-r-5 tx-gray-500"></i>..</li>
-                <li *ngFor="let d of browse?.dirs" class="list-group-item py-1 cursor-pointer" (click)="navigateInto(d)"><i class="fas fa-folder mg-r-5 tx-warning"></i>{{ d }}</li>
-                <li *ngIf="browse && browse.dirs.length === 0" class="list-group-item py-1 tx-gray-500">(no subfolders)</li>
-              </ul>
-              <button type="button" class="btn btn-az-primary btn-sm mg-t-10" (click)="useFolder()">Use this folder</button>
-            </div>
-          </div>
-          <div class="mg-t-10">
-            <button type="button" class="btn btn-az-primary btn-sm" (click)="saveSchedule()" [disabled]="savingSchedule">
-              <span *ngIf="savingSchedule" class="spinner-border spinner-border-sm mg-r-5"></span>Save schedule
-            </button>
-            <span *ngIf="scheduleMsg" class="tx-13 mg-l-10">{{ scheduleMsg }}</span>
-          </div>
-          <p class="tx-gray-500 tx-12 mg-t-5">Used by both the schedule and "Back up to server now". A blank destination uses the default. Changes apply on the next scheduled run — no restart.</p>
-
-          <div class="mg-t-20" *ngIf="info.backups?.length">
-            <strong class="tx-12 tx-uppercase tx-gray-500">Backups in this folder</strong>
-            <div *ngIf="restoreMsg" class="alert alert-info tx-13 mg-t-5 mg-b-0"><i class="fas fa-circle-info mg-r-5"></i>{{ restoreMsg }}</div>
-            <table class="table table-sm mg-t-5 mg-b-0">
-              <thead><tr><th>File</th><th>Size</th><th>Created</th><th></th></tr></thead>
-              <tbody>
-                <tr *ngFor="let b of info.backups">
-                  <td>{{ b.name }}</td>
-                  <td>{{ humanSize(b.size_bytes) }}</td>
-                  <td>{{ b.modified | date:'medium' }}</td>
-                  <td class="text-nowrap">
-                    <button type="button" class="btn btn-sm btn-outline-danger" (click)="restore(b.name)" [disabled]="restoring === b.name"
-                            title="Replace the entire database with this backup (applied on restart)">
-                      <span *ngIf="restoring === b.name" class="spinner-border spinner-border-sm mg-r-5"></span>Restore…
-                    </button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-            <p class="tx-gray-500 tx-12 mg-t-5 mg-b-0"><i class="fas fa-triangle-exclamation mg-r-5"></i>Restore replaces <strong>all</strong> data with the chosen backup, applied on the next app restart (your current DB is auto-backed-up first).</p>
-          </div>
-          <p *ngIf="!info.backups?.length" class="tx-gray-500 tx-12 mg-t-15 mg-b-0">No backups in this folder yet.</p>
-        </div>
+          <span class="badge" [ngClass]="info.integrity_ok ? 'text-bg-success' : 'text-bg-danger'">{{ info.integrity_ok ? 'OK' : 'FAILED' }}</span>
+        </div></div>
+        <div class="dl-row"><div class="k">Users</div><div class="v">{{ info.users }}</div></div>
+        <div class="dl-row"><div class="k">Connected sources</div><div class="v">{{ info.sources }}</div></div>
       </div>
     </div>
   </div>
-</div>
+  <!-- Backup -->
+  <div class="col-lg-7 mg-b-20">
+    <div class="card">
+      <div class="card-header"><h6 class="card-title mg-b-0">Backup</h6></div>
+      <div class="card-body">
+        <div class="alert alert-warning tx-13">
+          <i class="fas fa-triangle-exclamation mg-r-5"></i>
+          A backup is the <strong>entire database</strong> — <strong>every user's</strong> complete medical records (PHI). Keep the destination secure.
+        </div>
+        <!-- Health from durable .backup_health.json (#434) — visible without tailing logs -->
+        @if (info.backup_health; as health) {
+          <div
+            class="alert tx-13"
+            [ngClass]="health.ok ? 'alert-success' : 'alert-danger'">
+            <i class="fas mg-r-5" [ngClass]="health.ok ? 'fa-circle-check' : 'fa-triangle-exclamation'"></i>
+            <strong>{{ health.summary }}</strong>
+            @if (health.last_success_at) {
+              <span class="d-block mg-t-5 tx-12">
+                Last success: {{ health.last_success_at | date:'medium' }}
+                @if (health.days_since_success != null) {
+                  <span> ({{ health.days_since_success }} day(s) ago)</span>
+                }
+              </span>
+            }
+            @if (health.last_error) {
+              <span class="d-block mg-t-5 tx-12">
+                Last error ({{ health.consecutive_failures }} consecutive): {{ health.last_error }}
+              </span>
+            }
+            @if (!health.ok && health.schedule_enabled) {
+              <span class="d-block mg-t-5 tx-12">
+                Check destination path, disk space, and <code>backup.allowed-roots</code> in config if the path is outside the data volume.
+              </span>
+            }
+          </div>
+        }
+        <!-- On-demand: download (the browser Save dialog chooses where it lands) -->
+        <button type="button" class="btn btn-az-primary mg-b-5" (click)="downloadBackup()" [disabled]="downloading">
+          @if (downloading) {
+            <span class="spinner-border spinner-border-sm mg-r-5"></span>
+          }
+          @if (!downloading) {
+            <i class="fas fa-download mg-r-5"></i>
+            }{{ downloading ? 'Preparing download…' : 'Download backup' }}
+          </button>
+          <p class="tx-gray-500 tx-12 mg-t-0">Streams a compressed backup to your browser — your Save dialog picks the location. Stay on this page until it finishes.</p>
+          <!-- Server-side: fire-and-forget to the configured folder; you can leave the page -->
+          <button type="button" class="btn btn-outline-secondary mg-t-10" (click)="backup()" [disabled]="backingUp">
+            @if (backingUp) {
+              <span class="spinner-border spinner-border-sm mg-r-5"></span>
+              }{{ backingUp ? 'Backing up…' : 'Back up to server now' }}
+            </button>
+            <p class="tx-gray-500 tx-12 mg-t-5">Writes to the destination folder below; you can leave the page. Gzip-compressed; filename <code>YYYY-MM-DDTHH-MM-SSZ-yourphr-backup.db.gz</code>.</p>
+            @if (backupResult) {
+              <div class="alert alert-success tx-13 mg-t-10 mg-b-0"><i class="fas fa-check mg-r-5"></i>{{ backupResult }}</div>
+            }
+            @if (backupError) {
+              <div class="text-danger tx-13 mg-t-10">{{ backupError }}</div>
+            }
+            <!-- Automatic schedule (settable) -->
+            <hr/>
+            <strong class="tx-12 tx-uppercase tx-gray-500">Automatic backups</strong>
+            <div class="form-check mg-t-10">
+              <input class="form-check-input" type="checkbox" id="autoBackup" [(ngModel)]="schedule.enabled">
+              <label class="form-check-label" for="autoBackup">Enable scheduled backups</label>
+            </div>
+            <div class="row mg-t-10">
+              <div class="col-sm-3">
+                <label class="tx-12 tx-gray-600">Time (server)</label>
+                <input type="time" class="form-control" [(ngModel)]="schedule.time">
+              </div>
+              <div class="col-sm-3">
+                <label class="tx-12 tx-gray-600">Frequency</label>
+                <select class="form-control" [(ngModel)]="schedule.days">
+                  <option value="daily">Daily</option>
+                  <option value="weekly">Weekly (Sun)</option>
+                </select>
+              </div>
+              <div class="col-sm-3">
+                <label class="tx-12 tx-gray-600">Keep last</label>
+                <input type="number" min="1" class="form-control" [(ngModel)]="schedule.max_backups">
+              </div>
+            </div>
+            <label class="tx-12 tx-gray-600 mg-t-10 d-block">Destination folder (server)</label>
+            <div class="d-flex">
+              <input type="text" class="form-control mg-r-10" [(ngModel)]="schedule.destination" (ngModelChange)="destinationTest = null" placeholder="default: {{ info.backup_destination }}">
+              <button type="button" class="btn btn-outline-secondary btn-sm text-nowrap mg-r-5" (click)="openBrowser()"><i class="fas fa-folder-open mg-r-5"></i>Browse</button>
+              <button type="button" class="btn btn-outline-primary btn-sm text-nowrap" (click)="testDestination()" [disabled]="testingDestination">
+                <i class="fas fa-vial mg-r-5"></i>{{ testingDestination ? 'Testing…' : 'Test path' }}
+              </button>
+            </div>
+            <p class="tx-gray-500 tx-12 mg-t-5 mg-b-0">
+              Writes a small test file, reads it back and removes it — never a backup, so nothing sensitive is written to a folder you have not proved yet.
+              Turning the schedule <strong>on</strong> runs this same check and is refused if it fails.
+            </p>
+            @if (destinationTest) {
+              <div class="alert tx-12 mg-t-10 mg-b-0"
+                [ngClass]="destinationTest.writable ? 'alert-success' : 'alert-danger'">
+                <i class="fas mg-r-5" [ngClass]="destinationTest.writable ? 'fa-check-circle' : 'fa-exclamation-triangle'"></i>
+                @if (destinationTest.writable) {
+                  <code>{{ destinationTest.destination }}</code> is writable. A scheduled backup can use it.
+                }
+                @if (!destinationTest.writable) {
+                  <code>{{ destinationTest.destination }}</code> cannot be used: {{ destinationTest.error }}
+                }
+              </div>
+            }
+            @if (browsing) {
+              <div class="card mg-t-10">
+                <div class="card-body pd-15">
+                  <div class="d-flex justify-content-between align-items-center mg-b-10">
+                    <code class="tx-13 text-truncate">{{ browse?.path }}</code>
+                    <button type="button" class="btn-close btn-sm" (click)="browsing = false"></button>
+                  </div>
+                  @if (browseError) {
+                    <div class="text-danger tx-12 mg-b-10">{{ browseError }}</div>
+                  }
+                  <ul class="list-group list-group-flush" style="max-height: 220px; overflow-y: auto;">
+                    @if (browse?.parent) {
+                      <li class="list-group-item py-1 cursor-pointer" (click)="navigateUp()"><i class="fas fa-level-up-alt mg-r-5 tx-gray-500"></i>..</li>
+                    }
+                    @for (d of browse?.dirs; track d) {
+                      <li class="list-group-item py-1 cursor-pointer" (click)="navigateInto(d)"><i class="fas fa-folder mg-r-5 tx-warning"></i>{{ d }}</li>
+                    }
+                    @if (browse && browse.dirs.length === 0) {
+                      <li class="list-group-item py-1 tx-gray-500">(no subfolders)</li>
+                    }
+                  </ul>
+                  <button type="button" class="btn btn-az-primary btn-sm mg-t-10" (click)="useFolder()">Use this folder</button>
+                </div>
+              </div>
+            }
+            <div class="mg-t-10">
+              <button type="button" class="btn btn-az-primary btn-sm" (click)="saveSchedule()" [disabled]="savingSchedule">
+                @if (savingSchedule) {
+                  <span class="spinner-border spinner-border-sm mg-r-5"></span>
+                  }Save schedule
+                </button>
+                @if (scheduleMsg) {
+                  <span class="tx-13 mg-l-10">{{ scheduleMsg }}</span>
+                }
+              </div>
+              <p class="tx-gray-500 tx-12 mg-t-5">Used by both the schedule and "Back up to server now". A blank destination uses the default. Changes apply on the next scheduled run — no restart.</p>
+              @if (info.backups?.length) {
+                <div class="mg-t-20">
+                  <strong class="tx-12 tx-uppercase tx-gray-500">Backups in this folder</strong>
+                  @if (restoreMsg) {
+                    <div class="alert alert-info tx-13 mg-t-5 mg-b-0"><i class="fas fa-circle-info mg-r-5"></i>{{ restoreMsg }}</div>
+                  }
+                  <table class="table table-sm mg-t-5 mg-b-0">
+                    <thead><tr><th>File</th><th>Size</th><th>Created</th><th></th></tr></thead>
+                    <tbody>
+                      @for (b of info.backups; track b) {
+                        <tr>
+                          <td>{{ b.name }}</td>
+                          <td>{{ humanSize(b.size_bytes) }}</td>
+                          <td>{{ b.modified | date:'medium' }}</td>
+                          <td class="text-nowrap">
+                            <button type="button" class="btn btn-sm btn-outline-danger" (click)="restore(b.name)" [disabled]="restoring === b.name"
+                              title="Replace the entire database with this backup (applied on restart)">
+                              @if (restoring === b.name) {
+                                <span class="spinner-border spinner-border-sm mg-r-5"></span>
+                                }Restore…
+                              </button>
+                            </td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                    <p class="tx-gray-500 tx-12 mg-t-5 mg-b-0"><i class="fas fa-triangle-exclamation mg-r-5"></i>Restore replaces <strong>all</strong> data with the chosen backup, applied on the next app restart (your current DB is auto-backed-up first).</p>
+                  </div>
+                }
+                @if (!info.backups?.length) {
+                  <p class="tx-gray-500 tx-12 mg-t-15 mg-b-0">No backups in this folder yet.</p>
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+    </div>

@@ -1,10 +1,10 @@
 import { Component, Input, OnInit } from '@angular/core';
 import { ObservationModel } from '../../../../../lib/models/resources/observation-model';
-import { CommonModule, formatDate } from '@angular/common';
+import { formatDate } from '@angular/common';
 
 @Component({
     selector: 'observation-table',
-    imports: [CommonModule],
+    imports: [],
     templateUrl: './observation-table.component.html',
     styleUrls: ['./observation-table.component.scss']
 })

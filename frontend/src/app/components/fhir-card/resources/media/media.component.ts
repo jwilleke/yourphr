@@ -5,13 +5,13 @@ import {Router, RouterModule} from '@angular/router';
 import {FhirCardComponentInterface} from '../../fhir-card/fhir-card-component-interface';
 import {MediaModel} from '../../../../../lib/models/resources/media-model';
 import {NgbCollapseModule} from '@ng-bootstrap/ng-bootstrap';
-import {CommonModule} from '@angular/common';
+
 import {BadgeComponent} from '../../common/badge/badge.component';
 import {TableComponent} from '../../common/table/table.component';
 import {BinaryComponent} from '../binary/binary.component';
 
 @Component({
-    imports: [NgbCollapseModule, CommonModule, BadgeComponent, TableComponent, RouterModule, BinaryComponent],
+    imports: [NgbCollapseModule, BadgeComponent, TableComponent, RouterModule, BinaryComponent],
     selector: 'fhir-media',
     templateUrl: './media.component.html',
     styleUrls: ['./media.component.scss']

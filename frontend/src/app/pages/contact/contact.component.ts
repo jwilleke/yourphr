@@ -1,5 +1,5 @@
 import {Component, OnInit} from '@angular/core';
-import {CommonModule} from '@angular/common';
+
 import {RouterModule} from '@angular/router';
 import {FastenApiService} from '../../services/fasten-api.service';
 import {AuthService} from '../../services/auth.service';
@@ -13,7 +13,7 @@ import {AuthService} from '../../services/auth.service';
 // separately and clearly labelled, so the two are never confused.
 @Component({
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [RouterModule],
   selector: 'app-contact',
   templateUrl: './contact.component.html',
   styleUrls: ['./contact.component.scss'],

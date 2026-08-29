@@ -5,59 +5,63 @@
       <h2 class="az-content-title">Users</h2>
 
       <!-- Action results (#513). Dismissible and at the top, following ngdpbase's admin-users page:
-           a reset happens in a modal, so the confirmation has to live somewhere that survives it. -->
-      <div *ngIf="notice" class="alert alert-success alert-dismissible" role="status">
-        {{ notice }}
-        <button type="button" class="btn-close" aria-label="Close" (click)="notice = ''"></button>
-      </div>
-      <div *ngIf="errorMsg" class="alert alert-danger alert-dismissible" role="alert">
-        {{ errorMsg }}
-        <button type="button" class="btn-close" aria-label="Close" (click)="errorMsg = ''"></button>
-      </div>
-
-      <div *ngIf="loading" class="text-center">
-        <div class="spinner-border" role="status">
-          <span class="visually-hidden">Loading...</span>
+      a reset happens in a modal, so the confirmation has to live somewhere that survives it. -->
+      @if (notice) {
+        <div class="alert alert-success alert-dismissible" role="status">
+          {{ notice }}
+          <button type="button" class="btn-close" aria-label="Close" (click)="notice = ''"></button>
         </div>
-      </div>
+      }
+      @if (errorMsg) {
+        <div class="alert alert-danger alert-dismissible" role="alert">
+          {{ errorMsg }}
+          <button type="button" class="btn-close" aria-label="Close" (click)="errorMsg = ''"></button>
+        </div>
+      }
 
-      <ng-container *ngIf="!loading">
+      @if (loading) {
+        <div class="text-center">
+          <div class="spinner-border" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+        </div>
+      }
+
+      @if (!loading) {
         <!-- Summary cards, clickable as quick filters the way the reference page does it. Two, not
-             ngdpbase's four: its Active and System cards count concepts YourPHR does not have — an
-             account cannot be suspended here, and there are no system users. Inventing columns to
-             fill the row would be worse than a shorter row. -->
+        ngdpbase's four: its Active and System cards count concepts YourPHR does not have — an
+        account cannot be suspended here, and there are no system users. Inventing columns to
+        fill the row would be worse than a shorter row. -->
         <div class="row row-sm mg-b-20">
           <div class="col-sm-6 col-lg-3">
             <div class="card card-body" role="button" tabindex="0"
-                 [class.bd-primary]="quickFilter === 'total'"
-                 (click)="setQuickFilter('total')" (keyup.enter)="setQuickFilter('total')">
+              [class.bd-primary]="quickFilter === 'total'"
+              (click)="setQuickFilter('total')" (keyup.enter)="setQuickFilter('total')">
               <h6 class="tx-11 tx-uppercase tx-gray-500 mg-b-5">Total users</h6>
               <h3 class="mg-b-0">{{ users.length }}</h3>
             </div>
           </div>
           <div class="col-sm-6 col-lg-3">
             <div class="card card-body" role="button" tabindex="0"
-                 [class.bd-primary]="quickFilter === 'admin'"
-                 (click)="setQuickFilter('admin')" (keyup.enter)="setQuickFilter('admin')">
+              [class.bd-primary]="quickFilter === 'admin'"
+              (click)="setQuickFilter('admin')" (keyup.enter)="setQuickFilter('admin')">
               <h6 class="tx-11 tx-uppercase tx-gray-500 mg-b-5">Admins</h6>
               <h3 class="mg-b-0">{{ adminCount }}</h3>
             </div>
           </div>
         </div>
-
         <div class="d-flex flex-wrap align-items-center gap-2 mg-b-15">
           <div class="input-group" style="max-width: 22rem;">
             <span class="input-group-text"><i class="fas fa-search"></i></span>
             <input type="search" class="form-control" placeholder="Search name, username or email"
-                   aria-label="Search users" [(ngModel)]="search" (ngModelChange)="applyFilters()">
+              aria-label="Search users" [(ngModel)]="search" (ngModelChange)="applyFilters()">
           </div>
           <button type="button" class="btn btn-outline-secondary btn-sm"
-                  [disabled]="!search && quickFilter === 'total'" (click)="clearFilters()">
+            [disabled]="!search && quickFilter === 'total'" (click)="clearFilters()">
             Clear filters
           </button>
           <span class="tx-12 tx-gray-500">Showing {{ filteredUsers.length }} of {{ users.length }}</span>
         </div>
-
         <table class="table">
           <thead>
             <tr>
@@ -66,59 +70,66 @@
               <th>Email</th>
               <th>Role</th>
               <!-- #512. "Never" rather than blank: an account nobody has ever used is a fact worth
-                   stating, and it is what an admin comes to this page to find out. -->
+              stating, and it is what an admin comes to this page to find out. -->
               <th>Last sign-in</th>
               <th>Sign-ins</th>
               <th class="text-end">Actions</th>
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let user of filteredUsers">
-              <td>{{ user.full_name || '—' }}</td>
-              <td>{{ user.username }}</td>
-              <td>{{ user.email || '—' }}</td>
-              <!-- text-bg-*, never the Bootstrap 4 badge-* names: those render white-on-white in
-                   light mode, and there is a build guard that fails on them (#486). -->
-              <td>
-                <span class="badge" [ngClass]="user.role === 'admin' ? 'text-bg-danger' : 'text-bg-secondary'">
-                  {{ user.role }}
-                </span>
-              </td>
-              <td>{{ user.last_login ? (user.last_login | date:'short') : 'Never' }}</td>
-              <td>{{ user.login_count || 0 }}</td>
-              <td class="text-end">
-                <div class="btn-group btn-group-sm" role="group" aria-label="User actions">
-                  <!-- #511: the family case — somebody forgot their password. The value is GENERATED
-                       and shown once; an admin choosing one picks something they use elsewhere, and
-                       that value would now be attached to another person's health record. -->
-                  <button type="button" class="btn btn-outline-secondary"
-                          [disabled]="resettingUserId === user.id"
-                          [title]="'Reset the password for ' + user.username"
-                          (click)="resetPassword(user, resetPasswordModal)">
-                    <span *ngIf="resettingUserId === user.id" class="spinner-border spinner-border-sm mg-r-5" role="status" aria-hidden="true"></span>
-                    <i *ngIf="resettingUserId !== user.id" class="fas fa-key mg-r-5"></i>
-                    Reset password
-                  </button>
-                </div>
-              </td>
-            </tr>
+            @for (user of filteredUsers; track user) {
+              <tr>
+                <td>{{ user.full_name || '—' }}</td>
+                <td>{{ user.username }}</td>
+                <td>{{ user.email || '—' }}</td>
+                <!-- text-bg-*, never the Bootstrap 4 badge-* names: those render white-on-white in
+                light mode, and there is a build guard that fails on them (#486). -->
+                <td>
+                  <span class="badge" [ngClass]="user.role === 'admin' ? 'text-bg-danger' : 'text-bg-secondary'">
+                    {{ user.role }}
+                  </span>
+                </td>
+                <td>{{ user.last_login ? (user.last_login | date:'short') : 'Never' }}</td>
+                <td>{{ user.login_count || 0 }}</td>
+                <td class="text-end">
+                  <div class="btn-group btn-group-sm" role="group" aria-label="User actions">
+                    <!-- #511: the family case — somebody forgot their password. The value is GENERATED
+                    and shown once; an admin choosing one picks something they use elsewhere, and
+                    that value would now be attached to another person's health record. -->
+                    <button type="button" class="btn btn-outline-secondary"
+                      [disabled]="resettingUserId === user.id"
+                      [title]="'Reset the password for ' + user.username"
+                      (click)="resetPassword(user, resetPasswordModal)">
+                      @if (resettingUserId === user.id) {
+                        <span class="spinner-border spinner-border-sm mg-r-5" role="status" aria-hidden="true"></span>
+                      }
+                      @if (resettingUserId !== user.id) {
+                        <i class="fas fa-key mg-r-5"></i>
+                      }
+                      Reset password
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
             <!-- An empty table with headers reads as "broken"; this reads as "nothing matched". -->
-            <tr *ngIf="filteredUsers.length === 0">
-              <td colspan="7" class="text-center tx-gray-500 py-3">
-                {{ users.length === 0 ? 'No users on this instance yet.' : 'No users match the current filters.' }}
-              </td>
-            </tr>
+            @if (filteredUsers.length === 0) {
+              <tr>
+                <td colspan="7" class="text-center tx-gray-500 py-3">
+                  {{ users.length === 0 ? 'No users on this instance yet.' : 'No users match the current filters.' }}
+                </td>
+              </tr>
+            }
           </tbody>
         </table>
-
         <button class="btn btn-az-primary mt-3" routerLink="/users/new">Create New User</button>
-      </ng-container>
+      }
     </div>
   </div>
 </div>
 
 <!-- Shown once, and only once: the server does not store the plaintext, so closing this without
-     copying it means resetting again. Said plainly rather than discovered. -->
+copying it means resetting again. Said plainly rather than discovered. -->
 <ng-template #resetPasswordModal let-modal>
   <div class="modal-header">
     <h5 class="modal-title" id="reset-password-title">New password for {{ resetResult?.username }}</h5>

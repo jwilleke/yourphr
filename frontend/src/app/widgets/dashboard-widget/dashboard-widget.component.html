@@ -1,3 +1,5 @@
-<div *ngIf="loading">
-  <loading-widget></loading-widget>
-</div>
+@if (loading) {
+  <div>
+    <loading-widget></loading-widget>
+  </div>
+}

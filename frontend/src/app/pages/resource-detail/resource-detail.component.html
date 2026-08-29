@@ -2,33 +2,32 @@
   <div class="container">
     <div class="az-content-body">
       <!--
-        Trail mirrors Explore navigation (#448):
-        {source or patient} > Explore > {ResourceType} > {title from FHIR, e.g. Death Certification (308646001)}
+      Trail mirrors Explore navigation (#448):
+      {source or patient} > Explore > {ResourceType} > {title from FHIR, e.g. Death Certification (308646001)}
       -->
-      <div class="az-content-breadcrumb" *ngIf="sourceId">
-        <span class="cursor-pointer" [routerLink]="['/explore', sourceId]">{{sourceOrPatientLabel}}</span>
-        <span class="cursor-pointer" [routerLink]="['/explore']">Explore</span>
-        <span class="cursor-pointer" [routerLink]="['/explore', sourceId]">{{ (resourceType | resourceTypeLabel) || 'Record' }}</span>
-        <span>{{resourceTitle}}</span>
-      </div>
+      @if (sourceId) {
+        <div class="az-content-breadcrumb">
+          <span class="cursor-pointer" [routerLink]="['/explore', sourceId]">{{sourceOrPatientLabel}}</span>
+          <span class="cursor-pointer" [routerLink]="['/explore']">Explore</span>
+          <span class="cursor-pointer" [routerLink]="['/explore', sourceId]">{{ (resourceType | resourceTypeLabel) || 'Record' }}</span>
+          <span>{{resourceTitle}}</span>
+        </div>
+      }
 
-      <ng-container *ngIf="!loading else isLoadingTemplate">
-
-        <fhir-card *ngIf="displayModel else noDisplayModel" [displayModel]="displayModel" [showDetails]="false"></fhir-card>
-
-        <ng-template #noDisplayModel>
+      @if (!loading) {
+        @if (displayModel) {
+          <fhir-card [displayModel]="displayModel" [showDetails]="false"></fhir-card>
+        } @else {
           <p> An error occurred while parsing FHIR resource </p>
-        </ng-template>
-
+        }
         <app-raw-resource [raw]="resource?.resource_raw"></app-raw-resource>
-      </ng-container>
-      <ng-template #isLoadingTemplate>
+      } @else {
         <div class="row">
           <div class="col-12">
             <app-loading-spinner [loadingTitle]="'Please wait, loading report...'"></app-loading-spinner>
           </div>
         </div>
-      </ng-template>
+      }
     </div><!-- az-content-body -->
   </div>
 </div>

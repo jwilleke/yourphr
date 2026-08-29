@@ -8,12 +8,16 @@
   <div #collapse="ngbCollapse" [(ngbCollapse)]="isCollapsed" class="card-body">
     <p class="az-content-text mg-b-20">A formally or informally recognized grouping of people or organizations formed for the purpose of achieving some form of collective action. Includes companies, institutions, corporations, departments, community groups, healthcare practice groups, payer/insurer, etc.</p>
     <fhir-ui-table [displayModel]="displayModel" [tableData]="tableData"></fhir-ui-table>
-    <div *ngIf="isEditable" class="action-buttons">
-      <button type="button" (click)="onEditClicked()" class="btn btn-az-primary">Edit</button>
-      <button type="button" (click)="onUnlinkClicked()" class="btn btn-danger">Delete</button>
+    @if (isEditable) {
+      <div class="action-buttons">
+        <button type="button" (click)="onEditClicked()" class="btn btn-az-primary">Edit</button>
+        <button type="button" (click)="onUnlinkClicked()" class="btn btn-danger">Delete</button>
+      </div>
+    }
+  </div>
+  @if (showDetails) {
+    <div class="card-footer">
+      <a class="float-end" [routerLink]="['/explore', displayModel?.source_id, 'resource', displayModel?.source_resource_id]">details</a>
     </div>
-  </div>
-  <div *ngIf="showDetails" class="card-footer">
-    <a class="float-end" [routerLink]="['/explore', displayModel?.source_id, 'resource', displayModel?.source_resource_id]">details</a>
-  </div>
+  }
 </div>

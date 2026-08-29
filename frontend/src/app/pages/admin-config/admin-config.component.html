@@ -6,134 +6,165 @@
     <p class="tx-gray-500 mg-b-0">
       Every setting this instance knows about, what it is set to, and whether you set it.
       Defaults ship with the app; overrides are written to
-      <code *ngIf="config">{{ config.custom_config_path }}</code>.
-    </p>
-  </div>
-
-  <div class="alert alert-danger" *ngIf="error">{{ error }}</div>
-
-  <!-- Keys this instance publishes beyond the shipped set. Surfaced here because the startup log
-       line is read approximately never, and once widening is allowed this is the only protection
-       left. -->
-  <div class="alert alert-warning" *ngIf="config?.warnings?.length">
-    <strong><i class="fas fa-exclamation-triangle"></i>&nbsp; Published without a login</strong>
-    <ul class="mg-b-0 mg-t-5">
-      <li *ngFor="let warning of config.warnings">{{ warning }}</li>
-    </ul>
-  </div>
-
-  <app-loading-spinner *ngIf="loading"></app-loading-spinner>
-
-  <ng-container *ngIf="!loading && config">
-    <ul class="nav nav-tabs mg-b-15">
-      <li class="nav-item">
-        <a class="nav-link cursor-pointer" [class.active]="activeTab === 'current'"
-           (click)="activeTab = 'current'">Current</a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link cursor-pointer" [class.active]="activeTab === 'custom'"
-           (click)="activeTab = 'custom'">Your overrides <span class="badge text-bg-warning">{{ customCount }}</span></a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link cursor-pointer" [class.active]="activeTab === 'defaults'"
-           (click)="activeTab = 'defaults'">Shipped defaults</a>
-      </li>
-    </ul>
-
-    <p class="tx-gray-500" *ngIf="activeTab === 'custom' && customCount === 0">
-      No overrides are set — every value is the shipped default.
-    </p>
-
-    <div class="mg-b-15">
-      <input type="search" class="form-control" placeholder="Filter by key…" [(ngModel)]="filter">
+      @if (config) {
+        <code>{{ config.custom_config_path }}</code>
+        }.
+      </p>
     </div>
 
-    <div class="table-responsive">
-      <table class="table table-striped mg-b-0">
-        <thead>
-          <tr>
-            <th>Setting</th>
-            <th>{{ activeTab === 'defaults' ? 'Shipped value' : 'Value' }}</th>
-            <th>Source</th>
-            <th class="text-right">&nbsp;</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let entry of entries">
-            <td class="align-middle">
-              <code>{{ entry.key }}</code>
-              <span class="badge text-bg-info mg-l-5" *ngIf="entry.public"
-                    title="Readable without a login via /api/instance/public">public</span>
-              <span class="badge text-bg-warning mg-l-5" *ngIf="entry.promoted"
-                    title="This instance added it to the public list">promoted</span>
-              <span class="badge text-bg-dark mg-l-5" *ngIf="entry.from_env"
-                    [title]="'Set by ' + entry.env_var + ', which takes precedence over this screen'">environment</span>
-            </td>
+    @if (error) {
+      <div class="alert alert-danger">{{ error }}</div>
+    }
 
-            <td class="align-middle">
-              <ng-container *ngIf="editingKey !== entry.key">
-                <span *ngIf="activeTab === 'defaults'">{{ displayDefault(entry) }}</span>
-                <span *ngIf="activeTab !== 'defaults'">{{ displayValue(entry) || '—' }}</span>
+    <!-- Keys this instance publishes beyond the shipped set. Surfaced here because the startup log
+    line is read approximately never, and once widening is allowed this is the only protection
+    left. -->
+    @if (config?.warnings?.length) {
+      <div class="alert alert-warning">
+        <strong><i class="fas fa-exclamation-triangle"></i>&nbsp; Published without a login</strong>
+        <ul class="mg-b-0 mg-t-5">
+          @for (warning of config.warnings; track warning) {
+            <li>{{ warning }}</li>
+          }
+        </ul>
+      </div>
+    }
 
-                <!-- Reveal fetches the value from the server; it is NOT hidden text already in
-                     the page, so screen-sharing this table is safe by default. -->
-                <button type="button" class="btn btn-link btn-sm pd-0 mg-l-5"
-                        *ngIf="entry.masked" (click)="reveal(entry)"
-                        [title]="isRevealed(entry) ? 'Hide' : 'Reveal this value'">
-                  <i class="far" [class.fa-eye]="!isRevealed(entry)" [class.fa-eye-slash]="isRevealed(entry)"></i>
-                </button>
-              </ng-container>
+    @if (loading) {
+      <app-loading-spinner></app-loading-spinner>
+    }
 
-              <ng-container *ngIf="editingKey === entry.key">
-                <select class="form-control form-control-sm" *ngIf="isBoolean(entry)" [(ngModel)]="editingValue">
-                  <option [ngValue]="true">true</option>
-                  <option [ngValue]="false">false</option>
-                </select>
-                <input class="form-control form-control-sm" *ngIf="isNumber(entry)"
-                       type="number" [(ngModel)]="editingValue">
-                <input class="form-control form-control-sm" *ngIf="!isBoolean(entry) && !isNumber(entry)"
-                       type="text" [(ngModel)]="editingValue"
-                       [placeholder]="entry.masked ? 'Enter a new value' : ''">
-                <small class="tx-gray-500" *ngIf="entry.masked && !isRevealed(entry)">
-                  Starts blank on purpose — saving the mask would overwrite the real value.
-                </small>
-              </ng-container>
-            </td>
-
-            <td class="align-middle">
-              <span class="badge" [class.text-bg-warning]="entry.source === 'custom'"
-                    [class.text-bg-dark]="entry.source === 'environment'"
+    @if (!loading && config) {
+      <ul class="nav nav-tabs mg-b-15">
+        <li class="nav-item">
+          <a class="nav-link cursor-pointer" [class.active]="activeTab === 'current'"
+          (click)="activeTab = 'current'">Current</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link cursor-pointer" [class.active]="activeTab === 'custom'"
+            (click)="activeTab = 'custom'">Your overrides <span class="badge text-bg-warning">{{ customCount }}</span></a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link cursor-pointer" [class.active]="activeTab === 'defaults'"
+            (click)="activeTab = 'defaults'">Shipped defaults</a>
+          </li>
+        </ul>
+        @if (activeTab === 'custom' && customCount === 0) {
+          <p class="tx-gray-500">
+            No overrides are set — every value is the shipped default.
+          </p>
+        }
+        <div class="mg-b-15">
+          <input type="search" class="form-control" placeholder="Filter by key…" [(ngModel)]="filter">
+        </div>
+        <div class="table-responsive">
+          <table class="table table-striped mg-b-0">
+            <thead>
+              <tr>
+                <th>Setting</th>
+                <th>{{ activeTab === 'defaults' ? 'Shipped value' : 'Value' }}</th>
+                <th>Source</th>
+                <th class="text-right">&nbsp;</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (entry of entries; track entry) {
+                <tr>
+                  <td class="align-middle">
+                    <code>{{ entry.key }}</code>
+                    @if (entry.public) {
+                      <span class="badge text-bg-info mg-l-5"
+                      title="Readable without a login via /api/instance/public">public</span>
+                    }
+                    @if (entry.promoted) {
+                      <span class="badge text-bg-warning mg-l-5"
+                      title="This instance added it to the public list">promoted</span>
+                    }
+                    @if (entry.from_env) {
+                      <span class="badge text-bg-dark mg-l-5"
+                      [title]="'Set by ' + entry.env_var + ', which takes precedence over this screen'">environment</span>
+                    }
+                  </td>
+                  <td class="align-middle">
+                    @if (editingKey !== entry.key) {
+                      @if (activeTab === 'defaults') {
+                        <span>{{ displayDefault(entry) }}</span>
+                      }
+                      @if (activeTab !== 'defaults') {
+                        <span>{{ displayValue(entry) || '—' }}</span>
+                      }
+                      <!-- Reveal fetches the value from the server; it is NOT hidden text already in
+                      the page, so screen-sharing this table is safe by default. -->
+                      @if (entry.masked) {
+                        <button type="button" class="btn btn-link btn-sm pd-0 mg-l-5"
+                          (click)="reveal(entry)"
+                          [title]="isRevealed(entry) ? 'Hide' : 'Reveal this value'">
+                          <i class="far" [class.fa-eye]="!isRevealed(entry)" [class.fa-eye-slash]="isRevealed(entry)"></i>
+                        </button>
+                      }
+                    }
+                    @if (editingKey === entry.key) {
+                      @if (isBoolean(entry)) {
+                        <select class="form-control form-control-sm" [(ngModel)]="editingValue">
+                          <option [ngValue]="true">true</option>
+                          <option [ngValue]="false">false</option>
+                        </select>
+                      }
+                      @if (isNumber(entry)) {
+                        <input class="form-control form-control-sm"
+                          type="number" [(ngModel)]="editingValue">
+                      }
+                      @if (!isBoolean(entry) && !isNumber(entry)) {
+                        <input class="form-control form-control-sm"
+                          type="text" [(ngModel)]="editingValue"
+                          [placeholder]="entry.masked ? 'Enter a new value' : ''">
+                      }
+                      @if (entry.masked && !isRevealed(entry)) {
+                        <small class="tx-gray-500">
+                          Starts blank on purpose — saving the mask would overwrite the real value.
+                        </small>
+                      }
+                    }
+                  </td>
+                  <td class="align-middle">
+                    <span class="badge" [class.text-bg-warning]="entry.source === 'custom'"
+                      [class.text-bg-dark]="entry.source === 'environment'"
                     [class.text-bg-secondary]="entry.source === 'default'">{{ entry.source }}</span>
-            </td>
-
-            <td class="align-middle text-right text-nowrap">
-              <ng-container *ngIf="editingKey !== entry.key">
-                <!-- Env wins on restart, so editing here would take effect and then silently
-                     revert. Say where to change it instead. -->
-                <span class="tx-gray-500 tx-12" *ngIf="entry.from_env"
-                      [title]="'Change ' + entry.env_var + ' in your deployment configuration'">set by environment</span>
-                <button type="button" class="btn btn-sm btn-az-secondary" *ngIf="!entry.from_env"
+                  </td>
+                  <td class="align-middle text-right text-nowrap">
+                    @if (editingKey !== entry.key) {
+                      <!-- Env wins on restart, so editing here would take effect and then silently
+                      revert. Say where to change it instead. -->
+                      @if (entry.from_env) {
+                        <span class="tx-gray-500 tx-12"
+                        [title]="'Change ' + entry.env_var + ' in your deployment configuration'">set by environment</span>
+                      }
+                      @if (!entry.from_env) {
+                        <button type="button" class="btn btn-sm btn-az-secondary"
                         (click)="startEdit(entry)">Edit</button>
-                <button type="button" class="btn btn-sm btn-link" *ngIf="entry.source === 'custom' && !entry.from_env"
-                        [disabled]="saving" (click)="reset(entry)"
+                      }
+                      @if (entry.source === 'custom' && !entry.from_env) {
+                        <button type="button" class="btn btn-sm btn-link"
+                          [disabled]="saving" (click)="reset(entry)"
                         title="Drop this override and use the shipped default">Reset</button>
-              </ng-container>
-              <ng-container *ngIf="editingKey === entry.key">
-                <button type="button" class="btn btn-sm btn-az-primary" [disabled]="saving"
-                        (click)="save(entry)">Save</button>
-                <button type="button" class="btn btn-sm btn-link" [disabled]="saving"
-                        (click)="cancelEdit()">Cancel</button>
-              </ng-container>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+                      }
+                    }
+                    @if (editingKey === entry.key) {
+                      <button type="button" class="btn btn-sm btn-az-primary" [disabled]="saving"
+                      (click)="save(entry)">Save</button>
+                      <button type="button" class="btn btn-sm btn-link" [disabled]="saving"
+                      (click)="cancelEdit()">Cancel</button>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <p class="tx-gray-500 mg-t-15 mg-b-0">
+          A small number of secrets are hidden until you reveal them, and a hidden value is not sent
+          to your browser until you ask for it. Everything else is shown outright. Changes apply
+          immediately — no restart.
+        </p>
+      }
     </div>
-
-    <p class="tx-gray-500 mg-t-15 mg-b-0">
-      A small number of secrets are hidden until you reveal them, and a hidden value is not sent
-      to your browser until you ask for it. Everything else is shown outright. Changes apply
-      immediately — no restart.
-    </p>
-  </ng-container>
-</div>

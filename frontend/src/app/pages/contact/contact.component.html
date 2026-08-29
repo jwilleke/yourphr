@@ -19,36 +19,37 @@
             your account, or anything you want corrected or removed.
           </p>
 
-          <dl class="mg-b-0" *ngIf="hasOperatorContact; else noOperator">
-            <ng-container *ngIf="operatorName">
-              <dt class="tx-12 tx-uppercase tx-gray-500">Operated by</dt>
-              <dd class="mg-b-15">{{ operatorName }}</dd>
-            </ng-container>
-
-            <ng-container *ngIf="operatorContactEmail">
-              <dt class="tx-12 tx-uppercase tx-gray-500">Email</dt>
-              <dd class="mg-b-15">
-                <a [href]="'mailto:' + operatorContactEmail">{{ operatorContactEmail }}</a>
-              </dd>
-            </ng-container>
-
-            <ng-container *ngIf="operatorContactUrl">
-              <dt class="tx-12 tx-uppercase tx-gray-500">Support</dt>
-              <dd class="mg-b-0">
-                <a [href]="operatorContactUrl" target="_blank" rel="noopener noreferrer">{{ operatorContactUrl }}</a>
-              </dd>
-            </ng-container>
-          </dl>
+          @if (hasOperatorContact) {
+            <dl class="mg-b-0">
+              @if (operatorName) {
+                <dt class="tx-12 tx-uppercase tx-gray-500">Operated by</dt>
+                <dd class="mg-b-15">{{ operatorName }}</dd>
+              }
+              @if (operatorContactEmail) {
+                <dt class="tx-12 tx-uppercase tx-gray-500">Email</dt>
+                <dd class="mg-b-15">
+                  <a [href]="'mailto:' + operatorContactEmail">{{ operatorContactEmail }}</a>
+                </dd>
+              }
+              @if (operatorContactUrl) {
+                <dt class="tx-12 tx-uppercase tx-gray-500">Support</dt>
+                <dd class="mg-b-0">
+                  <a [href]="operatorContactUrl" target="_blank" rel="noopener noreferrer">{{ operatorContactUrl }}</a>
+                </dd>
+              }
+            </dl>
+          } @else {
+            @if (loaded) {
+              <p class="tx-gray-500 mg-b-0">
+                The operator of this instance has not published contact details.
+                If you run this instance, add them in
+                <a routerLink="/admin">Admin &rarr; Instance</a>.
+              </p>
+            }
+          }
 
           <!-- Say plainly that nothing was configured. Never substitute a project address for an
-               operator who has not published one — they are different parties. -->
-          <ng-template #noOperator>
-            <p class="tx-gray-500 mg-b-0" *ngIf="loaded">
-              The operator of this instance has not published contact details.
-              If you run this instance, add them in
-              <a routerLink="/admin">Admin &rarr; Instance</a>.
-            </p>
-          </ng-template>
+          operator who has not published one — they are different parties. -->
         </div>
       </div>
     </div>

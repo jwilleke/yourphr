@@ -49,20 +49,26 @@
       <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
           <h6 class="card-title mg-b-0"><i class="fas fa-database"></i>&nbsp; Database</h6>
-          <span *ngIf="!dbLoading && backupHealth"
-                class="badge"
-                [ngClass]="backupHealth.ok ? 'text-bg-success' : 'text-bg-danger'"
-                [title]="backupHealth.last_error || backupHealth.summary">
-            {{ backupHealth.summary }}
-          </span>
-          <span *ngIf="dbLoading" class="badge text-bg-secondary">…</span>
+          @if (!dbLoading && backupHealth) {
+            <span
+              class="badge"
+              [ngClass]="backupHealth.ok ? 'text-bg-success' : 'text-bg-danger'"
+              [title]="backupHealth.last_error || backupHealth.summary">
+              {{ backupHealth.summary }}
+            </span>
+          }
+          @if (dbLoading) {
+            <span class="badge text-bg-secondary">…</span>
+          }
         </div>
         <div class="card-body">
           <p class="tx-gray-500 mg-b-15">Database details (location, encryption, size, integrity) and an on-demand backup. Admin-only — a backup contains all users' records.</p>
-          <p *ngIf="!dbLoading && backupHealth && !backupHealth.ok" class="text-danger tx-13 mg-b-15">
-            <i class="fas fa-triangle-exclamation mg-r-5"></i>
-            {{ backupHealth.last_error || 'Scheduled backup needs attention — open Database for details.' }}
-          </p>
+          @if (!dbLoading && backupHealth && !backupHealth.ok) {
+            <p class="text-danger tx-13 mg-b-15">
+              <i class="fas fa-triangle-exclamation mg-r-5"></i>
+              {{ backupHealth.last_error || 'Scheduled backup needs attention — open Database for details.' }}
+            </p>
+          }
           <a routerLink="/admin/database" class="btn btn-az-primary"><i class="fas fa-database mg-r-5"></i> Open Database</a>
         </div>
       </div>
@@ -85,13 +91,17 @@
       <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
           <h6 class="card-title mg-b-0"><i class="fas fa-chart-line"></i>&nbsp; Metrics</h6>
-          <span *ngIf="!metricsLoading && metrics"
-                class="badge"
-                [ngClass]="metrics.scrape_enabled ? 'text-bg-success' : 'text-bg-secondary'"
-                [title]="metrics.scrape_note">
-            {{ metrics.scrape_enabled ? 'Scrape on' : 'Scrape off' }}
-          </span>
-          <span *ngIf="metricsLoading" class="badge text-bg-secondary">…</span>
+          @if (!metricsLoading && metrics) {
+            <span
+              class="badge"
+              [ngClass]="metrics.scrape_enabled ? 'text-bg-success' : 'text-bg-secondary'"
+              [title]="metrics.scrape_note">
+              {{ metrics.scrape_enabled ? 'Scrape on' : 'Scrape off' }}
+            </span>
+          }
+          @if (metricsLoading) {
+            <span class="badge text-bg-secondary">…</span>
+          }
         </div>
         <div class="card-body">
           <p class="tx-gray-500 mg-b-15">
@@ -99,51 +109,69 @@
             Prometheus scrape is <strong>opt-in</strong> and must stay cluster-internal.
           </p>
 
-          <div *ngIf="metricsLoading" class="tx-gray-500">Loading…</div>
-          <div *ngIf="metricsError" class="text-danger tx-13 mg-b-10">{{ metricsError }}</div>
+          @if (metricsLoading) {
+            <div class="tx-gray-500">Loading…</div>
+          }
+          @if (metricsError) {
+            <div class="text-danger tx-13 mg-b-10">{{ metricsError }}</div>
+          }
 
-          <ng-container *ngIf="!metricsLoading && metrics as m">
+          @if (!metricsLoading && metrics; as m) {
             <dl class="row tx-13 mg-b-10">
               <dt class="col-5 tx-gray-500">Scrape</dt>
               <dd class="col-7">
-                <span *ngIf="m.scrape_enabled">
-                  <code>{{ m.scrape_addr }}{{ m.scrape_path }}</code>
-                </span>
-                <span *ngIf="!m.scrape_enabled" class="tx-gray-600">
-                  Disabled — set <code>metrics.enabled</code> / <code>YOURPHR_METRICS_ENABLED</code>
-                </span>
+                @if (m.scrape_enabled) {
+                  <span>
+                    <code>{{ m.scrape_addr }}{{ m.scrape_path }}</code>
+                  </span>
+                }
+                @if (!m.scrape_enabled) {
+                  <span class="tx-gray-600">
+                    Disabled — set <code>metrics.enabled</code> / <code>YOURPHR_METRICS_ENABLED</code>
+                  </span>
+                }
               </dd>
               <dt class="col-5 tx-gray-500">Jobs (this process)</dt>
               <dd class="col-7">{{ processJobTotal() }} completed</dd>
-              <dt class="col-5 tx-gray-500" *ngIf="m.process.duration_count">Avg duration</dt>
-              <dd class="col-7" *ngIf="m.process.duration_count">
-                {{ formatDurationMs(avgDurationMs()) }}
-                <span class="tx-gray-500">(n={{ m.process.duration_count }})</span>
-              </dd>
+              @if (m.process.duration_count) {
+                <dt class="col-5 tx-gray-500">Avg duration</dt>
+              }
+              @if (m.process.duration_count) {
+                <dd class="col-7">
+                  {{ formatDurationMs(avgDurationMs()) }}
+                  <span class="tx-gray-500">(n={{ m.process.duration_count }})</span>
+                </dd>
+              }
             </dl>
-
-            <div *ngIf="recentJobsWithSummary().length" class="mg-b-15">
-              <p class="tx-12 tx-uppercase tx-gray-500 mg-b-5">Recent syncs (with summary)</p>
-              <ul class="list-unstyled tx-13 mg-b-0">
-                <li *ngFor="let j of recentJobsWithSummary().slice(0, 5)" class="mg-b-5">
-                  <span class="badge mg-r-5" [ngClass]="outcomeBadgeClass(j.summary?.outcome)">
-                    {{ j.summary?.outcome || j.job_status }}
-                  </span>
-                  <span class="tx-gray-700">{{ formatDurationMs(j.summary?.duration_ms) }}</span>
-                  <span class="tx-gray-500"> · {{ j.summary?.total_resources ?? 0 }} resources</span>
-                  <span *ngIf="j.summary?.platform_type" class="tx-gray-500"> · {{ j.summary?.platform_type }}</span>
-                </li>
-              </ul>
-            </div>
-            <p *ngIf="!recentJobsWithSummary().length" class="tx-gray-500 tx-13 mg-b-15">
-              No job summaries yet. Complete a source sync after upgrading; older jobs may lack <code>data.summary</code>.
-            </p>
-
+            @if (recentJobsWithSummary().length) {
+              <div class="mg-b-15">
+                <p class="tx-12 tx-uppercase tx-gray-500 mg-b-5">Recent syncs (with summary)</p>
+                <ul class="list-unstyled tx-13 mg-b-0">
+                  @for (j of recentJobsWithSummary().slice(0, 5); track j) {
+                    <li class="mg-b-5">
+                      <span class="badge mg-r-5" [ngClass]="outcomeBadgeClass(j.summary?.outcome)">
+                        {{ j.summary?.outcome || j.job_status }}
+                      </span>
+                      <span class="tx-gray-700">{{ formatDurationMs(j.summary?.duration_ms) }}</span>
+                      <span class="tx-gray-500"> · {{ j.summary?.total_resources ?? 0 }} resources</span>
+                      @if (j.summary?.platform_type) {
+                        <span class="tx-gray-500"> · {{ j.summary?.platform_type }}</span>
+                      }
+                    </li>
+                  }
+                </ul>
+              </div>
+            }
+            @if (!recentJobsWithSummary().length) {
+              <p class="tx-gray-500 tx-13 mg-b-15">
+                No job summaries yet. Complete a source sync after upgrading; older jobs may lack <code>data.summary</code>.
+              </p>
+            }
             <a routerLink="/background-jobs" class="btn btn-az-primary mg-r-5">
               <i class="fas fa-tasks mg-r-5"></i> Background jobs
             </a>
             <p class="tx-gray-500 tx-12 mg-t-10 mg-b-0">{{ m.scrape_note }}</p>
-          </ng-container>
+          }
         </div>
       </div>
     </div>
@@ -160,116 +188,136 @@
             Not the open-source project. Optional; leave blank if you only self-host for yourself.
           </p>
 
-          <div *ngIf="instanceLoading" class="tx-gray-500">Loading…</div>
+          @if (instanceLoading) {
+            <div class="tx-gray-500">Loading…</div>
+          }
 
-          <ng-container *ngIf="!instanceLoading">
+          @if (!instanceLoading) {
             <div class="form-group">
               <label class="tx-12 tx-uppercase tx-gray-500" for="operatorName">Operator name</label>
               <input id="operatorName" type="text" class="form-control" [(ngModel)]="instance.name"
-                     name="operatorName" placeholder="e.g. Nerds by the Hour" autocomplete="organization">
+                name="operatorName" placeholder="e.g. Nerds by the Hour" autocomplete="organization">
             </div>
             <div class="form-group">
               <label class="tx-12 tx-uppercase tx-gray-500" for="operatorEmail">Contact email</label>
               <input id="operatorEmail" type="email" class="form-control" [(ngModel)]="instance.contact_email"
-                     name="operatorEmail" placeholder="support@example.com" autocomplete="email">
+                name="operatorEmail" placeholder="support@example.com" autocomplete="email">
             </div>
             <div class="form-group">
               <label class="tx-12 tx-uppercase tx-gray-500" for="operatorUrl">Help / privacy URL</label>
               <input id="operatorUrl" type="url" class="form-control" [(ngModel)]="instance.contact_url"
-                     name="operatorUrl" placeholder="https://…">
-            </div>
-
-            <button type="button" class="btn btn-az-primary" (click)="saveInstance()" [disabled]="instanceSaving">
-              <i class="fas fa-save mg-r-5"></i>{{ instanceSaving ? 'Saving…' : 'Save' }}
-            </button>
-            <div *ngIf="instanceSaved" class="alert alert-success tx-13 mg-t-10 mg-b-0">
-              <i class="fas fa-check mg-r-5"></i>Saved. Applies immediately (no restart).
-            </div>
-            <div *ngIf="instanceError" class="text-danger tx-13 mg-t-10">{{ instanceError }}</div>
-            <p class="tx-gray-500 tx-12 mg-t-10 mg-b-0">
-              Also settable via <code>YOURPHR_OPERATOR_*</code> env / <code>operator.*</code> in config until you save here (saved values win).
-            </p>
-          </ng-container>
+                name="operatorUrl" placeholder="https://…">
+              </div>
+              <button type="button" class="btn btn-az-primary" (click)="saveInstance()" [disabled]="instanceSaving">
+                <i class="fas fa-save mg-r-5"></i>{{ instanceSaving ? 'Saving…' : 'Save' }}
+              </button>
+              @if (instanceSaved) {
+                <div class="alert alert-success tx-13 mg-t-10 mg-b-0">
+                  <i class="fas fa-check mg-r-5"></i>Saved. Applies immediately (no restart).
+                </div>
+              }
+              @if (instanceError) {
+                <div class="text-danger tx-13 mg-t-10">{{ instanceError }}</div>
+              }
+              <p class="tx-gray-500 tx-12 mg-t-10 mg-b-0">
+                Also settable via <code>YOURPHR_OPERATOR_*</code> env / <code>operator.*</code> in config until you save here (saved values win).
+              </p>
+            }
+          </div>
         </div>
       </div>
-    </div>
 
-    <!-- SMART OAuth Relay card (#402): the EFFECTIVE values and where each came from, so a
-         misconfiguration is visible here rather than surfacing mid-login at the provider. -->
+      <!-- SMART OAuth Relay card (#402): the EFFECTIVE values and where each came from, so a
+      misconfiguration is visible here rather than surfacing mid-login at the provider. -->
     <div class="col-lg-8 mg-b-20">
       <div class="card">
         <!-- The whole header toggles. The status badge stays visible when collapsed, so the one
-             thing worth noticing at a glance never gets hidden. -->
+        thing worth noticing at a glance never gets hidden. -->
         <div class="card-header d-flex justify-content-between align-items-center"
-             role="button"
-             tabindex="0"
-             [attr.aria-expanded]="relayExpanded"
-             aria-controls="relay-card-body"
-             (click)="toggleRelay()"
-             (keydown.enter)="toggleRelay()"
-             (keydown.space)="toggleRelay()"
-             style="cursor: pointer">
+          role="button"
+          tabindex="0"
+          [attr.aria-expanded]="relayExpanded"
+          aria-controls="relay-card-body"
+          (click)="toggleRelay()"
+          (keydown.enter)="toggleRelay()"
+          (keydown.space)="toggleRelay()"
+          style="cursor: pointer">
           <h6 class="card-title mg-b-0">
             <i class="fas" [ngClass]="relayExpanded ? 'fa-chevron-down' : 'fa-chevron-right'"></i>&nbsp;
             <i class="fas fa-exchange-alt"></i>&nbsp; SMART OAuth Relay
           </h6>
-          <span *ngIf="relayConfig" class="badge" [ngClass]="relayConfig.ready ? 'text-bg-success' : 'text-bg-danger'">
-            {{ relayConfig.ready ? 'Ready' : 'Not ready' }}
-          </span>
+          @if (relayConfig) {
+            <span class="badge" [ngClass]="relayConfig.ready ? 'text-bg-success' : 'text-bg-danger'">
+              {{ relayConfig.ready ? 'Ready' : 'Not ready' }}
+            </span>
+          }
         </div>
-        <div class="card-body" id="relay-card-body" *ngIf="relayExpanded">
-          <p class="tx-gray-500 mg-b-15">
-            The values this server is <strong>actually using</strong> for SMART on FHIR sign-in, and where each came from.
-            A setting shown as a <em>built-in default</em> means your configuration is not reaching the app.
-          </p>
-
-          <div *ngIf="relayLoading" class="tx-gray-500">Loading…</div>
-          <div *ngIf="relayError" class="alert alert-warning mg-b-0">{{ relayError }}</div>
-
-          <ng-container *ngIf="relayConfig as cfg">
-            <div class="alert" [ngClass]="cfg.ready ? 'alert-info' : 'alert-danger'">
-              <strong>Register this callback URL with each FHIR vendor</strong> — it must match exactly:
-              <div><code>{{ cfg.callback_url }}</code></div>
-              <div *ngIf="!cfg.ready" class="mg-t-5">
-                No relay secret is configured, so a connection cannot complete. Set
-                <code>{{ cfg.secret.env_var }}</code> to the same value as on your relay.
+        @if (relayExpanded) {
+          <div class="card-body" id="relay-card-body">
+            <p class="tx-gray-500 mg-b-15">
+              The values this server is <strong>actually using</strong> for SMART on FHIR sign-in, and where each came from.
+              A setting shown as a <em>built-in default</em> means your configuration is not reaching the app.
+            </p>
+            @if (relayLoading) {
+              <div class="tx-gray-500">Loading…</div>
+            }
+            @if (relayError) {
+              <div class="alert alert-warning mg-b-0">{{ relayError }}</div>
+            }
+            @if (relayConfig; as cfg) {
+              <div class="alert" [ngClass]="cfg.ready ? 'alert-info' : 'alert-danger'">
+                <strong>Register this callback URL with each FHIR vendor</strong> — it must match exactly:
+                <div><code>{{ cfg.callback_url }}</code></div>
+                @if (!cfg.ready) {
+                  <div class="mg-t-5">
+                    No relay secret is configured, so a connection cannot complete. Set
+                    <code>{{ cfg.secret.env_var }}</code> to the same value as on your relay.
+                  </div>
+                }
               </div>
-            </div>
-
-            <div class="table-responsive">
-              <table class="table table-sm mg-b-0">
-                <thead>
-                  <tr>
-                    <th>Setting</th>
-                    <th>Effective value</th>
-                    <th>Where it came from</th>
-                    <th>Set with</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td>Public origin<br><small class="tx-gray-500">providers redirect the browser here</small></td>
-                    <td><code>{{ cfg.public_url.value }}</code></td>
-                    <td><span class="badge" [ngClass]="sourceBadgeClass(cfg.public_url)">{{ sourceLabel(cfg.public_url) }}</span></td>
-                    <td><code *ngIf="cfg.public_url.env_var">{{ cfg.public_url.env_var }}</code><span *ngIf="!cfg.public_url.env_var" class="tx-gray-500">—</span></td>
-                  </tr>
-                  <tr>
-                    <td>Poll address<br><small class="tx-gray-500">this server polls /pending here; may be internal</small></td>
-                    <td><code>{{ cfg.poll_url.value }}</code></td>
-                    <td><span class="badge" [ngClass]="sourceBadgeClass(cfg.poll_url)">{{ sourceLabel(cfg.poll_url) }}</span></td>
-                    <td><code *ngIf="cfg.poll_url.env_var">{{ cfg.poll_url.env_var }}</code><span *ngIf="!cfg.poll_url.env_var" class="tx-gray-500">—</span></td>
-                  </tr>
-                  <tr>
-                    <td>Shared secret<br><small class="tx-gray-500">gates /pending</small></td>
-                    <td><span class="tx-gray-500">{{ cfg.configured ? 'configured (not shown)' : 'not set' }}</span></td>
-                    <td><span class="badge" [ngClass]="sourceBadgeClass(cfg.secret)">{{ sourceLabel(cfg.secret) }}</span></td>
-                    <td><code>{{ cfg.secret.env_var }}</code></td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </ng-container>
-        </div>
+              <div class="table-responsive">
+                <table class="table table-sm mg-b-0">
+                  <thead>
+                    <tr>
+                      <th>Setting</th>
+                      <th>Effective value</th>
+                      <th>Where it came from</th>
+                      <th>Set with</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>Public origin<br><small class="tx-gray-500">providers redirect the browser here</small></td>
+                      <td><code>{{ cfg.public_url.value }}</code></td>
+                      <td><span class="badge" [ngClass]="sourceBadgeClass(cfg.public_url)">{{ sourceLabel(cfg.public_url) }}</span></td>
+                      <td>@if (cfg.public_url.env_var) {
+                        <code>{{ cfg.public_url.env_var }}</code>
+                        }@if (!cfg.public_url.env_var) {
+                        <span class="tx-gray-500">—</span>
+                      }</td>
+                    </tr>
+                    <tr>
+                      <td>Poll address<br><small class="tx-gray-500">this server polls /pending here; may be internal</small></td>
+                      <td><code>{{ cfg.poll_url.value }}</code></td>
+                      <td><span class="badge" [ngClass]="sourceBadgeClass(cfg.poll_url)">{{ sourceLabel(cfg.poll_url) }}</span></td>
+                      <td>@if (cfg.poll_url.env_var) {
+                        <code>{{ cfg.poll_url.env_var }}</code>
+                        }@if (!cfg.poll_url.env_var) {
+                        <span class="tx-gray-500">—</span>
+                      }</td>
+                    </tr>
+                    <tr>
+                      <td>Shared secret<br><small class="tx-gray-500">gates /pending</small></td>
+                      <td><span class="tx-gray-500">{{ cfg.configured ? 'configured (not shown)' : 'not set' }}</span></td>
+                      <td><span class="badge" [ngClass]="sourceBadgeClass(cfg.secret)">{{ sourceLabel(cfg.secret) }}</span></td>
+                      <td><code>{{ cfg.secret.env_var }}</code></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            }
+          </div>
+        }
       </div>
     </div>
   </div>

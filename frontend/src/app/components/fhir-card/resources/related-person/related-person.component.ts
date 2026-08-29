@@ -1,6 +1,6 @@
 import {ChangeDetectorRef, Component, Input, OnInit} from '@angular/core';
 import {NgbCollapseModule} from '@ng-bootstrap/ng-bootstrap';
-import {CommonModule} from '@angular/common';
+
 import {Router, RouterModule} from '@angular/router';
 import * as _ from 'lodash';
 import {BadgeComponent} from '../../common/badge/badge.component';
@@ -10,7 +10,7 @@ import {FhirCardComponentInterface} from '../../fhir-card/fhir-card-component-in
 import {RelatedPersonModel} from '../../../../../lib/models/resources/related-person-model';
 
 @Component({
-    imports: [NgbCollapseModule, CommonModule, BadgeComponent, TableComponent, RouterModule],
+    imports: [NgbCollapseModule, BadgeComponent, TableComponent, RouterModule],
     selector: 'fhir-related-person',
     templateUrl: './related-person.component.html',
     styleUrls: ['./related-person.component.scss']

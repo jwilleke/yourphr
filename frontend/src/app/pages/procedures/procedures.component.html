@@ -6,41 +6,55 @@
     </div>
   </div>
 
-  <app-loading-spinner *ngIf="loading" loadingTitle="Loading your procedures..."></app-loading-spinner>
+  @if (loading) {
+    <app-loading-spinner loadingTitle="Loading your procedures..."></app-loading-spinner>
+  }
 
-  <div *ngIf="!loading && errored" class="alert alert-danger">Could not load your procedures. Please try again.</div>
+  @if (!loading && errored) {
+    <div class="alert alert-danger">Could not load your procedures. Please try again.</div>
+  }
 
-  <div *ngIf="!loading && !errored && filtered.length === 0" class="alert alert-info">No procedures found in your records.</div>
+  @if (!loading && !errored && filtered.length === 0) {
+    <div class="alert alert-info">No procedures found in your records.</div>
+  }
 
-  <div class="table-responsive" *ngIf="!loading && !errored && filtered.length > 0">
-    <table class="table table-hover">
-      <thead>
-        <tr>
-          <th style="width:1%"></th>
-          <th class="sortable" (click)="sortBy('name')">Procedure <i class="fas" [ngClass]="sortColumn==='name' ? (sortDirection==='asc' ? 'fa-caret-up' : 'fa-caret-down') : ''"></i></th>
-          <th class="sortable" (click)="sortBy('category')">Kind <i class="fas" [ngClass]="sortColumn==='category' ? (sortDirection==='asc' ? 'fa-caret-up' : 'fa-caret-down') : ''"></i></th>
-          <th class="sortable" (click)="sortBy('date')">Date <i class="fas" [ngClass]="sortColumn==='date' ? (sortDirection==='asc' ? 'fa-caret-up' : 'fa-caret-down') : ''"></i></th>
-          <th>Status</th>
-        </tr>
-      </thead>
-      <tbody>
-        <ng-container *ngFor="let p of filtered">
-          <tr class="procedure-row" (click)="toggleExpanded(rowKey(p))">
-            <td><i class="fas" [ngClass]="expanded[rowKey(p)] ? 'fa-chevron-down' : 'fa-chevron-right'"></i></td>
-            <td><strong>{{ name(p) }}</strong></td>
-            <td>{{ categoryLabel(p) }}</td>
-            <td><span *ngIf="date(p) as d; else noDate">{{ d | date }}</span><ng-template #noDate><span class="tx-gray-400">—</span></ng-template></td>
-            <td><span class="badge text-bg-light">{{ p.status || '—' }}</span></td>
+  @if (!loading && !errored && filtered.length > 0) {
+    <div class="table-responsive">
+      <table class="table table-hover">
+        <thead>
+          <tr>
+            <th style="width:1%"></th>
+            <th class="sortable" (click)="sortBy('name')">Procedure <i class="fas" [ngClass]="sortColumn==='name' ? (sortDirection==='asc' ? 'fa-caret-up' : 'fa-caret-down') : ''"></i></th>
+            <th class="sortable" (click)="sortBy('category')">Kind <i class="fas" [ngClass]="sortColumn==='category' ? (sortDirection==='asc' ? 'fa-caret-up' : 'fa-caret-down') : ''"></i></th>
+            <th class="sortable" (click)="sortBy('date')">Date <i class="fas" [ngClass]="sortColumn==='date' ? (sortDirection==='asc' ? 'fa-caret-up' : 'fa-caret-down') : ''"></i></th>
+            <th>Status</th>
           </tr>
-          <tr *ngIf="expanded[rowKey(p)]" class="procedure-detail">
-            <td></td>
-            <td colspan="4">
-              <!-- The existing per-resource Procedure card remains the detail view. -->
-              <fhir-card [displayModel]="p"></fhir-card>
-            </td>
-          </tr>
-        </ng-container>
-      </tbody>
-    </table>
-  </div>
+        </thead>
+        <tbody>
+          @for (p of filtered; track p) {
+            <tr class="procedure-row" (click)="toggleExpanded(rowKey(p))">
+              <td><i class="fas" [ngClass]="expanded[rowKey(p)] ? 'fa-chevron-down' : 'fa-chevron-right'"></i></td>
+              <td><strong>{{ name(p) }}</strong></td>
+              <td>{{ categoryLabel(p) }}</td>
+              <td>@if (date(p); as d) {
+                <span>{{ d | date }}</span>
+              } @else {
+                <span class="tx-gray-400">—</span>
+              }</td>
+              <td><span class="badge text-bg-light">{{ p.status || '—' }}</span></td>
+            </tr>
+            @if (expanded[rowKey(p)]) {
+              <tr class="procedure-detail">
+                <td></td>
+                <td colspan="4">
+                  <!-- The existing per-resource Procedure card remains the detail view. -->
+                  <fhir-card [displayModel]="p"></fhir-card>
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+  }
 </div>

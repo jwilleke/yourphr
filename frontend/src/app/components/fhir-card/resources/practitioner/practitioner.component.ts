@@ -5,13 +5,13 @@ import {TableRowItem} from '../../common/table/table-row-item';
 import {Router, RouterModule} from '@angular/router';
 import {PractitionerModel} from '../../../../../lib/models/resources/practitioner-model';
 import {NgbCollapseModule} from "@ng-bootstrap/ng-bootstrap";
-import {CommonModule} from "@angular/common";
+
 import {BadgeComponent} from "../../common/badge/badge.component";
 import {TableComponent} from "../../common/table/table.component";
 import { FastenDisplayModel } from 'src/lib/models/fasten/fasten-display-model';
 
 @Component({
-    imports: [NgbCollapseModule, CommonModule, BadgeComponent, TableComponent, RouterModule],
+    imports: [NgbCollapseModule, BadgeComponent, TableComponent, RouterModule],
     selector: 'fhir-practitioner',
     templateUrl: './practitioner.component.html',
     styleUrls: ['./practitioner.component.scss']

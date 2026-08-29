@@ -1,6 +1,6 @@
 import {ChangeDetectorRef, Component, Input, OnInit} from '@angular/core';
 import {NgbCollapseModule} from '@ng-bootstrap/ng-bootstrap';
-import {CommonModule} from '@angular/common';
+
 import {Router, RouterModule} from '@angular/router';
 import {BadgeComponent} from '../../common/badge/badge.component';
 import {TableComponent} from '../../common/table/table.component';
@@ -9,7 +9,7 @@ import {FhirCardComponentInterface} from '../../fhir-card/fhir-card-component-in
 import {FamilyMemberHistoryModel} from '../../../../../lib/models/resources/family-member-history-model';
 
 @Component({
-    imports: [NgbCollapseModule, CommonModule, BadgeComponent, TableComponent, RouterModule],
+    imports: [NgbCollapseModule, BadgeComponent, TableComponent, RouterModule],
     selector: 'fhir-family-member-history',
     templateUrl: './family-member-history.component.html',
     styleUrls: ['./family-member-history.component.scss']

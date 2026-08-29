@@ -15,59 +15,76 @@
         <!-- Group-by selector + honest total -->
         <div class="d-flex flex-wrap align-items-center justify-content-between mt-4 mb-3">
           <div class="btn-group" role="group" aria-label="Group medical history by">
-            <button *ngFor="let d of dimensions" type="button"
-                    class="btn btn-sm" [ngClass]="dimension === d.key ? 'btn-az-primary' : 'btn-outline-secondary'"
-                    (click)="setDimension(d.key)">
-              {{ d.label }}
-            </button>
+            @for (d of dimensions; track d) {
+              <button type="button"
+                class="btn btn-sm" [ngClass]="dimension === d.key ? 'btn-az-primary' : 'btn-outline-secondary'"
+                (click)="setDimension(d.key)">
+                {{ d.label }}
+              </button>
+            }
           </div>
           <span class="tx-gray-500 tx-13">{{ total }} record{{ total === 1 ? '' : 's' }} across {{ groups.length }} {{ dimension === 'date' ? 'dates' : (dimension + 's') }}</span>
         </div>
 
-        <div *ngIf="typedLoading" class="pd-20 tx-gray-500">
-          <span class="spinner-border spinner-border-sm mg-r-10"></span>Loading records…
-        </div>
-
-        <div class="row" *ngIf="!typedLoading">
-          <!-- Master rail -->
-          <div class="col-md-4 col-lg-3 mg-b-20">
-            <div class="list-group">
-              <button *ngFor="let g of groups" type="button"
-                      class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
-                      [class.active]="g.key === selectedKey"
-                      [class.tx-gray-500]="g.isUnknown"
-                      (click)="selectGroup(g.key)">
-                <span class="text-truncate mg-r-10">
-                  {{ g.label }}
-                  <small *ngIf="g.subLabel" class="d-block tx-11" [ngClass]="g.key === selectedKey ? 'tx-white-8' : 'tx-gray-500'">{{ g.subLabel }}</small>
-                </span>
-                <span class="badge rounded-pill" [ngClass]="g.key === selectedKey ? 'bg-light tx-gray-700' : 'bg-secondary'">{{ g.count }}</span>
-              </button>
-            </div>
+        @if (typedLoading) {
+          <div class="pd-20 tx-gray-500">
+            <span class="spinner-border spinner-border-sm mg-r-10"></span>Loading records…
           </div>
+        }
 
-          <!-- Detail pane: selected group's records by date -->
-          <div class="col-md-8 col-lg-9">
-            <div *ngIf="!selectedGroup" class="tx-gray-500 pd-20">Select a group to view its records.</div>
-            <div *ngIf="selectedGroup && detailBuckets.length === 0" class="tx-gray-500 pd-20">
-              No visits or records are linked to this {{ dimension }} yet.
-            </div>
-
-            <div *ngFor="let bucket of detailBuckets; trackBy: trackBucket" class="mg-b-20">
-              <h6 class="az-content-label tx-gray-600 mg-b-10">{{ bucket.date ? (bucket.date | date) : 'Undated' }}</h6>
-              <div *ngFor="let row of bucket.rows; trackBy: trackRow" class="mg-b-15">
-                <fhir-card *ngIf="modelFor(row) as model; else simpleRow" [displayModel]="model" [showDetails]="false"></fhir-card>
-                <ng-template #simpleRow>
-                  <div class="card pd-15">
-                    <a [routerLink]="['/explore', row.sourceId, 'resource', row.resourceId]">{{ row.title }}</a>
-                    <div class="tx-12 tx-gray-500">{{ row.resourceType | resourceTypeLabel }}</div>
-                  </div>
-                </ng-template>
-                <app-raw-resource [raw]="resourceFor(row)?.resource_raw"></app-raw-resource>
+        @if (!typedLoading) {
+          <div class="row">
+            <!-- Master rail -->
+            <div class="col-md-4 col-lg-3 mg-b-20">
+              <div class="list-group">
+                @for (g of groups; track g) {
+                  <button type="button"
+                    class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+                    [class.active]="g.key === selectedKey"
+                    [class.tx-gray-500]="g.isUnknown"
+                    (click)="selectGroup(g.key)">
+                    <span class="text-truncate mg-r-10">
+                      {{ g.label }}
+                      @if (g.subLabel) {
+                        <small class="d-block tx-11" [ngClass]="g.key === selectedKey ? 'tx-white-8' : 'tx-gray-500'">{{ g.subLabel }}</small>
+                      }
+                    </span>
+                    <span class="badge rounded-pill" [ngClass]="g.key === selectedKey ? 'bg-light tx-gray-700' : 'bg-secondary'">{{ g.count }}</span>
+                  </button>
+                }
               </div>
             </div>
+            <!-- Detail pane: selected group's records by date -->
+            <div class="col-md-8 col-lg-9">
+              @if (!selectedGroup) {
+                <div class="tx-gray-500 pd-20">Select a group to view its records.</div>
+              }
+              @if (selectedGroup && detailBuckets.length === 0) {
+                <div class="tx-gray-500 pd-20">
+                  No visits or records are linked to this {{ dimension }} yet.
+                </div>
+              }
+              @for (bucket of detailBuckets; track trackBucket($index, bucket)) {
+                <div class="mg-b-20">
+                  <h6 class="az-content-label tx-gray-600 mg-b-10">{{ bucket.date ? (bucket.date | date) : 'Undated' }}</h6>
+                  @for (row of bucket.rows; track trackRow($index, row)) {
+                    <div class="mg-b-15">
+                      @if (modelFor(row); as model) {
+                        <fhir-card [displayModel]="model" [showDetails]="false"></fhir-card>
+                      } @else {
+                        <div class="card pd-15">
+                          <a [routerLink]="['/explore', row.sourceId, 'resource', row.resourceId]">{{ row.title }}</a>
+                          <div class="tx-12 tx-gray-500">{{ row.resourceType | resourceTypeLabel }}</div>
+                        </div>
+                      }
+                      <app-raw-resource [raw]="resourceFor(row)?.resource_raw"></app-raw-resource>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
           </div>
-        </div>
+        }
 
       </ng-template>
 

@@ -3,7 +3,7 @@ import * as dwv from 'dwv';
 import {NgbModal, NgbModalModule, NgbPaginationModule, NgbTooltipModule} from '@ng-bootstrap/ng-bootstrap';
 import { VERSION } from '@angular/core';
 import {BinaryModel} from '../../../../../lib/models/resources/binary-model';
-import {CommonModule} from "@angular/common";
+
 // Copied from https://raw.githubusercontent.com/ivmartel/dwv-angular/master/src/app/dwv/dwv.component.ts
 
 // gui overrides
@@ -18,7 +18,7 @@ dwv.image.decoderScripts = {
 
 
 @Component({
-    imports: [CommonModule, NgbModalModule, NgbTooltipModule, NgbPaginationModule],
+    imports: [NgbModalModule, NgbTooltipModule, NgbPaginationModule],
     providers: [NgbModalModule],
     selector: 'fhir-dicom',
     templateUrl: './dicom.component.html',

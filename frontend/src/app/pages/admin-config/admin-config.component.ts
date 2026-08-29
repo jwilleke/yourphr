@@ -1,5 +1,5 @@
 import {Component, OnInit} from '@angular/core';
-import {CommonModule} from '@angular/common';
+
 import {FormsModule} from '@angular/forms';
 import {FastenApiService} from '../../services/fasten-api.service';
 import {AdminConfig, ConfigEntry} from '../../models/fasten/admin-config';
@@ -19,7 +19,7 @@ type TabId = 'current' | 'custom' | 'defaults';
 // form would only ever produce errors. Overriding any known key is done from the rows themselves.
 @Component({
   standalone: true,
-  imports: [CommonModule, FormsModule, AdminBackLinkComponent, LoadingSpinnerComponent],
+  imports: [FormsModule, AdminBackLinkComponent, LoadingSpinnerComponent],
   selector: 'app-admin-config',
   templateUrl: './admin-config.component.html',
   styleUrls: ['./admin-config.component.scss'],

@@ -5,151 +5,141 @@
       <!-- Header Row -->
       <report-header [reportHeaderTitle]="'Patient Profile'"></report-header>
 
-      <div *ngIf="!loading['page'] else isLoadingTemplate" class="ps-3 pe-3">
-        <!-- Patient Name Row -->
-        <div class="row mt-5 mb-3">
-          <div class="col-6">
-            <h1>{{patient | fhirPath: "Patient.name.family.first()"}}, {{patient | fhirPath: "Patient.name.given.first()"}}</h1>
-          </div>
-        </div>
-
-        <!-- Patient Details -->
-        <div class="row">
-          <div class="col-6">
-            <h2 class="tx-indigo">Patient</h2>
-
-            <div class="row">
-              <div class="col-6">
-                <strong class="tx-indigo">First Name:</strong>
-              </div>
-              <div class="col-6">
-                {{patient | fhirPath: "Patient.name.given.first()"}}
-              </div>
-
-              <div class="col-6">
-                <strong class="tx-indigo">Last Name:</strong>
-              </div>
-              <div class="col-6">
-                {{patient | fhirPath: "Patient.name.family.first()"}}
-              </div>
-
-              <div class="col-6">
-                <strong class="tx-indigo">Gender:</strong>
-              </div>
-              <div class="col-6">
-                {{patient | fhirPath: "Patient.gender" | titlecase}}
-              </div>
-
-              <div class="col-6">
-                <strong class="tx-indigo">Martial Status:</strong>
-              </div>
-              <div class="col-6">
-                {{patient | fhirPath: "Patient.maritalStatus.text" | titlecase}}
-              </div>
-
-              <div class="col-6">
-                <strong class="tx-indigo">Religious Affil:</strong>
-              </div>
-              <div class="col-6">
-                {{ (patient | fhirPath: "Patient.extension('http://hl7.org/fhir/StructureDefinition/patient-religion').valueCodeableConcept.text") || 'Not recorded' }}
-              </div>
-
-              <div class="col-6">
-                <strong class="tx-indigo">Ethnicity:</strong>
-              </div>
-              <div class="col-6">
-                {{ (patient | fhirPath: "Patient.extension('http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity').extension('ombCategory').valueCoding.display") || 'Not recorded' }}
-              </div>
-
-              <div class="col-6">
-                <strong class="tx-indigo">Language:</strong>
-              </div>
-              <div class="col-6">
-                {{patient | fhirPath: "Patient.communication.language.text" | titlecase}}
-              </div>
-
-              <div class="col-6">
-                <strong class="tx-indigo">Address:</strong>
-              </div>
-              <div class="col-6">
-                {{patient | fhirPath: "Patient.address.line.first()"}}<br/>{{patient | fhirPath: "Patient.address.city.first()"}}, {{patient | fhirPath: "Patient.address.state.first()"}}, {{patient | fhirPath: "Patient.address.postalCode.first()"}}
-              </div>
-
-              <div class="col-6">
-                <strong class="tx-indigo">Date of Birth:</strong>
-              </div>
-              <div class="col-6">
-                {{patient | fhirPath: "Patient.birthDate" | date }}
-              </div>
-
-              <div class="col-6">
-                <strong class="tx-indigo">Phone:</strong>
-              </div>
-              <div class="col-6">
-                {{patient | fhirPath: "Patient.telecom.where(system='phone').value.first()"}}
-              </div>
-
-              <div class="col-6">
-                <strong class="tx-indigo">Email:</strong>
-              </div>
-              <div class="col-6">
-                {{patient | fhirPath: "Patient.telecom.where(system='email').value.first()"}}
-              </div>
-
-            </div>
-
-          </div>
-          <div class="col-6">
-            <h2 class="tx-indigo">Care Provider</h2>
-
-            <div class="row">
-              <div class="col-6">
-                <strong class="tx-indigo">Primary care:</strong>
-              </div>
-              <div class="col-6">
-                {{ (patient | fhirPath: "Patient.generalPractitioner.display.first()") || 'Not recorded in your record' }}
-              </div>
-            </div>
-            <p class="tx-gray-500 tx-12 mt-2">Only providers stated in your imported records are shown here.</p>
-          </div>
-        </div>
-
-
-        <!-- Allergies and Immunizations now have dedicated pages (/allergies, /immunizations) — #289. -->
-
-        <!-- Personal & social information (SDOH / health-concern) -->
-        <div class="row mt-5" *ngIf="profileItems.length > 0">
-          <div class="col-12">
-            <h2 class="tx-indigo">Personal &amp; social information</h2>
-            <p class="tx-gray-500">Personal, social, and lifestyle items from your records — separated from your active Medical Concerns.</p>
-            <div class="table-responsive">
-              <table class="table table-sm table-hover">
-                <thead><tr><th>Item</th><th>Status</th><th>Reported by</th></tr></thead>
-                <tbody>
-                  <tr *ngFor="let item of profileItems">
-                    <td>
-                      <strong>{{ item.title }}</strong>
-                      <span *ngIf="item.selfReported" class="badge text-bg-info mg-l-5" title="You reported this; it was not stated by a clinician in your records.">Self-reported</span>
-                      <div *ngIf="item.note" class="tx-gray-500 tx-12 mg-t-3">{{ item.note }}</div>
-                    </td>
-                    <td>{{ item.state }}</td>
-                    <td>{{ item.provenance?.display || '—' }}</td>
-                  </tr>
-                </tbody>
-              </table>
+      @if (!loading['page']) {
+        <div class="ps-3 pe-3">
+          <!-- Patient Name Row -->
+          <div class="row mt-5 mb-3">
+            <div class="col-6">
+              <h1>{{patient | fhirPath: "Patient.name.family.first()"}}, {{patient | fhirPath: "Patient.name.given.first()"}}</h1>
             </div>
           </div>
+          <!-- Patient Details -->
+          <div class="row">
+            <div class="col-6">
+              <h2 class="tx-indigo">Patient</h2>
+              <div class="row">
+                <div class="col-6">
+                  <strong class="tx-indigo">First Name:</strong>
+                </div>
+                <div class="col-6">
+                  {{patient | fhirPath: "Patient.name.given.first()"}}
+                </div>
+                <div class="col-6">
+                  <strong class="tx-indigo">Last Name:</strong>
+                </div>
+                <div class="col-6">
+                  {{patient | fhirPath: "Patient.name.family.first()"}}
+                </div>
+                <div class="col-6">
+                  <strong class="tx-indigo">Gender:</strong>
+                </div>
+                <div class="col-6">
+                  {{patient | fhirPath: "Patient.gender" | titlecase}}
+                </div>
+                <div class="col-6">
+                  <strong class="tx-indigo">Martial Status:</strong>
+                </div>
+                <div class="col-6">
+                  {{patient | fhirPath: "Patient.maritalStatus.text" | titlecase}}
+                </div>
+                <div class="col-6">
+                  <strong class="tx-indigo">Religious Affil:</strong>
+                </div>
+                <div class="col-6">
+                  {{ (patient | fhirPath: "Patient.extension('http://hl7.org/fhir/StructureDefinition/patient-religion').valueCodeableConcept.text") || 'Not recorded' }}
+                </div>
+                <div class="col-6">
+                  <strong class="tx-indigo">Ethnicity:</strong>
+                </div>
+                <div class="col-6">
+                  {{ (patient | fhirPath: "Patient.extension('http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity').extension('ombCategory').valueCoding.display") || 'Not recorded' }}
+                </div>
+                <div class="col-6">
+                  <strong class="tx-indigo">Language:</strong>
+                </div>
+                <div class="col-6">
+                  {{patient | fhirPath: "Patient.communication.language.text" | titlecase}}
+                </div>
+                <div class="col-6">
+                  <strong class="tx-indigo">Address:</strong>
+                </div>
+                <div class="col-6">
+                  {{patient | fhirPath: "Patient.address.line.first()"}}<br/>{{patient | fhirPath: "Patient.address.city.first()"}}, {{patient | fhirPath: "Patient.address.state.first()"}}, {{patient | fhirPath: "Patient.address.postalCode.first()"}}
+                </div>
+                <div class="col-6">
+                  <strong class="tx-indigo">Date of Birth:</strong>
+                </div>
+                <div class="col-6">
+                  {{patient | fhirPath: "Patient.birthDate" | date }}
+                </div>
+                <div class="col-6">
+                  <strong class="tx-indigo">Phone:</strong>
+                </div>
+                <div class="col-6">
+                  {{patient | fhirPath: "Patient.telecom.where(system='phone').value.first()"}}
+                </div>
+                <div class="col-6">
+                  <strong class="tx-indigo">Email:</strong>
+                </div>
+                <div class="col-6">
+                  {{patient | fhirPath: "Patient.telecom.where(system='email').value.first()"}}
+                </div>
+              </div>
+            </div>
+            <div class="col-6">
+              <h2 class="tx-indigo">Care Provider</h2>
+              <div class="row">
+                <div class="col-6">
+                  <strong class="tx-indigo">Primary care:</strong>
+                </div>
+                <div class="col-6">
+                  {{ (patient | fhirPath: "Patient.generalPractitioner.display.first()") || 'Not recorded in your record' }}
+                </div>
+              </div>
+              <p class="tx-gray-500 tx-12 mt-2">Only providers stated in your imported records are shown here.</p>
+            </div>
+          </div>
+          <!-- Allergies and Immunizations now have dedicated pages (/allergies, /immunizations) — #289. -->
+          <!-- Personal & social information (SDOH / health-concern) -->
+          @if (profileItems.length > 0) {
+            <div class="row mt-5">
+              <div class="col-12">
+                <h2 class="tx-indigo">Personal &amp; social information</h2>
+                <p class="tx-gray-500">Personal, social, and lifestyle items from your records — separated from your active Medical Concerns.</p>
+                <div class="table-responsive">
+                  <table class="table table-sm table-hover">
+                    <thead><tr><th>Item</th><th>Status</th><th>Reported by</th></tr></thead>
+                    <tbody>
+                      @for (item of profileItems; track item) {
+                        <tr>
+                          <td>
+                            <strong>{{ item.title }}</strong>
+                            @if (item.selfReported) {
+                              <span class="badge text-bg-info mg-l-5" title="You reported this; it was not stated by a clinician in your records.">Self-reported</span>
+                            }
+                            @if (item.note) {
+                              <div class="tx-gray-500 tx-12 mg-t-3">{{ item.note }}</div>
+                            }
+                          </td>
+                          <td>{{ item.state }}</td>
+                          <td>{{ item.provenance?.display || '—' }}</td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          }
         </div>
-
-      </div>
-
-      <ng-template #isLoadingTemplate>
+      } @else {
         <div class="row">
           <div class="col-12">
             <app-loading-spinner [loadingTitle]="'Please wait, loading patient profile...'"></app-loading-spinner>
           </div>
         </div>
-      </ng-template>
+      }
+
 
     </div>
   </div>

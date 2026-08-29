@@ -1,3 +1,7 @@
 
-<observation-bar-chart *ngIf="visualizationType == 'bar'" [observations]="observations"></observation-bar-chart>
-<observation-table *ngIf="visualizationType == 'table'" [observations]="observations"></observation-table>
+@if (visualizationType == 'bar') {
+  <observation-bar-chart [observations]="observations"></observation-bar-chart>
+}
+@if (visualizationType == 'table') {
+  <observation-table [observations]="observations"></observation-table>
+}

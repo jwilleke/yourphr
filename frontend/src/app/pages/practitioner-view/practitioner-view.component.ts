@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { ActivatedRoute, Router } from '@angular/router';
 import { FastenApiService } from '../../services/fasten-api.service';
 import { Practitioner } from 'src/app/models/fasten/practitioner';
@@ -17,7 +17,7 @@ interface ContactDataItem {
 
 @Component({
     selector: 'app-practitioner-view',
-    imports: [CommonModule],
+    imports: [],
     templateUrl: './practitioner-view.component.html',
     styleUrls: ['./practitioner-view.component.scss']
 })

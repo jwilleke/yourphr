@@ -1,10 +1,10 @@
 import {Component, Input, OnInit} from '@angular/core';
-import {CommonModule} from '@angular/common';
+
 import {BinaryModel} from '../../../../../lib/models/resources/binary-model';
 import {EMFJS, RTFJS, WMFJS} from 'rtf.js';
 
 @Component({
-    imports: [CommonModule],
+    imports: [],
     selector: 'fhir-rtf',
     templateUrl: './rtf.component.html',
     styleUrls: ['./rtf.component.scss']

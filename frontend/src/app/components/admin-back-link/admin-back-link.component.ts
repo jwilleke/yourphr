@@ -1,5 +1,5 @@
 import {Component} from '@angular/core';
-import {CommonModule} from '@angular/common';
+
 import {RouterModule} from '@angular/router';
 
 // AdminBackLinkComponent is the single, consistent "Back to Admin Dashboard" control placed at the top
@@ -8,7 +8,7 @@ import {RouterModule} from '@angular/router';
 // definition, identical look + action everywhere. Reached pages link back to /admin.
 @Component({
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [RouterModule],
   selector: 'app-admin-back-link',
   template: `
     <a routerLink="/admin" class="btn btn-sm btn-outline-secondary mg-b-20">

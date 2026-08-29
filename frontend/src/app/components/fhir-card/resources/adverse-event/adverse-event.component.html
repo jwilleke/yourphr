@@ -2,7 +2,9 @@
   <div class="card-header" (click)="isCollapsed = ! isCollapsed">
     <div>
       <h6 class="card-title">{{displayModel?.event_display || 'Adverse event'}}</h6>
-      <p class="card-text tx-gray-400" *ngIf="displayModel?.date"><strong>Date</strong> {{displayModel?.date | date}}</p>
+      @if (displayModel?.date) {
+        <p class="card-text tx-gray-400"><strong>Date</strong> {{displayModel?.date | date}}</p>
+      }
       <p class="card-text tx-12 tx-gray-500 mg-b-0">
         Unintended harm or near-miss related to care (not a planned treatment effect).
       </p>
@@ -12,7 +14,9 @@
   <div #collapse="ngbCollapse" [(ngbCollapse)]="isCollapsed" class="card-body">
     <fhir-ui-table [displayModel]="displayModel" [tableData]="tableData"></fhir-ui-table>
   </div>
-  <div *ngIf="showDetails" class="card-footer">
-    <a class="float-end" [routerLink]="['/explore', displayModel?.source_id, 'resource', displayModel?.source_resource_id]">details</a>
-  </div>
+  @if (showDetails) {
+    <div class="card-footer">
+      <a class="float-end" [routerLink]="['/explore', displayModel?.source_id, 'resource', displayModel?.source_resource_id]">details</a>
+    </div>
+  }
 </div>

@@ -1,5 +1,5 @@
 import {Component, OnDestroy, OnInit} from '@angular/core';
-import {CommonModule} from '@angular/common';
+
 import {ActivatedRoute, RouterModule} from '@angular/router';
 import {Subscription} from 'rxjs';
 import {FastenApiService} from '../../services/fasten-api.service';
@@ -15,7 +15,7 @@ import {LegalDocument} from '../../models/fasten/legal-document';
 // sign-in page links here.
 @Component({
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [RouterModule],
   selector: 'app-legal-document',
   templateUrl: './legal-document.component.html',
   styleUrls: ['./legal-document.component.scss'],

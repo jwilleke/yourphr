@@ -4,10 +4,12 @@
       <app-admin-back-link></app-admin-back-link>
       <h2 class="az-content-title">Create New User</h2>
 
-      <div *ngIf="errorMessage" class="alert alert-danger alert-dismissible fade show" role="alert">
-        {{ errorMessage }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close" (click)="errorMessage = null"></button>
-      </div>
+      @if (errorMessage) {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+          {{ errorMessage }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close" (click)="errorMessage = null"></button>
+        </div>
+      }
 
       <form [formGroup]="userForm" (ngSubmit)="onSubmit()">
         <div class="mb-3">
@@ -28,9 +30,11 @@
             <option value="user" selected>User</option>
             <option value="admin">Admin</option>
           </select>
-          <div *ngIf="userForm.get('role')?.value === 'admin'" class="text-danger mt-2">
-            <strong>Warning:</strong> This will allow full system access including the ability to manage other users.
-          </div>
+          @if (userForm.get('role')?.value === 'admin') {
+            <div class="text-danger mt-2">
+              <strong>Warning:</strong> This will allow full system access including the ability to manage other users.
+            </div>
+          }
         </div>
         <div class="mb-3">
           <label for="email">Email</label>

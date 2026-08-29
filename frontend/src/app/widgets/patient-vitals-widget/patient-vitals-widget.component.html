@@ -15,15 +15,17 @@
       <p class="card-text">{{name}} | {{age}} | {{gender | titlecase}}</p>
     </div><!-- card-header -->
     <div class="card-body">
-      <div *ngFor="let vitalSignData of vitalSigns" class="az-list-item">
-        <div>
-          <h6>{{vitalSignData.display}}</h6>
-          <span>{{vitalSignData.date | date:'longDate'}}</span>
+      @for (vitalSignData of vitalSigns; track vitalSignData) {
+        <div class="az-list-item">
+          <div>
+            <h6>{{vitalSignData.display}}</h6>
+            <span>{{vitalSignData.date | date:'longDate'}}</span>
+          </div>
+          <div>
+            <h6 class="tx-primary">{{vitalSignData.value | number:'1.1-2'}} {{vitalSignData.unit}}</h6>
+          </div>
         </div>
-        <div>
-          <h6 class="tx-primary">{{vitalSignData.value | number:'1.1-2'}} {{vitalSignData.unit}}</h6>
-        </div>
-      </div><!-- list-group-item -->
-    </div><!-- card-body -->
-  </div>
-</ng-template><!-- card -->
+        }<!-- list-group-item -->
+      </div><!-- card-body -->
+    </div>
+  </ng-template><!-- card -->

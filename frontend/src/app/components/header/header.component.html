@@ -29,9 +29,11 @@
         <li class="nav-item" ngbDropdown [ngClass]="{ 'active': sources?.isActive }">
           <a routerLink="/sources" routerLinkActive="active" #sources="routerLinkActive" class="nav-link"><fa-icon [icon]="['fas', 'hospital']"></fa-icon>&nbsp; Sources</a>
         </li>
-        <li class="nav-item" *ngIf="isAdmin" ngbDropdown [ngClass]="{ 'active': users?.isActive }">
-          <a routerLink="/users" routerLinkActive="active" #users="routerLinkActive" class="nav-link"><fa-icon [icon]="['fas', 'users']"></fa-icon>&nbsp; Users</a>
-        </li>
+        @if (isAdmin) {
+          <li class="nav-item" ngbDropdown [ngClass]="{ 'active': users?.isActive }">
+            <a routerLink="/users" routerLinkActive="active" #users="routerLinkActive" class="nav-link"><fa-icon [icon]="['fas', 'users']"></fa-icon>&nbsp; Users</a>
+          </li>
+        }
         <li class="nav-item" ngbDropdown [ngClass]="{ 'active': practitioners?.isActive }">
           <a routerLink="/practitioners" routerLinkActive="active" #practitioners="routerLinkActive" class="nav-link"><fa-icon [icon]="['fas', 'id-card']"></fa-icon>&nbsp; Address book</a>
         </li>
@@ -52,159 +54,189 @@
           <h6 class="az-notification-title">Notifications</h6>
           <p class="az-notification-text">Background Jobs & Updates</p>
           <div class="az-notification-list">
-            <a *ngFor="let backgroundJob of backgroundJobs" class="media new" routerLink="/background-jobs">
-              <div><img imageFallback style="max-width:50px;" src="assets/sources/{{backgroundJob.data?.brand_id}}.png" alt=""></div>
-              <div class="media-body">
-                <p><strong>{{backgroundJob.data?.source_type}}</strong> added {{backgroundJob.data?.checkpoint_data?.summary?.UpdatedResources?.length}} new records</p>
-                <span>{{backgroundJob.done_time | date:'MMM dd hh:mma'}}</span>
-              </div><!-- media-body -->
-            </a><!-- media -->
-          </div><!-- az-notification-list -->
-          <div class="dropdown-footer"><a routerLink="/background-jobs">View History</a></div>
-        </div><!-- dropdown-menu -->
-      </div><!-- az-header-notification -->
-      <div class="az-header-theme-toggle" >
-        <a class="" (click)="toggleTheme()" >
-          <img *ngIf="isDarkMode" src="assets/icons/sun.svg" alt="Light mode" class="theme-icon">
-          <img *ngIf="!isDarkMode" src="assets/icons/moon.svg" alt="Dark mode" class="theme-icon">
-        </a>
-      </div>
-      <div class="dropdown az-profile-menu" ngbDropdown>
-        <a class="az-img-user" id="profileDropdown" ngbDropdownToggle [attr.aria-label]="'Account: ' + (current_user_claims.full_name || current_user_claims.sub)"><span class="az-img-initials">{{userInitials}}</span></a>
-        <div class="dropdown-menu" ngbDropdownMenu aria-labelledby="profileDropdown">
-          <div class="az-dropdown-header d-sm-none">
-            <a class="az-header-arrow" (click)="closeMenu($event)"><i class="icon ion-md-arrow-back"></i></a>
-          </div>
-          <div [routerLink]="'/patient-profile'" class="az-header-profile cursor-pointer">
-            <div class="az-img-user">
-              <span class="az-img-initials">{{userInitials}}</span>
-            </div><!-- az-img-user -->
-            <h6>{{current_user_claims.full_name || current_user_claims.sub || current_user_claims.email }}</h6>
-            <span *ngIf="isAdmin">Administrator</span>
-          </div><!-- az-header-profile -->
+            @for (backgroundJob of backgroundJobs; track backgroundJob) {
+              <a class="media new" routerLink="/background-jobs">
+                <div><img imageFallback style="max-width:50px;" src="assets/sources/{{backgroundJob.data?.brand_id}}.png" alt=""></div>
+                <div class="media-body">
+                  <p><strong>{{backgroundJob.data?.source_type}}</strong> added {{backgroundJob.data?.checkpoint_data?.summary?.UpdatedResources?.length}} new records</p>
+                  <span>{{backgroundJob.done_time | date:'MMM dd hh:mma'}}</span>
+                </div><!-- media-body -->
+              </a>
+              }<!-- media -->
+            </div><!-- az-notification-list -->
+            <div class="dropdown-footer"><a routerLink="/background-jobs">View History</a></div>
+          </div><!-- dropdown-menu -->
+        </div><!-- az-header-notification -->
+        <div class="az-header-theme-toggle" >
+          <a class="" (click)="toggleTheme()" >
+            @if (isDarkMode) {
+              <img src="assets/icons/sun.svg" alt="Light mode" class="theme-icon">
+            }
+            @if (!isDarkMode) {
+              <img src="assets/icons/moon.svg" alt="Dark mode" class="theme-icon">
+            }
+          </a>
+        </div>
+        <div class="dropdown az-profile-menu" ngbDropdown>
+          <a class="az-img-user" id="profileDropdown" ngbDropdownToggle [attr.aria-label]="'Account: ' + (current_user_claims.full_name || current_user_claims.sub)"><span class="az-img-initials">{{userInitials}}</span></a>
+          <div class="dropdown-menu" ngbDropdownMenu aria-labelledby="profileDropdown">
+            <div class="az-dropdown-header d-sm-none">
+              <a class="az-header-arrow" (click)="closeMenu($event)"><i class="icon ion-md-arrow-back"></i></a>
+            </div>
+            <div [routerLink]="'/patient-profile'" class="az-header-profile cursor-pointer">
+              <div class="az-img-user">
+                <span class="az-img-initials">{{userInitials}}</span>
+              </div><!-- az-img-user -->
+              <h6>{{current_user_claims.full_name || current_user_claims.sub || current_user_claims.email }}</h6>
+              @if (isAdmin) {
+                <span>Administrator</span>
+              }
+            </div><!-- az-header-profile -->
 
-          <a (click)="openSupportForm(content)" class="dropdown-item  cursor-pointer"><i style="font-size: medium;" class="fas fa-question-circle"></i> Get Support</a>
-          <a *ngIf="!is_environment_desktop" class="dropdown-item cursor-pointer" href="https://yourphr.org" externalLink><i style="font-size: medium;" class="fas fa-hand-holding-medical"></i> Donate</a>
-          <a *ngIf="isAdmin" routerLink="/admin" class="dropdown-item cursor-pointer"><i style="font-size: medium;" class="fas fa-cogs"></i> Admin Dashboard</a>
-          <a routerLink="/account-profile" class="dropdown-item cursor-pointer"><i style="font-size: medium;" class="fas fa-user-cog"></i> Account Profile</a>
-          <a (click)="signOut($event)" class="dropdown-item  cursor-pointer"><i style="font-size: medium;" class="fas fa-power-off"></i> Sign Out</a>
-        </div><!-- dropdown-menu -->
-      </div>
-    </div><!-- az-header-right -->
-  </div><!-- container -->
-</div><!-- az-header -->
+            <a (click)="openSupportForm(content)" class="dropdown-item  cursor-pointer"><i style="font-size: medium;" class="fas fa-question-circle"></i> Get Support</a>
+            @if (!is_environment_desktop) {
+              <a class="dropdown-item cursor-pointer" href="https://yourphr.org" externalLink><i style="font-size: medium;" class="fas fa-hand-holding-medical"></i> Donate</a>
+            }
+            @if (isAdmin) {
+              <a routerLink="/admin" class="dropdown-item cursor-pointer"><i style="font-size: medium;" class="fas fa-cogs"></i> Admin Dashboard</a>
+            }
+            <a routerLink="/account-profile" class="dropdown-item cursor-pointer"><i style="font-size: medium;" class="fas fa-user-cog"></i> Account Profile</a>
+            <a (click)="signOut($event)" class="dropdown-item  cursor-pointer"><i style="font-size: medium;" class="fas fa-power-off"></i> Sign Out</a>
+          </div><!-- dropdown-menu -->
+        </div>
+      </div><!-- az-header-right -->
+    </div><!-- container -->
+  </div><!-- az-header -->
 
-<!-- Read-only demo admin (#516). Persistent and above the content, because the honest thing to tell
-     someone touring an admin screen is that nothing they press will take effect — the API refuses
-     every change from this account, whatever the buttons look like. -->
-<div *ngIf="isReadOnlyDemoAdmin" class="alert alert-warning rounded-0 mb-0 py-2 text-center" role="status">
-  <strong>Read-only demo.</strong>
-  You are signed in as the demo's admin account, so you can see how this instance is configured — nothing you change here is saved.
-</div>
+  <!-- Read-only demo admin (#516). Persistent and above the content, because the honest thing to tell
+  someone touring an admin screen is that nothing they press will take effect — the API refuses
+  every change from this account, whatever the buttons look like. -->
+  @if (isReadOnlyDemoAdmin) {
+    <div class="alert alert-warning rounded-0 mb-0 py-2 text-center" role="status">
+      <strong>Read-only demo.</strong>
+      You are signed in as the demo's admin account, so you can see how this instance is configured — nothing you change here is saved.
+    </div>
+  }
 
 
-<ng-template #content let-modal>
-  <div class="modal-header">
-    <h4 class="modal-title">Get Support</h4>
-    <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss('Cross click')"></button>
-  </div>
-  <div class="modal-body">
-    <ngb-accordion #acc="ngbAccordion" activeIds="ngb-panel-0">
-      <ngb-panel title="File an Issue">
-        <ng-template ngbPanelContent>
+  <ng-template #content let-modal>
+    <div class="modal-header">
+      <h4 class="modal-title">Get Support</h4>
+      <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss('Cross click')"></button>
+    </div>
+    <div class="modal-body">
+      <ngb-accordion #acc="ngbAccordion" activeIds="ngb-panel-0">
+        <ngb-panel title="File an Issue">
+          <ng-template ngbPanelContent>
 
-          <p>If you're having issues with YourPHR, you can use this form to file a ticket.</p>
-          <div class="alert alert-warning" role="alert">
-            <strong>Your Privacy is Important</strong> None of the information provided in this form will be made public,
-            however we will anonymize & summarize the content before creating a <a href="https://github.com/jwilleke/yourphr/issues" externalLink><i class="fab fa-github"></i> Github Issue</a> for tracking purposes.
-          </div>
+            <p>If you're having issues with YourPHR, you can use this form to file a ticket.</p>
+            <div class="alert alert-warning" role="alert">
+              <strong>Your Privacy is Important</strong> None of the information provided in this form will be made public,
+              however we will anonymize & summarize the content before creating a <a href="https://github.com/jwilleke/yourphr/issues" externalLink><i class="fab fa-github"></i> Github Issue</a> for tracking purposes.
+            </div>
 
-          <form *ngIf="!submitSuccess; else supportRequestSuccess" (ngSubmit)="submitSupportForm()" #supportRequestForm="ngForm">
-
-            <div class="mb-3">
-              <div class="row">
-                <div class="col-6">
-                  <label class="az-content-label tx-11 tx-medium tx-gray-600">Name</label>
-                  <input [(ngModel)]="newSupportRequest.full_name" name="full_name" #full_name="ngModel" required minlength="2" type="text" class="form-control" placeholder="Enter your name">
-
-                  <div *ngIf="full_name.invalid && (full_name.dirty || full_name.touched)" class="alert alert-danger">
-                    <div *ngIf="full_name.errors?.['required']">
-                      Name is required.
+            @if (!submitSuccess) {
+              <form (ngSubmit)="submitSupportForm()" #supportRequestForm="ngForm">
+                <div class="mb-3">
+                  <div class="row">
+                    <div class="col-6">
+                      <label class="az-content-label tx-11 tx-medium tx-gray-600">Name</label>
+                      <input [(ngModel)]="newSupportRequest.full_name" name="full_name" #full_name="ngModel" required minlength="2" type="text" class="form-control" placeholder="Enter your name">
+                      @if (full_name.invalid && (full_name.dirty || full_name.touched)) {
+                        <div class="alert alert-danger">
+                          @if (full_name.errors?.['required']) {
+                            <div>
+                              Name is required.
+                            </div>
+                          }
+                          @if (full_name.errors?.['minlength']) {
+                            <div>
+                              Name must be at least 2 characters long.
+                            </div>
+                          }
+                        </div>
+                      }
                     </div>
-                    <div *ngIf="full_name.errors?.['minlength']">
-                      Name must be at least 2 characters long.
+                    <div class="col-6">
+                      <label class="az-content-label tx-11 tx-medium tx-gray-600">Email Address</label>
+                      <input [(ngModel)]="newSupportRequest.email" email  name="emailAddr" #emailAddr="ngModel" required minlength="4" type="text" class="form-control" autocapitalize="none" placeholder="Enter your email address">
+                      @if (emailAddr.invalid && (emailAddr.dirty || emailAddr.touched)) {
+                        <div class="alert alert-danger">
+                          @if (emailAddr.errors?.['required']) {
+                            <div>
+                              Email Address is required.
+                            </div>
+                          }
+                          @if (emailAddr.errors?.['minlength']) {
+                            <div>
+                              Email Address must be at least 4 characters long.
+                            </div>
+                          }
+                          @if (emailAddr.errors?.['email']) {
+                            <div>
+                              Email Address must be a valid email address.
+                            </div>
+                          }
+                        </div>
+                      }
                     </div>
                   </div>
-                </div>
-                <div class="col-6">
-                  <label class="az-content-label tx-11 tx-medium tx-gray-600">Email Address</label>
-                  <input [(ngModel)]="newSupportRequest.email" email  name="emailAddr" #emailAddr="ngModel" required minlength="4" type="text" class="form-control" autocapitalize="none" placeholder="Enter your email address">
-
-                  <div *ngIf="emailAddr.invalid && (emailAddr.dirty || emailAddr.touched)" class="alert alert-danger">
-                    <div *ngIf="emailAddr.errors?.['required']">
-                      Email Address is required.
+                </div><!-- mb-3 -->
+                <div class="mb-3">
+                  <label class="az-content-label tx-11 tx-medium tx-gray-600">Issue Description</label>
+                  <textarea [(ngModel)]="newSupportRequest.request_content" name="requestContent" #requestContent="ngModel" rows="3" class="form-control" placeholder="Please provide a detailed description of the issue that you're encountering" required minlength="4"></textarea>
+                  @if (requestContent.invalid && (requestContent.dirty || requestContent.touched)) {
+                    <div class="alert alert-danger">
+                      @if (requestContent.errors?.['required']) {
+                        <div>
+                          Issue Description is required.
+                        </div>
+                      }
+                      @if (requestContent.errors?.['minlength']) {
+                        <div>
+                          Issue Description must be at least 4 characters long.
+                        </div>
+                      }
                     </div>
-                    <div *ngIf="emailAddr.errors?.['minlength']">
-                      Email Address must be at least 4 characters long.
-                    </div>
-                    <div *ngIf="emailAddr.errors?.['email']">
-                      Email Address must be a valid email address.
-                    </div>
+                  }
+                </div><!-- mb-3 -->
+                <button [disabled]="!supportRequestForm.form.valid || loading" type="submit" class="btn btn-az-primary w-100">Submit Issue</button>
+                @if (errorMsg) {
+                  <div class="alert alert-danger mt-3" role="alert">
+                    <strong>Error</strong> {{errorMsg}}
                   </div>
-                </div>
+                }
+              </form>
+            } @else {
+              <div class="tx-center pd-y-20 pd-x-20">
+                <i class="far fa-check-square tx-100 tx-success lh-1 mg-t-20 d-inline-block"></i>
+                <h4 class="tx-success mg-b-20">Success!</h4>
+                <p class="mg-b-20 mg-x-20">Someone from the dev team will contact <br/>you shortly regarding your feedback. Thanks!</p>
+                <button type="button" (click)="resetSupportRequestForm()" class="btn btn-az-primary pd-x-25">Continue</button>
               </div>
+            }
 
-            </div><!-- mb-3 -->
 
-            <div class="mb-3">
-              <label class="az-content-label tx-11 tx-medium tx-gray-600">Issue Description</label>
-              <textarea [(ngModel)]="newSupportRequest.request_content" name="requestContent" #requestContent="ngModel" rows="3" class="form-control" placeholder="Please provide a detailed description of the issue that you're encountering" required minlength="4"></textarea>
-
-              <div *ngIf="requestContent.invalid && (requestContent.dirty || requestContent.touched)" class="alert alert-danger">
-                <div *ngIf="requestContent.errors?.['required']">
-                  Issue Description is required.
-                </div>
-                <div *ngIf="requestContent.errors?.['minlength']">
-                  Issue Description must be at least 4 characters long.
-                </div>
-              </div>
-            </div><!-- mb-3 -->
-
-            <button [disabled]="!supportRequestForm.form.valid || loading" type="submit" class="btn btn-az-primary w-100">Submit Issue</button>
-            <div *ngIf="errorMsg" class="alert alert-danger mt-3" role="alert">
-              <strong>Error</strong> {{errorMsg}}
-            </div>
-          </form>
-
-          <ng-template #supportRequestSuccess>
-            <div class="tx-center pd-y-20 pd-x-20">
-              <i class="far fa-check-square tx-100 tx-success lh-1 mg-t-20 d-inline-block"></i>
-              <h4 class="tx-success mg-b-20">Success!</h4>
-              <p class="mg-b-20 mg-x-20">Someone from the dev team will contact <br/>you shortly regarding your feedback. Thanks!</p>
-              <button type="button" (click)="resetSupportRequestForm()" class="btn btn-az-primary pd-x-25">Continue</button>
-            </div>
           </ng-template>
-
-        </ng-template>
-      </ngb-panel>
-      <ngb-panel title="Community Discussions & Support">
-        <ng-template ngbPanelContent>
-          <p>Whether you have questions or suggestions, we're here to help! Reach out to us through the following channels:</p>
-          <ul>
-            <li>
-              <a href="https://discord.gg/Bykz6BAN8p" externalLink><i class="fab fa-discord"></i> Discord Channel</a>
-            </li>
-            <li>
-              <a href="https://yourphr.org" externalLink><i class="fas fa-book"></i> Documentation</a>
-            </li>
-          </ul>
+        </ngb-panel>
+        <ngb-panel title="Community Discussions & Support">
+          <ng-template ngbPanelContent>
+            <p>Whether you have questions or suggestions, we're here to help! Reach out to us through the following channels:</p>
+            <ul>
+              <li>
+                <a href="https://discord.gg/Bykz6BAN8p" externalLink><i class="fab fa-discord"></i> Discord Channel</a>
+              </li>
+              <li>
+                <a href="https://yourphr.org" externalLink><i class="fas fa-book"></i> Documentation</a>
+              </li>
+            </ul>
 
 
-        </ng-template>
-      </ngb-panel>
-    </ngb-accordion>
-  </div>
-  <div class="modal-footer">
-    <button type="button" class="btn btn-outline-secondary" (click)="modal.close('Close click')">Close</button>
-  </div>
-</ng-template>
+          </ng-template>
+        </ngb-panel>
+      </ngb-accordion>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-outline-secondary" (click)="modal.close('Close click')">Close</button>
+    </div>
+  </ng-template>

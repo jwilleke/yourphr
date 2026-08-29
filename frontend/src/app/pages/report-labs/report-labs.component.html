@@ -10,14 +10,16 @@
       <ng-template #report>
 
         <!-- Report Details -->
-        <div class="row" *ngIf="reportDisplayModel">
-          <div class="col-12 mt-3 mb-3">
-            <h1 class="az-dashboard-title">Report Info</h1>
+        @if (reportDisplayModel) {
+          <div class="row">
+            <div class="col-12 mt-3 mb-3">
+              <h1 class="az-dashboard-title">Report Info</h1>
+            </div>
+            <div class="col-12">
+              <fhir-card [displayModel]="reportDisplayModel" [showDetails]="true"></fhir-card>
+            </div>
           </div>
-          <div class="col-12">
-            <fhir-card [displayModel]="reportDisplayModel" [showDetails]="true"></fhir-card>
-          </div>
-        </div>
+        }
 
 
 
@@ -34,15 +36,17 @@
               </button>
               <div ngbDropdownMenu aria-labelledby="dropdownReports">
                 <button ngbDropdownItem
-                        [class.active]="!reportSourceId && !reportResourceType && !reportResourceId"
-                        [routerLink]="'/labs'"
+                  [class.active]="!reportSourceId && !reportResourceType && !reportResourceId"
+                  [routerLink]="'/labs'"
                 >All</button>
                 <button ngbDropdownItem [disabled]="true">-----</button>
-                <button
-                  [class.active]="reportSourceId == diagnosticReport?.source_id && reportResourceType == diagnosticReport?.source_resource_type && reportResourceId == diagnosticReport?.source_resource_id"
-                  *ngFor="let diagnosticReport of diagnosticReports" ngbDropdownItem
-                  [routerLink]="'/labs/report/'+ diagnosticReport?.source_id + '/' + diagnosticReport?.source_resource_type + '/' + diagnosticReport?.source_resource_id"
-                >{{diagnosticReport?.sort_title}} [{{diagnosticReport?.sort_date | date:'longDate'}}]</button>
+                @for (diagnosticReport of diagnosticReports; track diagnosticReport) {
+                  <button
+                    [class.active]="reportSourceId == diagnosticReport?.source_id && reportResourceType == diagnosticReport?.source_resource_type && reportResourceId == diagnosticReport?.source_resource_id"
+                    ngbDropdownItem
+                    [routerLink]="'/labs/report/'+ diagnosticReport?.source_id + '/' + diagnosticReport?.source_resource_type + '/' + diagnosticReport?.source_resource_id"
+                  >{{diagnosticReport?.sort_title}} [{{diagnosticReport?.sort_date | date:'longDate'}}]</button>
+                }
               </div>
             </div>
             <div ngbDropdown class="d-inline-block float-end">
@@ -59,11 +63,13 @@
         </div>
 
         <!-- Observations List -->
-        <app-report-labs-observation *ngFor="let observationGroup of observationGroups |  keyvalue"
-                                     [observations]="observationGroup.value"
-                                     [observationCode]="observationGroup.key"
-                                     [observationTitle]="observationGroupTitles[observationGroup.key]"
-        ></app-report-labs-observation>
+        @for (observationGroup of observationGroups |  keyvalue; track observationGroup) {
+          <app-report-labs-observation
+            [observations]="observationGroup.value"
+            [observationCode]="observationGroup.key"
+            [observationTitle]="observationGroupTitles[observationGroup.key]"
+          ></app-report-labs-observation>
+        }
 
 
         <!-- Pagination -->
@@ -75,7 +81,7 @@
               [(page)]="currentPage"
               [pageSize]="pageSize"
               (pageChange)="populateObservationsForCurrentPage()"
-            >
+              >
             </ngb-pagination>
           </div>
         </div>

@@ -6,22 +6,25 @@
         {{eobDisplayModel?.sort_title ? eobDisplayModel?.sort_title : condition?.display ?  condition?.display : 'unknown'}}
       </div>
       <div class="col-6">
-        {{eobDisplayModel?.billablePeriod?.start | date }} <span *ngIf="eobDisplayModel?.billablePeriod?.end">- {{eobDisplayModel?.billablePeriod?.end | date}}</span>
-      </div>
+        {{eobDisplayModel?.billablePeriod?.start | date }} @if (eobDisplayModel?.billablePeriod?.end) {
+        <span>- {{eobDisplayModel?.billablePeriod?.end | date}}</span>
+      }
     </div>
-  </div><!-- card-header -->
-  <div class="card-body">
+  </div>
+</div><!-- card-header -->
+<div class="card-body">
 
-    <div class="row">
-      <!-- Condition Details -->
-      <!--      {{conditionDisplayModel | json}}-->
-      <div class="col-6 mb-2">
+  <div class="row">
+    <!-- Condition Details -->
+    <!--      {{conditionDisplayModel | json}}-->
+    <div class="col-6 mb-2">
 
-        <div *ngIf="involvedInCare.length > 0" class="row  ps-3">
+      @if (involvedInCare.length > 0) {
+        <div class="row  ps-3">
           <div class="col-12 mt-3 mb-2 tx-indigo">
             <p>Involved in Care</p>
           </div>
-          <ng-container *ngFor="let practitioner of involvedInCare">
+          @for (practitioner of involvedInCare; track practitioner) {
             <div class="col-6"  [ngClass]="{'cursor-pointer': !!practitioner.displayModel}" [disablePopover]="!!!practitioner.displayModel" [ngbPopover]="practitionerPopoverContent" placement="top-left" popoverClass="card-fhir-resource-popover">
               <strong>{{practitioner.displayName}}</strong>
             </div>
@@ -29,126 +32,141 @@
               {{practitioner.role}}
               <!-- TODO: add email address link here -->
             </div>
-
             <ng-template #practitionerPopoverContent>
               <fhir-card [displayModel]="practitioner.displayModel"></fhir-card>
             </ng-template>
-
-          </ng-container>
-
-
-          <div *ngIf="condition" class="col-12  mt-3 mb-2">
-            <p class="tx-indigo">Definition</p>
-            <app-glossary-lookup [code]="condition?.code" [codeSystem]="condition?.system"></app-glossary-lookup>
-          </div>
-
+          }
+          @if (condition) {
+            <div class="col-12  mt-3 mb-2">
+              <p class="tx-indigo">Definition</p>
+              <app-glossary-lookup [code]="condition?.code" [codeSystem]="condition?.system"></app-glossary-lookup>
+            </div>
+          }
         </div>
+      }
 
-        <div class="row pt-2" *ngIf="explanationOfBenefitGroup?.related_resources?.length > 0">
+      @if (explanationOfBenefitGroup?.related_resources?.length > 0) {
+        <div class="row pt-2">
           <div class="col-12">
             <a class="cursor-pointer tx-indigo" (click)="collapse.toggle()">show all</a>
             <div #collapse="ngbCollapse" [ngbCollapse]="true">
-
               <ul>
-                <li *ngFor="let resourceEntry of resourcesLookup | keyvalue" >
-                  <a class="cursor-pointer tx-indigo" [routerLink]="resourceEntry.key">
-                    {{resourceEntry.value.source_resource_type | resourceTypeLabel}} {{resourceEntry.value.sort_title ? '- '+resourceEntry.value.sort_title : '' }}
-                  </a>
-                </li>
+                @for (resourceEntry of resourcesLookup | keyvalue; track resourceEntry) {
+                  <li >
+                    <a class="cursor-pointer tx-indigo" [routerLink]="resourceEntry.key">
+                      {{resourceEntry.value.source_resource_type | resourceTypeLabel}} {{resourceEntry.value.sort_title ? '- '+resourceEntry.value.sort_title : '' }}
+                    </a>
+                  </li>
+                }
               </ul>
             </div>
           </div>
         </div>
+      }
 
 
-      </div>
-      <div class="col-6 bg-gray-100">
-        <div class="row">
+    </div>
+    <div class="col-6 bg-gray-100">
+      <div class="row">
 
-          <div class="col-6 mt-3 mb-2 tx-indigo">
-            <strong>{{eobDisplayModel?.billablePeriod?.start | date}}</strong>
-          </div>
-          <div class="col-6 mt-3 mb-2 tx-indigo">
-            <small>{{locations?.[0]?.name || 'unknown'}}</small>
-          </div>
+        <div class="col-6 mt-3 mb-2 tx-indigo">
+          <strong>{{eobDisplayModel?.billablePeriod?.start | date}}</strong>
+        </div>
+        <div class="col-6 mt-3 mb-2 tx-indigo">
+          <small>{{locations?.[0]?.name || 'unknown'}}</small>
+        </div>
 
-          <div *ngIf="eobDisplayModel?.related_resources?.MedicationRequest || eobDisplayModel?.related_resources?.Medication" class="col-12 mt-2 mb-2">
+        @if (eobDisplayModel?.related_resources?.MedicationRequest || eobDisplayModel?.related_resources?.Medication) {
+          <div class="col-12 mt-2 mb-2">
             <strong>Medications:</strong>
             <ul>
-              <li class="cursor-pointer" [ngbPopover]="medicationRequestPopoverContent" placement="top-left" popoverClass="card-fhir-resource-popover" *ngFor="let medication of eobDisplayModel?.related_resources?.MedicationRequest">
-                {{medication.display }}
-
-                <ng-template #medicationRequestPopoverContent>
-                  <fhir-card [displayModel]="medication"></fhir-card>
-                </ng-template>
-              </li>
-              <li class="cursor-pointer" [ngbPopover]="medicationPopoverContent" placement="top-left" popoverClass="card-fhir-resource-popover" *ngFor="let medication of eobDisplayModel?.related_resources?.Medication">
-                {{medication.title}}
-
-                <ng-template #medicationPopoverContent>
-                  <fhir-card [displayModel]="medication"></fhir-card>
-                </ng-template>
-              </li>
+              @for (medication of eobDisplayModel?.related_resources?.MedicationRequest; track medication) {
+                <li class="cursor-pointer" [ngbPopover]="medicationRequestPopoverContent" placement="top-left" popoverClass="card-fhir-resource-popover">
+                  {{medication.display }}
+                  <ng-template #medicationRequestPopoverContent>
+                    <fhir-card [displayModel]="medication"></fhir-card>
+                  </ng-template>
+                </li>
+              }
+              @for (medication of eobDisplayModel?.related_resources?.Medication; track medication) {
+                <li class="cursor-pointer" [ngbPopover]="medicationPopoverContent" placement="top-left" popoverClass="card-fhir-resource-popover">
+                  {{medication.title}}
+                  <ng-template #medicationPopoverContent>
+                    <fhir-card [displayModel]="medication"></fhir-card>
+                  </ng-template>
+                </li>
+              }
             </ul>
-
-
-
           </div>
+        }
 
 
-          <div *ngIf="procedures.length > 0" class="col-12 mt-2 mb-2">
+        @if (procedures.length > 0) {
+          <div class="col-12 mt-2 mb-2">
             <strong>Procedures:</strong>
             <ul>
-              <li class="cursor-pointer" [ngbPopover]="procedurePopoverContent" placement="top-left" popoverClass="card-fhir-resource-popover"  *ngFor="let procedure of procedures">
-                {{procedure.display}}
-
-                <ng-template #procedurePopoverContent>
-                  <fhir-card [displayModel]="procedure"></fhir-card>
-                </ng-template>
-              </li>
+              @for (procedure of procedures; track procedure) {
+                <li class="cursor-pointer" [ngbPopover]="procedurePopoverContent" placement="top-left" popoverClass="card-fhir-resource-popover" >
+                  {{procedure.display}}
+                  <ng-template #procedurePopoverContent>
+                    <fhir-card [displayModel]="procedure"></fhir-card>
+                  </ng-template>
+                </li>
+              }
             </ul>
           </div>
+        }
 
 
-          <div *ngIf="eobDisplayModel?.related_resources?.DiagnosticReport as diagnosticReports" class="col-12 mt-2 mb-2">
+        @if (eobDisplayModel?.related_resources?.DiagnosticReport; as diagnosticReports) {
+          <div class="col-12 mt-2 mb-2">
             <strong>Tests and Examinations:</strong>
             <ul>
-              <li class="cursor-pointer" [ngbPopover]="diagnosticReportPopoverContent" placement="top-left" popoverClass="card-fhir-resource-popover" *ngFor="let diagnosticReport of diagnosticReports">
-                {{diagnosticReport.title}}
-
-                <ng-template #diagnosticReportPopoverContent>
-                  <fhir-card [displayModel]="diagnosticReport"></fhir-card>
-                </ng-template>
-              </li>
+              @for (diagnosticReport of diagnosticReports; track diagnosticReport) {
+                <li class="cursor-pointer" [ngbPopover]="diagnosticReportPopoverContent" placement="top-left" popoverClass="card-fhir-resource-popover">
+                  {{diagnosticReport.title}}
+                  <ng-template #diagnosticReportPopoverContent>
+                    <fhir-card [displayModel]="diagnosticReport"></fhir-card>
+                  </ng-template>
+                </li>
+              }
             </ul>
           </div>
+        }
 
-          <div *ngIf="eobDisplayModel?.related_resources?.DocumentReference as documentReferences" class="col-12 mt-2 mb-2">
+        @if (eobDisplayModel?.related_resources?.DocumentReference; as documentReferences) {
+          <div class="col-12 mt-2 mb-2">
             <strong>Attachments:</strong>
             <ul>
-              <li class="cursor-pointer" [ngbPopover]="documentReferencePopoverContent" placement="top-left" popoverClass="card-fhir-resource-popover" *ngFor="let documentReference of documentReferences">
-                {{documentReference.sort_title}}
-
-                <ng-template #documentReferencePopoverContent>
-                  <fhir-card [displayModel]="documentReference"></fhir-card>
-                </ng-template>
-              </li>
+              @for (documentReference of documentReferences; track documentReference) {
+                <li class="cursor-pointer" [ngbPopover]="documentReferencePopoverContent" placement="top-left" popoverClass="card-fhir-resource-popover">
+                  {{documentReference.sort_title}}
+                  <ng-template #documentReferencePopoverContent>
+                    <fhir-card [displayModel]="documentReference"></fhir-card>
+                  </ng-template>
+                </li>
+              }
             </ul>
           </div>
+        }
 
-          <div *ngIf="eobDisplayModel?.related_resources?.Device as devices" class="col-12 mt-2 mb-2">
+        @if (eobDisplayModel?.related_resources?.Device; as devices) {
+          <div class="col-12 mt-2 mb-2">
             <strong>Device:</strong>
             <ul>
-              <li [routerLink]="['/explore', device?.source_id, 'resource', device?.source_resource_id]" *ngFor="let device of devices">
-                {{device.model}}
-              </li>
+              @for (device of devices; track device) {
+                <li [routerLink]="['/explore', device?.source_id, 'resource', device?.source_resource_id]">
+                  {{device.model}}
+                </li>
+              }
             </ul>
           </div>
+        }
 
-        </div>
       </div>
     </div>
+  </div>
 
 
-  </div><!-- card-body -->
+</div><!-- card-body -->
 </div>
