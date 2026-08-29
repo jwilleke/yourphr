@@ -4,7 +4,7 @@ import { GlossaryLookupComponent } from './glossary-lookup.component';
 import {FastenApiService} from '../../services/fasten-api.service';
 import {of} from 'rxjs';
 import {HTTP_CLIENT_TOKEN} from '../../dependency-injection';
-import { HttpClient, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { HttpClient, provideHttpClient, withInterceptorsFromDi, withXhr } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 
 describe('GlossaryLookupComponent', () => {
@@ -26,7 +26,7 @@ describe('GlossaryLookupComponent', () => {
             provide: HTTP_CLIENT_TOKEN,
             useClass: HttpClient,
         },
-        provideHttpClient(withInterceptorsFromDi()),
+        provideHttpClient(withXhr(), withInterceptorsFromDi()),
         provideHttpClientTesting(),
     ]
 })

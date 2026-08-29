@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import {DashboardWidgetComponent} from '../dashboard-widget/dashboard-widget.component';
 import {CommonModule} from '@angular/common';
 import {LoadingWidgetComponent} from '../loading-widget/loading-widget.component';
@@ -8,6 +8,7 @@ import {EmptyWidgetComponent} from '../empty-widget/empty-widget.component';
     imports: [CommonModule, LoadingWidgetComponent, EmptyWidgetComponent],
     selector: 'table-widget',
     templateUrl: './table-widget.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./table-widget.component.scss']
 })
 export class TableWidgetComponent  extends DashboardWidgetComponent implements OnInit {

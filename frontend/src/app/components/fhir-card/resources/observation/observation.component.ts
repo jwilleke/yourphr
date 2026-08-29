@@ -1,4 +1,4 @@
-import {ChangeDetectorRef, Component, Input, OnInit} from '@angular/core';
+import {ChangeDetectorRef, Component, Input, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import { NgbCollapseModule } from '@ng-bootstrap/ng-bootstrap';
 
 import {BadgeComponent} from '../../common/badge/badge.component';
@@ -14,6 +14,7 @@ import { ObservationVisualizationComponent } from '../../common/observation-visu
     providers: [],
     selector: 'fhir-observation',
     templateUrl: './observation.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./observation.component.scss']
 })
 export class ObservationComponent implements OnInit {

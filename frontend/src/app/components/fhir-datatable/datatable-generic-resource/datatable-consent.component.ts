@@ -1,4 +1,4 @@
-import {Component} from '@angular/core';
+import {Component, ChangeDetectionStrategy} from '@angular/core';
 import {GenericColumnDefn, DatatableGenericResourceComponent} from './datatable-generic-resource.component';
 
 /**
@@ -10,6 +10,7 @@ import {GenericColumnDefn, DatatableGenericResourceComponent} from './datatable-
     selector: 'fhir-datatable-consent',
     templateUrl: './datatable-generic-resource.component.html',
     styleUrls: ['./datatable-generic-resource.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class DatatableConsentComponent extends DatatableGenericResourceComponent {

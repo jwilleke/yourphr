@@ -1,4 +1,4 @@
-import {Component, OnInit, ViewChild} from '@angular/core';
+import {Component, OnInit, ViewChild, ChangeDetectionStrategy} from '@angular/core';
 import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 import {User} from '../../models/fasten/user';
 import {AuthService} from '../../services/auth.service';
@@ -19,6 +19,7 @@ class UserWizard extends User {
     selector: 'app-auth-signup-wizard',
     templateUrl: './auth-signup-wizard.component.html',
     styleUrls: ['./auth-signup-wizard.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class AuthSignupWizardComponent implements OnInit {

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import {FastenApiService} from '../../services/fasten-api.service';
 import {Source} from '../../models/fasten/source';
 import {forkJoin, of} from 'rxjs';
@@ -14,6 +14,7 @@ const EXPLORE_SHOW_SANDBOX_KEY = 'explore_show_sandbox_sources';
     selector: 'app-explore',
     templateUrl: './explore.component.html',
     styleUrls: ['./explore.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class ExploreComponent implements OnInit {

@@ -1,8 +1,9 @@
-import {Component, Input, OnInit} from '@angular/core';
+import {Component, Input, OnInit, ChangeDetectionStrategy} from '@angular/core';
 @Component({
   standalone: true,
   selector: 'fhir-ui-badge',
   templateUrl: './badge.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./badge.component.scss']
 })
 export class BadgeComponent implements OnInit {

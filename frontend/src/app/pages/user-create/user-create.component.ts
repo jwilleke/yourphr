@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { User } from '../../models/fasten/user';
 import { AuthService } from '../../services/auth.service';
@@ -12,6 +12,7 @@ import { AdminBackLinkComponent } from '../../components/admin-back-link/admin-b
     selector: 'app-user-create',
     templateUrl: './user-create.component.html',
     styleUrls: ['./user-create.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [ReactiveFormsModule, AdminBackLinkComponent]
 })
 export class UserCreateComponent implements OnInit {

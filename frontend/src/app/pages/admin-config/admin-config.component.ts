@@ -1,4 +1,4 @@
-import {Component, OnInit} from '@angular/core';
+import {Component, OnInit, ChangeDetectionStrategy} from '@angular/core';
 
 import {FormsModule} from '@angular/forms';
 import {FastenApiService} from '../../services/fasten-api.service';
@@ -22,6 +22,7 @@ type TabId = 'current' | 'custom' | 'defaults';
   imports: [FormsModule, AdminBackLinkComponent, LoadingSpinnerComponent],
   selector: 'app-admin-config',
   templateUrl: './admin-config.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./admin-config.component.scss'],
 })
 export class AdminConfigComponent implements OnInit {

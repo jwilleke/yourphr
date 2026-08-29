@@ -1,4 +1,4 @@
-import {Component, Input, OnInit} from '@angular/core';
+import {Component, Input, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {FastenApiService} from '../../services/fasten-api.service';
 import {DomSanitizer, SafeHtml} from '@angular/platform-browser';
 import {LoadingSpinnerComponent} from "../loading-spinner/loading-spinner.component";
@@ -11,6 +11,7 @@ import {DirectivesModule} from '../../directives/directives.module';
     providers: [FastenApiService, AuthService],
     selector: 'app-glossary-lookup',
     templateUrl: './glossary-lookup.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./glossary-lookup.component.scss']
 })
 export class GlossaryLookupComponent implements OnInit {

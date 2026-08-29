@@ -1,4 +1,4 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { NlmTypeaheadComponent } from '../nlm-typeahead/nlm-typeahead.component';
@@ -26,6 +26,7 @@ import { AddressModel } from 'src/lib/models/datatypes/address-model';
     ],
     selector: 'app-medical-record-wizard-edit-practitioner',
     templateUrl: './medical-record-wizard-edit-practitioner.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./medical-record-wizard-edit-practitioner.component.scss']
 })
 export class MedicalRecordWizardEditPractitionerComponent implements OnInit {

@@ -44,8 +44,8 @@
                   <button
                     [class.active]="reportSourceId == diagnosticReport?.source_id && reportResourceType == diagnosticReport?.source_resource_type && reportResourceId == diagnosticReport?.source_resource_id"
                     ngbDropdownItem
-                    [routerLink]="'/labs/report/'+ diagnosticReport?.source_id + '/' + diagnosticReport?.source_resource_type + '/' + diagnosticReport?.source_resource_id"
-                  >{{diagnosticReport?.sort_title}} [{{diagnosticReport?.sort_date | date:'longDate'}}]</button>
+                    [routerLink]="'/labs/report/'+ $safeNavigationMigration(diagnosticReport?.source_id) + '/' + $safeNavigationMigration(diagnosticReport?.source_resource_type) + '/' + $safeNavigationMigration(diagnosticReport?.source_resource_id)"
+                  >{{diagnosticReport?.sort_title}} [{{$safeNavigationMigration(diagnosticReport?.sort_date) | date:'longDate'}}]</button>
                 }
               </div>
             </div>

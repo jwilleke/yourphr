@@ -11,30 +11,30 @@
       </div><!-- az-header-menu-header -->
       <ul class="nav">
 
-        <li class="nav-item" ngbDropdown [ngClass]="{ 'active': dashboard?.isActive }">
+        <li class="nav-item" ngbDropdown [ngClass]="{ 'active': $safeNavigationMigration(dashboard?.isActive) }">
           <a routerLink="/dashboard" routerLinkActive="active" #dashboard="routerLinkActive" class="nav-link"><fa-icon [icon]="['fas', 'table-columns']"></fa-icon>&nbsp; Dashboard</a>
         </li>
-        <li class="nav-item" ngbDropdown [ngClass]="{ 'active': medicalHistory?.isActive }">
+        <li class="nav-item" ngbDropdown [ngClass]="{ 'active': $safeNavigationMigration(medicalHistory?.isActive) }">
           <a routerLink="/medical-history" routerLinkActive="active" #medicalHistory="routerLinkActive" class="nav-link"><fa-icon [icon]="['fas', 'book-medical']"></fa-icon>&nbsp; Medical History</a>
         </li>
-        <li class="nav-item" ngbDropdown [ngClass]="{ 'active': medications?.isActive }">
+        <li class="nav-item" ngbDropdown [ngClass]="{ 'active': $safeNavigationMigration(medications?.isActive) }">
           <a routerLink="/medications" routerLinkActive="active" #medications="routerLinkActive" class="nav-link"><fa-icon [icon]="['fas', 'pills']"></fa-icon>&nbsp; Medications</a>
         </li>
-        <li class="nav-item" ngbDropdown [ngClass]="{ 'active': labs?.isActive }">
+        <li class="nav-item" ngbDropdown [ngClass]="{ 'active': $safeNavigationMigration(labs?.isActive) }">
           <a routerLink="/labs" routerLinkActive="active" #labs="routerLinkActive" class="nav-link"><fa-icon [icon]="['fas', 'heart-pulse']"></fa-icon>&nbsp; Labs</a>
         </li>
-        <li class="nav-item" ngbDropdown [ngClass]="{ 'active': explore?.isActive }">
+        <li class="nav-item" ngbDropdown [ngClass]="{ 'active': $safeNavigationMigration(explore?.isActive) }">
           <a routerLink="/explore" routerLinkActive="active" #explore="routerLinkActive" class="nav-link"><fa-icon [icon]="['fas', 'folder-tree']"></fa-icon>&nbsp; Explore</a>
         </li>
-        <li class="nav-item" ngbDropdown [ngClass]="{ 'active': sources?.isActive }">
+        <li class="nav-item" ngbDropdown [ngClass]="{ 'active': $safeNavigationMigration(sources?.isActive) }">
           <a routerLink="/sources" routerLinkActive="active" #sources="routerLinkActive" class="nav-link"><fa-icon [icon]="['fas', 'hospital']"></fa-icon>&nbsp; Sources</a>
         </li>
         @if (isAdmin) {
-          <li class="nav-item" ngbDropdown [ngClass]="{ 'active': users?.isActive }">
+          <li class="nav-item" ngbDropdown [ngClass]="{ 'active': $safeNavigationMigration(users?.isActive) }">
             <a routerLink="/users" routerLinkActive="active" #users="routerLinkActive" class="nav-link"><fa-icon [icon]="['fas', 'users']"></fa-icon>&nbsp; Users</a>
           </li>
         }
-        <li class="nav-item" ngbDropdown [ngClass]="{ 'active': practitioners?.isActive }">
+        <li class="nav-item" ngbDropdown [ngClass]="{ 'active': $safeNavigationMigration(practitioners?.isActive) }">
           <a routerLink="/practitioners" routerLinkActive="active" #practitioners="routerLinkActive" class="nav-link"><fa-icon [icon]="['fas', 'id-card']"></fa-icon>&nbsp; Address book</a>
         </li>
 

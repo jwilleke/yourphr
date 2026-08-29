@@ -1,4 +1,4 @@
-import {Component, Input, OnInit, TemplateRef} from '@angular/core';
+import {Component, Input, OnInit, TemplateRef, ChangeDetectionStrategy} from '@angular/core';
 import * as dwv from 'dwv';
 import {NgbModal, NgbModalModule, NgbPaginationModule, NgbTooltipModule} from '@ng-bootstrap/ng-bootstrap';
 import { VERSION } from '@angular/core';
@@ -22,6 +22,7 @@ dwv.image.decoderScripts = {
     providers: [NgbModalModule],
     selector: 'fhir-dicom',
     templateUrl: './dicom.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./dicom.component.scss']
 })
 export class DicomComponent implements OnInit {

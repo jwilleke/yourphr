@@ -1,4 +1,4 @@
-import {Component, OnInit} from '@angular/core';
+import {Component, OnInit, ChangeDetectionStrategy} from '@angular/core';
 
 import {RouterModule} from '@angular/router';
 import {FastenApiService} from '../../services/fasten-api.service';
@@ -16,6 +16,7 @@ import {AuthService} from '../../services/auth.service';
   imports: [RouterModule],
   selector: 'app-contact',
   templateUrl: './contact.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./contact.component.scss'],
 })
 export class ContactComponent implements OnInit {

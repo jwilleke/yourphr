@@ -1,5 +1,5 @@
 import { CommonModule } from "@angular/common";
-import { ChangeDetectorRef, Component, Input, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, Input, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import { NgbCollapseModule } from "@ng-bootstrap/ng-bootstrap";
 import * as _ from "lodash";
@@ -13,6 +13,7 @@ import { FhirCardComponentInterface } from '../../fhir-card/fhir-card-component-
     imports: [NgbCollapseModule, CommonModule, BadgeComponent, TableComponent, RouterModule],
     selector: 'fhir-immunization',
     templateUrl: './immunization.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./immunization.component.scss']
 })
 export class ImmunizationComponent implements OnInit, FhirCardComponentInterface {

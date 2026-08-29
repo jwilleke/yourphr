@@ -4,7 +4,7 @@ import { MedicalRecordWizardEditMedicationComponent } from './medical-record-wiz
 import {NgbActiveModal, NgbModal} from '@ng-bootstrap/ng-bootstrap';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import {HTTP_CLIENT_TOKEN} from '../../dependency-injection';
-import { HttpClient, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { HttpClient, provideHttpClient, withInterceptorsFromDi, withXhr } from '@angular/common/http';
 
 describe('MedicalRecordWizardEditMedicationComponent', () => {
   let component: MedicalRecordWizardEditMedicationComponent;
@@ -16,7 +16,7 @@ describe('MedicalRecordWizardEditMedicationComponent', () => {
     providers: [NgbModal, NgbActiveModal, {
             provide: HTTP_CLIENT_TOKEN,
             useClass: HttpClient,
-        }, provideHttpClient(withInterceptorsFromDi()), provideHttpClientTesting()]
+        }, provideHttpClient(withXhr(), withInterceptorsFromDi()), provideHttpClientTesting()]
 })
     .compileComponents();
 

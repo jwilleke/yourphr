@@ -1,4 +1,4 @@
-import {ChangeDetectorRef, Component, Input, OnInit} from '@angular/core';
+import {ChangeDetectorRef, Component, Input, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {BinaryModel} from '../../../../../lib/models/resources/binary-model';
 import {FhirCardComponentInterface} from '../../fhir-card/fhir-card-component-interface';
 import {Router, RouterModule} from '@angular/router';
@@ -36,6 +36,7 @@ import {RtfComponent} from '../../datatypes/rtf/rtf.component';
     providers: [FastenApiService, AuthService],
     selector: 'fhir-binary',
     templateUrl: './binary.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./binary.component.scss']
 })
 export class BinaryComponent implements OnInit, FhirCardComponentInterface {

@@ -1,4 +1,4 @@
-import {Component, OnInit} from '@angular/core';
+import {Component, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 
 import {MedicalRecordWizardComponent} from '../../components/medical-record-wizard/medical-record-wizard.component';
@@ -8,6 +8,7 @@ import {Router} from '@angular/router';
     selector: 'app-resource-creator',
     templateUrl: './resource-creator.component.html',
     styleUrls: ['./resource-creator.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class ResourceCreatorComponent implements OnInit {

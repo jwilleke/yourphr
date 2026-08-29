@@ -1,4 +1,4 @@
-import {Component, Input, OnInit} from '@angular/core';
+import {Component, Input, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {ResourceFhir} from '../../models/fasten/resource_fhir';
 import {CareTeamModel} from '../../../lib/models/resources/care-team-model';
 import {PractitionerModel} from '../../../lib/models/resources/practitioner-model';
@@ -22,6 +22,7 @@ import {CodingModel} from '../../../lib/models/datatypes/coding-model';
     selector: 'app-report-medical-history-condition',
     templateUrl: './report-medical-history-condition.component.html',
     styleUrls: ['./report-medical-history-condition.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class ReportMedicalHistoryConditionComponent implements OnInit {

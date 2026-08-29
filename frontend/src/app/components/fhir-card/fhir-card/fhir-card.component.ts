@@ -55,7 +55,7 @@ import {PractitionerRoleComponent} from '../resources/practitioner-role/practiti
 
 @Component({
     selector: 'fhir-card',
-    changeDetection: ChangeDetectionStrategy.Default,
+    changeDetection: ChangeDetectionStrategy.Eager,
     templateUrl: './fhir-card.component.html',
     styleUrls: ['./fhir-card.component.scss'],
     standalone: false

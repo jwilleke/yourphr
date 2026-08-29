@@ -1,4 +1,4 @@
-import {Component, OnInit} from '@angular/core';
+import {Component, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {FastenApiService} from '../../services/fasten-api.service';
 import {environment} from '../../../environments/environment';
 import {
@@ -24,6 +24,7 @@ const defaultRelayPollSeconds = 55 // matches backend web.smart_connect.relay_po
   selector: 'app-sandbox',
   templateUrl: './sandbox.component.html',
   styleUrls: ['./sandbox.component.scss'],
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: false
 })
 export class SandboxComponent implements OnInit {

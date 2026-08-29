@@ -1,4 +1,4 @@
-import {Component, Input} from '@angular/core';
+import {Component, Input, ChangeDetectionStrategy} from '@angular/core';
 
 import {NgbTooltipModule} from '@ng-bootstrap/ng-bootstrap';
 
@@ -11,6 +11,7 @@ import {NgbTooltipModule} from '@ng-bootstrap/ng-bootstrap';
   imports: [NgbTooltipModule],
   selector: 'app-missing-data',
   templateUrl: './missing-data.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./missing-data.component.scss']
 })
 export class MissingDataComponent {

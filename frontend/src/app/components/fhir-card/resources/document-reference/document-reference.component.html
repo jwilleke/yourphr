@@ -3,10 +3,10 @@
     <div>
       <h6 class="card-title">{{displayModel?.title}}</h6>
       @if (displayModel?.created_at) {
-        <p class="card-text tx-gray-400"><strong>Created at</strong> {{displayModel?.created_at | date}}</p>
+        <p class="card-text tx-gray-400"><strong>Created at</strong> {{$safeNavigationMigration(displayModel?.created_at) | date}}</p>
       }
     </div>
-    <fhir-ui-badge class="float-end" [status]="displayModel?.status">{{displayModel?.status}}</fhir-ui-badge>
+    <fhir-ui-badge class="float-end" [status]="$safeNavigationMigration(displayModel?.status)">{{displayModel?.status}}</fhir-ui-badge>
     <!--    <div class="btn-group">-->
     <!--      <button class="btn active">Day</button>-->
     <!--      <button class="btn">Week</button>-->
@@ -24,7 +24,7 @@
             <li [ngbNavItem]="i">
               <a ngbNavLink>{{attachmentModel.contentType}}</a>
               <ng-template ngbNavContent>
-                <fhir-binary [attachmentModel]="attachmentModel" [attachmentSourceId]="displayModel?.source_id" ></fhir-binary>
+                <fhir-binary [attachmentModel]="attachmentModel" [attachmentSourceId]="$safeNavigationMigration(displayModel?.source_id)" ></fhir-binary>
               </ng-template>
             </li>
           }
@@ -32,7 +32,7 @@
         <div [ngbNavOutlet]="nav" class="mt-2"></div>
       } @else {
         @if (displayModel?.content?.length == 1) {
-          <fhir-binary  [attachmentModel]="displayModel?.content?.[0]" [attachmentSourceId]="displayModel?.source_id" ></fhir-binary>
+          <fhir-binary  [attachmentModel]="$safeNavigationMigration(displayModel?.content?.[0])" [attachmentSourceId]="$safeNavigationMigration(displayModel?.source_id)" ></fhir-binary>
         }
       }
     </div>
@@ -40,7 +40,7 @@
 </div>
 @if (showDetails) {
   <div class="card-footer">
-    <a class="float-end" [routerLink]="['/explore', displayModel?.source_id, 'resource', displayModel?.source_resource_id]">details</a>
+    <a class="float-end" [routerLink]="['/explore', $safeNavigationMigration(displayModel?.source_id), 'resource', $safeNavigationMigration(displayModel?.source_resource_id)]">details</a>
   </div>
 }
 </div>

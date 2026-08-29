@@ -1,4 +1,4 @@
-import {Component, OnInit, TemplateRef} from '@angular/core';
+import {Component, OnInit, TemplateRef, ChangeDetectionStrategy} from '@angular/core';
 import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 import {Router} from '@angular/router';
 import {AuthService} from '../../services/auth.service';
@@ -13,6 +13,7 @@ import {LegalConsentStatus} from '../../models/fasten/legal-consent';
   selector: 'app-account-profile',
   templateUrl: './account-profile.component.html',
   styleUrls: ['./account-profile.component.scss'],
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: false,
 })
 export class AccountProfileComponent implements OnInit {

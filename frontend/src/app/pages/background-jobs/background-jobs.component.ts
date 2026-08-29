@@ -1,4 +1,4 @@
-import {Component, OnDestroy, OnInit} from '@angular/core';
+import {Component, OnDestroy, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {FastenApiService} from '../../services/fasten-api.service';
 import {BackgroundJob} from '../../models/fasten/background-job';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
@@ -8,6 +8,7 @@ import {mergeMap} from 'rxjs/operators';
     selector: 'app-background-jobs',
     templateUrl: './background-jobs.component.html',
     styleUrls: ['./background-jobs.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class BackgroundJobsComponent implements OnInit, OnDestroy {

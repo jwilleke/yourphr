@@ -7,7 +7,7 @@
       }
     </div>
     <div>
-      <fhir-ui-badge [status]="displayModel?.status">{{displayModel?.status}}</fhir-ui-badge>
+      <fhir-ui-badge [status]="$safeNavigationMigration(displayModel?.status)">{{displayModel?.status}}</fhir-ui-badge>
       <ng-content select="[header]"></ng-content>
     </div>
   </div>
@@ -23,7 +23,7 @@
   </div>
   @if (showDetails) {
     <div class="card-footer">
-      <a class="float-end" [routerLink]="['/explore', displayModel?.source_id, 'resource', displayModel?.source_resource_id]">details</a>
+      <a class="float-end" [routerLink]="['/explore', $safeNavigationMigration(displayModel?.source_id), 'resource', $safeNavigationMigration(displayModel?.source_resource_id)]">details</a>
     </div>
   }
 </div>

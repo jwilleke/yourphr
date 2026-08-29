@@ -1,4 +1,4 @@
-import {Component, Input, OnInit} from '@angular/core';
+import {Component, Input, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators} from '@angular/forms';
 import {NlmTypeaheadComponent} from '../nlm-typeahead/nlm-typeahead.component';
@@ -30,6 +30,7 @@ import {ResourceType} from '../../../lib/models/constants';
     ],
     selector: 'app-medical-record-wizard-add-organization',
     templateUrl: './medical-record-wizard-add-organization.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./medical-record-wizard-add-organization.component.scss']
 })
 export class MedicalRecordWizardAddOrganizationComponent implements OnInit {

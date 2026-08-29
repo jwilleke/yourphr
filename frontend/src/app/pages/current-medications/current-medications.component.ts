@@ -1,4 +1,4 @@
-import {Component, OnInit} from '@angular/core';
+import {Component, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {RouterModule} from '@angular/router';
 import {NgbCollapseModule} from '@ng-bootstrap/ng-bootstrap';
@@ -18,6 +18,7 @@ type SortColumn = 'title' | 'state' | 'lastActivity';
   imports: [CommonModule, RouterModule, NgbCollapseModule, MissingDataComponent, LoadingSpinnerComponent],
   selector: 'app-current-medications',
   templateUrl: './current-medications.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./current-medications.component.scss'],
 })
 export class CurrentMedicationsComponent implements OnInit {

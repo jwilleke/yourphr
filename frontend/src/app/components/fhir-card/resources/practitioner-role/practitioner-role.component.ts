@@ -1,4 +1,4 @@
-import {ChangeDetectorRef, Component, Input, OnInit} from '@angular/core';
+import {ChangeDetectorRef, Component, Input, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {NgbCollapseModule} from '@ng-bootstrap/ng-bootstrap';
 
 import {Router, RouterModule} from '@angular/router';
@@ -12,6 +12,7 @@ import {PractitionerRoleModel} from '../../../../../lib/models/resources/practit
     imports: [NgbCollapseModule, BadgeComponent, TableComponent, RouterModule],
     selector: 'fhir-practitioner-role',
     templateUrl: './practitioner-role.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./practitioner-role.component.scss']
 })
 export class PractitionerRoleComponent implements OnInit, FhirCardComponentInterface {

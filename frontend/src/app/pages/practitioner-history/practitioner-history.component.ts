@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Practitioner } from 'src/app/models/fasten/practitioner';
 import { ResourceGraphResponse } from 'src/app/models/fasten/resource-graph-response';
@@ -9,6 +9,7 @@ import { FastenApiService } from 'src/app/services/fasten-api.service';
     selector: 'app-practitioner-history',
     templateUrl: './practitioner-history.component.html',
     styleUrls: ['./practitioner-history.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class PractitionerHistoryComponent implements OnInit {

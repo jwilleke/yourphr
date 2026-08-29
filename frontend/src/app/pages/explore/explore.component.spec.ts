@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { ExploreComponent } from './explore.component';
 import {HTTP_CLIENT_TOKEN} from '../../dependency-injection';
-import { HttpClient, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { HttpClient, provideHttpClient, withInterceptorsFromDi, withXhr } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ReportHeaderComponent } from 'src/app/components/report-header/report-header.component';
 import { LoadingSpinnerComponent } from 'src/app/components/loading-spinner/loading-spinner.component';
@@ -44,7 +44,7 @@ describe('ExploreComponent', () => {
             provide: HTTP_CLIENT_TOKEN,
             useClass: HttpClient,
         },
-        provideHttpClient(withInterceptorsFromDi()),
+        provideHttpClient(withXhr(), withInterceptorsFromDi()),
         provideHttpClientTesting(),
     ]
 })

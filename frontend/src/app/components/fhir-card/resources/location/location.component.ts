@@ -1,4 +1,4 @@
-import {ChangeDetectorRef, Component, Input, OnInit} from '@angular/core';
+import {ChangeDetectorRef, Component, Input, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {NgbCollapseModule} from '@ng-bootstrap/ng-bootstrap';
 
 import {BadgeComponent} from '../../common/badge/badge.component';
@@ -14,6 +14,7 @@ import {LocationModel} from '../../../../../lib/models/resources/location-model'
     imports: [NgbCollapseModule, BadgeComponent, TableComponent, RouterModule],
     selector: 'fhir-location',
     templateUrl: './location.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./location.component.scss']
 })
 export class LocationComponent implements OnInit, FhirCardComponentInterface {

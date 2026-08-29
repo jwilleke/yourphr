@@ -1,5 +1,5 @@
 import {Clipboard} from '@angular/cdk/clipboard';
-import {Component, Input} from '@angular/core';
+import {Component, Input, ChangeDetectionStrategy} from '@angular/core';
 
 /**
  * The one place raw FHIR is offered to a patient.
@@ -18,6 +18,7 @@ import {Component, Input} from '@angular/core';
 @Component({
   selector: 'app-raw-resource',
   templateUrl: './raw-resource.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: false,
 })
 export class RawResourceComponent {

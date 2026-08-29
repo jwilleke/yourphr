@@ -1,4 +1,4 @@
-import {ChangeDetectorRef, Component, Input, OnInit} from '@angular/core';
+import {ChangeDetectorRef, Component, Input, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {NgbCollapseModule} from '@ng-bootstrap/ng-bootstrap';
 
 import {Router, RouterModule} from '@angular/router';
@@ -23,6 +23,7 @@ import {money} from '../explanation-of-benefit/explanation-of-benefit.component'
   imports: [NgbCollapseModule, BadgeComponent, TableComponent, RouterModule],
   selector: 'fhir-claim',
   templateUrl: './claim.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./claim.component.scss'],
 })
 export class ClaimComponent implements OnInit, FhirCardComponentInterface {

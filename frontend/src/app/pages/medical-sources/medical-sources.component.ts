@@ -1,4 +1,4 @@
-import {Component, EventEmitter, OnInit, Optional, Output, TemplateRef, ViewChild} from '@angular/core';
+import {Component, EventEmitter, OnInit, Optional, Output, TemplateRef, ViewChild, ChangeDetectionStrategy} from '@angular/core';
 import {ConnectGatewayService} from '../../services/connect-gateway.service';
 import {FastenApiService} from '../../services/fasten-api.service';
 import {ConnectGatewaySourceMetadata} from '../../models/connect-gateway/connect-gateway-source-metadata';
@@ -49,6 +49,7 @@ export class SourceListItem {
     selector: 'app-medical-sources',
     templateUrl: './medical-sources.component.html',
     styleUrls: ['./medical-sources.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class MedicalSourcesComponent implements OnInit {

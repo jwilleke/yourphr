@@ -1,4 +1,4 @@
-import {Component, Input, OnInit} from '@angular/core';
+import {Component, Input, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {FormsModule} from '@angular/forms';
 import { NgbActiveModal, NgbModal } from '@ng-bootstrap/ng-bootstrap';
@@ -25,6 +25,7 @@ class RelatedNode {
     templateUrl: './report-medical-history-editor.component.html',
     styleUrls: ['./report-medical-history-editor.component.scss'],
     standalone: true,
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [CommonModule, FormsModule]
 })
 export class ReportMedicalHistoryEditorComponent implements OnInit {

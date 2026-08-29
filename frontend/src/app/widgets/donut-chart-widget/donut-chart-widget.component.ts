@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import {BaseChartDirective} from 'ng2-charts';
 import {ChartConfiguration} from 'chart.js';
 import {DashboardWidgetComponent} from '../dashboard-widget/dashboard-widget.component';
@@ -10,6 +10,7 @@ import {EmptyWidgetComponent} from '../empty-widget/empty-widget.component';
     imports: [BaseChartDirective, CommonModule, LoadingWidgetComponent, EmptyWidgetComponent],
     selector: 'donut-chart-widget',
     templateUrl: './donut-chart-widget.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./donut-chart-widget.component.scss']
 })
 export class DonutChartWidgetComponent extends DashboardWidgetComponent implements OnInit {

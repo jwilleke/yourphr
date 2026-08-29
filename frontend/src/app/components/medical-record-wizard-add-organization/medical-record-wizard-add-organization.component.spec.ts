@@ -4,7 +4,7 @@ import { MedicalRecordWizardAddOrganizationComponent } from './medical-record-wi
 import {NgbActiveModal, NgbModal, NgbModalModule} from '@ng-bootstrap/ng-bootstrap';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import {HTTP_CLIENT_TOKEN} from '../../dependency-injection';
-import { HttpClient, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { HttpClient, provideHttpClient, withInterceptorsFromDi, withXhr } from '@angular/common/http';
 
 describe('MedicalRecordWizardAddOrganizationComponent', () => {
   let component: MedicalRecordWizardAddOrganizationComponent;
@@ -16,7 +16,7 @@ describe('MedicalRecordWizardAddOrganizationComponent', () => {
     providers: [NgbModal, NgbActiveModal, {
             provide: HTTP_CLIENT_TOKEN,
             useClass: HttpClient,
-        }, provideHttpClient(withInterceptorsFromDi()), provideHttpClientTesting()]
+        }, provideHttpClient(withXhr(), withInterceptorsFromDi()), provideHttpClientTesting()]
 })
     .compileComponents();
 

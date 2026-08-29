@@ -1,4 +1,4 @@
-import {Component, Input, OnInit} from '@angular/core';
+import {Component, Input, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {ResourceFhir} from '../../models/fasten/resource_fhir';
 import {FastenDisplayModel} from '../../../lib/models/fasten/fasten-display-model';
 import {ResourceType} from '../../../lib/models/constants';
@@ -23,6 +23,7 @@ import {LocationModel} from '../../../lib/models/resources/location-model';
     selector: 'app-report-medical-history-explanation-of-benefit',
     templateUrl: './report-medical-history-explanation-of-benefit.component.html',
     styleUrls: ['./report-medical-history-explanation-of-benefit.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class ReportMedicalHistoryExplanationOfBenefitComponent implements OnInit {

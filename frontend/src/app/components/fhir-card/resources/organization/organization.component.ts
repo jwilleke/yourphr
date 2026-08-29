@@ -1,4 +1,4 @@
-import {ChangeDetectorRef, Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {ChangeDetectorRef, Component, EventEmitter, Input, OnInit, Output, ChangeDetectionStrategy} from '@angular/core';
 import {NgbCollapseModule} from '@ng-bootstrap/ng-bootstrap';
 
 import {BadgeComponent} from '../../common/badge/badge.component';
@@ -14,6 +14,7 @@ import { FastenDisplayModel } from 'src/lib/models/fasten/fasten-display-model';
     imports: [NgbCollapseModule, BadgeComponent, TableComponent, RouterModule],
     selector: 'fhir-organization',
     templateUrl: './organization.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./organization.component.scss']
 })
 export class OrganizationComponent implements OnInit, FhirCardEditableComponentInterface {

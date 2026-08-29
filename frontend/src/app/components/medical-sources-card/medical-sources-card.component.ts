@@ -1,4 +1,4 @@
-import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {Component, EventEmitter, Input, OnInit, Output, ChangeDetectionStrategy} from '@angular/core';
 import {SourceListItem} from '../../pages/medical-sources/medical-sources.component';
 import moment from 'moment/moment';
 
@@ -6,6 +6,7 @@ import moment from 'moment/moment';
     selector: 'app-medical-sources-card',
     templateUrl: './medical-sources-card.component.html',
     styleUrls: ['./medical-sources-card.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class MedicalSourcesCardComponent implements OnInit {

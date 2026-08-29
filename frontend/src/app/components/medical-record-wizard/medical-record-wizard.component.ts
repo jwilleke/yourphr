@@ -1,4 +1,4 @@
-import {Component, Input, OnInit} from '@angular/core';
+import {Component, Input, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {HighlightModule} from 'ngx-highlightjs';
 import {
   NgbActiveModal,
@@ -76,6 +76,7 @@ import { MedicationRequestModel } from 'src/lib/models/resources/medication-requ
     selector: 'app-medical-record-wizard',
     templateUrl: './medical-record-wizard.component.html',
     styleUrls: ['./medical-record-wizard.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     host: {
         class: 'medical-record-wizard',
     }

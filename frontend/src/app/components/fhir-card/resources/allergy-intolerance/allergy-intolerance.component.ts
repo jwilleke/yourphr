@@ -1,4 +1,4 @@
-import {ChangeDetectorRef, Component, Input, OnInit} from '@angular/core';
+import {ChangeDetectorRef, Component, Input, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {FhirCardComponentInterface} from '../../fhir-card/fhir-card-component-interface';
 import {TableRowItem, TableRowItemDataType} from '../../common/table/table-row-item';
 import {Router, RouterModule} from '@angular/router';
@@ -12,6 +12,7 @@ import {TableComponent} from "../../common/table/table.component";
     imports: [NgbCollapseModule, CommonModule, BadgeComponent, TableComponent, RouterModule],
     selector: 'fhir-allergy-intolerance',
     templateUrl: './allergy-intolerance.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./allergy-intolerance.component.scss']
 })
 export class AllergyIntoleranceComponent implements OnInit, FhirCardComponentInterface {

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import {BaseChartDirective} from 'ng2-charts';
 import {CommonModule} from '@angular/common';
 import {LoadingWidgetComponent} from '../loading-widget/loading-widget.component';
@@ -20,6 +20,7 @@ class GroupedSummary {
     imports: [CommonModule, LoadingWidgetComponent, EmptyWidgetComponent],
     selector: 'records-summary-widget',
     templateUrl: './records-summary-widget.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./records-summary-widget.component.scss']
 })
 export class RecordsSummaryWidgetComponent extends DashboardWidgetComponent implements OnInit {

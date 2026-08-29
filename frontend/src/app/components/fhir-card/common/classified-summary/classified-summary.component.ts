@@ -1,4 +1,4 @@
-import {Component, Input} from '@angular/core';
+import {Component, Input, ChangeDetectionStrategy} from '@angular/core';
 
 import {Classified} from '../../../../../lib/models/fasten/classified';
 
@@ -10,6 +10,7 @@ import {Classified} from '../../../../../lib/models/fasten/classified';
   standalone: true,
   imports: [],
   selector: 'fhir-ui-classified-summary',
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './classified-summary.component.html',
 })
 export class ClassifiedSummaryComponent {

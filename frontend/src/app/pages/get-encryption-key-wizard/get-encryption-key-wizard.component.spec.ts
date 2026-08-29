@@ -6,7 +6,7 @@ import { of } from 'rxjs';
 import { GetEncryptionKeyWizardComponent } from './get-encryption-key-wizard.component';
 import { FastenApiService } from '../../services/fasten-api.service';
 import { AuthService } from '../../services/auth.service';
-import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClient, withInterceptorsFromDi, withXhr } from '@angular/common/http';
 
 describe('GetEncryptionKeyWizardComponent', () => {
   let component: GetEncryptionKeyWizardComponent;
@@ -32,7 +32,7 @@ describe('GetEncryptionKeyWizardComponent', () => {
         { provide: Router, useValue: mockRouter },
         { provide: AuthService, useValue: mockAuthService },
         { provide: FastenApiService, useValue: mockFastenApiService },
-        provideHttpClient(withInterceptorsFromDi()),
+        provideHttpClient(withXhr(), withInterceptorsFromDi()),
         provideHttpClientTesting()
     ]
 })

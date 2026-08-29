@@ -1,4 +1,4 @@
-import {Component, OnInit} from '@angular/core';
+import {Component, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {User} from '../../models/fasten/user';
 import {ActivatedRoute, Router} from '@angular/router';
 import {ToastService} from '../../services/toast.service';
@@ -12,6 +12,7 @@ import {Location} from '@angular/common';
     selector: 'app-auth-signin',
     templateUrl: './auth-signin.component.html',
     styleUrls: ['./auth-signin.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class AuthSigninComponent implements OnInit {

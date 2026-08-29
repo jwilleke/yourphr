@@ -1,4 +1,4 @@
-import {Component, OnDestroy, OnInit} from '@angular/core';
+import {Component, OnDestroy, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {FormsModule} from '@angular/forms';
 import {FastenApiService} from '../../services/fasten-api.service';
@@ -15,6 +15,7 @@ import {extractErrorFromResponse} from '../../../lib/utils/error_extract';
   standalone: true,
   imports: [CommonModule, FormsModule, LoadingSpinnerComponent, AdminBackLinkComponent],
   selector: 'app-server-logs',
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './server-logs.component.html',
 })
 export class ServerLogsComponent implements OnInit, OnDestroy {

@@ -120,7 +120,7 @@
                         }
                         @for (practitioner of existingEncounter?.related_resources?.['Practitioner']; track practitioner; let i = $index) {
                           <option [value]="practitioner | referenceUri">
-                            {{practitioner?.name | humanName }} ({{practitioner?.profession?.text}})
+                            {{$safeNavigationMigration(practitioner?.name) | humanName }} ({{practitioner?.profession?.text}})
                           </option>
                         }
                         @if (practitioners.controls.length) {
@@ -221,7 +221,7 @@
                       }
                       @for (practitioner of existingEncounter?.related_resources?.['Practitioner']; track practitioner; let i = $index) {
                         <option [value]="practitioner | referenceUri">
-                          {{practitioner?.name | humanName }} ({{practitioner?.profession?.text}})
+                          {{$safeNavigationMigration(practitioner?.name) | humanName }} ({{practitioner?.profession?.text}})
                         </option>
                       }
                       @if (practitioners.controls.length) {
@@ -410,7 +410,7 @@
               <strong>Lab Results Status: {{labresultsGroup.status}}</strong>
             </div>
           }
-          <fhir-diagnostic-report class="fhir-card-callout-warning" [formGroup]="labresultsGroup"  [showDetails]="false" [displayModel]="labresultsGroup.controls.data.value?.entry?.[0]?.resource | fastenDisplayModel" [isCollapsed]="true">
+          <fhir-diagnostic-report class="fhir-card-callout-warning" [formGroup]="labresultsGroup"  [showDetails]="false" [displayModel]="$safeNavigationMigration(labresultsGroup.controls.data.value?.entry?.[0]?.resource) | fastenDisplayModel" [isCollapsed]="true">
             <div header>
               <span class="cursor-pointer float-end" (click)="deleteLabResults(i)" aria-hidden="true"><i class="fas fa-trash"></i></span>
             </div>

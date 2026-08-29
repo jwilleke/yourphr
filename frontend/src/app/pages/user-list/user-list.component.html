@@ -141,7 +141,7 @@ copying it means resetting again. Said plainly rather than discovered. -->
       — if you lose it, reset again.
     </p>
     <div class="input-group">
-      <input type="text" class="form-control tx-monospace" [value]="resetResult?.password" readonly aria-label="Generated password">
+      <input type="text" class="form-control tx-monospace" [value]="$safeNavigationMigration(resetResult?.password)" readonly aria-label="Generated password">
       <button class="btn btn-outline-secondary" type="button" (click)="copyPassword()">
         {{ copied ? 'Copied' : 'Copy' }}
       </button>

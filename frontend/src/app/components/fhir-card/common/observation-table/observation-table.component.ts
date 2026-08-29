@@ -1,4 +1,4 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { ObservationModel } from '../../../../../lib/models/resources/observation-model';
 import { formatDate } from '@angular/common';
 
@@ -6,6 +6,7 @@ import { formatDate } from '@angular/common';
     selector: 'observation-table',
     imports: [],
     templateUrl: './observation-table.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./observation-table.component.scss']
 })
 export class ObservationTableComponent implements OnInit {

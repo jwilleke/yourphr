@@ -1,4 +1,4 @@
-import {Component, Input, OnInit} from '@angular/core';
+import {Component, Input, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {CodingModel} from '../../../../../lib/models/datatypes/coding-model';
 
 
@@ -6,6 +6,7 @@ import {CodingModel} from '../../../../../lib/models/datatypes/coding-model';
     imports: [],
     selector: 'fhir-coding',
     templateUrl: './coding.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./coding.component.scss']
 })
 export class CodingComponent implements OnInit {

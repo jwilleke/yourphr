@@ -1,13 +1,13 @@
 <div class="card card-dashboard-seven mb-3">
   <div class="card-header tx-medium">
-    <div class="row cursor-pointer" [routerLink]="['/explore', eobDisplayModel?.source_id, 'resource', eobDisplayModel?.source_resource_id]">
+    <div class="row cursor-pointer" [routerLink]="['/explore', $safeNavigationMigration(eobDisplayModel?.source_id), 'resource', $safeNavigationMigration(eobDisplayModel?.source_resource_id)]">
       <!-- Condition Header -->
       <div class="col-6">
         {{eobDisplayModel?.sort_title ? eobDisplayModel?.sort_title : condition?.display ?  condition?.display : 'unknown'}}
       </div>
       <div class="col-6">
-        {{eobDisplayModel?.billablePeriod?.start | date }} @if (eobDisplayModel?.billablePeriod?.end) {
-        <span>- {{eobDisplayModel?.billablePeriod?.end | date}}</span>
+        {{$safeNavigationMigration(eobDisplayModel?.billablePeriod?.start) | date }} @if (eobDisplayModel?.billablePeriod?.end) {
+        <span>- {{$safeNavigationMigration(eobDisplayModel?.billablePeriod?.end) | date}}</span>
       }
     </div>
   </div>
@@ -39,7 +39,7 @@
           @if (condition) {
             <div class="col-12  mt-3 mb-2">
               <p class="tx-indigo">Definition</p>
-              <app-glossary-lookup [code]="condition?.code" [codeSystem]="condition?.system"></app-glossary-lookup>
+              <app-glossary-lookup [code]="$safeNavigationMigration(condition?.code)" [codeSystem]="$safeNavigationMigration(condition?.system)"></app-glossary-lookup>
             </div>
           }
         </div>
@@ -70,7 +70,7 @@
       <div class="row">
 
         <div class="col-6 mt-3 mb-2 tx-indigo">
-          <strong>{{eobDisplayModel?.billablePeriod?.start | date}}</strong>
+          <strong>{{$safeNavigationMigration(eobDisplayModel?.billablePeriod?.start) | date}}</strong>
         </div>
         <div class="col-6 mt-3 mb-2 tx-indigo">
           <small>{{locations?.[0]?.name || 'unknown'}}</small>
@@ -155,7 +155,7 @@
             <strong>Device:</strong>
             <ul>
               @for (device of devices; track device) {
-                <li [routerLink]="['/explore', device?.source_id, 'resource', device?.source_resource_id]">
+                <li [routerLink]="['/explore', $safeNavigationMigration(device?.source_id), 'resource', $safeNavigationMigration(device?.source_resource_id)]">
                   {{device.model}}
                 </li>
               }

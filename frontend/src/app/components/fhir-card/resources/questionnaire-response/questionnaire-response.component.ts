@@ -1,4 +1,4 @@
-import {ChangeDetectorRef, Component, Input, OnInit} from '@angular/core';
+import {ChangeDetectorRef, Component, Input, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {NgbCollapseModule} from '@ng-bootstrap/ng-bootstrap';
 import {CommonModule} from '@angular/common';
 import {BadgeComponent} from '../../common/badge/badge.component';
@@ -12,6 +12,7 @@ import {QuestionnaireResponseModel} from '../../../../../lib/models/resources/qu
     imports: [NgbCollapseModule, CommonModule, BadgeComponent, TableComponent, RouterModule],
     selector: 'fhir-questionnaire-response',
     templateUrl: './questionnaire-response.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./questionnaire-response.component.scss']
 })
 export class QuestionnaireResponseComponent implements OnInit, FhirCardComponentInterface {

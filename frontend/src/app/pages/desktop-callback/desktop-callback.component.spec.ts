@@ -4,7 +4,7 @@ import { DesktopCallbackComponent } from './desktop-callback.component';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import {RouterTestingModule} from '@angular/router/testing';
 import { LoadingSpinnerComponent } from 'src/app/components/loading-spinner/loading-spinner.component';
-import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClient, withInterceptorsFromDi, withXhr } from '@angular/common/http';
 
 describe('DesktopCallbackComponent', () => {
   let component: DesktopCallbackComponent;
@@ -14,7 +14,7 @@ describe('DesktopCallbackComponent', () => {
     await TestBed.configureTestingModule({
     declarations: [DesktopCallbackComponent],
     imports: [RouterTestingModule, LoadingSpinnerComponent],
-    providers: [provideHttpClient(withInterceptorsFromDi()), provideHttpClientTesting()]
+    providers: [provideHttpClient(withXhr(), withInterceptorsFromDi()), provideHttpClientTesting()]
 })
     .compileComponents();
 

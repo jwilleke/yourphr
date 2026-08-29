@@ -20,7 +20,7 @@
         } @else {
           <p> An error occurred while parsing FHIR resource </p>
         }
-        <app-raw-resource [raw]="resource?.resource_raw"></app-raw-resource>
+        <app-raw-resource [raw]="$safeNavigationMigration(resource?.resource_raw)"></app-raw-resource>
       } @else {
         <div class="row">
           <div class="col-12">

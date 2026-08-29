@@ -77,7 +77,7 @@
                           <div class="tx-12 tx-gray-500">{{ row.resourceType | resourceTypeLabel }}</div>
                         </div>
                       }
-                      <app-raw-resource [raw]="resourceFor(row)?.resource_raw"></app-raw-resource>
+                      <app-raw-resource [raw]="$safeNavigationMigration(resourceFor(row)?.resource_raw)"></app-raw-resource>
                     </div>
                   }
                 </div>

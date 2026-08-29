@@ -1,4 +1,4 @@
-import {Component, OnInit} from '@angular/core';
+import {Component, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
 import {AuthService} from '../../services/auth.service';
 
@@ -20,6 +20,7 @@ import {AuthService} from '../../services/auth.service';
     templateUrl: './demo-entry.component.html',
     // Declared in AppModule like every other page here. Angular now defaults components to
     // standalone, and the AOT build fails with NG6008 without this.
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class DemoEntryComponent implements OnInit {

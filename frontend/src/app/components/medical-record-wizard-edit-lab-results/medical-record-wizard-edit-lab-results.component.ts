@@ -1,4 +1,4 @@
-import { Component, CUSTOM_ELEMENTS_SCHEMA, ElementRef, Input, OnInit, ViewChild } from '@angular/core';
+import { Component, CUSTOM_ELEMENTS_SCHEMA, ElementRef, Input, OnInit, ViewChild, ChangeDetectionStrategy } from '@angular/core';
 
 import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { NlmTypeaheadComponent } from '../nlm-typeahead/nlm-typeahead.component';
@@ -28,6 +28,7 @@ import { DataAbsentReasonModel } from 'src/lib/models/datatypes/data-absent-reas
     selector: 'app-medical-record-wizard-edit-lab-results',
     templateUrl: './medical-record-wizard-edit-lab-results.component.html',
     styleUrls: ['./medical-record-wizard-edit-lab-results.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })
 export class MedicalRecordWizardEditLabResultsComponent implements OnInit {

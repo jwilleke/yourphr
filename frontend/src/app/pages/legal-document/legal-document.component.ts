@@ -1,4 +1,4 @@
-import {Component, OnDestroy, OnInit} from '@angular/core';
+import {Component, OnDestroy, OnInit, ChangeDetectionStrategy} from '@angular/core';
 
 import {ActivatedRoute, RouterModule} from '@angular/router';
 import {Subscription} from 'rxjs';
@@ -18,6 +18,7 @@ import {LegalDocument} from '../../models/fasten/legal-document';
   imports: [RouterModule],
   selector: 'app-legal-document',
   templateUrl: './legal-document.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./legal-document.component.scss'],
 })
 export class LegalDocumentComponent implements OnInit, OnDestroy {

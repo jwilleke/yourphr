@@ -1,4 +1,4 @@
 <!-- Layer-1 synthesized legibility (state/verification/category) — classifier-backed types only (#308) -->
-<fhir-ui-classified-summary [classified]="displayModel?.classified"></fhir-ui-classified-summary>
+<fhir-ui-classified-summary [classified]="$safeNavigationMigration(displayModel?.classified)"></fhir-ui-classified-summary>
 <ng-template fhirCardOutlet></ng-template>
-<fhir-ui-reported-by [provenance]="displayModel?.provenance"></fhir-ui-reported-by>
+<fhir-ui-reported-by [provenance]="$safeNavigationMigration(displayModel?.provenance)"></fhir-ui-reported-by>

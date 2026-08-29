@@ -341,7 +341,7 @@
                     </div>
                   }
                   <button (click)="openDeleteModal(deleteModalRef)" type="button" class="btn btn-outline-danger"
-                    [disabled]="user?.demo_account"
+                    [disabled]="$safeNavigationMigration(user?.demo_account)"
                     [title]="user?.demo_account ? 'Disabled in the public demo — the account is shared' : ''">
                     <i class="fas fa-trash mg-r-5"></i> Delete Account
                   </button>

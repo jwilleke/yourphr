@@ -1,4 +1,4 @@
-import {Component, Input, OnInit} from '@angular/core';
+import {Component, Input, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {NgbActiveModal, NgbDatepickerModule, NgbNavModule, NgbTooltipModule, NgbTypeaheadModule} from '@ng-bootstrap/ng-bootstrap';
 import {CommonModule} from '@angular/common';
 import {FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators} from '@angular/forms';
@@ -30,6 +30,7 @@ import {parseFullName}  from 'parse-full-name'
     ],
     selector: 'app-medical-record-wizard-add-practitioner',
     templateUrl: './medical-record-wizard-add-practitioner.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./medical-record-wizard-add-practitioner.component.scss']
 })
 export class MedicalRecordWizardAddPractitionerComponent implements OnInit {

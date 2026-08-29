@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -22,6 +22,7 @@ import { parseFullName } from 'parse-full-name';
         NlmTypeaheadComponent
     ],
     templateUrl: './practitioner-edit.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./practitioner-edit.component.scss']
 })
 export class PractitionerEditPageComponent implements OnInit {

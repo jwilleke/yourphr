@@ -1,4 +1,4 @@
-import {ChangeDetectorRef, Component, Input, OnInit} from '@angular/core';
+import {ChangeDetectorRef, Component, Input, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {NgbCollapseModule} from '@ng-bootstrap/ng-bootstrap';
 import {CommonModule} from '@angular/common';
 import {Router, RouterModule} from '@angular/router';
@@ -12,6 +12,7 @@ import {CoverageModel} from '../../../../../lib/models/resources/coverage-model'
     imports: [NgbCollapseModule, CommonModule, BadgeComponent, TableComponent, RouterModule],
     selector: 'fhir-coverage',
     templateUrl: './coverage.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./coverage.component.scss']
 })
 export class CoverageComponent implements OnInit, FhirCardComponentInterface {

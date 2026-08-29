@@ -1,4 +1,4 @@
-import {ChangeDetectorRef, Component, Input, OnInit} from '@angular/core';
+import {ChangeDetectorRef, Component, Input, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {NgbCollapseModule} from '@ng-bootstrap/ng-bootstrap';
 import {CommonModule} from '@angular/common';
 import {Router, RouterModule} from '@angular/router';
@@ -12,6 +12,7 @@ import {CareTeamModel} from '../../../../../lib/models/resources/care-team-model
     imports: [NgbCollapseModule, CommonModule, BadgeComponent, TableComponent, RouterModule],
     selector: 'fhir-care-team',
     templateUrl: './care-team.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./care-team.component.scss']
 })
 export class CareTeamComponent implements OnInit, FhirCardComponentInterface {

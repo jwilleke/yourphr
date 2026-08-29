@@ -3,7 +3,7 @@
  * Copyright (c) 2022 Alain Dumesny - see GridStack root license
  */
 
-import { Component, ElementRef, Input, ViewChild, ViewContainerRef, OnDestroy } from '@angular/core';
+import { Component, ElementRef, Input, ViewChild, ViewContainerRef, OnDestroy, ChangeDetectionStrategy } from '@angular/core';
 import { GridItemHTMLElement, GridStackNode } from 'gridstack';
 
 
@@ -27,6 +27,7 @@ export interface GridItemCompHTMLElement extends GridItemHTMLElement {
       <!-- fallback HTML content from GridStackWidget content field if used instead -->
       {{options.content}}
     </div>`,
+    changeDetection: ChangeDetectionStrategy.Eager,
     styles: [`
     :host { display: block; }
   `]

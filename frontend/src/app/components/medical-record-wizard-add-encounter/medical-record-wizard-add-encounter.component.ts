@@ -1,4 +1,4 @@
-import {Component, Input, OnInit} from '@angular/core';
+import {Component, Input, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators} from '@angular/forms';
 import {NlmTypeaheadComponent} from '../nlm-typeahead/nlm-typeahead.component';
@@ -28,6 +28,7 @@ import {uuidV4} from '../../../lib/utils/uuid';
     ],
     selector: 'app-medical-record-wizard-add-encounter',
     templateUrl: './medical-record-wizard-add-encounter.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./medical-record-wizard-add-encounter.component.scss']
 })
 export class MedicalRecordWizardAddEncounterComponent implements OnInit {

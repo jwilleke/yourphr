@@ -1,4 +1,4 @@
-import {Component, OnInit} from '@angular/core';
+import {Component, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {Clipboard} from '@angular/cdk/clipboard';
 import {forkJoin} from 'rxjs';
 import {FastenApiService} from '../../services/fasten-api.service';
@@ -25,6 +25,7 @@ import {FastenDisplayModel} from '../../../lib/models/fasten/fasten-display-mode
     selector: 'app-medical-history',
     templateUrl: './medical-history.component.html',
     styleUrls: ['./medical-history.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class MedicalHistoryComponent implements OnInit {

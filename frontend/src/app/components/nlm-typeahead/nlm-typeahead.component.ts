@@ -1,4 +1,4 @@
-import {Component, EventEmitter, Input, OnInit, Optional, Output, Self, ViewChild} from '@angular/core';
+import {Component, EventEmitter, Input, OnInit, Optional, Output, Self, ViewChild, ChangeDetectionStrategy} from '@angular/core';
 import {merge, Observable, ObservableInput, of, Subject} from 'rxjs';
 import {catchError, debounceTime, distinctUntilChanged, filter, switchMap, tap} from 'rxjs/operators';
 import {NlmClinicalTableSearchService, NlmSearchResults} from '../../services/nlm-clinical-table-search.service';
@@ -44,6 +44,7 @@ export enum NlmSearchType {
     selector: 'app-nlm-typeahead',
     templateUrl: './nlm-typeahead.component.html',
     styleUrls: ['./nlm-typeahead.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     providers: [
     // {
     //   provide: NG_VALUE_ACCESSOR,

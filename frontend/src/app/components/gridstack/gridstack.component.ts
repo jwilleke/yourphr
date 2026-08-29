@@ -3,8 +3,11 @@
  * Copyright (c) 2022 Alain Dumesny - see GridStack root license
  */
 
-import { AfterContentInit, Component, ContentChildren, ElementRef, EventEmitter, Input,
-  OnDestroy, OnInit, Output, QueryList, Type, ViewChild, ViewContainerRef, reflectComponentType } from '@angular/core';
+import {
+  AfterContentInit, Component, ContentChildren, ElementRef, EventEmitter, Input,
+  OnDestroy, OnInit, Output, QueryList, Type, ViewChild, ViewContainerRef, reflectComponentType,
+  ChangeDetectionStrategy
+} from '@angular/core';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { GridHTMLElement, GridItemHTMLElement, GridStack, GridStackNode, GridStackOptions, GridStackWidget } from 'gridstack';
@@ -57,6 +60,7 @@ export type SelectorToType = Record<string, Type<object>>;
     <!-- where template items go -->
     <ng-content></ng-content>
     `,
+    changeDetection: ChangeDetectionStrategy.Eager,
     styles: [`
     :host { display: block; }
   `]

@@ -1,4 +1,4 @@
-import {ChangeDetectorRef, Component, Input, OnInit} from '@angular/core';
+import {ChangeDetectorRef, Component, Input, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {NgbCollapseModule} from '@ng-bootstrap/ng-bootstrap';
 import {CommonModule} from '@angular/common';
 import {Router, RouterModule} from '@angular/router';
@@ -12,6 +12,7 @@ import {ConditionModel} from '../../../../../lib/models/resources/condition-mode
     imports: [NgbCollapseModule, CommonModule, BadgeComponent, TableComponent, RouterModule],
     selector: 'fhir-condition',
     templateUrl: './condition.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./condition.component.scss']
 })
 export class ConditionComponent implements OnInit, FhirCardComponentInterface {

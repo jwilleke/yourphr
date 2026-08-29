@@ -60,7 +60,7 @@
 
   <div class="modal-footer">
 
-    <a [routerLink]="['/explore', modalSelectedSourceListItem?.source?.id]" (click)="modal.close()" class="btn btn-az-primary me-auto">Explore</a>
+    <a [routerLink]="['/explore', $safeNavigationMigration(modalSelectedSourceListItem?.source?.id)]" (click)="modal.close()" class="btn btn-az-primary me-auto">Explore</a>
 
 
     @if (modalSelectedSourceListItem?.source?.platform_type != 'fasten') {
@@ -74,9 +74,9 @@
         </button>
         <div ngbDropdownMenu aria-labelledby="dropdownManual">
           @if (modalSelectedSourceListItem?.source?.platform_type != 'manual') {
-            <button ngbDropdownItem (click)="sourceSyncHandler(modalSelectedSourceListItem?.source)" type="button" class="btn btn-az-primary">Sync</button>
+            <button ngbDropdownItem (click)="sourceSyncHandler($safeNavigationMigration(modalSelectedSourceListItem?.source))" type="button" class="btn btn-az-primary">Sync</button>
           }
-          <button ngbDropdownItem (click)="sourceExportHandler(modalSelectedSourceListItem?.source)" type="button" class="btn btn-az-primary">Download</button>
+          <button ngbDropdownItem (click)="sourceExportHandler($safeNavigationMigration(modalSelectedSourceListItem?.source))" type="button" class="btn btn-az-primary">Download</button>
           @if (modalSelectedSourceListItem?.source?.platform_type != 'manual') {
             <button ngbDropdownItem (click)="sourceReconnectHandler(modalSelectedSourceListItem)" type="button" class="btn btn-outline-secondary">Reconnect</button>
           }

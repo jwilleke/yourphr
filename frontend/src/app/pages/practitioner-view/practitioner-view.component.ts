@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
 
 import { ActivatedRoute, Router } from '@angular/router';
 import { FastenApiService } from '../../services/fasten-api.service';
@@ -19,6 +19,7 @@ interface ContactDataItem {
     selector: 'app-practitioner-view',
     imports: [],
     templateUrl: './practitioner-view.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./practitioner-view.component.scss']
 })
 export class PractitionerViewComponent implements OnInit {

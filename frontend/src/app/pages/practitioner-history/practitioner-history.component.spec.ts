@@ -6,7 +6,7 @@ import { of } from 'rxjs';
 import { ReportHeaderComponent } from 'src/app/components/report-header/report-header.component';
 import { ActivatedRoute } from '@angular/router';
 import { HTTP_CLIENT_TOKEN } from 'src/app/dependency-injection';
-import { HttpClient, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { HttpClient, provideHttpClient, withInterceptorsFromDi, withXhr } from '@angular/common/http';
 import { MedicalHistoryComponent } from '../medical-history/medical-history.component';
 
 describe('PractitionerHistoryComponent', () => {
@@ -37,7 +37,7 @@ describe('PractitionerHistoryComponent', () => {
             provide: HTTP_CLIENT_TOKEN,
             useClass: HttpClient,
         },
-        provideHttpClient(withInterceptorsFromDi()),
+        provideHttpClient(withXhr(), withInterceptorsFromDi()),
     ]
 }).compileComponents();
     mockedFastenApiService.getResourceGraph.and.returnValue(

@@ -6,7 +6,7 @@ import {RouterTestingModule} from '@angular/router/testing';
 import {RouterModule} from '@angular/router';
 import {FormsModule} from '@angular/forms';
 import {HTTP_CLIENT_TOKEN} from '../../dependency-injection';
-import { HttpClient, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { HttpClient, provideHttpClient, withInterceptorsFromDi, withXhr } from '@angular/common/http';
 
 describe('AuthSigninComponent', () => {
   let component: AuthSigninComponent;
@@ -22,7 +22,7 @@ describe('AuthSigninComponent', () => {
             provide: HTTP_CLIENT_TOKEN,
             useClass: HttpClient,
         },
-        provideHttpClient(withInterceptorsFromDi()),
+        provideHttpClient(withXhr(), withInterceptorsFromDi()),
         provideHttpClientTesting(),
     ]
 })

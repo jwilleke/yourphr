@@ -1,4 +1,4 @@
-import {ChangeDetectorRef, Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {ChangeDetectorRef, Component, EventEmitter, Input, OnInit, Output, ChangeDetectionStrategy} from '@angular/core';
 import {FhirCardEditableComponentInterface} from '../../fhir-card/fhir-card-component-interface';
 import {ImmunizationModel} from '../../../../../lib/models/resources/immunization-model';
 import {TableRowItem} from '../../common/table/table-row-item';
@@ -14,6 +14,7 @@ import { FastenDisplayModel } from 'src/lib/models/fasten/fasten-display-model';
     imports: [NgbCollapseModule, BadgeComponent, TableComponent, RouterModule],
     selector: 'fhir-practitioner',
     templateUrl: './practitioner.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./practitioner.component.scss']
 })
 export class PractitionerComponent implements OnInit, FhirCardEditableComponentInterface {

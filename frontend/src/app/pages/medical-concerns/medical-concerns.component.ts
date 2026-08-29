@@ -1,4 +1,4 @@
-import {Component, OnInit} from '@angular/core';
+import {Component, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {FastenApiService} from '../../services/fasten-api.service';
 import {ClassifiedCondition} from '../../models/fasten/classified-condition';
@@ -24,6 +24,7 @@ const MEDLINEPLUS_PROBLEM_SYSTEMS: {url: string; oid: string}[] = [
   imports: [CommonModule, LoadingSpinnerComponent],
   selector: 'app-medical-concerns',
   templateUrl: './medical-concerns.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./medical-concerns.component.scss'],
 })
 export class MedicalConcernsComponent implements OnInit {

@@ -1,4 +1,4 @@
-import {Component, Input, OnInit} from '@angular/core';
+import {Component, Input, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {ChartConfiguration, ChartDataset, ChartOptions} from 'chart.js';
 import {DashboardWidgetConfig} from '../../models/widget/dashboard-widget-config';
 
@@ -19,6 +19,7 @@ import {map} from 'rxjs/operators';
     imports: [NgbDatepickerModule, LoadingWidgetComponent],
     selector: 'app-dashboard-widget',
     templateUrl: './dashboard-widget.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./dashboard-widget.component.scss']
 })
 export class DashboardWidgetComponent implements OnInit, DashboardWidgetComponentInterface {

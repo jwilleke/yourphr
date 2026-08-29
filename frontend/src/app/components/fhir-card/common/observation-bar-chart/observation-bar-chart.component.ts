@@ -1,4 +1,4 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { formatDate } from '@angular/common';
 import { ObservationModel } from '../../../../../lib/models/resources/observation-model';
 import { ChartConfiguration } from 'chart.js';
@@ -11,6 +11,7 @@ const defaultChartEntryHeight = 30;
     selector: 'observation-bar-chart',
     imports: [BaseChartDirective],
     templateUrl: './observation-bar-chart.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./observation-bar-chart.component.scss']
 })
 export class ObservationBarChartComponent implements OnInit {

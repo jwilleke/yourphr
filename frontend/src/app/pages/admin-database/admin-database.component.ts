@@ -1,4 +1,4 @@
-import {Component, OnInit} from '@angular/core';
+import {Component, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {FormsModule} from '@angular/forms';
 import {FastenApiService} from '../../services/fasten-api.service';
@@ -14,6 +14,7 @@ import {LoadingSpinnerComponent} from '../../components/loading-spinner/loading-
   imports: [CommonModule, FormsModule, AdminBackLinkComponent, LoadingSpinnerComponent],
   selector: 'app-admin-database',
   templateUrl: './admin-database.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./admin-database.component.scss'],
 })
 export class AdminDatabaseComponent implements OnInit {

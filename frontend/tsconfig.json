@@ -10,6 +10,10 @@
     "typeRoots": [
       "node_modules/@types"
     ],
+    // TypeScript 6 deprecates baseUrl, but it is load-bearing here: many files import the app as
+    // `from 'src/app/...'` and those resolve through it. Silenced rather than removed — removing it
+    // is a codemod over every non-relative import, which is not an upgrade step.
+    "ignoreDeprecations": "6.0",
     "baseUrl": "./",
     "outDir": "./dist/out-tsc",
     "forceConsistentCasingInFileNames": true,
@@ -17,7 +21,6 @@
     "noFallthroughCasesInSwitch": true,
     "sourceMap": true,
     "declaration": false,
-    "downlevelIteration": true,
     "experimentalDecorators": true,
     "moduleResolution": "bundler",
     "importHelpers": true,

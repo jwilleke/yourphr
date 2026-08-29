@@ -1,4 +1,4 @@
-import {Component, OnInit} from '@angular/core';
+import {Component, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {FastenApiService} from '../../services/fasten-api.service';
 import {ResourceFhir} from '../../models/fasten/resource_fhir';
 import {fhirModelFactory} from '../../../lib/models/factory';
@@ -16,6 +16,7 @@ type SortColumn = 'name' | 'category' | 'date';
   selector: 'app-procedures',
   templateUrl: './procedures.component.html',
   styleUrls: ['./procedures.component.scss'],
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: false,
 })
 export class ProceduresComponent implements OnInit {

@@ -1,7 +1,7 @@
 import { FhirCardOutletDirective } from './fhir-card-outlet.directive';
 
 import {
-  ComponentFactory, ComponentRef,
+  ComponentRef,
   EmbeddedViewRef, EnvironmentInjector,
   Injector,
   NgModuleRef,
@@ -10,6 +10,15 @@ import {
   ViewContainerRef
 } from '@angular/core';
 
+/**
+ * A hand-rolled ViewContainerRef whose every method throws — the directive under test only stores
+ * it, so nothing here is ever called.
+ *
+ * The `createComponent(componentFactory: ComponentFactory<C>, ...)` overload was dropped in the
+ * Angular 22 upgrade (yourphr#482): `ComponentFactory` is the pre-Ivy API and is no longer exported
+ * from `@angular/core` — it survives only as the internal `ɵRender3ComponentFactory`. Importing it
+ * fails the whole spec bundle to load, so this is not optional cleanup.
+ */
 class TestViewContainerRef extends ViewContainerRef {
   get element(): import("@angular/core").ElementRef<any> {
     throw new Error("Method not implemented.");
@@ -52,7 +61,6 @@ class TestViewContainerRef extends ViewContainerRef {
   }
 
   createComponent<C>(componentType: Type<C>, options?: { index?: number; injector?: Injector; ngModuleRef?: NgModuleRef<unknown>; environmentInjector?: EnvironmentInjector | NgModuleRef<unknown>; projectableNodes?: Node[][] }): ComponentRef<C>;
-  createComponent<C>(componentFactory: ComponentFactory<C>, index?: number, injector?: Injector, projectableNodes?: any[][], environmentInjector?: EnvironmentInjector | NgModuleRef<any>): ComponentRef<C>;
   createComponent<C>(componentType, options?: { index?: number; injector?: Injector; ngModuleRef?: NgModuleRef<unknown>; environmentInjector?: EnvironmentInjector | NgModuleRef<unknown>; projectableNodes?: Node[][] } | number, injector?: Injector, projectableNodes?: any[][], environmentInjector?: EnvironmentInjector | NgModuleRef<any>): ComponentRef<C> {
     throw new Error("Method not implemented.");
   }

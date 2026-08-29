@@ -3,7 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { EventBusService } from './event-bus.service';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import {HTTP_CLIENT_TOKEN} from '../dependency-injection';
-import { HttpClient, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { HttpClient, provideHttpClient, withInterceptorsFromDi, withXhr } from '@angular/common/http';
 
 describe('EventBusService', () => {
   let service: EventBusService;
@@ -16,7 +16,7 @@ describe('EventBusService', () => {
             provide: HTTP_CLIENT_TOKEN,
             useClass: HttpClient,
         },
-        provideHttpClient(withInterceptorsFromDi()),
+        provideHttpClient(withXhr(), withInterceptorsFromDi()),
         provideHttpClientTesting(),
     ]
 });

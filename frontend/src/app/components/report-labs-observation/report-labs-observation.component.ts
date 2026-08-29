@@ -1,4 +1,4 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { ResourceFhir } from '../../models/fasten/resource_fhir';
 import { ObservationModel } from 'src/lib/models/resources/observation-model';
 
@@ -6,6 +6,7 @@ import { ObservationModel } from 'src/lib/models/resources/observation-model';
     selector: 'app-report-labs-observation',
     templateUrl: './report-labs-observation.component.html',
     styleUrls: ['./report-labs-observation.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class ReportLabsObservationComponent implements OnInit {

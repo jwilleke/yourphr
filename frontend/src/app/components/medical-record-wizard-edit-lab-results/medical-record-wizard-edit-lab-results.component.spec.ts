@@ -4,7 +4,7 @@ import { MedicalRecordWizardEditLabResultsComponent } from './medical-record-wiz
 import { NlmClinicalTableSearchService } from 'src/app/services/nlm-clinical-table-search.service';
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 import { HTTP_CLIENT_TOKEN } from '../../dependency-injection';
-import { HttpHandler, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { HttpHandler, provideHttpClient, withInterceptorsFromDi, withXhr } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 
 describe('MedicalRecordWizardEditLabResultsComponent', () => {
@@ -17,7 +17,7 @@ describe('MedicalRecordWizardEditLabResultsComponent', () => {
     providers: [NgbActiveModal, NlmClinicalTableSearchService, {
             provide: HTTP_CLIENT_TOKEN,
             useClass: HttpHandler,
-        }, provideHttpClient(withInterceptorsFromDi()), provideHttpClientTesting()]
+        }, provideHttpClient(withXhr(), withInterceptorsFromDi()), provideHttpClientTesting()]
 })
     .compileComponents();
 

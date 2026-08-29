@@ -1,4 +1,4 @@
-import {Component} from '@angular/core';
+import {Component, ChangeDetectionStrategy} from '@angular/core';
 import {GenericColumnDefn, DatatableGenericResourceComponent} from './datatable-generic-resource.component';
 import {attributeXTime} from './utils';
 
@@ -6,6 +6,7 @@ import {attributeXTime} from './utils';
     selector: 'fhir-datatable-organization',
     templateUrl: './datatable-generic-resource.component.html',
     styleUrls: ['./datatable-generic-resource.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class DatatableOrganizationComponent extends DatatableGenericResourceComponent {

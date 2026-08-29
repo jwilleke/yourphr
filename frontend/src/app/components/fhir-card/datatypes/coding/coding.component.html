@@ -1,7 +1,7 @@
 <div>
   <span>{{coding?.display}}</span>
   @if (has_additional_info) {
-    <span [title]="coding?.system">
+    <span [title]="$safeNavigationMigration(coding?.system)">
       ({{coding?.code || '?'}})
     </span>
   }

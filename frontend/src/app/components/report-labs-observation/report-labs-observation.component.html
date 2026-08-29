@@ -3,7 +3,7 @@
     <div class="row" >
       <!-- Condition Header -->
       <div class="col-6">
-        <span [routerLink]="['/explore', firstObservation?.source_id, 'resource', firstObservation?.source_resource_id]">{{observationTitle}}</span>
+        <span [routerLink]="['/explore', $safeNavigationMigration(firstObservation?.source_id), 'resource', $safeNavigationMigration(firstObservation?.source_resource_id)]">{{observationTitle}}</span>
       </div>
       <div class="col-6">
         {{firstObservation | fhirPath: "Observation.effectiveDateTime": "Observation.issued" |  date}}
@@ -38,7 +38,7 @@
               <ul>
                 @for (observation of observations; track observation) {
                   <li class="cursor-pointer tx-indigo">
-                    <a [routerLink]="['/explore', observation?.source_id, 'resource', observation?.source_resource_id]">
+                    <a [routerLink]="['/explore', $safeNavigationMigration(observation?.source_id), 'resource', $safeNavigationMigration(observation?.source_resource_id)]">
                       Observation: {{observation | fhirPath: "Observation.effectiveDateTime": "Observation.issued" | date}}
                     </a>
                   </li>

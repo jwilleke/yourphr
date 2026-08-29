@@ -1,4 +1,4 @@
-import {ChangeDetectorRef, Component, EventEmitter, Input, OnInit, Output, ViewChild} from '@angular/core';
+import {ChangeDetectorRef, Component, EventEmitter, Input, OnInit, Output, ViewChild, ChangeDetectionStrategy} from '@angular/core';
 import {DatatableComponent, ColumnMode, SelectionType} from '@swimlane/ngx-datatable';
 import {ResourceFhir} from '../../../models/fasten/resource_fhir';
 import {FORMATTERS, getPath, obsValue, attributeXTime} from './utils';
@@ -38,6 +38,7 @@ class PageInfo {
     selector: 'fhir-datatable-generic-resource',
     templateUrl: './datatable-generic-resource.component.html',
     styleUrls: ['./datatable-generic-resource.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class DatatableGenericResourceComponent implements OnInit, ResourceListComponentInterface  {

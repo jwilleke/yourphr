@@ -1,4 +1,4 @@
-import {ChangeDetectorRef, Component, Input, OnInit} from '@angular/core';
+import {ChangeDetectorRef, Component, Input, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {DocumentReferenceModel} from '../../../../../lib/models/resources/document-reference-model';
 import {TableRowItem, TableRowItemDataType} from '../../common/table/table-row-item';
 import {Router, RouterModule} from '@angular/router';
@@ -14,6 +14,7 @@ import {BinaryComponent} from '../binary/binary.component';
     imports: [NgbCollapseModule, BadgeComponent, TableComponent, RouterModule, BinaryComponent],
     selector: 'fhir-media',
     templateUrl: './media.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./media.component.scss']
 })
 export class MediaComponent implements OnInit, FhirCardComponentInterface{

@@ -1,4 +1,4 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { ObservationModel } from '../../../../../lib/models/resources/observation-model';
 
 import { ObservationBarChartComponent } from '../observation-bar-chart/observation-bar-chart.component';
@@ -8,6 +8,7 @@ import { ObservationTableComponent } from '../observation-table/observation-tabl
     selector: 'observation-visualization',
     imports: [ObservationBarChartComponent, ObservationTableComponent],
     templateUrl: './observation-visualization.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./observation-visualization.component.scss']
 })
 export class ObservationVisualizationComponent implements OnInit {

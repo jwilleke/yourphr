@@ -1,4 +1,4 @@
-import {Component, Input, OnInit} from '@angular/core';
+import {Component, Input, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {BaseChartDirective} from 'ng2-charts';
 import {DashboardWidgetConfig} from '../../models/widget/dashboard-widget-config';
 import {FastenApiService} from '../../services/fasten-api.service';
@@ -13,6 +13,7 @@ import {PipesModule} from '../../pipes/pipes.module';
     imports: [BaseChartDirective, CommonModule, LoadingWidgetComponent, EmptyWidgetComponent, PipesModule],
     selector: 'simple-line-chart-widget',
     templateUrl: './simple-line-chart-widget.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./simple-line-chart-widget.component.scss']
 })
 export class SimpleLineChartWidgetComponent extends DashboardWidgetComponent implements OnInit {

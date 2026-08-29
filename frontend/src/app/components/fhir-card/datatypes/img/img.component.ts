@@ -1,4 +1,4 @@
-import {Component, Input, OnInit} from '@angular/core';
+import {Component, Input, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {BinaryModel} from '../../../../../lib/models/resources/binary-model';
 
 
@@ -6,6 +6,7 @@ import {BinaryModel} from '../../../../../lib/models/resources/binary-model';
     imports: [],
     selector: 'fhir-img',
     templateUrl: './img.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./img.component.scss']
 })
 export class ImgComponent implements OnInit {

@@ -1,4 +1,4 @@
-import {Component, Input, OnDestroy, OnInit} from '@angular/core';
+import {Component, Input, OnDestroy, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {Source} from '../../models/fasten/source';
 import {SourceListItem} from '../../pages/medical-sources/medical-sources.component';
 import {ModalDismissReasons, NgbModal} from '@ng-bootstrap/ng-bootstrap';
@@ -21,6 +21,7 @@ import {extractErrorFromResponse, replaceErrors} from '../../../lib/utils/error_
     selector: 'app-medical-sources-connected',
     templateUrl: './medical-sources-connected.component.html',
     styleUrls: ['./medical-sources-connected.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class MedicalSourcesConnectedComponent implements OnInit, OnDestroy {

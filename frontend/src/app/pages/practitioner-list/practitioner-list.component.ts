@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
+import { Component, OnInit, OnDestroy, HostListener, ChangeDetectionStrategy } from '@angular/core';
 
 import { Router } from '@angular/router';
 import { FastenApiService } from '../../services/fasten-api.service';
@@ -19,6 +19,7 @@ export interface Favorite {
     selector: 'app-practitioner-list',
     templateUrl: './practitioner-list.component.html',
     styleUrls: ['./practitioner-list.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: []
 })
 export class PractitionerListComponent implements OnInit, OnDestroy {

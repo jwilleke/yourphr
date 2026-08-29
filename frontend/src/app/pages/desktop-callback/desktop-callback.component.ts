@@ -1,10 +1,11 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
 
 @Component({
     selector: 'app-desktop-callback',
     templateUrl: './desktop-callback.component.html',
     styleUrls: ['./desktop-callback.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class DesktopCallbackComponent implements OnInit {

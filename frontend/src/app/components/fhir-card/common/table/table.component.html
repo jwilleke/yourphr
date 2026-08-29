@@ -32,7 +32,7 @@
             <ng-template #dataTypeReference>
               <!-- Guarded: an absent reference must render nothing, not throw and take the whole card with it. -->
               @if (rowItem.data?.reference) {
-                <a [routerLink]="['/explore', displayModel?.source_id, 'resource', rowItem.data.reference]">{{rowItem.data.display || rowItem.data.reference}}</a>
+                <a [routerLink]="['/explore', $safeNavigationMigration(displayModel?.source_id), 'resource', rowItem.data.reference]">{{rowItem.data.display || rowItem.data.reference}}</a>
               }
             </ng-template>
             <ng-template #dataTypeString>{{rowItem.data}}</ng-template>

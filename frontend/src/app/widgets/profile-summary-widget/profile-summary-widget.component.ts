@@ -1,4 +1,4 @@
-import {Component, OnInit} from '@angular/core';
+import {Component, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {RouterModule} from '@angular/router';
 import {DashboardWidgetComponent} from '../dashboard-widget/dashboard-widget.component';
@@ -33,6 +33,7 @@ interface ProfileSummaryRow {
   imports: [CommonModule, RouterModule, LoadingWidgetComponent, MissingDataComponent],
   selector: 'profile-summary-widget',
   templateUrl: './profile-summary-widget.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./profile-summary-widget.component.scss'],
 })
 export class ProfileSummaryWidgetComponent extends DashboardWidgetComponent implements OnInit {

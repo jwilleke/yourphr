@@ -1,4 +1,4 @@
-import {ChangeDetectorRef, Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {ChangeDetectorRef, Component, EventEmitter, Input, OnInit, Output, ChangeDetectionStrategy} from '@angular/core';
 import {FhirCardEditableComponentInterface} from '../../fhir-card/fhir-card-component-interface';
 import {TableRowItem, TableRowItemDataType} from '../../common/table/table-row-item';
 import {Router, RouterModule} from '@angular/router';
@@ -15,6 +15,7 @@ import { FastenDisplayModel } from 'src/lib/models/fasten/fasten-display-model';
     imports: [NgbCollapseModule, NgbNavModule, CommonModule, BadgeComponent, TableComponent, RouterModule, BinaryComponent, GlossaryLookupComponent],
     selector: 'fhir-diagnostic-report',
     templateUrl: './diagnostic-report.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./diagnostic-report.component.scss']
 })
 export class DiagnosticReportComponent implements OnInit, FhirCardEditableComponentInterface {

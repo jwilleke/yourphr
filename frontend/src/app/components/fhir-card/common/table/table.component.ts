@@ -1,4 +1,4 @@
-import {Component, Input, OnInit} from '@angular/core';
+import {Component, Input, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {TableRowItem} from './table-row-item';
 import {FastenDisplayModel} from '../../../../../lib/models/fasten/fasten-display-model';
 import {CommonModule} from "@angular/common";
@@ -11,6 +11,7 @@ import {CodableConceptComponent} from '../../datatypes/codable-concept/codable-c
     providers: [RouterModule],
     selector: 'fhir-ui-table',
     templateUrl: './table.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./table.component.scss']
 })
 export class TableComponent implements OnInit {

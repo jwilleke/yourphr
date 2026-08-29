@@ -1,4 +1,4 @@
-import {Component} from '@angular/core';
+import {Component, ChangeDetectionStrategy} from '@angular/core';
 
 import {FormsModule} from '@angular/forms';
 import {Router, RouterModule} from '@angular/router';
@@ -10,6 +10,7 @@ import {extractErrorFromResponse} from '../../../lib/utils/error_extract';
   standalone: true,
   imports: [FormsModule, RouterModule],
   selector: 'app-patient-entry',
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './patient-entry.component.html',
 })
 export class PatientEntryComponent {

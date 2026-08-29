@@ -1,4 +1,4 @@
-import {Component} from '@angular/core';
+import {Component, ChangeDetectionStrategy} from '@angular/core';
 import {attributeXTime, obsValue} from './utils';
 import {GenericColumnDefn, DatatableGenericResourceComponent} from './datatable-generic-resource.component';
 
@@ -6,6 +6,7 @@ import {GenericColumnDefn, DatatableGenericResourceComponent} from './datatable-
     selector: 'fhir-datatable-observation',
     templateUrl: './datatable-generic-resource.component.html',
     styleUrls: ['./datatable-generic-resource.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class DatatableObservationComponent extends DatatableGenericResourceComponent {

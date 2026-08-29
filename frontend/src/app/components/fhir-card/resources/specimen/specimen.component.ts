@@ -1,4 +1,4 @@
-import {ChangeDetectorRef, Component, Input, OnInit} from '@angular/core';
+import {ChangeDetectorRef, Component, Input, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {NgbCollapseModule} from '@ng-bootstrap/ng-bootstrap';
 import {CommonModule} from '@angular/common';
 import {Router, RouterModule} from '@angular/router';
@@ -12,6 +12,7 @@ import {SpecimenModel} from '../../../../../lib/models/resources/specimen-model'
     imports: [NgbCollapseModule, CommonModule, BadgeComponent, TableComponent, RouterModule],
     selector: 'fhir-specimen',
     templateUrl: './specimen.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./specimen.component.scss']
 })
 export class SpecimenComponent implements OnInit, FhirCardComponentInterface {

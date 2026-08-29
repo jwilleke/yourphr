@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import {ResourceFhir} from '../../models/fasten/resource_fhir';
 import {FastenApiService} from '../../services/fasten-api.service';
 import {ClassifiedCondition} from '../../models/fasten/classified-condition';
@@ -10,6 +10,7 @@ import {ClassifiedCondition} from '../../models/fasten/classified-condition';
     selector: 'app-patient-profile',
     templateUrl: './patient-profile.component.html',
     styleUrls: ['./patient-profile.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class PatientProfileComponent implements OnInit {

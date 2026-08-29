@@ -1,4 +1,4 @@
-import {Component, OnInit} from '@angular/core';
+import {Component, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {RouterModule} from '@angular/router';
 import {DashboardWidgetComponent} from '../dashboard-widget/dashboard-widget.component';
@@ -14,6 +14,7 @@ import {ReconciledMedication} from '../../models/fasten/reconciled-medication';
   imports: [CommonModule, RouterModule, LoadingWidgetComponent, EmptyWidgetComponent],
   selector: 'medications-widget',
   templateUrl: './medications-widget.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./medications-widget.component.scss'],
 })
 export class MedicationsWidgetComponent extends DashboardWidgetComponent implements OnInit {

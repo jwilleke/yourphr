@@ -4,17 +4,17 @@
       <!-- US Core MS: description is the goal text -->
       <h6 class="card-title">{{displayModel?.description || displayModel?.title}}</h6>
       @if (displayModel?.start_date) {
-        <p class="card-text tx-gray-400"><strong>Start date</strong> {{displayModel?.start_date | date}}</p>
+        <p class="card-text tx-gray-400"><strong>Start date</strong> {{$safeNavigationMigration(displayModel?.start_date) | date}}</p>
       }
     </div>
-    <fhir-ui-badge class="float-end" [status]="displayModel?.status">{{displayModel?.status}}</fhir-ui-badge>
+    <fhir-ui-badge class="float-end" [status]="$safeNavigationMigration(displayModel?.status)">{{displayModel?.status}}</fhir-ui-badge>
   </div>
   <div #collapse="ngbCollapse" [(ngbCollapse)]="isCollapsed" class="card-body">
     <fhir-ui-table [displayModel]="displayModel" [tableData]="tableData"></fhir-ui-table>
   </div>
   @if (showDetails) {
     <div class="card-footer">
-      <a class="float-end" [routerLink]="['/explore', displayModel?.source_id, 'resource', displayModel?.source_resource_id]">details</a>
+      <a class="float-end" [routerLink]="['/explore', $safeNavigationMigration(displayModel?.source_id), 'resource', $safeNavigationMigration(displayModel?.source_resource_id)]">details</a>
     </div>
   }
 </div>

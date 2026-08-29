@@ -1,4 +1,4 @@
-import {ChangeDetectorRef, Component, Input, OnInit} from '@angular/core';
+import {ChangeDetectorRef, Component, Input, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {NgbCollapseModule} from '@ng-bootstrap/ng-bootstrap';
 
 import {Router, RouterModule} from '@angular/router';
@@ -13,6 +13,7 @@ import {RelatedPersonModel} from '../../../../../lib/models/resources/related-pe
     imports: [NgbCollapseModule, BadgeComponent, TableComponent, RouterModule],
     selector: 'fhir-related-person',
     templateUrl: './related-person.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./related-person.component.scss']
 })
 export class RelatedPersonComponent implements OnInit, FhirCardComponentInterface {

@@ -192,13 +192,13 @@
 
   <div class="modal-header">
     <div class="media">
-      <img class="modal-header-media-image mg-sm-r-20 mg-b-20 mg-sm-b-0" [src]="'assets/sources/'+(modalSelectedBrandListItem?.id +'.png')" [alt]="modalSelectedBrandListItem?.name">
+      <img class="modal-header-media-image mg-sm-r-20 mg-b-20 mg-sm-b-0" [src]="'assets/sources/'+($safeNavigationMigration(modalSelectedBrandListItem?.id) +'.png')" [alt]="$safeNavigationMigration(modalSelectedBrandListItem?.name)">
       <div class="media-body">
         <h6>{{modalSelectedBrandListItem?.name}}</h6>
         @if (modalSelectedBrandListItem?.brand_website) {
           <a
-            [href]="modalSelectedBrandListItem?.brand_website"
-          class="mg-b-0" externalLink>{{modalSelectedBrandListItem?.brand_website | shortDomain}}</a>
+            [href]="$safeNavigationMigration(modalSelectedBrandListItem?.brand_website)"
+          class="mg-b-0" externalLink>{{$safeNavigationMigration(modalSelectedBrandListItem?.brand_website) | shortDomain}}</a>
         }
       </div><!-- media-body -->
     </div><!-- media -->

@@ -1,4 +1,4 @@
-import {Component, Input} from '@angular/core';
+import {Component, Input, ChangeDetectionStrategy} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {Provenance} from '../../../../../lib/models/fasten/provenance';
 
@@ -9,6 +9,7 @@ import {Provenance} from '../../../../../lib/models/fasten/provenance';
   standalone: true,
   imports: [CommonModule],
   selector: 'fhir-ui-reported-by',
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './reported-by.component.html',
 })
 export class ReportedByComponent {

@@ -1,4 +1,4 @@
-import {Component} from '@angular/core';
+import {Component, ChangeDetectionStrategy} from '@angular/core';
 import {GenericColumnDefn, DatatableGenericResourceComponent} from './datatable-generic-resource.component';
 import {money} from '../../../../lib/utils/fhir-money';
 
@@ -15,6 +15,7 @@ import {money} from '../../../../lib/utils/fhir-money';
   selector: 'fhir-datatable-claim',
   templateUrl: './datatable-generic-resource.component.html',
   styleUrls: ['./datatable-generic-resource.component.scss'],
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: false,
 })
 export class DatatableClaimComponent extends DatatableGenericResourceComponent {

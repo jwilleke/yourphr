@@ -1,4 +1,4 @@
-import {Component, OnInit, ViewChild} from '@angular/core';
+import {Component, OnInit, ViewChild, ChangeDetectionStrategy} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
 import {Source} from '../../models/fasten/source';
 import {FastenApiService} from '../../services/fasten-api.service';
@@ -9,6 +9,7 @@ import {getPath} from '../../components/fhir-datatable/datatable-generic-resourc
     selector: 'app-source-detail',
     templateUrl: './source-detail.component.html',
     styleUrls: ['./source-detail.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class SourceDetailComponent implements OnInit {

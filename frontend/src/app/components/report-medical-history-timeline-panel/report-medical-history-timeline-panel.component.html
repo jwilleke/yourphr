@@ -1,7 +1,7 @@
 <!-- begin timeline-time -->
 <div class="timeline-time">
-  <span class="date">{{displayModel?.period_start | date:'yyyy' }}</span>
-  <span class="time">{{displayModel?.period_start | date:'MMM dd' }}</span>
+  <span class="date">{{$safeNavigationMigration(displayModel?.period_start) | date:'yyyy' }}</span>
+  <span class="time">{{$safeNavigationMigration(displayModel?.period_start) | date:'MMM dd' }}</span>
 </div>
 <!-- end timeline-time -->
 <!-- begin timeline-icon -->
@@ -13,7 +13,7 @@
 <div class="timeline-body card">
   <div class="timeline-header">
     <span class="username">
-      <a style="font-size: 1.3125rem;font-weight: 500;" [routerLink]="['/explore', displayModel?.source_id, 'resource', displayModel?.source_resource_id]">
+      <a style="font-size: 1.3125rem;font-weight: 500;" [routerLink]="['/explore', $safeNavigationMigration(displayModel?.source_id), 'resource', $safeNavigationMigration(displayModel?.source_resource_id)]">
         {{displayModel?.sort_title}}
       </a>
       <small></small>
@@ -114,7 +114,7 @@
         <strong>Device:</strong>
         <ul>
           @for (device of devices; track device) {
-            <li [routerLink]="['/explore', device?.source_id, 'resource', device?.source_resource_id]" role="link">
+            <li [routerLink]="['/explore', $safeNavigationMigration(device?.source_id), 'resource', $safeNavigationMigration(device?.source_resource_id)]" role="link">
               {{device.model}}
             </li>
           }
@@ -129,7 +129,7 @@
         {{ showRaw ? 'Hide' : 'Show' }} details (raw FHIR)
       </button>
       @if (showRaw) {
-        <pre class="tx-11 bg-light pd-10 mg-t-5 rounded" style="max-height: 360px; overflow: auto;">{{ resourceFhir?.resource_raw | json }}</pre>
+        <pre class="tx-11 bg-light pd-10 mg-t-5 rounded" style="max-height: 360px; overflow: auto;">{{ $safeNavigationMigration(resourceFhir?.resource_raw) | json }}</pre>
       }
     </div>
   </div>
@@ -143,7 +143,7 @@
           @for (documentReference of displayModel?.related_resources['DocumentReference']; track documentReference) {
             <a class="dropdown-item"
               ngbDropdownItem
-              [routerLink]="['/explore', documentReference?.source_id, 'resource', documentReference?.source_resource_id]"
+              [routerLink]="['/explore', $safeNavigationMigration(documentReference?.source_id), 'resource', $safeNavigationMigration(documentReference?.source_resource_id)]"
             >{{documentReference?.sort_title}}</a>
           }
           @for (diagnosticReport of displayModel?.related_resources['DiagnosticReport']; track diagnosticReport) {
@@ -161,11 +161,11 @@
         View Related
       </button>
       <div ngbDropdownMenu aria-labelledby="dropdownReports">
-        @for (resourceEntry of displayModel?.related_resources | keyvalue; track resourceEntry) {
+        @for (resourceEntry of $safeNavigationMigration(displayModel?.related_resources) | keyvalue; track resourceEntry) {
           @for (resourceListItem of resourceEntry.value; track resourceListItem) {
             <a class="dropdown-item"
               ngbDropdownItem
-              [routerLink]="['/explore', resourceListItem?.source_id, 'resource', resourceListItem?.source_resource_id]"
+              [routerLink]="['/explore', $safeNavigationMigration(resourceListItem?.source_id), 'resource', $safeNavigationMigration(resourceListItem?.source_resource_id)]"
             >{{resourceListItem.source_resource_type | resourceTypeLabel}} {{resourceListItem.sort_title ? '- '+resourceListItem.sort_title : '' }}</a>
           }
         }

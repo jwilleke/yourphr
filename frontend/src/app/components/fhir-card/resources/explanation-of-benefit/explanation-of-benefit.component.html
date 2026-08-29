@@ -6,7 +6,7 @@
         <p class="card-text tx-gray-400"><strong>Service dates</strong> {{ serviceDates }}</p>
       }
     </div>
-    <fhir-ui-badge class="float-end" [status]="displayModel?.resourceStatus">{{ displayModel?.resourceStatus }}</fhir-ui-badge>
+    <fhir-ui-badge class="float-end" [status]="$safeNavigationMigration(displayModel?.resourceStatus)">{{ displayModel?.resourceStatus }}</fhir-ui-badge>
   </div>
   <div #collapse="ngbCollapse" [(ngbCollapse)]="isCollapsed" class="card-body">
     <!--
@@ -28,7 +28,7 @@
   </div>
   @if (showDetails) {
     <div class="card-footer">
-      <a class="float-end" [routerLink]="['/explore', displayModel?.source_id, 'resource', displayModel?.source_resource_id]">details</a>
+      <a class="float-end" [routerLink]="['/explore', $safeNavigationMigration(displayModel?.source_id), 'resource', $safeNavigationMigration(displayModel?.source_resource_id)]">details</a>
     </div>
   }
 </div>

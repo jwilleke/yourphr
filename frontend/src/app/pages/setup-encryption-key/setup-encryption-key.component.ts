@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef, OnDestroy } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, OnDestroy, ChangeDetectionStrategy } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { FastenApiService } from 'src/app/services/fasten-api.service';
@@ -8,6 +8,7 @@ import { Subscription } from 'rxjs';
     selector: 'app-setup-encryption-key',
     templateUrl: './setup-encryption-key.component.html',
     styleUrls: ['./setup-encryption-key.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class SetupEncryptionKeyComponent implements OnInit, OnDestroy {

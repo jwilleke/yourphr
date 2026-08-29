@@ -12,7 +12,7 @@ which category was empty — not the generic "Add Source" empty-widget. -->
     @if (widgetConfig?.description_text) {
       <p class="az-content-text mg-b-10">{{ widgetConfig?.description_text }}</p>
     }
-    <app-missing-data [field]="widgetConfig?.title_text"></app-missing-data>
+    <app-missing-data [field]="$safeNavigationMigration(widgetConfig?.title_text)"></app-missing-data>
   </div>
 </ng-template>
 

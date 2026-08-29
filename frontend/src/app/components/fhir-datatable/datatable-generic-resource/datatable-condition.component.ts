@@ -1,4 +1,4 @@
-import {Component, OnInit} from '@angular/core';
+import {Component, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {GenericColumnDefn, DatatableGenericResourceComponent, ResourceListComponentInterface} from './datatable-generic-resource.component';
 import {FORMATTERS} from './utils';
 
@@ -6,6 +6,7 @@ import {FORMATTERS} from './utils';
     selector: 'fhir-datatable-condition',
     templateUrl: './datatable-generic-resource.component.html',
     styleUrls: ['./datatable-generic-resource.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class DatatableConditionComponent extends DatatableGenericResourceComponent {

@@ -1,4 +1,4 @@
-import {ChangeDetectorRef, Component, Input, OnInit} from '@angular/core';
+import {ChangeDetectorRef, Component, Input, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {NgbCollapseModule} from '@ng-bootstrap/ng-bootstrap';
 import {CommonModule} from '@angular/common';
 import {Router, RouterModule} from '@angular/router';
@@ -12,6 +12,7 @@ import {AdverseEventModel} from '../../../../../lib/models/resources/adverse-eve
     imports: [NgbCollapseModule, CommonModule, BadgeComponent, TableComponent, RouterModule],
     selector: 'fhir-adverse-event',
     templateUrl: './adverse-event.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./adverse-event.component.scss']
 })
 export class AdverseEventComponent implements OnInit, FhirCardComponentInterface {

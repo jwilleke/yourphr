@@ -1,4 +1,4 @@
-import {Component, OnInit} from '@angular/core';
+import {Component, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {RouterModule} from '@angular/router';
 import {FastenApiService} from '../../services/fasten-api.service';
@@ -18,6 +18,7 @@ type SortColumn = 'title' | 'state' | 'lastActivity';
   imports: [CommonModule, RouterModule, MissingDataComponent, LoadingSpinnerComponent],
   selector: 'app-allergies',
   templateUrl: './allergies.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./allergies.component.scss'],
 })
 export class AllergiesComponent implements OnInit {

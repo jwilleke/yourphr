@@ -1,4 +1,4 @@
-import {Component, OnInit} from '@angular/core';
+import {Component, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {FormsModule} from '@angular/forms';
 import {RouterModule} from '@angular/router';
@@ -16,6 +16,7 @@ import {extractErrorFromResponse} from '../../../lib/utils/error_extract';
   standalone: true,
   imports: [CommonModule, FormsModule, RouterModule, LoadingSpinnerComponent, AdminBackLinkComponent],
   selector: 'app-provider-catalog-admin',
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './provider-catalog-admin.component.html',
 })
 export class ProviderCatalogAdminComponent implements OnInit {

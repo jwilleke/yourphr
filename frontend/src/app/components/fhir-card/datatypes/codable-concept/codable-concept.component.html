@@ -2,7 +2,7 @@
 <div>
   <span>{{codableConcept?.text || codableConcept?.coding?.[0]?.display}}</span>
   @if (codableConcept?.coding?.[0]?.code) {
-    <span [title]="codableConcept?.coding?.[0]?.system">
+    <span [title]="$safeNavigationMigration(codableConcept?.coding?.[0]?.system)">
       ({{codableConcept?.coding?.[0]?.code || '?'}})
     </span>
   }

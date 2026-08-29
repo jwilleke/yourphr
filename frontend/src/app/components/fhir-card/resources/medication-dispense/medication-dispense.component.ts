@@ -1,4 +1,4 @@
-import {ChangeDetectorRef, Component, Input, OnInit} from '@angular/core';
+import {ChangeDetectorRef, Component, Input, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {FhirCardComponentInterface} from '../../fhir-card/fhir-card-component-interface';
 import {TableRowItem, TableRowItemDataType} from '../../common/table/table-row-item';
 import {Router, RouterModule} from '@angular/router';
@@ -14,6 +14,7 @@ import * as _ from "lodash";
     imports: [NgbCollapseModule, CommonModule, BadgeComponent, TableComponent, GlossaryLookupComponent, RouterModule],
     selector: 'fhir-medication-dispense',
     templateUrl: './medication-dispense.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./medication-dispense.component.scss']
 })
 export class MedicationDispenseComponent implements OnInit, FhirCardComponentInterface {

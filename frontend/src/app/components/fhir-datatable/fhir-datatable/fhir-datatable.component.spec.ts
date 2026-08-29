@@ -5,7 +5,7 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 import {FhirDatatableOutletDirective} from './fhir-datatable-outlet.directive';
 import {FastenApiService} from '../../../services/fasten-api.service';
 import {HTTP_CLIENT_TOKEN} from '../../../dependency-injection';
-import { HttpClient, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { HttpClient, provideHttpClient, withInterceptorsFromDi, withXhr } from '@angular/common/http';
 import {DatatableClaimComponent} from '../datatable-generic-resource/datatable-claim.component';
 import {DatatableExplanationOfBenefitComponent} from '../datatable-generic-resource/datatable-explanation-of-benefit.component';
 
@@ -23,7 +23,7 @@ describe('ResourceListComponent', () => {
             provide: HTTP_CLIENT_TOKEN,
             useClass: HttpClient,
         },
-        provideHttpClient(withInterceptorsFromDi()),
+        provideHttpClient(withXhr(), withInterceptorsFromDi()),
         provideHttpClientTesting(),
     ]
 })

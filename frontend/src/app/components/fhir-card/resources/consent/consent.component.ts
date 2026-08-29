@@ -1,4 +1,4 @@
-import {ChangeDetectorRef, Component, Input, OnInit} from '@angular/core';
+import {ChangeDetectorRef, Component, Input, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {NgbCollapseModule} from '@ng-bootstrap/ng-bootstrap';
 import {CommonModule} from '@angular/common';
 import {Router, RouterModule} from '@angular/router';
@@ -12,6 +12,7 @@ import {ConsentModel} from '../../../../../lib/models/resources/consent-model';
     imports: [NgbCollapseModule, CommonModule, BadgeComponent, TableComponent, RouterModule],
     selector: 'fhir-consent',
     templateUrl: './consent.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./consent.component.scss']
 })
 export class ConsentComponent implements OnInit, FhirCardComponentInterface {

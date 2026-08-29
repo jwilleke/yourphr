@@ -1,4 +1,4 @@
-import {Component} from '@angular/core';
+import {Component, ChangeDetectionStrategy} from '@angular/core';
 
 import {RouterModule} from '@angular/router';
 
@@ -10,6 +10,7 @@ import {RouterModule} from '@angular/router';
   standalone: true,
   imports: [RouterModule],
   selector: 'app-admin-back-link',
+  changeDetection: ChangeDetectionStrategy.Eager,
   template: `
     <a routerLink="/admin" class="btn btn-sm btn-outline-secondary mg-b-20">
       <i class="fas fa-arrow-left mg-r-5"></i> Back to Admin Dashboard

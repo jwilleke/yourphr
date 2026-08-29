@@ -149,10 +149,10 @@
                 <ul class="list-unstyled tx-13 mg-b-0">
                   @for (j of recentJobsWithSummary().slice(0, 5); track j) {
                     <li class="mg-b-5">
-                      <span class="badge mg-r-5" [ngClass]="outcomeBadgeClass(j.summary?.outcome)">
+                      <span class="badge mg-r-5" [ngClass]="outcomeBadgeClass($safeNavigationMigration(j.summary?.outcome))">
                         {{ j.summary?.outcome || j.job_status }}
                       </span>
-                      <span class="tx-gray-700">{{ formatDurationMs(j.summary?.duration_ms) }}</span>
+                      <span class="tx-gray-700">{{ formatDurationMs($safeNavigationMigration(j.summary?.duration_ms)) }}</span>
                       <span class="tx-gray-500"> · {{ j.summary?.total_resources ?? 0 }} resources</span>
                       @if (j.summary?.platform_type) {
                         <span class="tx-gray-500"> · {{ j.summary?.platform_type }}</span>

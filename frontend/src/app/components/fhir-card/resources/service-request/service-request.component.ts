@@ -1,4 +1,4 @@
-import {ChangeDetectorRef, Component, Input, OnInit} from '@angular/core';
+import {ChangeDetectorRef, Component, Input, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {NgbCollapseModule} from '@ng-bootstrap/ng-bootstrap';
 import {CommonModule} from '@angular/common';
 import {Router, RouterModule} from '@angular/router';
@@ -12,6 +12,7 @@ import {ServiceRequestModel} from '../../../../../lib/models/resources/service-r
     imports: [NgbCollapseModule, CommonModule, BadgeComponent, TableComponent, RouterModule],
     selector: 'fhir-service-request',
     templateUrl: './service-request.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./service-request.component.scss']
 })
 export class ServiceRequestComponent implements OnInit, FhirCardComponentInterface {

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -23,6 +23,7 @@ import { uuidV4 } from '../../../lib/utils/uuid';
         NlmTypeaheadComponent
     ],
     templateUrl: './practitioner-create.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./practitioner-create.component.scss']
 })
 export class PractitionerCreateComponent implements OnInit {

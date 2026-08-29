@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ProviderCatalogAdminComponent } from './provider-catalog-admin.component';
-import { HttpClient, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { HttpClient, provideHttpClient, withInterceptorsFromDi, withXhr } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { RouterTestingModule } from '@angular/router/testing';
 import { HTTP_CLIENT_TOKEN } from '../../dependency-injection';
@@ -14,7 +14,7 @@ describe('ProviderCatalogAdminComponent', () => {
       imports: [ProviderCatalogAdminComponent, RouterTestingModule],
       providers: [
         { provide: HTTP_CLIENT_TOKEN, useClass: HttpClient },
-        provideHttpClient(withInterceptorsFromDi()),
+        provideHttpClient(withXhr(), withInterceptorsFromDi()),
         provideHttpClientTesting(),
       ],
     }).compileComponents();
