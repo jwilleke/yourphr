@@ -21,6 +21,14 @@ import {User} from '../models/fasten/user';
 import {ResourceFhir} from '../models/fasten/resource_fhir';
 import {SourceSummary} from '../models/fasten/source-summary';
 import {Summary} from '../models/fasten/summary';
+import {AccessToken, CreateAccessTokenRequest, ServerDiscovery} from '../models/fasten/access-token';
+import {
+  HealthMetricsCatalog,
+  HealthSamplePage,
+  HealthSampleQuery,
+  HealthSeries,
+  HealthSeriesQuery,
+} from '../models/fasten/health-sample';
 import {AuthService} from './auth.service';
 import {GetEndpointAbsolutePath} from '../../lib/utils/endpoint_absolute_path';
 import {environment} from '../../environments/environment';
@@ -86,6 +94,78 @@ export class FastenApiService {
       .pipe(
         map((response: ResponseWrapper) => {
           return response.data
+        })
+      );
+  }
+
+  getAccessTokens(): Observable<AccessToken[]> {
+    return this._httpClient.get<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/access/token`)
+      .pipe(map((response: ResponseWrapper) => (response.data || []) as AccessToken[]));
+  }
+
+  createAccessToken(body: CreateAccessTokenRequest): Observable<string> {
+    return this._httpClient.post<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/access/token`, body)
+      .pipe(map((response: ResponseWrapper) => response.data as string));
+  }
+
+  deleteAccessToken(tokenId: string): Observable<boolean> {
+    return this._httpClient.delete<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/access/token`, {
+      body: { token_id: tokenId },
+    }).pipe(map((response: ResponseWrapper) => response.success));
+  }
+
+  getServerDiscovery(): Observable<ServerDiscovery> {
+    return this._httpClient.get<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/sync/discovery`)
+      .pipe(map((response: ResponseWrapper) => response.data as ServerDiscovery));
+  }
+
+  getHealthMetrics(): Observable<HealthMetricsCatalog> {
+    return this._httpClient.get<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/health/metrics`)
+      .pipe(
+        map((response: ResponseWrapper) => {
+          const data = (response.data || {}) as HealthMetricsCatalog
+          return {
+            last_synced_at: data.last_synced_at,
+            metrics: data.metrics || [],
+          }
+        })
+      );
+  }
+
+  getHealthSeries(query: HealthSeriesQuery): Observable<HealthSeries> {
+    const params: Record<string, string> = {}
+    if (query.codes?.length) params['code'] = query.codes.join(',')
+    if (query.metricTypes?.length) params['metric_type'] = query.metricTypes.join(',')
+    if (query.vendorType) params['vendor_type'] = query.vendorType
+    if (query.startAfter) params['start_after'] = query.startAfter
+    if (query.startBefore) params['start_before'] = query.startBefore
+    if (query.mode) params['mode'] = query.mode
+    return this._httpClient.get<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/health/series`, {params})
+      .pipe(
+        map((response: ResponseWrapper) => (response.data || {total: 0, downsampled: false}) as HealthSeries)
+      );
+  }
+
+  listHealthSamples(query: HealthSampleQuery): Observable<HealthSamplePage> {
+    const params: Record<string, string> = {}
+    if (query.codes?.length) params['code'] = query.codes.join(',')
+    if (query.metricTypes?.length) params['metric_type'] = query.metricTypes.join(',')
+    if (query.vendorType) params['vendor_type'] = query.vendorType
+    if (query.startAfter) params['start_after'] = query.startAfter
+    if (query.startBefore) params['start_before'] = query.startBefore
+    if (query.limit != null) params['limit'] = String(query.limit)
+    if (query.offset != null) params['offset'] = String(query.offset)
+    params['sort'] = query.sort || 'desc'
+    return this._httpClient.get<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/health/samples`, {params})
+      .pipe(
+        map((response: ResponseWrapper) => {
+          const data = (response.data || {}) as HealthSamplePage
+          return {
+            total: data.total || 0,
+            count: data.count || 0,
+            offset: data.offset || 0,
+            samples: data.samples || [],
+          }
         })
       );
   }

@@ -1,0 +1,205 @@
+@import "../../../assets/scss/bootstrap/variables";
+
+.health-page {
+  max-width: 1400px;
+}
+
+.health-header {
+  grid-area: header;
+  padding: 24px 0 16px;
+}
+
+.health-title {
+  font-size: 1.6rem;
+  font-weight: 600;
+  color: $gray-900;
+}
+
+.health-subtitle {
+  color: $gray-600;
+  font-size: 0.95rem;
+}
+
+.health-layout {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  grid-template-areas:
+    "header header"
+    "catalog detail";
+  column-gap: 16px;
+  align-items: start;
+}
+
+.health-track,
+.health-slide {
+  display: contents;
+}
+
+.health-catalog {
+  grid-area: catalog;
+}
+
+.health-detail {
+  grid-area: detail;
+}
+
+.health-back,
+.health-metric-chevron {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .health-layout {
+    display: block;
+    overflow: hidden;
+  }
+
+  .health-track {
+    display: flex;
+    width: 200%;
+    transition: transform 0.3s ease;
+  }
+
+  .health-layout.show-detail .health-track {
+    transform: translateX(-50%);
+  }
+
+  .health-slide {
+    display: block;
+    width: 50%;
+    flex: 0 0 50%;
+    min-width: 0;
+  }
+
+  .health-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin: 12px 0 8px;
+    padding: 8px 0;
+    border: 0;
+    background: transparent;
+    color: $indigo;
+    font-size: 1rem;
+    font-weight: 600;
+  }
+
+  .health-metric-chevron {
+    display: block;
+    flex-shrink: 0;
+    margin-left: 12px;
+    color: $gray-600;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .health-track {
+    transition: none;
+  }
+}
+
+.health-catalog .card-header {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: $gray-600;
+  background: transparent;
+}
+
+.health-metric {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  border-left: 3px solid transparent;
+}
+
+.health-metric-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+// Bootstrap's .list-group-item.active is white-on-primary. We keep a pale selected
+// background, so the title must stay dark in light mode or it vanishes on white.
+.health-metric.active {
+  border-left-color: $indigo;
+  background: rgba($indigo, 0.06);
+  color: $gray-900;
+}
+
+.health-metric-label {
+  font-weight: 600;
+  color: inherit;
+}
+
+.health-metric-value {
+  font-size: 0.85rem;
+  color: $gray-600;
+}
+
+.health-metric.active .health-metric-value {
+  color: $gray-600;
+}
+
+.health-detail-title {
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+
+.health-latest-value {
+  font-weight: 600;
+}
+
+.health-window {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0 4px;
+}
+
+.health-slider {
+  flex: 1;
+  min-width: 0;
+}
+
+.health-window-caption {
+  color: $gray-600;
+  font-size: 0.8rem;
+  margin-bottom: 12px;
+}
+
+.health-chart {
+  position: relative;
+  height: 280px;
+  width: 100%;
+}
+
+.health-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 12px;
+  font-size: 0.9rem;
+  color: $gray-700;
+}
+
+@mixin health-dark {
+  .health-metric.active {
+    background: rgba($indigo, 0.22);
+    color: var(--dark-text-color);
+  }
+
+  .health-metric.active .health-metric-value {
+    color: var(--dark-secondary-text-color);
+  }
+}
+
+:host-context(body.dark-theme) { @include health-dark; }
+
+@media (prefers-color-scheme: dark) {
+  :host-context(body:not(.light-theme)) { @include health-dark; }
+}

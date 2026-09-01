@@ -11,7 +11,7 @@ import { ApiContext, ApiError } from '../src/framework/ApiContext.js';
 import { ConfigurationManager } from '../src/framework/ConfigurationManager.js';
 import { PolicyManager, PERMISSIONS_KEY, ROLES_KEY } from '../src/framework/managers/PolicyManager.js';
 import { FileConfigProvider } from '../src/framework/providers/FileConfigProvider.js';
-import { envNameFor, legacyEnvNameFor } from '../src/config/index.js';
+import { envNameFor, legacyEnvNameFor, unprefixedEnvNameFor } from '../src/config/index.js';
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -160,6 +160,8 @@ async function main(): Promise<void> {
   // names live inside the encrypted payload — so the old name must keep working until the cut-over.
   check('the pre-#627 SPIKE_ name is still accepted, so a running deployment does not crash-loop on rename',
     legacyEnvNameFor('yourphr.database.encryption.key') === 'SPIKE_DATABASE_ENCRYPTION_KEY');
+  check('HOST_IP and HOST_PORT are the unprefixed aliases for companion LAN discovery',
+    unprefixedEnvNameFor('yourphr.host.ip') === 'HOST_IP' && unprefixedEnvNameFor('yourphr.host.port') === 'HOST_PORT');
 
   const failed = results.filter((r) => !r.ok);
   console.log(`\n${results.length - failed.length}/${results.length} checks passed`);

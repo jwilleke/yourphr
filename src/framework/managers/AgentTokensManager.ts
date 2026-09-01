@@ -214,7 +214,7 @@ export class AgentTokensManager extends BaseManager {
    */
   private requireHuman(ctx: ApiContext): void {
     ctx.requireAuthenticated();
-    if (ctx.viaToken) {
+    if (ctx.viaToken || ctx.viaDevice) {
       throw new ApiError(403, 'an agent token cannot manage agent tokens — sign in to do this');
     }
   }

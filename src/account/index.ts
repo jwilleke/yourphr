@@ -36,6 +36,7 @@ export const ACCESS_CATEGORIES = [
   'Record search',
   'Records (FHIR)',
   'Full export',
+  'Health',
 ] as const;
 
 export type AccessCategory = (typeof ACCESS_CATEGORIES)[number];
@@ -124,6 +125,11 @@ export function accessCategoryFor(pathname: string): string | undefined {
     '/api/secure/resources/search': 'Record search',
     '/api/secure/search': 'Record search',
     '/api/secure/resource/fhir': 'Records (FHIR)',
+    '/api/secure/health/metrics': 'Health',
+    '/api/secure/health/series': 'Health',
+    '/api/secure/health/samples': 'Health',
+    '/api/secure/health/bundle': 'Health',
+    '/api/secure/health/sync-state': 'Health',
   };
   if (exact[pathname]) return exact[pathname];
   if (/^\/api\/secure\/resource\/fhir\/[^/]+\/[^/]+$/.test(pathname)) return 'Records (FHIR)';

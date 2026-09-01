@@ -6,7 +6,23 @@
         box-shadow: 0 0 30px rgba(0, 0, 0, 0.8);
 
         &-menu {
-            >.nav {
+            // The drawer is position:fixed with a light background. On desktop the
+            // links sit on the dark header bar, so they stay readable; on the phone
+            // (and any viewport below lg) that same light text was drawn on white.
+            @include media-breakpoint-down(lg) {
+                background-color: var(--header);
+                border-right-color: var(--border);
+
+                .az-header-menu-header {
+                    border-bottom-color: var(--border);
+
+                    .btn-close {
+                        filter: invert(1) grayscale(1);
+                    }
+                }
+            }
+
+            .az-header-menu-scroll > .nav {
                 .nav-item {
                     >.nav-link {
                         color: var(--dark-text-white-transparent-color);
@@ -30,6 +46,15 @@
                         }
                     }
                 }
+            }
+        }
+
+        &-menu-icon {
+
+            span,
+            span::before,
+            span::after {
+                background-color: var(--dark-text-white-color);
             }
         }
 

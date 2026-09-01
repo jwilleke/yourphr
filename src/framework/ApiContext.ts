@@ -47,6 +47,12 @@ export interface Principal {
    * ordinary session. ngdpbase carries the same fact under the same name.
    */
   viaToken?: ViaToken;
+  /**
+   * Set when the caller is a COMPANION DEVICE holding a token minted in Settings → Connected
+   * Devices. Distinct from viaToken: a device token is a full user credential (writes allowed),
+   * not a scoped read-only agent.
+   */
+  viaDevice?: ViaDevice;
 }
 
 /**
@@ -63,6 +69,12 @@ export interface ViaToken {
   scopes: readonly string[];
   /** The connected-device grant this key belongs to (yourphr#808); absent for an ordinary agent token. */
   grantId?: string;
+}
+
+/** A paired companion (the iPhone HealthKit app) standing behind a request. */
+export interface ViaDevice {
+  id: string;
+  name: string;
 }
 
 export class ApiContext {
@@ -83,6 +95,8 @@ export class ApiContext {
   readonly system: string;
   /** Present only when an agent token authenticated this request (yourphr#695). */
   readonly viaToken: ViaToken | undefined;
+  /** Present only when a companion device token authenticated this request. */
+  readonly viaDevice: ViaDevice | undefined;
 
   private constructor(engine: Engine, principal: Principal | null, system = '') {
     this.engine = engine;
@@ -103,6 +117,9 @@ export class ApiContext {
     this.viaToken = principal?.viaToken
       ? Object.freeze({ ...principal.viaToken, scopes: Object.freeze([...principal.viaToken.scopes]) })
       : undefined;
+    this.viaDevice = principal?.viaDevice
+      ? Object.freeze({ ...principal.viaDevice })
+      : undefined;
     Object.freeze(this);
   }
 
@@ -120,6 +137,14 @@ export class ApiContext {
    */
   static agent(owner: string, via: ViaToken, engine: Engine): ApiContext {
     return new ApiContext(engine, { username: owner, role: 'user', viaToken: via });
+  }
+
+  /**
+   * A companion device acting for `owner`. The role is the owner's — a paired phone is the
+   * patient writing their own samples, not an agent with a narrowed scope.
+   */
+  static device(owner: string, role: Role, via: ViaDevice, engine: Engine): ApiContext {
+    return new ApiContext(engine, { username: owner, role, viaDevice: via });
   }
 
   /** Nobody: the public routes. */
@@ -141,6 +166,7 @@ export class ApiContext {
    */
   get actor(): string {
     if (this.viaToken) return this.viaToken.name;
+    if (this.viaDevice) return this.viaDevice.name;
     return this.system !== '' ? this.system : this.username;
   }
 

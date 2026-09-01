@@ -10,9 +10,16 @@
 # MULTI-ARCH without native runners: the TypeScript compiles on the BUILD platform (its output is
 # arch-independent), and the only native dependency, better-sqlite3-multiple-ciphers, ships linux
 # x64 AND arm64 prebuilds, so the per-arch stages download rather than compile. No QEMU compile.
+#
+# Runtime is distroless (glibc, not Alpine/musl) so the SQLCipher prebuilds load. Distroless Node 24
+# is debian13; debian12 Node images were removed upstream. A debug shell needs a different image.
 
 # --- the Angular app --------------------------------------------------------------------------
 FROM --platform=$BUILDPLATFORM node:24-bookworm-slim AS frontend
+# Yarn Classic still runs Playwright's postinstall; without this it downloads ~1GB of browsers
+# into the build cache. They are never COPY'd into the runtime image.
+ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 \
+    CYPRESS_INSTALL_BINARY=0
 WORKDIR /build/frontend
 COPY frontend/package.json frontend/yarn.lock ./
 RUN yarn install --frozen-lockfile --network-timeout 600000
@@ -39,15 +46,18 @@ RUN yarn build -- -c prod
 RUN test ! -e /build/dist/web/main.js \
     && ls /build/dist/web/main.*.js > /dev/null \
     || (echo "REFUSED: the Angular output is unhashed — 'ng build' ran with no configuration, so it has shipped environment.ts (development). See yourphr#673." >&2; exit 1)
+RUN find /build/dist/web -type f -name '*.map' -delete
 
 # --- compile TypeScript once, on the build platform -------------------------------------------
 FROM --platform=$BUILDPLATFORM node:24-bookworm-slim AS build
+ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
 WORKDIR /build
 COPY package.json package-lock.json tsconfig.json tsconfig.build.json ./
 # --ignore-scripts: the repo's `prepare` hook wires git hooks, which has no business in an image.
 RUN npm ci --ignore-scripts
 COPY src ./src
-RUN npm run build
+# Source maps stay on for local `npm run build`; the image does not ship them.
+RUN npm run build -- --sourceMap false
 
 # The demo's baked-in baseline (yourphr#645): the databases a public demo resets itself to, built
 # HERE so what ships is reproducible and nobody hand-curates a database strangers will read.
@@ -60,26 +70,43 @@ RUN npx tsx scripts/build-demo-baseline.ts --out /build/baseline
 
 # --- production dependencies for the TARGET platform ------------------------------------------
 FROM node:24-bookworm-slim AS deps
+ARG TARGETARCH
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm ci --omit=dev --ignore-scripts && npm cache clean --force
+# SqliteFhirRepository readJson's three R4 files only; the rest of @medplum/definitions is unused
+# valuesets / other-version JSON. Maps and foreign-OS SQLCipher prebuilds never run in this image.
+# deps/ and src/ are the compile tree; runtime loads prebuilds/*.node.
+RUN npm ci --omit=dev --ignore-scripts && npm cache clean --force \
+    && find node_modules -type f -name '*.map' -delete \
+    && find node_modules/@medplum/definitions -type f -name '*.json' \
+        ! -name 'package.json' \
+        ! -path '*/fhir/r4/profiles-types.json' \
+        ! -path '*/fhir/r4/profiles-resources.json' \
+        ! -path '*/fhir/r4/search-parameters.json' \
+        -delete \
+    && node_arch="$(if [ "$TARGETARCH" = "arm64" ]; then echo arm64; else echo x64; fi)" \
+    && find node_modules/better-sqlite3-multiple-ciphers/prebuilds -type f ! -name "linux-${node_arch}.node" -delete \
+    && rm -rf node_modules/better-sqlite3-multiple-ciphers/deps node_modules/better-sqlite3-multiple-ciphers/src \
+    && mkdir -p /app/data
 
 # --- the runtime --------------------------------------------------------------------------------
-FROM node:24-bookworm-slim
+# Distroless has no shell, so mkdir/chown happen in `deps`. uid 1000 matches the `node` user the
+# previous bookworm-slim image ran as, so existing volume ownership keeps working.
+FROM gcr.io/distroless/nodejs24-debian13
 ENV NODE_ENV=production
 WORKDIR /opt/yourphr
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=build /build/dist/server ./dist/server
-COPY package.json ./
+COPY --from=deps --chown=1000:1000 /app/node_modules ./node_modules
+COPY --from=build --chown=1000:1000 /build/dist/server ./dist/server
+COPY --chown=1000:1000 package.json ./
 # The shipped defaults are part of the product (yourphr#621): the process refuses to boot without
 # them, and WORKDIR is where FileConfigProvider looks. Instance overrides live under ./data.
-COPY config ./config
+COPY --chown=1000:1000 config ./config
 # Inert on every instance that is not a demo: the reset needs demo.enabled AND reset-on-restart AND
 # this directory, and then still has to prove the database belongs to a demo (yourphr#645).
-COPY --from=build /build/baseline ./baseline
-COPY --from=frontend /build/dist/web ./web
-RUN mkdir -p /opt/yourphr/data && chown -R node:node /opt/yourphr
-USER node
+COPY --from=build --chown=1000:1000 /build/baseline ./baseline
+COPY --from=frontend --chown=1000:1000 /build/dist/web ./web
+COPY --from=deps --chown=1000:1000 /app/data ./data
+USER 1000
 
 # Bootstrap only (yourphr#472): where the data lives, where the UI is, which port. Settings live in
 # the config store under the data directory. Secrets (YOURPHR_DATABASE_ENCRYPTION_KEY,
@@ -98,11 +125,15 @@ VOLUME ["/opt/yourphr/data"]
 # ENTRYPOINT plus a default CMD, not CMD alone (yourphr#654). Words after the image name REPLACE
 # CMD and leave ENTRYPOINT in place, so `docker run … <image> migrate --go …` — what the upgrade
 # guide has always told self-hosters to run — becomes `node dist/server/main.js migrate --go …`.
+# Distroless's own ENTRYPOINT is `/nodejs/bin/node` and `node` is NOT on PATH, so a bare `node`
+# fails at runc with "executable file not found". We replace their ENTRYPOINT with the absolute
+# path plus the script so extra args cannot drop the script either.
 # With CMD alone those words replaced the whole command and docker looked for a binary called
 # `migrate`, which is why the documented upgrade could not be performed from the image.
 #
 # `start` is the default, so an argument-less `docker run` and every existing Deployment (neither
 # yourphr nor demo-yourphr sets command: or args:) behave exactly as before. A shell for debugging
-# now needs --entrypoint, which is the ordinary cost of a container that has more than one job.
-ENTRYPOINT ["node", "dist/server/main.js"]
+# now needs a debug image (distroless has none), which is the ordinary cost of a container that
+# has more than one job.
+ENTRYPOINT ["/nodejs/bin/node", "dist/server/main.js"]
 CMD ["start"]

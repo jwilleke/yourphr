@@ -35,6 +35,36 @@
                 "glob": "**/*",
                 "input": "./node_modules/dwv/decoders/",
                 "output": "/assets/dwv/decoders/"
+              },
+              {
+                "glob": "lhc-forms.js",
+                "input": "./node_modules/lforms/dist/lforms/webcomponent/",
+                "output": "/assets/js/lforms/"
+              },
+              {
+                "glob": "assets/lib/zone.min.js",
+                "input": "./node_modules/lforms/dist/lforms/webcomponent/",
+                "output": "/assets/js/lforms/"
+              },
+              {
+                "glob": "lformsFHIRAll.min.js",
+                "input": "./node_modules/lforms/dist/lforms/fhir/",
+                "output": "/assets/js/lforms/fhir/"
+              },
+              {
+                "glob": "**/*.js",
+                "input": "./node_modules/@webcomponents/webcomponentsjs",
+                "output": "/assets/js/webcomponents/"
+              },
+              {
+                "glob": "**/*.css",
+                "input": "./node_modules/lforms/dist/lforms/webcomponent/",
+                "output": "/assets/css/lforms/"
+              },
+              {
+                "glob": "**/*.png",
+                "input": "./node_modules/lforms/dist/lforms/webcomponent/",
+                "output": "/assets/css/lforms/"
               }
             ],
             "styles": [
@@ -67,7 +97,7 @@
               ],
               "optimization": true,
               "outputHashing": "all",
-              "sourceMap": true,
+              "sourceMap": false,
               "namedChunks": false,
               "extractLicenses": true,
               "vendorChunk": false,

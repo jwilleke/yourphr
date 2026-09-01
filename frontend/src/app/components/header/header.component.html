@@ -5,6 +5,7 @@
       <a href="#" id="azMenuShow" (click)="toggleHeaderMenu($event)" class="az-header-menu-icon d-lg-none"><span></span></a>
     </div><!-- az-header-left -->
     <div class="az-header-menu">
+      <div class="az-header-menu-scroll">
       <div class="az-header-menu-header">
         <a routerLink="/" class="az-logo"><span></span> YourPHR</a>
         <a href="#" (click)="toggleHeaderMenu($event)" class="btn-close" aria-label="Close"></a>
@@ -23,6 +24,9 @@
         <li class="nav-item" ngbDropdown [ngClass]="{ 'active': $safeNavigationMigration(labs?.isActive) }">
           <a routerLink="/labs" routerLinkActive="active" #labs="routerLinkActive" class="nav-link"><fa-icon [icon]="['fas', 'heart-pulse']"></fa-icon>&nbsp; Labs</a>
         </li>
+        <li class="nav-item" ngbDropdown [ngClass]="{ 'active': $safeNavigationMigration(health?.isActive) }">
+          <a routerLink="/health" routerLinkActive="active" #health="routerLinkActive" class="nav-link"><fa-icon [icon]="['fas', 'chart-line']"></fa-icon>&nbsp; Health</a>
+        </li>
         <li class="nav-item" ngbDropdown [ngClass]="{ 'active': $safeNavigationMigration(explore?.isActive) }">
           <a routerLink="/explore" routerLinkActive="active" #explore="routerLinkActive" class="nav-link"><fa-icon [icon]="['fas', 'folder-tree']"></fa-icon>&nbsp; Explore</a>
         </li>
@@ -34,6 +38,7 @@
         </li>
 
       </ul>
+      </div><!-- az-header-menu-scroll -->
     </div><!-- az-header-menu -->
     <div class="az-header-right">
       <a style="display:none;" ngbTooltip="not yet implemented" class="az-header-search-link"><i class="fas fa-search"></i></a>
@@ -96,7 +101,11 @@
               <a routerLink="/admin" class="dropdown-item cursor-pointer"><i style="font-size: medium;" class="fas fa-cogs"></i> Admin Dashboard</a>
             }
             <a routerLink="/account-profile" class="dropdown-item cursor-pointer"><i style="font-size: medium;" class="fas fa-user-cog"></i> Account Profile</a>
-            <a (click)="signOut($event)" class="dropdown-item  cursor-pointer"><i style="font-size: medium;" class="fas fa-power-off"></i> Sign Out</a>
+            @if (isCompanionApp) {
+              <span class="dropdown-item text-muted">Disconnect this phone from the app’s sync menu.</span>
+            } @else {
+              <a (click)="signOut($event)" class="dropdown-item  cursor-pointer"><i style="font-size: medium;" class="fas fa-power-off"></i> Sign Out</a>
+            }
           </div><!-- dropdown-menu -->
         </div>
       </div><!-- az-header-right -->

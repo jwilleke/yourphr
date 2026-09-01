@@ -61,6 +61,17 @@ describe('ApiContext — who is asking, immutable, with guards that throw ApiErr
     expect(tool.role).toBe('user');
   });
 
+  it('a companion device acts as the owner with a full (unscoped) read', () => {
+    const phone = ApiContext.device('alice', 'user', {id: 'tok_phone', name: 'iPhone'}, engine);
+    expect(phone.isAuthenticated).toBe(true);
+    expect(phone.username).toBe('alice');
+    expect(phone.actor).toBe('iPhone');
+    expect(phone.viaDevice?.id).toBe('tok_phone');
+    expect(phone.viaToken).toBeUndefined();
+    expect(phone.canRead('Health')).toBe(true);
+    expect(phone.canRead('Medications')).toBe(true);
+  });
+
   it('ApiError carries status and extra envelope fields', () => {
     const err = new ApiError(403, 'consent first', { error_code: 'legal_consent_required' });
     expect(err.status).toBe(403);

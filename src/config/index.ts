@@ -77,3 +77,15 @@ export function legacyEnvNameFor(key: string): string | undefined {
   const withoutPrefix = key.startsWith('yourphr.') ? key.slice('yourphr.'.length) : undefined;
   return withoutPrefix === undefined ? undefined : 'SPIKE_' + withoutPrefix.toUpperCase().replace(/[.-]/g, '_');
 }
+
+/**
+ * Docker-compose and the Go-era `.env` published these two without a prefix: they describe how a
+ * phone on Wi-Fi reaches the instance, which is a host fact. Bound explicitly so `HOST_IP=` in
+ * `.env` populates `yourphr.host.ip` for the companion QR. `YOURPHR_HOST_IP` still wins when both
+ * are set. See docs/configuration-system.md.
+ */
+export function unprefixedEnvNameFor(key: string): string | undefined {
+  if (key === 'yourphr.host.ip') return 'HOST_IP';
+  if (key === 'yourphr.host.port') return 'HOST_PORT';
+  return undefined;
+}

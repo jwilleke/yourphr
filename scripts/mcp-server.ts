@@ -36,6 +36,13 @@
  * same either way — only the plumbing changes.
  */
 import { createInterface } from 'node:readline';
+// The ONLY import out of src/, and a deliberate one: the sleep stages come back as bare SNOMED
+// codes ("248220008"), and a client showing those to a patient is showing them nothing. The
+// display strings are already written down once, in the catalog the server itself codes against —
+// copying them here would be the second place for the record's meaning to drift, which is the
+// mistake this file argues against everywhere else. catalog.ts is pure data with no imports of its
+// own, so this stays an HTTP client with no database handle and no privilege.
+import { codeableDisplay, lookupByMetricType } from '../src/app/health/catalog.js';
 
 /** MCP revisions this bridge speaks. A client asking for one of these is answered in its own. */
 const SUPPORTED_PROTOCOLS = ['2025-06-18', '2025-03-26', '2024-11-05'];
@@ -118,6 +125,45 @@ const SEARCH_RECORDS = {
 } as const;
 
 /**
+ * Wearable metrics (yourphr sat-apple-health): the phone's own readings, which `search_records`
+ * cannot reach and never will.
+ *
+ * Record search runs over the FHIR resources a provider sent — health_samples is a separate
+ * projection written by the companion app, deliberately NOT through the FHIR write path, because
+ * every Observation write costs a goja evaluation and a year of five-minute heart rate would cost
+ * more than a day of CPU. So a metric is not "a record that search happens to miss": it lives in a
+ * different table, reached by a different route, under its own `Health` access category.
+ *
+ * TWO SHAPES, because the two questions are different sizes. The catalog resource is "what does my
+ * phone record, and what was the last reading" — one row per metric, attachable. This tool is "what
+ * has my heart rate done for a month", which is a series, and a series is only worth fetching once
+ * the model knows which metric to ask for.
+ */
+const READ_HEALTH_METRIC = {
+  name: 'read_health_metric',
+  title: 'Read a wearable health metric',
+  description:
+    "Read one of the patient's own wearable/phone health metrics over time — heart rate, resting " +
+    'heart rate, HRV, steps, blood pressure, body mass, oxygen saturation, body temperature, sleep. ' +
+    'Returns the values with min/max/average for the window. Read the yourphr://health resource ' +
+    'first to see which metrics this instance actually holds. Read-only.',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      metric_type: { type: 'string', description: 'The metric, e.g. "heart_rate", "step_count", "sleep_stage", "blood_pressure".' },
+      days: { type: 'integer', description: 'How many days back from now (1-365). Defaults to 30.', minimum: 1, maximum: 365 },
+      mode: {
+        type: 'string',
+        enum: ['points', 'day', 'daily-stats', 'stages'],
+        description: 'points = one value per sample (default); day = one total per day (steps); daily-stats = per-day min/max/avg; stages = hours per sleep stage per night.',
+      },
+    },
+    required: ['metric_type'],
+    additionalProperties: false,
+  },
+} as const;
+
+/**
  * The records a client can ATTACH, rather than ask a question about (yourphr#657).
  *
  * The first slice published one tool and nothing else, which is why YourPHR did not appear in a
@@ -149,6 +195,8 @@ const RESOURCES = [
     description: 'Immunization history, classified by vaccine.' },
   { uri: 'yourphr://recent', name: 'recent', title: 'Recent records', scope: 'Record search', path: '/api/secure/resources/recent',
     description: 'The most recently added records across every type, newest first.' },
+  { uri: 'yourphr://health', name: 'health', title: 'Wearable health metrics', scope: 'Health', path: '/api/secure/health/metrics',
+    description: "What the patient's phone and wearables record — one entry per metric with its latest reading, how far back it goes, and how many samples there are." },
 ] as const;
 
 /**
@@ -276,6 +324,145 @@ async function readResource(entry: (typeof RESOURCES)[number]): Promise<{ ok: tr
   return { ok: true, text: await res.text() };
 }
 
+/** Two decimals: a daily step total printed as 3314.7400000000002 is arithmetic showing through. */
+const round = (value: number): number => Math.round(value * 100) / 100;
+
+interface SeriesPoint { t: string; v: number }
+interface DailyBucket { date: string; value: number }
+interface StageNight { date: string; stages: Record<string, number> }
+interface Series {
+  metric_type?: string;
+  vendor_type?: string;
+  unit?: string;
+  total?: number;
+  downsampled?: boolean;
+  points?: SeriesPoint[];
+  daily?: DailyBucket[];
+  nights?: StageNight[];
+  /** A panel metric (blood pressure) has no single value: one series PER COMPONENT code, keyed by it. */
+  components?: Record<string, SeriesPoint[]>;
+  stats?: { min?: number; max?: number; avg?: number };
+}
+
+/**
+ * One metric's series, as the patient.
+ *
+ * RENDERED, not raw JSON, and that is the whole reason this is a tool rather than a second
+ * resource: a month of five-minute heart rate is thousands of (t, v) pairs, and handing the model
+ * that array spends the context window on numbers it will summarise into the three the server
+ * already computed. The server downsamples and computes min/max/avg; this prints those, the window,
+ * and a bounded tail of the values so a specific reading can still be quoted with its timestamp.
+ */
+async function readHealthMetric(metricType: string, days: number, mode: string): Promise<Record<string, unknown>> {
+  const startAfter = new Date(Date.now() - days * 86_400_000).toISOString();
+  const params = new URLSearchParams({ metric_type: metricType, start_after: startAfter, mode });
+  let res: Response;
+  try {
+    res = await fetch(`${BASE}/api/secure/health/series?${params.toString()}`, {
+      headers: { authorization: `Bearer ${TOKEN}`, accept: 'application/json' },
+    });
+  } catch (err) {
+    return toolResult(`Could not reach YourPHR at ${BASE}: ${(err as Error).message}`, true);
+  }
+  if (res.status === 401) {
+    return toolResult(
+      'YourPHR refused the agent token. It has been revoked, or it has expired — agent tokens last at ' +
+        'most 24 hours. Mint a fresh one from Account Profile and update this client.',
+      true,
+    );
+  }
+  if (res.status === 403) {
+    return toolResult(
+      'This agent token was not given access to health metrics. Mint one from Account Profile with the ' +
+        '"Health" scope selected.',
+      true,
+    );
+  }
+  // A metric this instance has never recorded is a 400 from the server, and saying which ones it
+  // does hold is more use to the patient than the status code.
+  if (res.status === 400) {
+    return toolResult(
+      `YourPHR does not recognise the metric "${metricType}". Read the yourphr://health resource to see ` +
+        'which metrics this instance holds.',
+      true,
+    );
+  }
+  if (!res.ok) return toolResult(`YourPHR answered ${res.status} ${res.statusText}.`, true);
+
+  const series = ((await res.json()) as { data?: Series }).data ?? {};
+  const unit = series.unit ? ` ${series.unit}` : '';
+  const head = `${series.metric_type || metricType} over the last ${days} day${days === 1 ? '' : 's'}` +
+    ` (since ${startAfter.slice(0, 10)})`;
+
+  if (series.nights?.length) {
+    const metric = lookupByMetricType(series.metric_type || metricType);
+    const lines = series.nights.map((n) => {
+      const stages = Object.entries(n.stages)
+        .map(([code, hours]) => `${metric ? codeableDisplay(metric, code) : code} ${hours.toFixed(1)}h`)
+        .join(', ');
+      return `- ${n.date}: ${stages}`;
+    });
+    return toolResult(`${head} — ${series.nights.length} night(s):\n${lines.join('\n')}`);
+  }
+
+  if (series.daily?.length) {
+    const lines = series.daily.map((d) => `- ${d.date}: ${round(d.value)}${unit}`);
+    return toolResult(`${head} — ${series.daily.length} day(s):\n${lines.join('\n')}`);
+  }
+
+  // A panel before the plain points, because a panel HAS no points and falling through to them is
+  // how blood pressure came back as "no samples recorded" while thirty cuff readings sat in the
+  // table. Systolic and diastolic are printed on one line per reading: a pair is what a clinician
+  // reads, and splitting it into two lists loses which half went with which.
+  if (series.components && Object.keys(series.components).length > 0) {
+    const metric = lookupByMetricType(series.metric_type || metricType);
+    const codes = Object.keys(series.components);
+    const label = (code: string): string =>
+      metric?.components?.find((c) => c.code === code)?.display ?? code;
+    const byTime = new Map<string, Map<string, number>>();
+    for (const code of codes) {
+      for (const point of series.components[code] ?? []) {
+        if (!byTime.has(point.t)) byTime.set(point.t, new Map());
+        byTime.get(point.t)!.set(code, point.v);
+      }
+    }
+    const times = [...byTime.keys()].sort();
+    const TAIL_PANEL = 60;
+    const shownTimes = times.slice(-TAIL_PANEL);
+    const lines = shownTimes.map((t) => {
+      const values = codes
+        .filter((code) => byTime.get(t)!.has(code))
+        .map((code) => `${label(code)} ${round(byTime.get(t)!.get(code)!)}${unit}`)
+        .join(' / ');
+      return `- ${t}: ${values}`;
+    });
+    const trimmed = times.length > TAIL_PANEL ? ` (showing the most recent ${TAIL_PANEL})` : '';
+    return toolResult(`${head}: ${series.total ?? times.length} reading(s)${trimmed}\n${lines.join('\n')}`);
+  }
+
+  const points = series.points ?? [];
+  if (points.length === 0) return toolResult(`${head}: no samples recorded.`);
+
+  const s = series.stats ?? {};
+  const stats = [
+    s.min !== undefined ? `min ${s.min}${unit}` : '',
+    s.max !== undefined ? `max ${s.max}${unit}` : '',
+    s.avg !== undefined ? `avg ${Number(s.avg).toFixed(1)}${unit}` : '',
+  ].filter(Boolean).join(', ');
+
+  // The tail is bounded because the context window is: the stats above are computed over the WHOLE
+  // window by the server, so truncating the listing loses detail but never distorts the summary.
+  const TAIL = 60;
+  const shown = points.slice(-TAIL);
+  const lines = shown.map((p) => `- ${p.t}: ${round(p.v)}${unit}`);
+  const note = points.length > TAIL ? ` (showing the most recent ${TAIL})` : '';
+  const sampled = series.downsampled ? ' The server downsampled this window, so each value is a bucket average.' : '';
+
+  return toolResult(
+    `${head}: ${series.total ?? points.length} sample(s)${stats ? `, ${stats}` : ''}.${sampled}${note}\n${lines.join('\n')}`,
+  );
+}
+
 async function handle(msg: Rpc): Promise<void> {
   const { id, method, params } = msg;
 
@@ -306,7 +493,7 @@ async function handle(msg: Rpc): Promise<void> {
       return;
 
     case 'tools/list':
-      reply(id, { tools: [SEARCH_RECORDS] });
+      reply(id, { tools: [SEARCH_RECORDS, READ_HEALTH_METRIC] });
       return;
 
     case 'resources/list':
@@ -367,6 +554,28 @@ async function handle(msg: Rpc): Promise<void> {
 
     case 'tools/call': {
       const call = params as { name?: string; arguments?: Record<string, unknown> } | undefined;
+      const args = call?.arguments ?? {};
+
+      if (call?.name === READ_HEALTH_METRIC.name) {
+        const metricType = typeof args['metric_type'] === 'string' ? args['metric_type'].trim() : '';
+        if (metricType === '') {
+          reply(id, toolResult('Name the metric to read, e.g. "heart_rate". The yourphr://health resource lists them.', true));
+          return;
+        }
+        const askedDays = Number(args['days'] ?? 30);
+        const days = Number.isInteger(askedDays) ? Math.min(Math.max(askedDays, 1), 365) : 30;
+        const askedMode = typeof args['mode'] === 'string' ? args['mode'] : '';
+        // The mode a metric wants is a property of the metric, not of the question: steps are a
+        // daily total and sleep is a set of stages, and a client that omits it should still get the
+        // chart the app would draw rather than a raw sample list.
+        const mode = askedMode !== '' ? askedMode
+          : metricType === 'step_count' ? 'day'
+          : metricType === 'sleep_stage' ? 'stages'
+          : 'points';
+        reply(id, await readHealthMetric(metricType, days, mode));
+        return;
+      }
+
       if (call?.name !== SEARCH_RECORDS.name) {
         fail(id, -32602, `unknown tool: ${String(call?.name ?? '')}`);
         return;

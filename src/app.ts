@@ -25,6 +25,10 @@ import { FileConfigProvider } from './framework/providers/FileConfigProvider.js'
 import { addColumnWithDefault, type Migration } from './framework/providers/sqlite-migrations.js';
 import { AgentTokensManager } from './framework/managers/AgentTokensManager.js';
 import { SqliteAgentTokensProvider } from './framework/providers/SqliteAgentTokensProvider.js';
+import { DeviceTokensManager } from './app/managers/DeviceTokensManager.js';
+import { SqliteDeviceTokensProvider } from './app/providers/SqliteDeviceTokensProvider.js';
+import { HealthManager } from './app/managers/HealthManager.js';
+import { SqliteHealthProvider } from './app/providers/SqliteHealthProvider.js';
 import { DatabaseManager } from './framework/managers/DatabaseManager.js';
 import { SqliteDatabaseProvider } from './framework/providers/SqliteDatabaseProvider.js';
 import { UsersManager, BOOTSTRAP_ADMIN_USERNAME } from './framework/managers/UsersManager.js';
@@ -523,8 +527,12 @@ export async function openStores(dataDir: string, env: Record<string, string | u
   // yourphr#695: after sessions, because an agent token is an alternative to one rather than a
   // replacement for it — the bearer path tries a session first and falls through to here.
   engine.register('agentTokens', new AgentTokensManager(engine, new SqliteAgentTokensProvider(db)));
+  // Companion device tokens (Settings → Connected Devices): a full user credential, not a
+  // scoped agent. Distinct prefix, hashed like agent tokens, so the iPhone can POST HealthKit samples.
+  engine.register('deviceTokens', new DeviceTokensManager(engine, new SqliteDeviceTokensProvider(db)));
   const recordsManager = new RecordsManager(engine, recordsProvider, new SqliteFavoritesProvider(db));
   engine.register('records', recordsManager);
+  engine.register('health', new HealthManager(engine, new SqliteHealthProvider(db)));
   // Backups (yourphr#615): the coordinator over OPTIONAL storage; the records door is the exporter.
   engine.register('backups', new BackupManager(engine, backupProviderFor(config.getString('yourphr.backup.storage.provider')), { dataDir, exporter: recordsManager, alsoExport: [{ file: appDbPath, key: dbKey }, { file: phdSamplesDbPath, key: dbKey, optional: true }] }));
   // 7. Jobs and Sources (yourphr#612): the source client is an OPTIONAL capability — bound by

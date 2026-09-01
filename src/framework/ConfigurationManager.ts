@@ -19,7 +19,8 @@
 import { BaseManager, type BackupData } from './BaseManager.js';
 import type { Engine } from './Engine.js';
 import type { BaseConfigProvider } from './providers/BaseConfigProvider.js';
-import { envNameFor, legacyEnvNameFor, isConfigObject, PUBLIC_KEYS_KEY, type ConfigObject, type ConfigValue } from '../config/index.js';
+
+import { envNameFor, legacyEnvNameFor, unprefixedEnvNameFor, isConfigObject, PUBLIC_KEYS_KEY, type ConfigObject, type ConfigValue } from '../config/index.js';
 import { appLog } from '../log/index.js';
 import { coerceToTypeOf, describePropertySource, ENV_KEYS_CONFIG_KEY, FALLBACK_ENV_KEYS, SECRET_KEYS_CONFIG_KEY, type EnvKeyMap, type PropertyDescription } from '../config/env-keys.js';
 
@@ -148,7 +149,7 @@ export class ConfigurationManager extends BaseManager {
       if (raw !== undefined && raw !== '') return coerceToTypeOf(raw, shipped);
       return shipped as ConfigValue;   // the shipped value is this key's boot fallback
     }
-    const fromEnv = this.envValue(envNameFor(key)) ?? this.legacyEnvValue(key);
+    const fromEnv = this.envValue(envNameFor(key)) ?? this.legacyEnvValue(key) ?? this.unprefixedEnvValue(key);
     if (fromEnv !== undefined) return coerceFromEnv(fromEnv, this.defaults[key], key);
     if (key in this.custom) return this.merged[key] as ConfigValue;
     return this.defaults[key] as ConfigValue;
@@ -285,15 +286,15 @@ export class ConfigurationManager extends BaseManager {
   customValues(): Record<string, ConfigValue> { return { ...this.custom }; }
 
   isSetByEnvironment(key: string): boolean {
-    return this.envValue(envNameFor(key)) !== undefined || this.legacyEnvValue(key) !== undefined;
+    return this.envValue(envNameFor(key)) !== undefined || this.legacyEnvValue(key) !== undefined || this.unprefixedEnvValue(key) !== undefined;
   }
 
-  /** A pre-yourphr#627 `SPIKE_*` variable, warned about once so an operator knows to move it. */
   /** The environment as this manager sees it: the real one, over the provider's roots. */
   private envValue(name: string): string | undefined {
     return this.env[name] ?? this.roots[name];
   }
 
+  /** A pre-yourphr#627 `SPIKE_*` variable, warned about once so an operator knows to move it. */
   private legacyEnvValue(key: string): string | undefined {
     const legacy = legacyEnvNameFor(key);
     if (legacy === undefined) return undefined;
@@ -303,6 +304,23 @@ export class ConfigurationManager extends BaseManager {
       this.log(`configuration: ${legacy} is the old name for ${envNameFor(key)} and still works — update the deployment before the cut-over (yourphr#588)`);
     }
     return value;
+  }
+
+  /** `HOST_IP` / `HOST_PORT` — documented unprefixed aliases, empty means unset. */
+  private unprefixedEnvValue(key: string): string | undefined {
+    const name = unprefixedEnvNameFor(key);
+    if (name === undefined) return undefined;
+    const value = this.envValue(name);
+    if (value === undefined || value === '') return undefined;
+    return value;
+  }
+
+  /** The variable actually supplying this key, for refused-write messages. */
+  private environmentNameSet(key: string): string {
+    if (this.envValue(envNameFor(key)) !== undefined) return envNameFor(key);
+    const legacy = legacyEnvNameFor(key);
+    if (legacy !== undefined && this.env[legacy] !== undefined) return legacy;
+    return unprefixedEnvNameFor(key) ?? envNameFor(key);
   }
 
   private readonly warnedLegacy = new Set<string>();
@@ -380,7 +398,7 @@ export class ConfigurationManager extends BaseManager {
     // read-only either way, or the same key is editable on one instance and refused on another.
     const owner = this.envKeyMap()[key];
     if (owner !== undefined) throw new Error(`${key} is owned by the environment variable ${owner} — set it there and restart; this screen cannot change it`);
-    if (this.isSetByEnvironment(key)) throw new Error(`${key} is set in the environment (${envNameFor(key)}); remove the variable to manage it here`);
+    if (this.isSetByEnvironment(key)) throw new Error(`${key} is set in the environment (${this.environmentNameSet(key)}); remove the variable to manage it here`);
     if (this.customUnreadable) throw new Error(`${this.provider.customLocation()} exists but cannot be parsed — refusing to overwrite it`);
     // Writing a literal over an environment reference would move a secret out of the deployment
     // and into a file on disk — silently, and from a screen that was only showing '••••'.

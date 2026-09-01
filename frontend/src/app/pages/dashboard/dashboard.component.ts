@@ -11,6 +11,7 @@ import {ClassifiedCondition} from '../../models/fasten/classified-condition';
 import {ClassifiedAllergy} from '../../models/fasten/classified-allergy';
 import {ResourceListItem} from '../../models/fasten/resource-list-item';
 import {displayFhirDate} from '../../../lib/utils/implant-date';
+import {groupSummaries} from '../health/health-metrics';
 
 // The palette a patient can pick a tile color from (matches the SCSS .tile-color-* classes).
 export const TILE_PALETTE = ['amber', 'blue', 'red', 'green', 'teal', 'purple', 'pink', 'gray']
@@ -32,7 +33,7 @@ export interface DashboardTile {
   // countKey tiles get their count from a classifier (not the summary resource counts): concerns/profile
   // from the condition classifier, allergies from the allergy classifier (so "no known allergy"
   // negations are excluded — #290).
-  countKey?: 'concerns' | 'profile' | 'allergies'
+  countKey?: 'concerns' | 'profile' | 'allergies' | 'health'
 }
 
 export const DEFAULT_TILES: DashboardTile[] = [
@@ -41,6 +42,7 @@ export const DEFAULT_TILES: DashboardTile[] = [
   {id: 'medications', label: 'Medications', clinicalLabel: 'Prescriptions & medication statements', icon: 'fa-solid fa-pills', route: '/medications', resourceTypes: ['MedicationRequest', 'MedicationStatement', 'Medication', 'MedicationAdministration', 'MedicationDispense'], count: 0, color: 'amber', unit: 'records'},
   {id: 'allergies', label: 'Allergies', clinicalLabel: 'Allergies & intolerances', icon: 'fa-solid fa-triangle-exclamation', route: '/allergies', resourceTypes: ['AllergyIntolerance'], count: 0, color: 'pink', unit: 'recorded', countKey: 'allergies'},
   {id: 'lab-results', label: 'Lab Results', clinicalLabel: 'Observations & diagnostic reports', icon: 'fa-solid fa-flask', route: '/labs', resourceTypes: ['Observation', 'DiagnosticReport'], count: 0, color: 'blue', unit: 'results'},
+  {id: 'health', label: 'Health', clinicalLabel: 'Wearables & device readings', icon: 'fa-solid fa-chart-line', route: '/health', resourceTypes: [], count: 0, color: 'red', unit: 'metrics', countKey: 'health'},
   {id: 'immunizations', label: 'Immunizations', clinicalLabel: 'Vaccinations', icon: 'fa-solid fa-syringe', route: '/immunizations', resourceTypes: ['Immunization'], count: 0, color: 'green', unit: 'on file'},
   {id: 'visits', label: 'Visits & Notes', clinicalLabel: 'Encounters', icon: 'fa-solid fa-notes-medical', route: '/medical-history', resourceTypes: ['Encounter'], count: 0, color: 'teal', unit: 'encounters'},
   {id: 'procedures', label: 'Procedures', clinicalLabel: 'Procedures & surgeries', icon: 'fa-solid fa-user-nurse', route: '/procedures', resourceTypes: ['Procedure'], count: 0, color: 'purple', unit: 'procedures'},
@@ -154,6 +156,12 @@ export class DashboardComponent implements OnInit, OnDestroy {
       next: (rows: ClassifiedAllergy[]) => {
         const real = (rows || []).filter((r) => !r.noKnown && r.state !== 'RuledOut')
         this.setTileCount('allergies', real.length)
+      },
+    })
+
+    this.fastenApi.getHealthMetrics().subscribe({
+      next: (catalog) => {
+        this.setTileCount('health', groupSummaries(catalog.metrics || []).length)
       },
     })
   }

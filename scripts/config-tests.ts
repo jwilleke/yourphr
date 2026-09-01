@@ -72,6 +72,18 @@ function main(): void {
     rmSync(dir, { recursive: true, force: true });
   }
 
+  // --- companion LAN discovery: HOST_IP is the documented unprefixed alias ---
+  {
+    const dir = mkdtempSync(join(tmpdir(), 'spike-config-host-'));
+    const fromHost = store(dir, { HOST_IP: '10.0.0.226', HOST_PORT: '9090' });
+    check('HOST_IP populates yourphr.host.ip for the companion QR',
+      fromHost.getString('yourphr.host.ip') === '10.0.0.226' && fromHost.getString('yourphr.host.port') === '9090');
+    const preferred = store(dir, { HOST_IP: '10.0.0.1', [envNameFor('yourphr.host.ip')]: '10.0.0.9' });
+    check('YOURPHR_HOST_IP outranks HOST_IP when both are set',
+      preferred.getString('yourphr.host.ip') === '10.0.0.9');
+    rmSync(dir, { recursive: true, force: true });
+  }
+
   // --- the overlay holds only what the operator changed ---
   {
     const dir = mkdtempSync(join(tmpdir(), 'spike-config-'));

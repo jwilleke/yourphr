@@ -218,6 +218,20 @@ describe('environment-owned keys — declared, not detected (yourphr#635)', () =
     expect(both.getString('yourphr.database.encryption.key')).toBe('new');
   });
 
+  it('HOST_IP / HOST_PORT populate LAN discovery without being declared env-owned', () => {
+    const { cfg } = boot({ HOST_IP: '10.0.0.226', HOST_PORT: '9090' });
+    expect(cfg.getString('yourphr.host.ip')).toBe('10.0.0.226');
+    expect(cfg.getString('yourphr.host.port')).toBe('9090');
+    expect(cfg.isSetByEnvironment('yourphr.host.ip')).toBe(true);
+    expect(cfg.envControlledKeys()['yourphr.host.ip']).toBeUndefined();
+    expect(() => cfg.set('yourphr.host.ip', '1.2.3.4')).toThrow(/HOST_IP/);
+    const preferred = boot({ HOST_IP: '10.0.0.1', YOURPHR_HOST_IP: '10.0.0.9' }).cfg;
+    expect(preferred.getString('yourphr.host.ip')).toBe('10.0.0.9');
+    const empty = boot({ HOST_IP: '' }).cfg;
+    expect(empty.getString('yourphr.host.ip')).toBe('');
+    expect(empty.isSetByEnvironment('yourphr.host.ip')).toBe(false);
+  });
+
   it('the declared map is exposed so the admin screen can name the owning variable', () => {
     const cfg = new ConfigurationManager(new Engine(), new FakeConfigProvider(), { env: {} });
     expect(cfg.envControlledKeys()['yourphr.database.encryption.key']).toBe('YOURPHR_DATABASE_ENCRYPTION_KEY');
