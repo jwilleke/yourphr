@@ -97,7 +97,7 @@
     "storybook": "^10.5.10",
     "ts-node": "~9.1.1",
     "typescript": "~6.0.3",
-    "typescript-eslint": "8.67.0"
+    "typescript-eslint": "8.68.0"
   },
   "resolutions": {
     "ip-address": "10.3.1",
