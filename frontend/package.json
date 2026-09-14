@@ -40,7 +40,7 @@
     "@panva/oauth4webapi": "1.2.1",
     "@popperjs/core": "^2.11.6",
     "@swimlane/ngx-datatable": "^25.1.0",
-    "@types/fhir": "^0.0.35",
+    "@types/fhir": "^0.0.44",
     "@webcomponents/webcomponentsjs": "^2.8.0",
     "asmcrypto.js": "^2.3.2",
     "bootstrap": "^5.3.8",

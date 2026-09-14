@@ -3637,10 +3637,10 @@
     "@types/qs" "*"
     "@types/serve-static" "^1"
 
-"@types/fhir@^0.0.35":
-  version "0.0.35"
-  resolved "https://registry.npmjs.org/@types/fhir/-/fhir-0.0.35.tgz#e598b99e6468fee556f0e78d398c13ad2571b1eb"
-  integrity sha512-y+VI3Y48xzZBM8AjXPq67EWbiY9VN4Cx5KzN8EplS0Zju8D2KahLXoK6P/PWlKyNTKvJBwemkHzJIocczLRkhQ==
+"@types/fhir@^0.0.44":
+  version "0.0.44"
+  resolved "https://registry.yarnpkg.com/@types/fhir/-/fhir-0.0.44.tgz#38d8985e7d37a3111db437c453ec2589738baf52"
+  integrity sha512-RhqRUNcUFeQSbEK9cOEYQ98sfsUFFRCUKbgozHvryiUfEAPiXuhgk2wqYV3MoD1T1qHp0gztrHDywU68bN7KYQ==
 
 "@types/html-minifier-terser@^6.0.0":
   version "6.1.0"
