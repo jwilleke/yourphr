@@ -28,6 +28,7 @@ LABELS=(
   # --- State / type (additive) ---
   "security|DC2626|Security: vulnerability alert or security feature work"
   "in-review|0075ca|Shipped; awaiting operator verification"
+  "epic|3e4b9e|Container for work tracked in its own issues"
   "blocked|000000|Blocked on an external dependency or decision"
   "dependencies|0366d6|Dependency updates (Dependabot)"
 )

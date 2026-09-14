@@ -56,7 +56,9 @@ For each open Dependabot / code-scanning / GitGuardian alert:
 
 - Any open __issue__ with __no__ placement label (`P0` / `P1` / `P2` / `deferred` / `in-review`) gets
   `needs-triage` so it shows up as awaiting a decision rather than being silently mis-ranked. An
-  `in-review` issue is already placed (it lands in the In review band) and is never flagged.
+  `in-review` issue is already placed (it lands in the In review band) and is never flagged. Nor is
+  an __epic__ (see below): an epic with no priority label is still placed, at the foot of the Epics
+  band.
 - Open __PRs__ are not auto-labeled; their band is derived in Step 4 (see __PR priority__). Unplaced
   PRs land in __Needs triage__ the same way unplaced issues do — never a separate unranked dump.
 
@@ -83,12 +85,47 @@ report and the operator has to work out which half is current.
 The bands, in this order (issues __and__ PRs share these bands):
 
 - `🔴 P0 — Security & Critical` (list `security` / vulnerability items first)
+- `🟣 Epics` (epics — see below)
 - `🟠 P1`
 - `🟡 P2`
 - `🔵 In review` (items labeled `in-review` — work complete and pushed, awaiting the operator's
   decision to close; takes precedence over a priority label so it surfaces as "ready for your call")
 - `⏸ Deferred`
 - `❓ Needs triage` (issues and PRs with no resolvable placement)
+
+__Placement precedence.__ That list is display order, not precedence. An item carrying several
+placement signals goes in the band of the __first__ that applies, highest first:
+
+1. `deferred` → ⏸ Deferred. It trumps everything, including `P0` and `in-review`: a deferred item is
+   not being worked, whatever its priority says.
+2. `in-review` → 🔵 In review.
+3. Epic → 🟣 Epics, whatever its `P0` / `P1` / `P2`.
+4. `P0` → 🔴, `P1` → 🟠, `P2` → 🟡.
+5. Anything else → ❓ Needs triage. `needs-triage` is the absence of a placement, never one: an item
+   that carries it alongside any signal above goes where that signal says.
+
+__An item is an epic if it is labeled `epic` or its title starts `[EPIC]`__ (case-insensitive).
+The title is enough on its own: the kit's `epic.md` issue template sets the prefix but not the label,
+and older repos have epics filed before the label existed. Do not wait for a relabel to place them.
+
+__An epic goes in the Epics band, whatever its priority label.__ An epic is a container for
+work that is tracked in its own issues, so ranking it beside them buries it: it reads as one more
+P0 while the issues that actually move it sit lower down. So epic outranks `P0` / `P1` / `P2` for
+band placement — but not `in-review`, since a finished epic is a decision waiting on the operator,
+and not `deferred`.
+
+The priority label still means something after the move: it orders the Epics band. Within the
+band, list by priority (`P0` before `P1` before `P2`, then epics with no priority), then by
+descending number. And note that
+moving an epic out can leave `P0` reading `*None.*` while a `P0`-labeled epic is open just below
+it — that is the intended trade, not a bug. The epic is visible in its own band, which is the
+point.
+
+__Regenerate only what is above `<!-- KIT:END -->`.__ Where `TODO.md` carries the marker,
+everything below it is the repo's own — a local band, a note, a link table — and `/pstatus` must
+leave it byte-for-byte alone. The bands go above it. The TODO linter stops reading there too, so
+content below the marker is never judged against the band rules. A repo without the marker is
+linted and regenerated end to end, as before.
 
 __There is no separate `🔀 Open PRs` band.__ Every open PR appears exactly once under the same
 priority band as issues. A flat PR-only section hid deps work from the ranked backlog (Dependabot
@@ -120,7 +157,7 @@ __title text__ only; never touch the link target of the `[#N](…)` reference it
 Resolve related issues first (next subsection), then place the PR:
 
 1. __Explicit PR labels__ — if the PR itself has `P0` / `P1` / `P2` / `deferred` / `in-review`, use
-   that (same precedence as issues: `in-review` wins over a priority label).
+   that, by the same placement precedence as issues (`deferred`, then `in-review`, then priority).
 2. __Inherit from linked issues__ — among open issues linked via `closes` / `refs` / `likely`, take
    the __highest__ priority: `P0` > `P1` > `P2`. Prefer a linked `security` issue's grade when
    present. If every linked open issue is only `in-review` or `deferred`, place the PR with that
