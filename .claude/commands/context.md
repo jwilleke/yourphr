@@ -14,6 +14,21 @@ Use `/context` at the start of a session to get up to speed on:
 - Any blockers or issues
 - Upcoming tasks and priorities
 
+## First: has this already been done?
+
+Before proposing or starting anything, establish what already exists. This is the work half of the
+kit's __Don't Repeat Yourself__ protocol, and it is the first action of a session, not a courtesy
+check afterwards:
+
+- the `▶ Resume here` block at the top of `TODO.md` — where the last session stopped, and what it
+  left running or half-done
+- recent `git log`, and whether the working tree is clean
+- the related GitHub issue, including its comments — a decision may already be recorded there
+
+Report what you found before recommending work. "Repeating finished work is the most common
+avoidable mistake" is in every repo's `AGENTS.md` because it keeps happening; a session that opens
+by restating a decision that already has a home has already made it.
+
 ## Repo-specific additions
 
 This file is __kit-managed and overwritten wholesale__ on every `install-kit.sh` run — anything

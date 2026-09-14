@@ -56,9 +56,10 @@ it reads as boilerplate attached to the manual edit, so it leaves with it.
 
 __Why not `npm install --package-lock-only`.__ That re-resolves the dependency tree against the
 registry and can bump transitive resolutions that satisfy existing ranges — unrelated to the
-release, and badly timed: the test gate in Step 1–3 already passed against the *old* resolution, so
-the lockfile that ships is not the one that was tested. Usually a no-op; when it is not, the change
-is invisible inside a large diff and lands unreviewed. `utility/set-version.mjs` never re-resolves.
+release. Steps 1–3 are git checks only (clean tree, on master, not behind remote, commits exist);
+they do not run any build or test. Re-resolving the lockfile could silently change transitive
+dependencies right before tagging, and the change would be invisible inside a large diff. Usually a
+no-op; when it is not, the change lands unreviewed. `utility/set-version.mjs` never re-resolves.
 
 ### Step 5: Commit, tag, and push
 

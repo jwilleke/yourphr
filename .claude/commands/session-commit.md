@@ -21,14 +21,17 @@ related GitHub issues. The personal log is __never committed__.
 ### Step 3: Refresh `TODO.md` and commit it
 
 - Regenerate `TODO.md` from the current GitHub issue labels (same banding as `/pstatus`:
-  P0 / P1 / P2 / Deferred / Needs triage). The `▶ Resume here` pointer is owned by `/wrap`; no need
+  P0 / Epics / P1 / P2 / In review / Deferred / Needs triage). The `▶ Resume here` pointer is owned by `/wrap`; no need
   to preserve it here. If `/pstatus` was just run, it is already current.
 - Apply `needs-triage` to any open issue with no placement label (`P0` / `P1` / `P2` / `deferred` /
-  `in-review`), exactly as `/pstatus` does. Two commands that regenerate the same file from the same
+  `in-review`) that is not an epic, exactly as `/pstatus` does, and place items by its precedence
+  rules. Two commands that regenerate the same file from the same
   labels must not disagree about what an unlabeled issue means.
 - Follow `.markdownlint-cli2.jsonc`, the control file for markdown style — including for any bare
   URL that arrives inside an issue or PR title. `TODO.md` is generated, so a violation turns the lint
   job red on a file nobody hand-edited.
+- Where `TODO.md` carries `<!-- KIT:END -->`, regenerate only the bands above it and leave
+  everything below untouched — that content belongs to the repo, not the kit.
 - Stage and commit `TODO.md` if it changed: `docs: refresh TODO from issue labels`.
 
 ### Step 4: Journal the session (local only — NOT committed)

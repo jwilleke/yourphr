@@ -48,6 +48,11 @@ pick up:
 <!-- RESUME:END -->
 ```
 
+Insert the block right after the `# TODO` title — and, where the file carries
+`<!-- KIT:START ... -->`, above that marker. The linter reads only the kit region between the
+markers, so a pointer placed above `KIT:START` is out of its scope entirely; a pointer written
+inside the bands is not (#75, #77).
+
 Insert the block right after the `# TODO` title (the markers will usually be absent, since `/pstatus`
 regenerated a bands-only `TODO.md` during the session; replace the block if it is present). This
 reflects only the latest handoff — `/context` reads it next session, then the first `/pstatus` clears
