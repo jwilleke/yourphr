@@ -374,10 +374,10 @@
     tslib "^2.3.0"
     zod "^4.0.10"
 
-"@angular/language-service@^22.1.5":
-  version "22.1.5"
-  resolved "https://registry.yarnpkg.com/@angular/language-service/-/language-service-22.1.5.tgz#8998daf9713ba97157344e08d7f90472bfc982b8"
-  integrity sha512-siezUdZm4wfA+wUWbTdPDlPzrEDM5LdFghyhspJyKMLQPs88c4MyD28d6AcEo7JzqdHPCF6PO/sXv910PElJtw==
+"@angular/language-service@^22.1.6":
+  version "22.1.6"
+  resolved "https://registry.yarnpkg.com/@angular/language-service/-/language-service-22.1.6.tgz#c36c18231c208e3d6551f11884aadfa8d83ef7d8"
+  integrity sha512-qsOgDUGR62lsdyJF+hoLx1kTSZtBoc+r2GJ64o6O+HqlsTPw0Q6aI6Y1qQkAurQbGa0s7qfhuXEHtKmG9MFiXA==
 
 "@angular/localize@^22.1.4":
   version "22.1.4"
