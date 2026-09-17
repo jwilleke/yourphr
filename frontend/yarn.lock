@@ -36,6 +36,14 @@
     "@angular-devkit/core" "21.2.19"
     rxjs "7.8.2"
 
+"@angular-devkit/architect@>= 0.2200.0 < 0.2300.0":
+  version "0.2201.8"
+  resolved "https://registry.yarnpkg.com/@angular-devkit/architect/-/architect-0.2201.8.tgz#87c8592ea017044243396f3b5372c760af7231e4"
+  integrity sha512-EUQo8RDS1my2Bo5FRS+gBYgz1/klfIp9XESfMpTBO04nBkjF6DkPCeOxeAf1CYjWy9nCXcWn968eSdEhV5jXiA==
+  dependencies:
+    "@angular-devkit/core" "22.1.8"
+    rxjs "7.8.2"
+
 "@angular-devkit/build-angular@^22.1.6":
   version "22.1.6"
   resolved "https://registry.yarnpkg.com/@angular-devkit/build-angular/-/build-angular-22.1.6.tgz#6bdc36170312bab9ccb5ac8601e7a4dcbebfb79e"
@@ -153,6 +161,18 @@
     rxjs "7.8.2"
     source-map "0.7.6"
 
+"@angular-devkit/core@22.1.8", "@angular-devkit/core@>= 22.0.0 < 23.0.0":
+  version "22.1.8"
+  resolved "https://registry.yarnpkg.com/@angular-devkit/core/-/core-22.1.8.tgz#7563f8dddc62831055fdade259e2abfc815ee8f4"
+  integrity sha512-34lsgg2FwMVBX7nR/ZqzRUcdvdYPvSB8XAEr2GudXAyZwLI9ehzfQlagAWR/gEb8p4uCFZW0r7uU0toxydq4Rw==
+  dependencies:
+    ajv "8.20.0"
+    ajv-formats "3.0.1"
+    jsonc-parser "3.3.1"
+    picomatch "4.0.5"
+    rxjs "7.8.2"
+    source-map "0.7.6"
+
 "@angular-devkit/schematics@22.0.4":
   version "22.0.4"
   resolved "https://registry.yarnpkg.com/@angular-devkit/schematics/-/schematics-22.0.4.tgz#56a37aef6990520236d1e017f5f4f0af035c9a2c"
@@ -193,6 +213,14 @@
   dependencies:
     "@angular-devkit/architect" ">= 0.2100.0 < 0.2200.0"
     "@angular-devkit/core" ">= 21.0.0 < 22.0.0"
+
+"@angular-eslint/builder@22.5.0":
+  version "22.5.0"
+  resolved "https://registry.yarnpkg.com/@angular-eslint/builder/-/builder-22.5.0.tgz#5406574811b65ea5a8b4e131d90260e45c46eb2d"
+  integrity sha512-bChGIHOApVk3eXaAfCOxxb54tToIttSzADEUpuBN6cs7Jp7OO96lNpMktv9IPvxfyVrhbriocwNy33jhpRSt0Q==
+  dependencies:
+    "@angular-devkit/architect" ">= 0.2200.0 < 0.2300.0"
+    "@angular-devkit/core" ">= 22.0.0 < 23.0.0"
 
 "@angular-eslint/bundled-angular-compiler@21.0.1":
   version "21.0.1"
