@@ -77,7 +77,7 @@
     "@playwright/test": "^1.62.1",
     "@types/node": "^24.0.0",
     "@vitest/coverage-v8": "^4.1.11",
-    "markdownlint-cli2": "^0.23.2",
+    "markdownlint-cli2": "^0.23.3",
     "tsx": "^4.19.2",
     "typescript": "^7.0.2",
     "vitest": "^4.1.11"
