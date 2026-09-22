@@ -45,6 +45,7 @@ export class SmartSourceClientProvider extends BaseSourceClientProvider {
         refreshToken: token.refreshToken ?? '',
         expiresAt: token.expiresAt ? Math.floor(token.expiresAt.getTime() / 1000) : 0,
         patient: (token.patient ?? '').trim(),
+        scope: (token.scope ?? '').trim(),
       };
     } catch (err) {
       throw new SourceClientError('exchange', `token exchange failed: ${(err as Error).message}`);
@@ -62,6 +63,7 @@ export class SmartSourceClientProvider extends BaseSourceClientProvider {
       refreshToken: token.refreshToken ?? source.refreshToken, // some providers rotate, some repeat — keep whichever is newest
       expiresAt: token.expiresAt ? Math.floor(token.expiresAt.getTime() / 1000) : nowSeconds + 3600,
       tokenUrl,
+      scope: (token.scope ?? '').trim(),
     };
   }
 

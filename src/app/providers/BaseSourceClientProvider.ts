@@ -8,7 +8,14 @@ import type { RecordsWriter } from './BaseRecordsProvider.js';
 import type { ConnectedSource } from './BaseSourcesProvider.js';
 import type { SourceCapability } from '../../sources/capability.js';
 
-export interface RefreshedTokens { accessToken: string; refreshToken: string; expiresAt: number; tokenUrl: string }
+export interface RefreshedTokens {
+  accessToken: string;
+  refreshToken: string;
+  expiresAt: number;
+  tokenUrl: string;
+  /** The grant as the refresh restated it (yourphr#757); '' when the server said nothing. */
+  scope: string;
+}
 export interface FetchReport {
   received: number;
   created: number;
@@ -33,7 +40,20 @@ export interface SmartApp {
 }
 
 export interface AuthorizationStart { authorizeUrl: string; state: string; codeVerifier: string }
-export interface AuthorizationResult { tokenUrl: string; accessToken: string; refreshToken: string; expiresAt: number; patient: string }
+export interface AuthorizationResult {
+  tokenUrl: string;
+  accessToken: string;
+  refreshToken: string;
+  expiresAt: number;
+  patient: string;
+  /**
+   * The scopes the server GRANTED (yourphr#757). SMART App Launch makes `scope` a required field of
+   * the access token response — "Scope of access authorized. Note that this can be different from
+   * the scopes requested by the app" — so this, not the catalog entry's request, is what the
+   * connection may actually read. '' when a (non-conformant) server omitted it.
+   */
+  scope: string;
+}
 
 /** Where a client call failed — the manager turns the stage into the caller-facing message. */
 export class SourceClientError extends Error {

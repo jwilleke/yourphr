@@ -33,6 +33,7 @@ import type { EventBus } from '../../events/index.js';
 import { providerRequiresLegalConsent } from '../../account/index.js';
 import { FhirHttpError, emptySyncReport, storeEntries } from '../../sync/index.js';
 import { decodeCapability, encodeCapability, narrowTypes } from '../../sources/capability.js';
+import { resourceTypesFromScopes } from '../../migrate/index.js';
 import { UploadFormatError, parseFhirUpload, patientOf } from '../../upload/index.js';
 
 declare module '../../framework/Engine.js' {
@@ -515,6 +516,9 @@ export class SourcesManager extends BaseManager {
    */
   private async typesToFetch(source: ConnectedSource, accessToken: string, now: number, notes: string[]): Promise<string[]> {
     if (source.platformType === MANUAL_PLATFORM_TYPE) return source.resourceTypes; // nobody fetches an upload
+    // What the server GRANTED wins over what was stored at connect (yourphr#757): a re-consent can
+    // change it, and the refresh above keeps it current. '' means the server never stated one.
+    const wanted = source.grantedScopes === '' ? source.resourceTypes : resourceTypesFromScopes(source.grantedScopes);
     let capability = decodeCapability(source.capability);
     if (!capability || now - capability.readAt > CAPABILITY_MAX_AGE_SECONDS) {
       const read = await this.client.readCapability(source, accessToken, now);
@@ -529,8 +533,8 @@ export class SourcesManager extends BaseManager {
         }
       }
     }
-    if (!capability) return source.resourceTypes;
-    const { keep, dropped } = narrowTypes(capability, source.resourceTypes);
+    if (!capability) return wanted;
+    const { keep, dropped } = narrowTypes(capability, wanted);
     if (dropped.length) notes.push(`not asking for ${dropped.map((d) => `${d.type} (${d.reason})`).join(', ')}`);
     return keep;
   }
@@ -551,6 +555,12 @@ export class SourcesManager extends BaseManager {
             const fresh = await this.client.refresh(source, now);
             if (fresh.tokenUrl !== source.tokenUrl) await this.provider.updateTokenUrl(source.id, fresh.tokenUrl); // discovered once, persisted (yourphr#584)
             await this.provider.updateTokens(source.id, fresh.accessToken, fresh.refreshToken, fresh.expiresAt);
+            // A re-consent can widen or narrow the grant, and the refresh restates it (yourphr#757).
+            if (fresh.scope !== '' && fresh.scope !== source.grantedScopes) {
+              await this.provider.updateGrantedScopes(source.id, fresh.scope);
+              this.log(`grant: source ${source.id} (${source.display}): the provider restated it as ${fresh.scope}`);
+              source = { ...source, grantedScopes: fresh.scope };
+            }
             accessToken = fresh.accessToken;
             if (report) report.refreshed++;
           } catch (err) {

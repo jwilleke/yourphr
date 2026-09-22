@@ -26,9 +26,15 @@ export interface ConnectedSource {
    * source of truth — see src/sources/capability.ts.
    */
   capability: string;
+  /**
+   * The scopes the server GRANTED, as it stated them in the token response (yourphr#757) — the
+   * truth about what this connection may read, which can be narrower than what was requested. ''
+   * when the server omitted the field, and then the catalog entry's request stands.
+   */
+  grantedScopes: string;
 }
 
-export type NewSource = Omit<ConnectedSource, 'id' | 'lastSyncAt' | 'platformType' | 'environment' | 'capability'> & Partial<Pick<ConnectedSource, 'platformType' | 'environment' | 'capability'>>;
+export type NewSource = Omit<ConnectedSource, 'id' | 'lastSyncAt' | 'platformType' | 'environment' | 'capability' | 'grantedScopes'> & Partial<Pick<ConnectedSource, 'platformType' | 'environment' | 'capability' | 'grantedScopes'>>;
 
 export interface DynamicClient {
   clientId: string;
@@ -45,6 +51,7 @@ export abstract class BaseSourcesProvider {
   abstract count(): Promise<number>;
   abstract clearTokens(id: number): Promise<void>;
   abstract updateCapability(id: number, capability: string): Promise<void>;
+  abstract updateGrantedScopes(id: number, scopes: string): Promise<void>;
   abstract updateTokenUrl(id: number, tokenUrl: string): Promise<void>;
   abstract updateTokens(id: number, accessToken: string, refreshToken: string, expiresAt: number): Promise<void>;
   abstract markSynced(id: number, at: number): Promise<void>;

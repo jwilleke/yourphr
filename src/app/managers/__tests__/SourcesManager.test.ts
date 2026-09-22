@@ -35,12 +35,14 @@ class ScriptedClient extends BaseSourceClientProvider {
   async refresh(source: ConnectedSource, now: number): Promise<RefreshedTokens> {
     this.refreshes++;
     if (this.failRefresh) throw new Error('token endpoint said no');
-    return { accessToken: `fresh-${this.refreshes}`, refreshToken: `rotated-${this.refreshes}`, expiresAt: now + 3600, tokenUrl: source.tokenUrl || 'https://idp.example.org/token' };
+    return { accessToken: `fresh-${this.refreshes}`, refreshToken: `rotated-${this.refreshes}`, expiresAt: now + 3600, tokenUrl: source.tokenUrl || 'https://idp.example.org/token', scope: this.grantedScope };
   }
   /** What `/metadata` says, when a spec sets one; no statement at all by default. */
   capability?: SourceCapability;
   capabilityReads = 0;
   capabilityReason = 'no statement in this spec';
+  /** What a refresh restates as granted (yourphr#757); '' is a server that says nothing. */
+  grantedScope = '';
   async readCapability(): Promise<{ capability?: SourceCapability; reason: string }> {
     this.capabilityReads++;
     return this.capability ? { capability: this.capability, reason: '' } : { reason: this.capabilityReason };
@@ -328,6 +330,28 @@ describe('SourcesManager — the pass (what src/worker was)', () => {
     expect(client.fetches).toEqual(['1:Condition:tok', '1:Observation:tok', '1:Condition:tok', '1:Observation:tok']); // every granted type, as before
     const said = (await jobs.history(s.id)).filter((j) => j.error.includes('could not read the provider'));
     expect(said.length).toBe(1);
+  });
+
+  // yourphr#757: the grant is the truth about what may be read, and a refresh restates it.
+  it('asks for what the grant covers, not what was stored at connect', async () => {
+    await sources.add(alice, newSource('alice', { resourceTypes: ['Condition', 'Observation'], grantedScopes: 'patient/Condition.read' }));
+    await sources.pass(NOW);
+    expect(client.fetches).toEqual(['1:Condition:tok']);
+  });
+
+  it('a refresh that restates the grant changes what the next sync asks for, and says so once', async () => {
+    const s = await sources.add(alice, newSource('alice', { expiresAt: NOW - 10, resourceTypes: ['Condition', 'Observation'], grantedScopes: 'patient/Condition.read patient/Observation.read' }));
+    client.grantedScope = 'patient/Condition.read'; // the provider narrowed it at re-consent
+    await sources.pass(NOW);
+    expect(client.fetches).toEqual(['1:Condition:fresh-1']);
+    expect((await sources.owned(alice, s.id))?.grantedScopes).toBe('patient/Condition.read');
+    expect(lines.filter((l) => l.includes('the provider restated it as')).length).toBe(1);
+  });
+
+  it('a source whose server states no grant keeps asking for the types it was connected with', async () => {
+    await sources.add(alice, newSource('alice', { grantedScopes: '' }));
+    await sources.pass(NOW);
+    expect(client.fetches).toEqual(['1:Condition:tok', '1:Observation:tok']);
   });
 
   it('the worker acts for each owner: records land under the source\'s owner, never anyone else', async () => {

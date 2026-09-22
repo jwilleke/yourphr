@@ -284,13 +284,13 @@ export class CatalogManager extends BaseManager {
     }
     const redirectUri = str('redirect_uri') !== '' ? str('redirect_uri') : (this.options.relay?.ready() ? this.options.relay.callbackUrl() : '');
     if (redirectUri === '') throw new ApiError(400, 'redirect_uri is required (the one the authorization used)');
-    let granted;
+    let granted_;
     try {
-      granted = await this.client.completeAuthorization(await this.smartApp(e), redirectUri, code, verifier);
+      granted_ = await this.client.completeAuthorization(await this.smartApp(e), redirectUri, code, verifier);
     } catch (err) {
       throw this.asApiError(err);
     }
-    if (granted.patient === '') throw new ApiError(502, 'token had no patient id — this stack does not yet resolve one from the FHIR API');
+    if (granted_.patient === '') throw new ApiError(502, 'token had no patient id — this stack does not yet resolve one from the FHIR API');
     const patientFacing = connectableShape(e)['display'] as string;
     const display = patientFacing === e.display && str('display') !== '' ? str('display') : patientFacing;
     const sources = this.engine.managers.sources;
@@ -300,18 +300,27 @@ export class CatalogManager extends BaseManager {
     // patient. Narrows, never widens: a statement cannot add a type the grant did not cover. A
     // statement that cannot be read is not a failed connect; the source keeps the scope-derived
     // list and reads the statement on a later sync.
-    const wanted = resourceTypesFromScopes(e.scopes);
+    // What the server GRANTED decides what to ask for, not what the entry requested (yourphr#757).
+    // SMART requires the token response to carry `scope`; a server that omits it leaves the
+    // request standing, which is the old behaviour and never worse.
+    const requested = resourceTypesFromScopes(e.scopes);
+    const granted = granted_.scope === '' ? [] : resourceTypesFromScopes(granted_.scope);
+    const wanted = granted.length ? granted : requested;
+    const notGranted = requested.filter((t) => wanted.indexOf(t) === -1);
+    if (granted_.scope === '') this.options.log?.(`grant: ${display}: the token response stated no scope — asking for every type the catalog entry requested`);
+    else if (notGranted.length) this.options.log?.(`grant: ${display}: requested but not granted: ${notGranted.join(', ')}`);
     const { capability, reason } = await this.client.readCapability(
-      { fhirBaseUrl: e.fhirBaseUrl } as ConnectedSource, granted.accessToken, Math.floor(Date.now() / 1000));
+      { fhirBaseUrl: e.fhirBaseUrl } as ConnectedSource, granted_.accessToken, Math.floor(Date.now() / 1000));
     const narrowed = capability ? narrowTypes(capability, wanted) : { keep: wanted, dropped: [] as { type: string; reason: string }[] };
     if (!capability) this.options.log?.(`capability: ${display}: could not read the provider's capability statement (${reason}); using the granted scopes only`);
     else if (narrowed.dropped.length) this.options.log?.(`capability: ${display}: not asking for ${narrowed.dropped.map((d) => `${d.type} (${d.reason})`).join(', ')}`);
 
     const source = await sources.add(ctx, {
-      userId: ctx.username, display, fhirBaseUrl: e.fhirBaseUrl, tokenUrl: granted.tokenUrl, clientId: e.clientId, patient: granted.patient,
-      resourceTypes: narrowed.keep, accessToken: granted.accessToken, refreshToken: granted.refreshToken, expiresAt: granted.expiresAt,
+      userId: ctx.username, display, fhirBaseUrl: e.fhirBaseUrl, tokenUrl: granted_.tokenUrl, clientId: e.clientId, patient: granted_.patient,
+      resourceTypes: narrowed.keep, accessToken: granted_.accessToken, refreshToken: granted_.refreshToken, expiresAt: granted_.expiresAt,
       platformType: e.platformType || 'ehr', environment: e.environment,
       capability: capability ? encodeCapability(capability) : '',
+      grantedScopes: granted_.scope,
     });
     // The initial import runs in the background, as Go's does; the page follows it on the event stream.
     sources.syncInBackground(ctx, source);

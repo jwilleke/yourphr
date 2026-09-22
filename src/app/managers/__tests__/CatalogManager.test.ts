@@ -42,10 +42,12 @@ class ScriptedClient extends BaseSourceClientProvider {
     this.exchanges.push({ code, verifier: codeVerifier });
     if (this.failDiscovery) throw new SourceClientError('discovery', 'SMART discovery failed: no .well-known');
     if (this.failExchange) throw new SourceClientError('exchange', 'token exchange failed: HTTP 400');
-    return { tokenUrl: 'https://idp.example.org/token', accessToken: 'at', refreshToken: 'rt', expiresAt: 2_000, patient: this.patient };
+    return { tokenUrl: 'https://idp.example.org/token', accessToken: 'at', refreshToken: 'rt', expiresAt: 2_000, patient: this.patient, scope: this.grantedScope };
   }
   async refresh(): Promise<RefreshedTokens> { throw new Error('not in this spec'); }
   capability?: SourceCapability;
+  /** What the token response states as GRANTED (yourphr#757); '' is a server that omits the field. */
+  grantedScope = '';
   async readCapability(): Promise<{ capability?: SourceCapability; reason: string }> { return this.capability ? { capability: this.capability, reason: '' } : { reason: 'no statement in this spec' }; }
   async fetchPages(): Promise<FetchReport> { return { received: 0, created: 0, updated: 0 }; }
 }
@@ -233,6 +235,24 @@ describe('CatalogManager — a member connects', () => {
     expect(r.source).toMatchObject({ id: 'source-1', display: 'Big Hospital', user_id: 'alice', platform_type: 'ehr', environment: 'production', patient: 'p-123' });
     expect(sourcesProvider.rows.get(1)).toMatchObject({ accessToken: 'at', refreshToken: 'rt', expiresAt: 2_000, tokenUrl: 'https://idp.example.org/token', resourceTypes: ['Condition', 'Observation'] });
     expect(client.exchanges).toEqual([{ code: 'c', verifier: 'v' }]);
+  });
+
+  // yourphr#757: SMART requires the token response to state what was GRANTED, which can be
+  // narrower than the request — Epic grants by app registration and ignores what was asked for.
+  it('takes the source\'s types from the scopes the server GRANTED, not the ones requested', async () => {
+    await catalog.updateEntry(admin, 1, { ...PROD, consentPolicy: 'skip' });
+    client.grantedScope = 'launch/patient patient/Condition.read openid';
+    await catalog.connect(alice, '1', { code_verifier: 'v', code: 'c', redirect_uri: 'https://app/cb' });
+    expect(sourcesProvider.rows.get(1)).toMatchObject({ resourceTypes: ['Condition'], grantedScopes: 'launch/patient patient/Condition.read openid' });
+    expect(lines.some((l) => l.includes('requested but not granted: Observation'))).toBe(true);
+  });
+
+  it('falls back to the requested types when the server states no scope, and says so — non-conformant, but not a reason to fail', async () => {
+    await catalog.updateEntry(admin, 1, { ...PROD, consentPolicy: 'skip' });
+    client.grantedScope = '';
+    await catalog.connect(alice, '1', { code_verifier: 'v', code: 'c', redirect_uri: 'https://app/cb' });
+    expect(sourcesProvider.rows.get(1)).toMatchObject({ resourceTypes: ['Condition', 'Observation'], grantedScopes: '' });
+    expect(lines.some((l) => l.includes('stated no scope'))).toBe(true);
   });
 
   it('a skip-consent entry connects without the consent; the member\'s own display name wins when given', async () => {

@@ -195,6 +195,15 @@ const APP_MIGRATIONS: Migration[] = [
       if (!columns.includes('capability')) addColumnWithDefault(db, 'connected_sources', 'capability', 'TEXT', '');
     },
   },
+  {
+    id: '20260922210000',
+    description: 'connected_sources.granted_scopes (yourphr#757) — what the server said it GRANTED, which can be narrower than what the catalog entry requested',
+    up: (db) => {
+      const columns = (db.pragma('table_info(connected_sources)') as { name: string }[]).map((c) => c.name);
+      // '' means the server never stated one; the catalog entry's request then stands, as before.
+      if (!columns.includes('granted_scopes')) addColumnWithDefault(db, 'connected_sources', 'granted_scopes', 'TEXT', '');
+    },
+  },
 ];
 
 /** Everything that owns data, opened the one way the server opens it. */
