@@ -79,7 +79,7 @@ __What is published where, checked 2026-09-22:__
 
 __Unverified:__ that Epic populates `scope` in practice, rather than merely being obliged to. Check it during implementation, not before.
 
-__Issue:__ none yet.
+__Issue:__ [#757](https://github.com/jwilleke/yourphr/issues/757).
 
 ## Gap 3 — no CapabilityStatement reading
 
@@ -96,7 +96,7 @@ __What it buys, and what it does not.__ It buys the type list and the search sha
 3. __When it cannot be read__ — transient failure, a gateway serving HTML, a size or time limit, or a wrong tenant-specific base URL, __not__ a permissions problem — fall back to the __granted scopes alone__, say so in the job and the log ("could not read the provider's capability statement; using granted scopes only"), and try again next sync. This is better than v2's fallback of a fixed 20-type list, which could ask for types the server never had.
 4. __Narrow only.__ The menu prunes the type list; it never adds a type the grant did not cover. A type the menu says is not searchable by patient is skipped silently, rather than recording the same refusal every cycle.
 
-__Issue:__ none yet.
+__Issue:__ [#756](https://github.com/jwilleke/yourphr/issues/756).
 
 ## Gap 4 — extracting `@jwilleke/fhir-sources`
 
