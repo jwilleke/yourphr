@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
+import type { SourceCapability } from '../../../sources/capability.js';
 import { Engine } from '../../../framework/Engine.js';
 import { ApiContext } from '../../../framework/ApiContext.js';
 import { ConfigurationManager } from '../../../framework/ConfigurationManager.js';
@@ -44,6 +45,8 @@ class ScriptedClient extends BaseSourceClientProvider {
     return { tokenUrl: 'https://idp.example.org/token', accessToken: 'at', refreshToken: 'rt', expiresAt: 2_000, patient: this.patient };
   }
   async refresh(): Promise<RefreshedTokens> { throw new Error('not in this spec'); }
+  capability?: SourceCapability;
+  async readCapability(): Promise<{ capability?: SourceCapability; reason: string }> { return this.capability ? { capability: this.capability, reason: '' } : { reason: 'no statement in this spec' }; }
   async fetchPages(): Promise<FetchReport> { return { received: 0, created: 0, updated: 0 }; }
 }
 

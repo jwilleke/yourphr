@@ -22,7 +22,9 @@ import { type BaseSourceClientProvider, SourceClientError } from '../providers/B
 import { catalogEntryShape, connectableShape, connectionPolicy, normalizeConsentPolicy, normalizePreConnectProfile } from '../../catalog/index.js';
 import { LOGIN_WAIT_SECONDS, RELAY_POLL_SECONDS, type RelayProvider } from '../providers/RelayProvider.js';
 import { resourceTypesFromScopes } from '../../migrate/index.js';
+import { encodeCapability, narrowTypes } from '../../sources/capability.js';
 import { sourceShape } from './SourcesManager.js';
+import type { ConnectedSource } from '../providers/BaseSourcesProvider.js';
 
 declare module '../../framework/Engine.js' {
   interface ManagerRegistry {
@@ -292,10 +294,24 @@ export class CatalogManager extends BaseManager {
     const patientFacing = connectableShape(e)['display'] as string;
     const display = patientFacing === e.display && str('display') !== '' ? str('display') : patientFacing;
     const sources = this.engine.managers.sources;
+
+    // What does this server actually serve? (yourphr#756) Read its CapabilityStatement once, here,
+    // where a token has just been issued — then ask only for types it has and can search by
+    // patient. Narrows, never widens: a statement cannot add a type the grant did not cover. A
+    // statement that cannot be read is not a failed connect; the source keeps the scope-derived
+    // list and reads the statement on a later sync.
+    const wanted = resourceTypesFromScopes(e.scopes);
+    const { capability, reason } = await this.client.readCapability(
+      { fhirBaseUrl: e.fhirBaseUrl } as ConnectedSource, granted.accessToken, Math.floor(Date.now() / 1000));
+    const narrowed = capability ? narrowTypes(capability, wanted) : { keep: wanted, dropped: [] as { type: string; reason: string }[] };
+    if (!capability) this.options.log?.(`capability: ${display}: could not read the provider's capability statement (${reason}); using the granted scopes only`);
+    else if (narrowed.dropped.length) this.options.log?.(`capability: ${display}: not asking for ${narrowed.dropped.map((d) => `${d.type} (${d.reason})`).join(', ')}`);
+
     const source = await sources.add(ctx, {
       userId: ctx.username, display, fhirBaseUrl: e.fhirBaseUrl, tokenUrl: granted.tokenUrl, clientId: e.clientId, patient: granted.patient,
-      resourceTypes: resourceTypesFromScopes(e.scopes), accessToken: granted.accessToken, refreshToken: granted.refreshToken, expiresAt: granted.expiresAt,
+      resourceTypes: narrowed.keep, accessToken: granted.accessToken, refreshToken: granted.refreshToken, expiresAt: granted.expiresAt,
       platformType: e.platformType || 'ehr', environment: e.environment,
+      capability: capability ? encodeCapability(capability) : '',
     });
     // The initial import runs in the background, as Go's does; the page follows it on the event stream.
     sources.syncInBackground(ctx, source);

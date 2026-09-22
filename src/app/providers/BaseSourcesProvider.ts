@@ -20,9 +20,15 @@ export interface ConnectedSource {
   /** Go's platform_type / environment; '' when unknown — never guessed (yourphr#594). */
   platformType: string;
   environment: string;
+  /**
+   * The distilled CapabilityStatement this server published, as JSON (yourphr#756); '' when it has
+   * never been read, or was read and could not be used. A cache of what the server said, never a
+   * source of truth — see src/sources/capability.ts.
+   */
+  capability: string;
 }
 
-export type NewSource = Omit<ConnectedSource, 'id' | 'lastSyncAt' | 'platformType' | 'environment'> & Partial<Pick<ConnectedSource, 'platformType' | 'environment'>>;
+export type NewSource = Omit<ConnectedSource, 'id' | 'lastSyncAt' | 'platformType' | 'environment' | 'capability'> & Partial<Pick<ConnectedSource, 'platformType' | 'environment' | 'capability'>>;
 
 export interface DynamicClient {
   clientId: string;
@@ -38,6 +44,7 @@ export abstract class BaseSourcesProvider {
   abstract list(): Promise<ConnectedSource[]>;
   abstract count(): Promise<number>;
   abstract clearTokens(id: number): Promise<void>;
+  abstract updateCapability(id: number, capability: string): Promise<void>;
   abstract updateTokenUrl(id: number, tokenUrl: string): Promise<void>;
   abstract updateTokens(id: number, accessToken: string, refreshToken: string, expiresAt: number): Promise<void>;
   abstract markSynced(id: number, at: number): Promise<void>;

@@ -32,6 +32,7 @@ import type { BaseDocumentConverterProvider, ConverterStatus } from '../provider
 import type { EventBus } from '../../events/index.js';
 import { providerRequiresLegalConsent } from '../../account/index.js';
 import { FhirHttpError, emptySyncReport, storeEntries } from '../../sync/index.js';
+import { decodeCapability, encodeCapability, narrowTypes } from '../../sources/capability.js';
 import { UploadFormatError, parseFhirUpload, patientOf } from '../../upload/index.js';
 
 declare module '../../framework/Engine.js' {
@@ -44,6 +45,13 @@ export type { ConnectedSource, NewSource, DynamicClient };
 
 /** Refresh when this close to expiry — half the typical sandbox hour, same intent as Go's loop. */
 const REFRESH_MARGIN_SECONDS = 10 * 60;
+
+/**
+ * How stale a stored CapabilityStatement may be before it is read again (yourphr#756). Weekly: a
+ * server gains a resource type rarely, and re-reading every sync would spend a request per cycle to
+ * learn nothing. A source that has never read one re-reads on its next sync, whatever its age.
+ */
+const CAPABILITY_MAX_AGE_SECONDS = 7 * 24 * 60 * 60;
 
 export interface PassReport {
   refreshAttempted: number;
@@ -62,6 +70,8 @@ export interface SourceImportReport {
 
 export interface SourcesOptions {
   maxPages: number;
+  /** Tests only — lets a loopback fake serve `/metadata`; the SSRF guard stays on everywhere else. */
+  allowInternal?: boolean;
   log?: (line: string) => void;
   events?: EventBus;
   /**
@@ -134,6 +144,11 @@ export class SourcesManager extends BaseManager {
    * the warning once, which is a feature.
    */
   private readonly unrefreshable = new Set<number>();
+  /**
+   * Sources already reported as not serving a readable CapabilityStatement (yourphr#756). Once per
+   * outage, not once per cycle — the same rule as `unrefreshable`, for the same reason.
+   */
+  private readonly capabilityWarned = new Set<number>();
 
   constructor(
     engine: Engine,
@@ -492,6 +507,34 @@ export class SourcesManager extends BaseManager {
     return report;
   }
 
+  /**
+   * The types worth asking this source for now: its stored CapabilityStatement narrows the
+   * scope-derived list, and a statement older than a week (or never read) is read again first
+   * (yourphr#756). Never widens, never fatal — a server that will not answer `/metadata` simply
+   * leaves the list as it was, with a note.
+   */
+  private async typesToFetch(source: ConnectedSource, accessToken: string, now: number, notes: string[]): Promise<string[]> {
+    if (source.platformType === MANUAL_PLATFORM_TYPE) return source.resourceTypes; // nobody fetches an upload
+    let capability = decodeCapability(source.capability);
+    if (!capability || now - capability.readAt > CAPABILITY_MAX_AGE_SECONDS) {
+      const read = await this.client.readCapability(source, accessToken, now);
+      if (read.capability) {
+        capability = read.capability;
+        this.capabilityWarned.delete(source.id);
+        await this.provider.updateCapability(source.id, encodeCapability(read.capability));
+      } else {
+        if (!this.capabilityWarned.has(source.id)) {
+          this.capabilityWarned.add(source.id);
+          notes.push(`could not read the provider's capability statement (${read.reason})${capability ? '; using the one last read' : '; asking for every granted type'}`);
+        }
+      }
+    }
+    if (!capability) return source.resourceTypes;
+    const { keep, dropped } = narrowTypes(capability, source.resourceTypes);
+    if (dropped.length) notes.push(`not asking for ${dropped.map((d) => `${d.type} (${d.reason})`).join(', ')}`);
+    return keep;
+  }
+
   /** One source, refresh-then-sync, the job recorded either way. */
   private async syncOne(ctx: ApiContext, source: ConnectedSource, now = Math.floor(Date.now() / 1000), report?: PassReport): Promise<JobRecord> {
     const publicId = `source-${source.id}`;
@@ -534,7 +577,13 @@ export class SourcesManager extends BaseManager {
       if (source.resourceTypes.length === 0 && source.platformType !== MANUAL_PLATFORM_TYPE) {
         fatal = 'nothing to sync: the catalog entry\'s scopes name no patient/<Type> read scope (e.g. patient/*.read)';
       }
-      for (const resourceType of fatal ? [] : source.resourceTypes) {
+
+      // What this server serves (yourphr#756): read once at connect, re-read when stale, and used
+      // only to NARROW — a type the server does not have, or cannot search by patient, is not asked
+      // for at all rather than refused every cycle. An unreadable statement changes nothing.
+      const types = fatal ? [] : await this.typesToFetch(source, accessToken, now, notes);
+
+      for (const resourceType of types) {
         try {
           const r = await this.client.fetchPages(source, resourceType, accessToken, writer, this.options.maxPages);
           received += r.received;
@@ -551,8 +600,8 @@ export class SourcesManager extends BaseManager {
           skipped.push(message);
         }
       }
-      const ok = !fatal && (succeeded > 0 || source.resourceTypes.length === 0);
-      const detail = [fatal, ...(skipped.length ? [`skipped ${skipped.length} of ${source.resourceTypes.length} types: ${skipped.join('; ')}`] : []), ...notes].filter(Boolean).join('; ');
+      const ok = !fatal && (succeeded > 0 || types.length === 0);
+      const detail = [fatal, ...(skipped.length ? [`skipped ${skipped.length} of ${types.length} types: ${skipped.join('; ')}`] : []), ...notes].filter(Boolean).join('; ');
       if (ok) await this.provider.markSynced(source.id, now);
       job = { sourceId: source.id, outcome: ok ? 'success' : 'failure', received, created, updated, error: detail.slice(0, 512), startedAt: now, finishedAt: now };
       // One line per sync, success or not: the job row alone was the only trace, and the container

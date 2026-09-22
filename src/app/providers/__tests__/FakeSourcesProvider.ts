@@ -8,7 +8,7 @@ export class FakeSourcesProvider extends BaseSourcesProvider {
   private nextId = 1;
   async initialize(): Promise<void> { this.initialized = true; }
   async add(source: NewSource): Promise<ConnectedSource> {
-    const row: ConnectedSource = { ...source, id: this.nextId++, lastSyncAt: 0, platformType: source.platformType ?? '', environment: source.environment ?? '' };
+    const row: ConnectedSource = { ...source, id: this.nextId++, lastSyncAt: 0, platformType: source.platformType ?? '', environment: source.environment ?? '', capability: source.capability ?? '' };
     this.rows.set(row.id, row);
     return { ...row };
   }
@@ -17,6 +17,7 @@ export class FakeSourcesProvider extends BaseSourcesProvider {
   async count(): Promise<number> { return this.rows.size; }
   private patch(id: number, change: Partial<ConnectedSource>): void { const r = this.rows.get(id); if (r) this.rows.set(id, { ...r, ...change }); }
   async clearTokens(id: number): Promise<void> { this.patch(id, { accessToken: '', refreshToken: '', expiresAt: 0 }); }
+  async updateCapability(id: number, capability: string): Promise<void> { this.patch(id, { capability }); }
   async updateTokenUrl(id: number, tokenUrl: string): Promise<void> { this.patch(id, { tokenUrl }); }
   async updateTokens(id: number, accessToken: string, refreshToken: string, expiresAt: number): Promise<void> { this.patch(id, { accessToken, refreshToken, expiresAt }); }
   async markSynced(id: number, at: number): Promise<void> { this.patch(id, { lastSyncAt: at }); }

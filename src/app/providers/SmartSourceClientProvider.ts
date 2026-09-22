@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { SmartClient, generateVerifier, type Endpoints } from '../../smart/index.js';
 import { FhirHttpError, syncFrom, syncResource } from '../../sync/index.js';
 import { categorySearches, plainSearch, refusalReason, refusalWantsMoreParameters } from '../../sources/query-plan.js';
+import { readCapability, type SourceCapability } from '../../sources/capability.js';
 import { BaseSourceClientProvider, SourceClientError, type AuthorizationResult, type AuthorizationStart, type FetchReport, type RefreshedTokens, type SmartApp } from './BaseSourceClientProvider.js';
 import type { ConnectedSource } from './BaseSourcesProvider.js';
 import type { RecordsWriter } from './BaseRecordsProvider.js';
@@ -62,6 +63,10 @@ export class SmartSourceClientProvider extends BaseSourceClientProvider {
       expiresAt: token.expiresAt ? Math.floor(token.expiresAt.getTime() / 1000) : nowSeconds + 3600,
       tokenUrl,
     };
+  }
+
+  async readCapability(source: ConnectedSource, accessToken: string, nowSeconds: number): Promise<{ capability?: SourceCapability; reason: string }> {
+    return readCapability(source.fhirBaseUrl, accessToken, { allowInternal: this.options.allowInternal, nowSeconds });
   }
 
   async fetchPages(source: ConnectedSource, resourceType: string, accessToken: string, writer: RecordsWriter, maxPages: number): Promise<FetchReport> {

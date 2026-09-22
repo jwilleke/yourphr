@@ -167,6 +167,34 @@ const APP_MIGRATIONS: Migration[] = [
       db.exec(`CREATE INDEX IF NOT EXISTS idx_agent_tokens_owner ON agent_tokens(owner, created_at DESC)`);
     },
   },
+  {
+    id: '20260922200000',
+    description: 'connected_sources.capability (yourphr#756) — the distilled CapabilityStatement a server published, so a sync asks only for what that server serves',
+    up: (db) => {
+      // Frozen pre-column shape, so ADD COLUMN has a table on a fresh database (the provider's
+      // constructor creates it, with the column, a step later).
+      db.exec(`CREATE TABLE IF NOT EXISTS connected_sources (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id TEXT NOT NULL,
+        display TEXT NOT NULL,
+        fhir_base_url TEXT NOT NULL,
+        token_url TEXT NOT NULL,
+        client_id TEXT NOT NULL,
+        patient TEXT NOT NULL,
+        resource_types TEXT NOT NULL,
+        access_token TEXT NOT NULL,
+        refresh_token TEXT NOT NULL DEFAULT '',
+        expires_at INTEGER NOT NULL DEFAULT 0,
+        platform_type TEXT NOT NULL DEFAULT '',
+        environment TEXT NOT NULL DEFAULT '',
+        last_sync_at INTEGER NOT NULL DEFAULT 0
+      )`);
+      const columns = (db.pragma('table_info(connected_sources)') as { name: string }[]).map((c) => c.name);
+      // '' means never read: an existing source reads its server's statement on its next sync
+      // rather than at some migration-time fetch nobody asked for.
+      if (!columns.includes('capability')) addColumnWithDefault(db, 'connected_sources', 'capability', 'TEXT', '');
+    },
+  },
 ];
 
 /** Everything that owns data, opened the one way the server opens it. */
@@ -348,6 +376,7 @@ export async function openStores(dataDir: string, env: Record<string, string | u
     events,
     log: (line) => appLog.info(line),
     converters: [cdaConverter],
+    allowInternal,
   }));
   // 8. Catalog (yourphr#613): what the instance can connect to; connects through Sources and the same client.
   // The SMART OAuth relay (yourphr#700): derives redirect_uri and polls the authorization code

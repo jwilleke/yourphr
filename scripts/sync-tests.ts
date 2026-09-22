@@ -19,6 +19,7 @@ import { SqliteFhirRepository } from '../src/SqliteFhirRepository.js';
 import { FhirHttpError, repositoryWriter, syncFrom, nextPageUrl } from '../src/sync/index.js';
 import { SmartSourceClientProvider } from '../src/app/providers/SmartSourceClientProvider.js';
 import type { ConnectedSource } from '../src/app/providers/BaseSourcesProvider.js';
+import { narrowTypes, readCapability } from '../src/sources/capability.js';
 
 const results: { name: string; ok: boolean; detail: string }[] = [];
 function check(name: string, ok: boolean, detail = ''): void {
@@ -245,6 +246,15 @@ async function main(): Promise<void> {
     // otherwise-bad request is `code: invalid`, which must NOT trigger a category retry.
     const outcome = (text: string, code = 'invalid', severity = 'error') => ({ resourceType: 'OperationOutcome', issue: [{ severity, code, diagnostics: text }] });
     const url = req.url ?? '';
+    if (url === '/metadata') return json(200, {
+      resourceType: 'CapabilityStatement', fhirVersion: '4.0.1',
+      rest: [{ mode: 'server', resource: [
+        { type: 'Patient', searchParam: [{ name: '_id' }, { name: 'identifier' }] },
+        { type: 'Observation', searchParam: [{ name: 'patient' }, { name: 'category' }, { name: 'code' }] },
+        { type: 'Condition', searchParam: [{ name: 'patient' }, { name: 'category' }] },
+        { type: 'Binary', searchParam: [{ name: '_id' }] },
+      ] }],
+    });
     if (url.startsWith('/Patient?')) return json(400, outcome('patient is not a valid search parameter for Patient'));
     if (url === '/Patient/epic-pt%2B1') return json(200, { resourceType: 'Patient', id: 'epic-pt+1', name: [{ family: 'Lin' }] });
     if (url.startsWith('/Condition?patient=epic-pt%2B1&')) return json(200, { resourceType: 'Bundle', type: 'searchset', entry: [{ resource: { ...condition('epic-c1', 'Asthma'), subject: { reference: 'Patient/epic-pt+1' } } }] });
@@ -286,6 +296,17 @@ async function main(): Promise<void> {
   try { await epicClient.fetchPages(epicSource, 'CarePlan', 'tok', epicWriter, 5); } catch (err) { noPlan = err; }
   check('a refusal with no category list to fall back on is still a FhirHttpError carrying its status',
     noPlan instanceof FhirHttpError && noPlan.status === 404, String(noPlan));
+  // yourphr#756: the statement is read over HTTP and distilled — types, their search parameters,
+  // and whether Patient/$everything is advertised.
+  const { capability, reason } = await readCapability(epicBase, 'tok', { allowInternal: true, nowSeconds: 1_700_000_000 });
+  check('a CapabilityStatement is read and distilled to what a sync needs',
+    !!capability && capability.fhirVersion === '4.0.1' && capability.everything === false && Object.keys(capability.types).length === 4, reason || JSON.stringify(capability?.types));
+  check('it narrows a type list to what the server serves AND can search by patient',
+    JSON.stringify(narrowTypes(capability!, ['Patient', 'Observation', 'Condition', 'Binary', 'MedicationStatement'])) ===
+      JSON.stringify({ keep: ['Patient', 'Observation', 'Condition'], dropped: [{ type: 'Binary', reason: 'the server serves it but not by patient' }, { type: 'MedicationStatement', reason: 'the server does not serve it' }] }));
+
+  const notThere = await readCapability(`${epicBase}/nowhere`, 'tok', { allowInternal: true });
+  check('a statement that cannot be read is a reason, never a throw', notThere.capability === undefined && notThere.reason !== '', notThere.reason);
   epic.close();
 
   repo.db.close();

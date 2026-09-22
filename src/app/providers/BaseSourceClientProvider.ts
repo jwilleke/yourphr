@@ -6,6 +6,7 @@
  */
 import type { RecordsWriter } from './BaseRecordsProvider.js';
 import type { ConnectedSource } from './BaseSourcesProvider.js';
+import type { SourceCapability } from '../../sources/capability.js';
 
 export interface RefreshedTokens { accessToken: string; refreshToken: string; expiresAt: number; tokenUrl: string }
 export interface FetchReport {
@@ -50,6 +51,13 @@ export abstract class BaseSourceClientProvider {
   /** Refresh an expiring token; discovers the token endpoint once when the source has none. */
   abstract refresh(source: ConnectedSource, nowSeconds: number): Promise<RefreshedTokens>;
   /** Every page of one resource type for the source's patient, written through the door. (Not named after the browser API on purpose: the HTTP-boundary guard reads that word as a network call.) */
+  /**
+   * The server's CapabilityStatement, distilled (yourphr#756) — undefined with a reason when it
+   * cannot be read, which is never fatal. On the client because the client is what talks to
+   * providers; the manager decides what to do with the answer.
+   */
+  abstract readCapability(source: ConnectedSource, accessToken: string, nowSeconds: number): Promise<{ capability?: SourceCapability; reason: string }>;
+
   abstract fetchPages(source: ConnectedSource, resourceType: string, accessToken: string, writer: RecordsWriter, maxPages: number): Promise<FetchReport>;
 }
 
@@ -62,5 +70,6 @@ export class NullSourceClientProvider extends BaseSourceClientProvider {
   async beginAuthorization(): Promise<AuthorizationStart> { return this.refuse('a provider cannot be authorized'); }
   async completeAuthorization(): Promise<AuthorizationResult> { return this.refuse('a provider cannot be connected'); }
   async refresh(): Promise<RefreshedTokens> { return this.refuse('tokens cannot be refreshed'); }
+  async readCapability(): Promise<{ capability?: SourceCapability; reason: string }> { return { reason: 'no source client is configured' }; }
   async fetchPages(): Promise<FetchReport> { return this.refuse('nothing can be synced'); }
 }

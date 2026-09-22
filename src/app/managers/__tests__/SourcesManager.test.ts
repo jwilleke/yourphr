@@ -13,6 +13,7 @@ import { FakeJobsProvider } from '../../../framework/providers/__tests__/FakeJob
 import { FakeSourcesProvider } from '../../providers/__tests__/FakeSourcesProvider.js';
 import { BaseSourceClientProvider, NullSourceClientProvider, type AuthorizationResult, type AuthorizationStart, type FetchReport, type RefreshedTokens } from '../../providers/BaseSourceClientProvider.js';
 import type { ConnectedSource } from '../../providers/BaseSourcesProvider.js';
+import type { SourceCapability } from '../../../sources/capability.js';
 import type { RecordsWriter } from '../../providers/BaseRecordsProvider.js';
 import { ConfigurationManager } from '../../../framework/ConfigurationManager.js';
 import { FhirHttpError } from '../../../sync/index.js';
@@ -35,6 +36,14 @@ class ScriptedClient extends BaseSourceClientProvider {
     this.refreshes++;
     if (this.failRefresh) throw new Error('token endpoint said no');
     return { accessToken: `fresh-${this.refreshes}`, refreshToken: `rotated-${this.refreshes}`, expiresAt: now + 3600, tokenUrl: source.tokenUrl || 'https://idp.example.org/token' };
+  }
+  /** What `/metadata` says, when a spec sets one; no statement at all by default. */
+  capability?: SourceCapability;
+  capabilityReads = 0;
+  capabilityReason = 'no statement in this spec';
+  async readCapability(): Promise<{ capability?: SourceCapability; reason: string }> {
+    this.capabilityReads++;
+    return this.capability ? { capability: this.capability, reason: '' } : { reason: this.capabilityReason };
   }
   async fetchPages(source: ConnectedSource, resourceType: string, accessToken: string, writer: RecordsWriter): Promise<FetchReport> {
     this.fetches.push(`${source.id}:${resourceType}:${accessToken}`);
@@ -236,7 +245,11 @@ describe('SourcesManager — the pass (what src/worker was)', () => {
     expect(await sources.pass(NOW)).toMatchObject({ synced: 0, failed: 2 });
     client.failFetch = false;
     expect(await sources.pass(NOW + 1)).toMatchObject({ synced: 2, failed: 0 });
-    expect((await jobs.history(2)).map((j) => [j.outcome, j.error])).toEqual([['failure', 'skipped 2 of 2 types: Condition: FHIR HTTP 500; Observation: FHIR HTTP 500'], ['success', '']]);
+    expect((await jobs.history(2)).map((j) => [j.outcome, j.error.replace(/could not read[^;]*; asking for every granted type/, 'no statement')])).toEqual([
+      // yourphr#756: the unreadable statement is said ONCE, on the first sync — not again on the second.
+      ['failure', 'skipped 2 of 2 types: Condition: FHIR HTTP 500; Observation: FHIR HTTP 500; no statement'],
+      ['success', ''],
+    ]);
   });
 
   // yourphr#753: Epic refuses some types routinely (403 not granted, 400 needs a category). One
@@ -274,9 +287,47 @@ describe('SourcesManager — the pass (what src/worker was)', () => {
   });
 
   it('every sync writes one log line, success included', async () => {
+    client.capability = { readAt: NOW, types: { Condition: ['patient'], Observation: ['patient', 'category'] }, everything: false, fhirVersion: '4.0.1' };
     const s = await sources.add(alice, newSource('alice'));
     await sources.pass(NOW);
     expect(lines).toContain(`sync: source ${s.id} (alice's clinic): success, 4 received (4 new, 0 updated)`);
+  });
+
+  // yourphr#756: the server's own statement decides what is worth asking for.
+  it('does not ask for a type the server does not serve, or serves but cannot search by patient', async () => {
+    client.capability = { readAt: NOW, types: { Condition: ['patient'], Observation: ['code'] }, everything: false, fhirVersion: '4.0.1' };
+    const s = await sources.add(alice, newSource('alice', { resourceTypes: ['Condition', 'Observation', 'CarePlan'] }));
+    await sources.pass(NOW);
+    expect(client.fetches).toEqual(['1:Condition:tok']); // Observation is not searchable by patient here; CarePlan is absent
+    const job = await jobs.latest(s.id);
+    expect(job?.outcome).toBe('success');
+    expect(job?.error).toContain('not asking for Observation (the server serves it but not by patient), CarePlan (the server does not serve it)');
+  });
+
+  it('reads the statement once and keeps it — not once per sync', async () => {
+    client.capability = { readAt: NOW, types: { Condition: ['patient'], Observation: ['patient'] }, everything: false, fhirVersion: '4.0.1' };
+    await sources.add(alice, newSource('alice'));
+    await sources.pass(NOW);
+    await sources.pass(NOW + 60);
+    await sources.pass(NOW + 120);
+    expect(client.capabilityReads).toBe(1);
+  });
+
+  it('re-reads a statement older than a week', async () => {
+    client.capability = { readAt: NOW, types: { Condition: ['patient'], Observation: ['patient'] }, everything: false, fhirVersion: '4.0.1' };
+    await sources.add(alice, newSource('alice'));
+    await sources.pass(NOW);
+    await sources.pass(NOW + 8 * 24 * 60 * 60);
+    expect(client.capabilityReads).toBe(2);
+  });
+
+  it('an unreadable statement changes nothing, and is said ONCE rather than every cycle', async () => {
+    const s = await sources.add(alice, newSource('alice')); // the scripted client serves no statement
+    await sources.pass(NOW);
+    await sources.pass(NOW + 60);
+    expect(client.fetches).toEqual(['1:Condition:tok', '1:Observation:tok', '1:Condition:tok', '1:Observation:tok']); // every granted type, as before
+    const said = (await jobs.history(s.id)).filter((j) => j.error.includes('could not read the provider'));
+    expect(said.length).toBe(1);
   });
 
   it('the worker acts for each owner: records land under the source\'s owner, never anyone else', async () => {

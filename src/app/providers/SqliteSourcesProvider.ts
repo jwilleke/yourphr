@@ -19,7 +19,8 @@ export class SqliteSourcesProvider extends BaseSourcesProvider {
       expires_at INTEGER NOT NULL DEFAULT 0,
       platform_type TEXT NOT NULL DEFAULT '',
       environment TEXT NOT NULL DEFAULT '',
-      last_sync_at INTEGER NOT NULL DEFAULT 0
+      last_sync_at INTEGER NOT NULL DEFAULT 0,
+      capability TEXT NOT NULL DEFAULT ''
     )`);
     db.exec(`CREATE TABLE IF NOT EXISTS dynamic_clients (
       source_id INTEGER PRIMARY KEY,
@@ -40,6 +41,7 @@ export class SqliteSourcesProvider extends BaseSourcesProvider {
       resourceTypes: (r['resource_types'] as string).split(',').filter(Boolean), accessToken: r['access_token'] as string,
       refreshToken: r['refresh_token'] as string, expiresAt: r['expires_at'] as number, lastSyncAt: r['last_sync_at'] as number,
       platformType: (r['platform_type'] as string | undefined) ?? '', environment: (r['environment'] as string | undefined) ?? '',
+      capability: (r['capability'] as string | undefined) ?? '',
     };
   }
 
@@ -67,6 +69,11 @@ export class SqliteSourcesProvider extends BaseSourcesProvider {
 
   async clearTokens(id: number): Promise<void> {
     this.db.prepare("UPDATE connected_sources SET access_token = '', refresh_token = '', expires_at = 0 WHERE id = ?").run(id);
+  }
+
+  /** The distilled CapabilityStatement (yourphr#756). '' means never read, or read and unusable. */
+  async updateCapability(id: number, capability: string): Promise<void> {
+    this.db.prepare('UPDATE connected_sources SET capability = ? WHERE id = ?').run(capability, id);
   }
 
   async updateTokenUrl(id: number, tokenUrl: string): Promise<void> {
