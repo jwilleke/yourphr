@@ -240,12 +240,23 @@ async function main(): Promise<void> {
   const epic = createServer((req, res) => {
     epicSeen.push(req.url ?? '');
     const json = (status: number, body: unknown) => { res.writeHead(status, { 'content-type': 'application/fhir+json' }); res.end(JSON.stringify(body)); };
-    const outcome = (text: string) => ({ resourceType: 'OperationOutcome', issue: [{ severity: 'error', code: 'invalid', diagnostics: text }] });
+    // Shaped as Epic's own refusals are (captured live 2026-09-22): a missing REQUIRED parameter is
+    // `severity: fatal, code: required` — which is the signal yourphr#754 keys on — while an
+    // otherwise-bad request is `code: invalid`, which must NOT trigger a category retry.
+    const outcome = (text: string, code = 'invalid', severity = 'error') => ({ resourceType: 'OperationOutcome', issue: [{ severity, code, diagnostics: text }] });
     const url = req.url ?? '';
     if (url.startsWith('/Patient?')) return json(400, outcome('patient is not a valid search parameter for Patient'));
     if (url === '/Patient/epic-pt%2B1') return json(200, { resourceType: 'Patient', id: 'epic-pt+1', name: [{ family: 'Lin' }] });
     if (url.startsWith('/Condition?patient=epic-pt%2B1&')) return json(200, { resourceType: 'Bundle', type: 'searchset', entry: [{ resource: { ...condition('epic-c1', 'Asthma'), subject: { reference: 'Patient/epic-pt+1' } } }] });
-    if (url.startsWith('/Observation?')) return json(400, outcome('This resource requires a category for searching'));
+    if (url.startsWith('/Observation?')) {
+      const category = new URL(url, 'http://x').searchParams.get('category');
+      // Epic's rule (yourphr#754): no category, no answer. With one, it serves that slice only.
+      if (!category) return json(400, outcome('This resource requires a category for searching', 'required', 'fatal'));
+      if (category === 'laboratory') return json(200, { resourceType: 'Bundle', type: 'searchset', entry: [{ resource: { resourceType: 'Observation', id: 'epic-lab-1', status: 'final', code: { text: 'Haemoglobin' } } }] });
+      if (category === 'vital-signs') return json(200, { resourceType: 'Bundle', type: 'searchset', entry: [{ resource: { resourceType: 'Observation', id: 'epic-vital-1', status: 'final', code: { text: 'Blood pressure' } } }] });
+      if (category === 'social-history') return json(403, outcome('not granted'));
+      return json(200, { resourceType: 'Bundle', type: 'searchset' });
+    }
     json(404, outcome('not found'));
   });
   await new Promise<void>((resolve) => epic.listen(0, '127.0.0.1', resolve));
@@ -258,10 +269,23 @@ async function main(): Promise<void> {
   check('Epic: the patient is READ by id, never searched with ?patient=', epicPatient.created === 1 && epicSeen.includes('/Patient/epic-pt%2B1') && !epicSeen.some((u) => u.startsWith('/Patient?')), epicSeen.join(' '));
   const epicConditions = await epicClient.fetchPages(epicSource, 'Condition', 'tok', epicWriter, 5);
   check('Epic: the patient id is URL-encoded in a search', epicConditions.created === 1 && epicSeen.some((u) => u.startsWith('/Condition?patient=epic-pt%2B1&')));
-  let refusal: unknown;
-  try { await epicClient.fetchPages(epicSource, 'Observation', 'tok', epicWriter, 5); } catch (err) { refusal = err; }
-  check('Epic: a refused search is a FhirHttpError that carries its status, so only that type is skipped',
-    refusal instanceof FhirHttpError && refusal.status === 400 && refusal.message.includes('requires a category'), String(refusal));
+  // yourphr#754: the plain search is refused, so the client asks once per US Core category. Labs and
+  // vitals arrive; the refused category costs only itself; the type reports once, not nine times.
+  const epicObs = await epicClient.fetchPages(epicSource, 'Observation', 'tok', epicWriter, 5);
+  const asked = epicSeen.filter((u) => u.startsWith('/Observation?'));
+  check('Epic: a refused Observation search is re-asked by category, and labs and vitals arrive',
+    epicObs.created === 2 && asked.some((u) => u.includes('category=laboratory')) && asked.some((u) => u.includes('category=vital-signs')),
+    `${epicObs.created} created from ${asked.length} searches`);
+  check('Epic: the plain search is tried FIRST — a required combination is what a server supports, not what it demands',
+    asked[0] === '/Observation?patient=epic-pt%2B1&_count=100', asked[0] ?? 'none');
+  check('Epic: one refused category costs only itself, and the fetch says what it did',
+    (epicObs.detail ?? '').includes('8 of 9 answered') && (epicObs.detail ?? '').includes('social-history'), epicObs.detail ?? 'no detail');
+
+  // A type nobody has category codes for keeps its refusal: there is nothing better to try.
+  let noPlan: unknown;
+  try { await epicClient.fetchPages(epicSource, 'CarePlan', 'tok', epicWriter, 5); } catch (err) { noPlan = err; }
+  check('a refusal with no category list to fall back on is still a FhirHttpError carrying its status',
+    noPlan instanceof FhirHttpError && noPlan.status === 404, String(noPlan));
   epic.close();
 
   repo.db.close();

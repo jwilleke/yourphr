@@ -527,6 +527,8 @@ export class SourcesManager extends BaseManager {
       // importing nothing. Now a refused type is skipped and NAMED in the job; only a 401 ends the
       // sync, because every later request would carry the same refused token.
       const skipped: string[] = [];
+      /** What a type had to be asked differently for — a category fan-out (yourphr#754), say. */
+      const notes: string[] = [];
       let fatal = '';
       let succeeded = 0;
       if (source.resourceTypes.length === 0 && source.platformType !== MANUAL_PLATFORM_TYPE) {
@@ -538,6 +540,7 @@ export class SourcesManager extends BaseManager {
           received += r.received;
           created += r.created;
           updated += r.updated;
+          if (r.detail) notes.push(`${resourceType}: ${r.detail}`);
           succeeded++;
         } catch (err) {
           const message = `${resourceType}: ${(err as Error).message}`;
@@ -549,7 +552,7 @@ export class SourcesManager extends BaseManager {
         }
       }
       const ok = !fatal && (succeeded > 0 || source.resourceTypes.length === 0);
-      const detail = [fatal, ...(skipped.length ? [`skipped ${skipped.length} of ${source.resourceTypes.length} types: ${skipped.join('; ')}`] : [])].filter(Boolean).join('; ');
+      const detail = [fatal, ...(skipped.length ? [`skipped ${skipped.length} of ${source.resourceTypes.length} types: ${skipped.join('; ')}`] : []), ...notes].filter(Boolean).join('; ');
       if (ok) await this.provider.markSynced(source.id, now);
       job = { sourceId: source.id, outcome: ok ? 'success' : 'failure', received, created, updated, error: detail.slice(0, 512), startedAt: now, finishedAt: now };
       // One line per sync, success or not: the job row alone was the only trace, and the container

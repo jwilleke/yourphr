@@ -62,7 +62,12 @@ const DEFAULT_MAX_PAGES = 500;
  * search it will not run without a `category` (yourphr#753).
  */
 export class FhirHttpError extends Error {
-  constructor(readonly status: number, message: string) {
+  /**
+   * The response body as the server sent it, so a caller can read the OperationOutcome rather than
+   * pattern-match the message (yourphr#754): Epic's "requires a category" refusal is an issue with
+   * `code: required`, and that is what decides whether asking differently is worth a try.
+   */
+  constructor(readonly status: number, message: string, readonly body = '') {
     super(message);
     this.name = 'FhirHttpError';
   }
@@ -128,7 +133,7 @@ export async function syncFrom(startUrl: string, options: SyncOptions): Promise<
           headers: accessToken ? { authorization: `Bearer ${accessToken}` } : {},
         });
       if (response.status !== 200) {
-        throw new FhirHttpError(response.status, `HTTP ${response.status} fetching ${url}: ${response.body.toString('utf8').slice(0, 256)}`);
+        throw new FhirHttpError(response.status, `HTTP ${response.status} fetching ${url}: ${response.body.toString('utf8').slice(0, 256)}`, response.body.toString('utf8'));
       }
 
       let bundle: Bundle;
@@ -165,7 +170,7 @@ export async function syncResource(url: string, options: SyncOptions): Promise<S
   const writer = options.writer ?? repositoryWriter(options.repo!, options.sourceId ?? '');
   const response = await http.get(url, { headers: options.accessToken ? { authorization: `Bearer ${options.accessToken}` } : {} });
   if (response.status !== 200) {
-    throw new FhirHttpError(response.status, `HTTP ${response.status} fetching ${url}: ${response.body.toString('utf8').slice(0, 256)}`);
+    throw new FhirHttpError(response.status, `HTTP ${response.status} fetching ${url}: ${response.body.toString('utf8').slice(0, 256)}`, response.body.toString('utf8'));
   }
   let resource: Resource;
   try {

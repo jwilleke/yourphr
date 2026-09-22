@@ -8,7 +8,17 @@ import type { RecordsWriter } from './BaseRecordsProvider.js';
 import type { ConnectedSource } from './BaseSourcesProvider.js';
 
 export interface RefreshedTokens { accessToken: string; refreshToken: string; expiresAt: number; tokenUrl: string }
-export interface FetchReport { received: number; created: number; updated: number }
+export interface FetchReport {
+  received: number;
+  created: number;
+  updated: number;
+  /**
+   * What the client had to do differently for this type, when it did — e.g. asking once per
+   * category because the server refused a plain patient search (yourphr#754). Surfaced in the job
+   * and the log so a partial or unusual fetch explains itself; absent when nothing notable happened.
+   */
+  detail?: string;
+}
 
 /** A catalog entry as the client needs it: the app registered with the provider. */
 export interface SmartApp {
