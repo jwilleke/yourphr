@@ -1,6 +1,6 @@
 # Connecting a provider and pulling records — the flow, its gaps, and what closes them
 
-> __Status: working document, opened 2026-09-22.__ The flow below is what v3.5.2 actually does, checked against the code and against a live Epic sandbox run on 2026-09-22 ([#753](https://github.com/jwilleke/yourphr/issues/753)) that imported 29 records for Camila Lopez. The gaps are worked one at a time; each carries its decision and the issue that closes it. Nothing here is adopted until its __Decision__ line says so.
+> __Status: working document, opened 2026-09-22. Epic: [#755](https://github.com/jwilleke/yourphr/issues/755).__ The flow below is what v3.5.2 actually does, checked against the code and against a live Epic sandbox run on 2026-09-22 ([#753](https://github.com/jwilleke/yourphr/issues/753)) that imported 29 records for Camila Lopez. The gaps are worked one at a time; each carries its decision and the issue that closes it. Nothing here is adopted until its __Decision__ line says so.
 
 ## The flow as it stands
 
@@ -24,11 +24,11 @@ Ordered by what they cost a patient, not by effort.
 | # | Gap | Effect | Issue | Decision |
 |---|---|---|---|---|
 | 1 | Epic refuses `Observation` without a `category` | __No labs, no vital signs__ from Epic | [#754](https://github.com/jwilleke/yourphr/issues/754) | __settled 2026-09-22__ — US Core combinations + adaptive fallback |
-| 2 | Record types come from the scopes the catalog entry __requests__, never from what the server supports or actually granted | Types are requested that a server refuses; types it offers can be missed | none yet | __settled 2026-09-22__ — granted scopes ∩ advertised resources |
-| 3 | No CapabilityStatement (`/metadata`) reading — every provider is asked the same way; v2 did this and v3 dropped it | Each new provider is a new surprise, found in production | none yet | __settled 2026-09-22__ — read at connect, store, re-read weekly, narrow only |
-| 4 | Vendor knowledge sits inside one class in this repo | Adding Cerner or athenahealth means editing YourPHR itself; nothing else can reuse it | none yet | __settled 2026-09-22__ — build as `src/sources/`, extract later |
-| 5 | No `$everything` when a server advertises it | More requests than needed where one would do | none yet | open |
-| 6 | No per-type page budget and no retry on 5xx | A large or flaky provider can stall a sync | none yet | open |
+| 2 | Record types come from the scopes the catalog entry __requests__, never from what the server supports or actually granted | Types are requested that a server refuses; types it offers can be missed | [#757](https://github.com/jwilleke/yourphr/issues/757) | __settled 2026-09-22__ — granted scopes ∩ advertised resources |
+| 3 | No CapabilityStatement (`/metadata`) reading — every provider is asked the same way; v2 did this and v3 dropped it | Each new provider is a new surprise, found in production | [#756](https://github.com/jwilleke/yourphr/issues/756) | __settled 2026-09-22__ — read at connect, store, re-read weekly, narrow only |
+| 4 | Vendor knowledge sits inside one class in this repo | Adding Cerner or athenahealth means editing YourPHR itself; nothing else can reuse it | [#760](https://github.com/jwilleke/yourphr/issues/760) | __settled 2026-09-22__ — build as `src/sources/`, extract later |
+| 5 | No `$everything` when a server advertises it | More requests than needed where one would do | [#758](https://github.com/jwilleke/yourphr/issues/758) | __settled 2026-09-22__ — use where advertised, fall back otherwise |
+| 6 | No per-type page budget and no retry on 5xx | A large or flaky provider can stall a sync | [#759](https://github.com/jwilleke/yourphr/issues/759) | __settled 2026-09-22__ — per-type budget, one retry, 401 still fatal |
 
 ## Gap 1 — Epic refuses an unqualified Observation search
 
@@ -130,11 +130,15 @@ __The trigger to extract__, when one of these becomes true: a second consumer ne
 
 ## Gap 5 — `$everything` where advertised
 
-__Decision:__ not yet discussed.
+Where a server advertises the operation, one call returns the record instead of one search per type; v2 used it when advertised and fell back otherwise. Epic does __not__ advertise it, so this is for other servers. Needs Gap 3 first, since "where advertised" means reading the statement.
+
+__Issue:__ [#758](https://github.com/jwilleke/yourphr/issues/758).
 
 ## Gap 6 — page budget and retry
 
-__Decision:__ not yet discussed.
+`src/sync` caps pages for the whole fetch (`sync.max-pages`, 500), so one large type can starve the rest — and Gap 1's per-category Observation fetch multiplies the searches. A 5xx or timeout is currently treated like a refusal and skipped for the cycle; v2 retried a transient failure once and treated only 401 as fatal. A truncated type must say so rather than look complete.
+
+__Issue:__ [#759](https://github.com/jwilleke/yourphr/issues/759).
 
 ## What has already been settled
 
