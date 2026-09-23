@@ -1,6 +1,6 @@
 {
   "name": "yourphr",
-  "version": "3.5.2",
+  "version": "3.6.0",
   "private": true,
   "type": "module",
   "description": "YourPHR — your medical records, immediately and in your hands, for free. The TypeScript stack that succeeds the Go backend.",

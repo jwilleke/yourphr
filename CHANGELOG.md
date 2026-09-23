@@ -1,5 +1,25 @@
 # Changelog
 
+## [3.6.0](https://github.com/jwilleke/yourphr/compare/v3.5.2...v3.6.0) (2026-09-23)
+
+__An Epic sandbox import went from 29 records to 296 in a live run — 250 of them labs and vital signs, which had never arrived at all.__ This release is the epic [#755](https://github.com/jwilleke/yourphr/issues/755): ask each provider the way the standards say that provider must be asked, instead of sending one guessed query shape to everyone.
+
+### Features
+
+- __Labs and vital signs arrive from Epic__ ([#754](https://github.com/jwilleke/yourphr/issues/754)) — Epic and Oracle Health both refuse an unqualified `Observation` search, as US Core allows. A refused search is now re-asked once per category, using the combinations US Core publishes; there is no table keyed by vendor, because all three big vendors agree here for the same reason. The plain search is still tried first: a required combination is what a server must support, not what it refuses without.
+- __A source asks only for what its server actually serves__ ([#756](https://github.com/jwilleke/yourphr/issues/756)) — each provider's CapabilityStatement is read at connect, stored with the source and re-read weekly. On Epic it pruned 10 types before a single request. When it cannot be read, nothing changes and the reason is said once.
+- __A source's record types come from the scopes the server GRANTED__ ([#757](https://github.com/jwilleke/yourphr/issues/757)), not the ones the catalog entry requested — SMART requires the token response to state them. Epic granted 21 types where the old hard-coded list asked for 11, so Goal, ServiceRequest and CareTeam now import for the first time.
+- __`Patient/$everything` where a server advertises it__ ([#758](https://github.com/jwilleke/yourphr/issues/758)), per-type searches otherwise. Epic does not advertise it; this is for the servers that do.
+- __A sync is bounded__ ([#759](https://github.com/jwilleke/yourphr/issues/759)) — a per-type page cap, a budget across the whole run so one large type cannot starve the rest, and one retry for a 5xx or a dropped connection. A truncated type says so rather than looking complete.
+
+### Bug Fixes
+
+- __The demo tour can no longer read Admin → Configuration__ ([#751](https://github.com/jwilleke/yourphr/issues/751)) — viewing it needs `admin-system`, so a public demo does not publish its sign-in throttle. Nothing changes for a real administrator. (Also in v3.5.2.)
+
+### Internal
+
+- The provider-fetch layer is gathered into `src/sources/` behind one entry point and a caller-supplied guarded fetch ([#760](https://github.com/jwilleke/yourphr/issues/760)), with the boundary asserted by a test: nothing in it may import a records provider, touch the database or reach the network directly. Deliberately not extracted as a package yet — see [`docs/planning/fhir-flow-plan.md`](https://github.com/jwilleke/yourphr/blob/main/docs/planning/fhir-flow-plan.md).
+
 ## [3.5.2](https://github.com/jwilleke/yourphr/compare/v3.5.1...v3.5.2) (2026-09-22)
 
 ### Bug Fixes
