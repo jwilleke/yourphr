@@ -1287,10 +1287,13 @@ export function createYourPhrServer(options: ServerOptions) {
       // mistaken for one a hospital asserted.
       if (url.pathname === '/api/secure/resource/patient-entry' && req.method === 'POST') {
         const body = (await readJsonBody(req)) ?? {};
+        // Who it is about and who measured it — the account's own person record (yourphr#696).
+        const self = await engine.managers.records.selfPatient(ctx);
         let built;
         try {
-          built = buildPatientVital(body as PatientEntryRequest);
+          built = buildPatientVital(body as PatientEntryRequest, new Date(), {subject: self.reference});
         } catch (err) {
+          // The only refusal left: nothing was said at all.
           if (err instanceof PatientEntryError) {
             send(res, 400, {success: false, error: (err as Error).message});
             return;
@@ -1306,6 +1309,9 @@ export function createYourPhrServer(options: ServerOptions) {
             source_resource_id: saved.id,
             source_id: `source-${manual.id}`,
             sort_title: built.sortTitle,
+            // What was kept but still needs a person: the form shows this instead of an error,
+            // because the record was stored either way.
+            needs_review: built.review,
             resource: built.observation,
           },
         });

@@ -61,6 +61,26 @@ describe('RecordsManager — the one door, scoped to whoever is asking', () => {
     expect(await records.list(bob, 'Observation')).toHaveLength(1);
   });
 
+  // yourphr#696: what the person said is kept; what nobody has confirmed is not a chart fact.
+  it('holds a needs-review record out of the lists, the counts, the dashboard and search — and keeps it', async () => {
+    const quarantined = {
+      resourceType: 'Observation',
+      id: 'o-review',
+      status: 'final',
+      code: { text: 'peak flow' }, // their words, uncoded — nothing invented
+      meta: { tag: [{ system: 'https://yourphr.org/fhir/CodeSystem/record-origin', code: 'needs-review' }] },
+    };
+    await records.writer(alice, 'source-1').upsert(quarantined as never);
+
+    expect((await records.list(alice, 'Observation')).map((r) => r['source_resource_id'])).not.toContain('o-review');
+    expect(await records.countsByType(alice)).toEqual([{ resource_type: 'Condition', count: 2 }, { resource_type: 'Observation', count: 3 }]);
+    expect((await records.recent(alice, 50)).map((r) => r.source_resource_id)).not.toContain('o-review');
+    expect((await records.searchText(alice, 'peak flow')).map((r) => r.source_resource_id)).not.toContain('o-review');
+
+    // Kept, not deleted: it is still addressable, which is what the review queue will read.
+    expect((await records.detail(alice, 'o-review'))['source_resource_id']).toBe('o-review');
+  });
+
   it('detail finds a record by id without its type; a missing one is a 404', async () => {
     expect((await records.detail(alice, 'c1'))['source_resource_type']).toBe('Condition');
     await expect(records.detail(alice, 'o9')).rejects.toMatchObject({ status: 404 }); // bob's

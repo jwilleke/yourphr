@@ -820,12 +820,41 @@ async function main(): Promise<void> {
   check('the vital is readable straight away, filed under the patient\'s own manual source — never a provider\'s',
     !!vitalRow && vitalRow?.source_id === bp.data?.source_id, JSON.stringify(vitalRow ?? {}));
 
-  const badVital = await entry(upToken, { vital: 'blood_sugar', value: 5.5 });
+  // yourphr#696: what the person said is KEPT even when it cannot be coded — and held out of the
+  // chart until they confirm it, rather than refused at the door.
+  const glucose = await entry(upToken, { vital: 'blood_sugar', value: 96, unit: 'mg/dL' });
+  const glucoseBody = (await glucose.json()) as { data?: { resource?: { code?: { coding?: { code?: string }[] }; category?: { coding?: { code?: string }[] }[] }; needs_review?: string[] } };
+  check('a home glucose reading is coded by its unit and filed as a laboratory result',
+    glucose.status === 200 && glucoseBody.data?.resource?.code?.coding?.[0]?.code === '41653-7'
+      && glucoseBody.data?.resource?.category?.[0]?.coding?.[0]?.code === 'laboratory' && (glucoseBody.data?.needs_review ?? []).length === 0,
+    JSON.stringify(glucoseBody.data?.needs_review ?? glucoseBody.data?.resource?.code));
+
   const halfBp = await entry(upToken, { vital: 'blood_pressure', systolic: 120 });
+  const halfBody = (await halfBp.json()) as { data?: { source_resource_id?: string; needs_review?: string[] } };
+  const unknown = await entry(upToken, { vital: 'peak flow', value: 400 });
+  const unknownBody = (await unknown.json()) as { data?: { source_resource_id?: string; needs_review?: string[]; resource?: { code?: { text?: string; coding?: unknown } } } };
+  check('half a reading and an unknown measurement are STORED with what was said, flagged for review',
+    halfBp.status === 200 && (halfBody.data?.needs_review ?? []).some((r) => r.includes('only the systolic half'))
+      && unknown.status === 200 && unknownBody.data?.resource?.code?.text === 'peak flow' && unknownBody.data?.resource?.code?.coding === undefined,
+    `${halfBp.status} ${unknown.status} ${JSON.stringify(unknownBody.data?.needs_review)}`);
+
+  const chartList = (await (await fetch(`${base}/api/secure/resource/fhir?sourceResourceType=Observation`, authed(upToken))).json()) as { data?: { source_resource_id?: string }[] };
+  const inChart = (chartList.data ?? []).map((r) => r.source_resource_id);
+  check('a record awaiting review is not a chart fact: absent from the lists, while the confirmed ones are there',
+    !inChart.includes(halfBody.data?.source_resource_id) && !inChart.includes(unknownBody.data?.source_resource_id) && inChart.includes(bp.data?.source_resource_id),
+    `${inChart.length} listed`);
+
+  const selfPatients = (await (await fetch(`${base}/api/secure/resource/fhir?sourceResourceType=Patient`, authed(upToken))).json()) as { data?: { resource_raw?: { id?: string } }[] };
+  const storedBp = (await (await fetch(`${base}/api/secure/resource/fhir/${bp.data?.source_id}/${bp.data?.source_resource_id}`, authed(upToken))).json()) as { data?: { resource_raw?: { subject?: { reference?: string }; performer?: { reference?: string }[] } } };
+  check('the record says who it is about and who measured it — the account\'s own person record (PGHD)',
+    !!storedBp.data?.resource_raw?.subject?.reference && storedBp.data?.resource_raw?.subject?.reference === storedBp.data?.resource_raw?.performer?.[0]?.reference
+      && (selfPatients.data ?? []).some((p) => `Patient/${p.resource_raw?.id}` === storedBp.data?.resource_raw?.subject?.reference),
+    String(storedBp.data?.resource_raw?.subject?.reference));
+
   const anonEntry = await fetch(`${base}/api/secure/resource/patient-entry`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{"vital":"heart_rate","value":64}' });
-  check('a vital it cannot represent is refused with the reason, and no session is 401 — never a stored guess',
-    badVital.status === 400 && halfBp.status === 400 && anonEntry.status === 401,
-    `unknown ${badVital.status} half-bp ${halfBp.status} anon ${anonEntry.status}`);
+  const nothing = await entry(upToken, {});
+  check('only an empty submission is refused, and no session is 401',
+    nothing.status === 400 && anonEntry.status === 401, `empty ${nothing.status} anon ${anonEntry.status}`);
 
   // C-CDA: unconfigured first — the page must be able to say so BEFORE anyone uploads (yourphr#397, #686).
   const ccd = '<?xml version="1.0"?><ClinicalDocument xmlns="urn:hl7-org:v3"><recordTarget><patientRole><id root="2.16.840.1.113883.19.5" extension="996-756-495"/><patient><name><given>Una</given></name></patient></patientRole></recordTarget></ClinicalDocument>';

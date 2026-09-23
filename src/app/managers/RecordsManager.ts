@@ -11,6 +11,8 @@
  * computed by a free function over a store handle is a second door in all but name.
  */
 import type { Bundle, Resource } from '@medplum/fhirtypes';
+import { randomUUID } from 'node:crypto';
+import { NEEDS_REVIEW, RECORD_ORIGIN } from '../../patient-entry/index.js';
 import type { SearchRequest, WithId } from '@medplum/core';
 import { BaseManager, type BackupData } from '../../framework/BaseManager.js';
 import type { Engine } from '../../framework/Engine.js';
@@ -80,6 +82,26 @@ export class RecordsManager extends BaseManager {
     return ctx.username;
   }
 
+  // --- the chart, and what is held out of it (yourphr#696) ---
+
+  /**
+   * Is this record kept but NOT yet a chart fact?
+   *
+   * A record the person wrote that could not be fully understood — an uncoded measurement, half a
+   * blood pressure, a date nobody could read — is stored exactly as they said it and tagged
+   * `needs-review`. It is theirs and it is visible, but it must not be counted, searched, listed or
+   * exported as though a clinician could rely on it. Quarantine, not deletion.
+   */
+  static needsReview(resource: unknown): boolean {
+    const tags = (resource as { meta?: { tag?: { system?: string; code?: string }[] } })?.meta?.tag ?? [];
+    return tags.some((t) => t.system === RECORD_ORIGIN && t.code === NEEDS_REVIEW);
+  }
+
+  /** The rows that speak for the chart: everything the person holds, minus what awaits review. */
+  private chartOnly<T extends { resource: unknown }>(rows: T[]): T[] {
+    return rows.filter((r) => !RecordsManager.needsReview(r.resource));
+  }
+
   // --- the record pages ---
 
   /** GET /resource/fhir?sourceResourceType=…[&sourceID=…] — YourPHR's resource_fhir rows. */
@@ -89,6 +111,7 @@ export class RecordsManager extends BaseManager {
     const sourceOf = await this.provider.sourceOf(userId, resourceType);
     return (bundle.entry ?? [])
       .map((e) => e.resource as Resource)
+      .filter((r) => !RecordsManager.needsReview(r))
       .filter((r) => !options.sourceId || sourceOf.get(r.id ?? '') === options.sourceId)
       .map((r) => toResourceFhir(r, sourceOf.get(r.id ?? '') ?? ''));
   }
@@ -106,7 +129,16 @@ export class RecordsManager extends BaseManager {
 
   /** GET /summary's counts. */
   async countsByType(ctx: ApiContext, sourceId?: string): Promise<{ resource_type: string; count: number }[]> {
-    return (await this.provider.countByType(this.who(ctx), sourceId)).map((c) => ({ resource_type: c.resourceType, count: c.count }));
+    const userId = this.who(ctx);
+    const counted = await this.provider.countByType(userId, sourceId);
+    // What awaits review is stored but is not a chart fact, so it is not counted as one.
+    const inQuarantine = new Map<string, number>();
+    for (const row of await this.provider.list(userId, sourceId ? { sourceId } : {})) {
+      if (RecordsManager.needsReview(row.resource)) inQuarantine.set(row.resourceType, (inQuarantine.get(row.resourceType) ?? 0) + 1);
+    }
+    return counted
+      .map((c) => ({ resource_type: c.resourceType, count: c.count - (inQuarantine.get(c.resourceType) ?? 0) }))
+      .filter((c) => c.count > 0);
   }
 
   async typesHeld(ctx: ApiContext): Promise<string[]> {
@@ -115,7 +147,7 @@ export class RecordsManager extends BaseManager {
 
   /** The dashboard's recent activity: newest records across every type, Go's list-item shape. */
   async recent(ctx: ApiContext, limit: number): Promise<RecentItem[]> {
-    const items = (await this.provider.list(this.who(ctx))).map((r) => {
+    const items = this.chartOnly(await this.provider.list(this.who(ctx))).map((r) => {
       const shaped = toResourceFhir(r.resource, r.sourceId);
       const date = String(shaped['sort_date'] ?? '').slice(0, 10);
       return { source_id: r.sourceId, source_resource_type: r.resourceType, source_resource_id: r.id, title: String(shaped['sort_title'] ?? ''), ...(date ? { date } : {}) };
@@ -125,7 +157,7 @@ export class RecordsManager extends BaseManager {
   }
 
   private async inputs(ctx: ApiContext, resourceType: string): Promise<InputResource[]> {
-    return (await this.provider.list(this.who(ctx), { resourceType }))
+    return this.chartOnly(await this.provider.list(this.who(ctx), { resourceType }))
       .sort((a, b) => a.id.localeCompare(b.id))
       .map((r) => ({ sourceResourceType: resourceType, sourceResourceId: r.id, sourceId: r.sourceId, raw: r.resource }));
   }
@@ -137,7 +169,7 @@ export class RecordsManager extends BaseManager {
   async medications(ctx: ApiContext): Promise<ReconciledMedication[]> {
     const inputs: MedInput[] = [];
     for (const type of ['MedicationRequest', 'MedicationStatement', 'MedicationDispense']) {
-      for (const r of await this.provider.list(this.who(ctx), { resourceType: type })) inputs.push({ resource: r.resource, sourceId: r.sourceId });
+      for (const r of this.chartOnly(await this.provider.list(this.who(ctx), { resourceType: type }))) inputs.push({ resource: r.resource, sourceId: r.sourceId });
     }
     return reconcileMedications(inputs);
   }
@@ -211,6 +243,61 @@ export class RecordsManager extends BaseManager {
     return (await this.provider.countByType(this.who(ctx), sourceId)).map((c) => ({ source_id: sourceId, resource_type: c.resourceType, count: c.count }));
   }
 
+  /**
+   * The person this account's own records are about (yourphr#696).
+   *
+   * A record the person writes has to say whose it is — `subject`, and `performer` when they
+   * measured it themselves. That is the PGHD pattern: the resource states who asserted it, rather
+   * than a flag beside it. But an account holds one `Patient` per connected source, because that is
+   * what each provider sent, and identity is LOCAL: Epic's `Patient/123` and a clinic's
+   * `Patient/456` are different resources about the same human.
+   *
+   * So the account's own `manual` source carries one person record, and it learns identifiers from
+   * the sources the person connected. Each identifier keeps __the system that issued it__: an MRN is
+   * exclusive to the organisation that issued it (it is the number on that hospital's wristband), so
+   * recording "Epic knows this person as E12345" is a fact, while re-stamping it as a YourPHR number
+   * would not be. Each is recorded because the person AUTHENTICATED there — a SMART launch proves
+   * the login and the token names the Patient it was issued for, which is stronger evidence than any
+   * demographic score.
+   *
+   * What this deliberately does NOT do: merge clinical data, rewrite a provider's Patient, or
+   * resolve a disagreement between two sources. That is yourphr#761.
+   */
+  async selfPatient(ctx: ApiContext): Promise<{ reference: string; id: string }> {
+    const userId = this.who(ctx);
+    const manual = `source-${(await this.engine.managers.sources.manualSource(ctx)).id}`;
+
+    // Every identifier the connected sources have told us about this person, each under its own
+    // issuing system. Sorted so the record does not churn on every call.
+    const learned = new Map<string, { system: string; value: string }>();
+    for (const held of await this.provider.list(userId, { resourceType: 'Patient' })) {
+      if (held.sourceId === manual) continue; // our own record is not evidence about itself
+      for (const identifier of ((held.resource as { identifier?: { system?: string; value?: string }[] }).identifier ?? [])) {
+        const system = (identifier.system ?? '').trim();
+        const value = (identifier.value ?? '').trim();
+        if (system === '' || value === '') continue; // an identifier with no system names nothing
+        learned.set(`${system}|${value}`, { system, value });
+      }
+    }
+    const identifier = [...learned.values()].sort((a, b) => `${a.system}|${a.value}`.localeCompare(`${b.system}|${b.value}`));
+
+    const held = (await this.provider.list(userId, { resourceType: 'Patient', sourceId: manual }))
+      .sort((a, b) => a.lastUpdated.localeCompare(b.lastUpdated))[0];
+    const id = held?.resource?.id ?? randomUUID();
+    const existing = (held?.resource as { identifier?: unknown[] } | undefined)?.identifier ?? [];
+
+    // Written on first use, and again only when what we have learned actually changed.
+    if (!held || JSON.stringify(existing) !== JSON.stringify(identifier)) {
+      await this.writer(ctx, manual).upsert({
+        resourceType: 'Patient',
+        id,
+        ...(identifier.length ? { identifier } : {}),
+        meta: { tag: [{ system: RECORD_ORIGIN, code: 'patient-reported', display: 'Patient-reported (YourPHR)' }] },
+      } as Resource);
+    }
+    return { reference: `Patient/${id}`, id };
+  }
+
   async patientOf(ctx: ApiContext, sourceId: string): Promise<Record<string, unknown> | null> {
     const patients = (await this.provider.list(this.who(ctx), { resourceType: 'Patient', sourceId })).sort((a, b) => b.lastUpdated.localeCompare(a.lastUpdated));
     return patients[0] ? toResourceFhir(patients[0].resource, sourceId) : null;
@@ -254,6 +341,7 @@ export class RecordsManager extends BaseManager {
     for (const hit of hits) {
       const stored = await this.provider.read(userId, hit.resourceType, hit.id);
       if (!stored) continue;
+      if (RecordsManager.needsReview(stored.resource)) continue; // kept, but not yet a chart fact
       const shaped = toResourceFhir(stored.resource, stored.sourceId);
       const date = String(shaped['sort_date'] ?? '').slice(0, 10);
       items.push({ source_id: stored.sourceId, source_resource_type: stored.resourceType, source_resource_id: stored.id, title: String(shaped['sort_title'] ?? '') || stored.resourceType, ...(date ? { date } : {}), snippet: hit.snippet });

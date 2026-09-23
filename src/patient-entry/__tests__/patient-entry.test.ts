@@ -58,31 +58,86 @@ describe('a vital the patient measured', () => {
   });
 });
 
-describe('what it refuses, rather than storing something adjacent', () => {
-  const refuses = (req: Parameters<typeof buildPatientVital>[0], message: string) => {
-    expect(() => buildPatientVital(req, NOW)).toThrow(PatientEntryError);
-    expect(() => buildPatientVital(req, NOW)).toThrow(message);
-  };
+describe('what it keeps when it cannot code what was said (yourphr#696)', () => {
+  const tagged = (o: { meta?: { tag?: { code?: string }[] } }) => (o.meta?.tag ?? []).some((t) => t.code === 'needs-review');
 
-  it('an unknown vital, rather than filing it as something near it', () => {
-    refuses({ vital: 'blood_sugar', value: 5.5 }, 'unknown vital "blood_sugar"');
+  it('stores an unknown measurement as the person\'s own words, uncoded, for review', () => {
+    const { observation, sortTitle, review } = buildPatientVital({ vital: 'peak flow', value: 400, unit: 'L/min' }, NOW);
+    expect(observation.code).toEqual({ text: 'peak flow' }); // no coding invented
+    expect(observation.valueQuantity).toBeUndefined(); // nor a value hung off a code that is not there
+    expect(sortTitle).toBe('peak flow');
+    expect(review[0]).toContain('not a measurement this release knows how to code');
+    expect(tagged(observation)).toBe(true);
   });
 
-  it('a kind this release does not support', () => {
-    refuses({ kind: 'allergy', vital: 'body_weight', value: 70 }, 'kind=vital only');
+  it('keeps half a blood pressure — 128 is a fact — and says the other half is missing', () => {
+    const { observation, sortTitle, review } = buildPatientVital({ vital: 'blood_pressure', systolic: 128 }, NOW);
+    expect(observation.component).toEqual([
+      { code: expect.objectContaining({ text: 'Systolic blood pressure' }), valueQuantity: { value: 128, unit: 'mm[Hg]', system: 'http://unitsofmeasure.org', code: 'mm[Hg]' } },
+    ]);
+    expect(sortTitle).toBe('Blood pressure 128 systolic mmHg');
+    expect(review[0]).toContain('only the systolic half');
+    expect(tagged(observation)).toBe(true);
   });
 
-  it('a missing value, and half a blood pressure', () => {
-    refuses({ vital: 'body_weight' }, 'value is required for body_weight');
-    refuses({ vital: 'blood_pressure', systolic: 120 }, 'systolic and diastolic are required');
+  it('leaves a record with NO date when the date cannot be read, rather than dating it today', () => {
+    const { observation, review } = buildPatientVital({ vital: 'heart_rate', value: 64, effective_date_time: 'last tuesday' }, NOW);
+    expect(observation.effectiveDateTime).toBeUndefined();
+    expect(observation.valueQuantity?.value).toBe(64); // the reading is still kept
+    expect(review[0]).toContain('could not be read');
+    expect(tagged(observation)).toBe(true);
   });
 
-  it('a date it cannot read — better an error on the form than a record dated wrongly', () => {
-    refuses({ vital: 'heart_rate', value: 64, effective_date_time: 'last tuesday' }, 'RFC3339 or YYYY-MM-DD');
+  it('keeps a kind it cannot yet store in its own resource type, and says so', () => {
+    const { observation, review } = buildPatientVital({ kind: 'allergy', vital: 'penicillin' }, NOW);
+    expect(observation.code).toEqual({ text: 'penicillin' });
+    expect(review.some((r) => r.includes('belongs in its own kind of record'))).toBe(true);
+    expect(tagged(observation)).toBe(true);
   });
 
-  it('a vital that was not named at all', () => {
-    refuses({ value: 70 }, 'vital is required');
+  it('records a measurement with no reading yet, rather than dropping the fact that it was named', () => {
+    const { observation, review } = buildPatientVital({ vital: 'body_weight' }, NOW);
+    expect(observation.code?.coding?.[0]?.code).toBe('29463-7');
+    expect(observation.valueQuantity).toBeUndefined();
+    expect(review[0]).toContain('no reading was given');
+  });
+
+  it('refuses ONLY an empty submission — no name and no reading is not a fact', () => {
+    expect(() => buildPatientVital({}, NOW)).toThrow(PatientEntryError);
+    expect(() => buildPatientVital({}, NOW)).toThrow('there is nothing to record');
+  });
+
+  it('marks nothing for review when everything was understood', () => {
+    const { observation, review } = buildPatientVital({ vital: 'heart_rate', value: 64 }, NOW);
+    expect(review).toEqual([]);
+    expect(tagged(observation)).toBe(false);
+  });
+});
+
+describe('a home glucose reading (yourphr#696)', () => {
+  it('is coded by the UNIT, because the unit says which quantity was measured', () => {
+    expect(buildPatientVital({ vital: 'blood_sugar', value: 96, unit: 'mg/dL' }, NOW).observation.code?.coding?.[0]?.code).toBe('41653-7');
+    expect(buildPatientVital({ vital: 'blood_sugar', value: 5.3, unit: 'mmol/L' }, NOW).observation.code?.coding?.[0]?.code).toBe('14743-9');
+    expect(buildPatientVital({ vital: 'glucose', value: 96 }, NOW).observation.code?.coding?.[0]?.code).toBe('41653-7'); // mg/dL by default
+  });
+
+  it('is a laboratory observation, not a vital sign — a finger-stick is a lab value wherever it was taken', () => {
+    const { observation } = buildPatientVital({ vital: 'blood_sugar', value: 96 }, NOW);
+    expect(observation.category?.[0]?.coding?.[0]?.code).toBe('laboratory');
+  });
+
+  it('leaves a reading in an unrecognised unit uncoded for review, rather than guessing the specimen', () => {
+    const { observation, review } = buildPatientVital({ vital: 'blood_sugar', value: 96, unit: 'g/L' }, NOW);
+    expect(observation.code).toEqual({ text: 'blood sugar' });
+    expect(review[0]).toContain('unit "g/L" was not recognised');
+  });
+});
+
+describe('who the record is about and who measured it (PGHD)', () => {
+  it('states both, when the caller gives the person record', () => {
+    const { observation } = buildPatientVital({ vital: 'heart_rate', value: 64 }, NOW, { subject: 'Patient/self-1' });
+    expect(observation.subject).toEqual({ reference: 'Patient/self-1' });
+    expect(observation.performer).toEqual([{ reference: 'Patient/self-1' }]);
   });
 });
 
