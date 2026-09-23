@@ -803,6 +803,30 @@ async function main(): Promise<void> {
     notMultipart.status === 400 && pdf.status === 400 && anonUpload.status === 401 && sourcesAfterRefusals === sourcesAfter,
     `multipart ${notMultipart.status} pdf ${pdf.status} anon ${anonUpload.status} sources ${sourcesAfter} -> ${sourcesAfterRefusals}`);
 
+  // --- "Add record": a vital the patient measured at home (yourphr#696) ---
+  // The button is a primary call to action in three places and its form used to 404.
+  const entry = async (token: string, body: Record<string, unknown>) =>
+    fetch(`${base}/api/secure/resource/patient-entry`, { method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` }, body: JSON.stringify(body) });
+
+  const bpRes = await entry(upToken, { kind: 'vital', vital: 'blood_pressure', systolic: 128, diastolic: 78, effective_date_time: '2026-09-20' });
+  const bp = (await bpRes.json()) as { data?: { resource_type?: string; source_resource_id?: string; source_id?: string; sort_title?: string } };
+  check('POST /secure/resource/patient-entry saves the vital and answers in the shape the form reads',
+    bpRes.status === 200 && bp.data?.resource_type === 'Observation' && bp.data?.sort_title === 'Blood pressure 128/78 mmHg'
+      && !!bp.data?.source_resource_id && String(bp.data?.source_id).startsWith('source-'),
+    `${bpRes.status} ${JSON.stringify(bp.data)}`);
+
+  const storedVital = (await (await fetch(`${base}/api/secure/resource/fhir?sourceResourceType=Observation`, authed(upToken))).json()) as { data?: { source_resource_id?: string; source_id?: string }[] };
+  const vitalRow = (storedVital.data ?? []).find((r) => r.source_resource_id === bp.data?.source_resource_id);
+  check('the vital is readable straight away, filed under the patient\'s own manual source — never a provider\'s',
+    !!vitalRow && vitalRow?.source_id === bp.data?.source_id, JSON.stringify(vitalRow ?? {}));
+
+  const badVital = await entry(upToken, { vital: 'blood_sugar', value: 5.5 });
+  const halfBp = await entry(upToken, { vital: 'blood_pressure', systolic: 120 });
+  const anonEntry = await fetch(`${base}/api/secure/resource/patient-entry`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{"vital":"heart_rate","value":64}' });
+  check('a vital it cannot represent is refused with the reason, and no session is 401 — never a stored guess',
+    badVital.status === 400 && halfBp.status === 400 && anonEntry.status === 401,
+    `unknown ${badVital.status} half-bp ${halfBp.status} anon ${anonEntry.status}`);
+
   // C-CDA: unconfigured first — the page must be able to say so BEFORE anyone uploads (yourphr#397, #686).
   const ccd = '<?xml version="1.0"?><ClinicalDocument xmlns="urn:hl7-org:v3"><recordTarget><patientRole><id root="2.16.840.1.113883.19.5" extension="996-756-495"/><patient><name><given>Una</given></name></patient></patientRole></recordTarget></ClinicalDocument>';
   const statusUnset = (await (await fetch(`${base}/api/secure/source/cda-converter/status`, authed(upToken))).json()) as { data?: { enabled?: boolean; ready?: boolean; setup_hint?: string } };

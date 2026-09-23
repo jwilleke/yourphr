@@ -32,6 +32,7 @@ import {RecordsManager} from './app/managers/RecordsManager.js';
 import {SimpleRateLimiter} from './http/rate-limit.js';
 import {clientIp} from './framework/managers/SessionsManager.js';
 import {SqliteRecordsProvider} from './app/providers/SqliteRecordsProvider.js';
+import {PatientEntryError, buildPatientVital, type PatientEntryRequest} from './patient-entry/index.js';
 
 /**
  * The session cookie. HttpOnly throughout: the Angular app (yourphr#118 Phase 2b) never sees a
@@ -127,7 +128,40 @@ export function toResourceFhir(resource: Resource, sourceId: string): Record<str
   };
 }
 
+/**
+ * What an Observation measured, in the words the record itself carries (yourphr#696).
+ *
+ * Blood pressure is the case that forced this: it holds no value of its own, only two components,
+ * so a list showed the panel's LOINC display and never the reading. Anything this cannot phrase
+ * from the record — a lab with no value yet, a panel of other shapes — falls through to the code
+ * text, which is the honest answer rather than an invented one.
+ */
+function observationMeasurement(r: any): string {
+  const label = (c: any): string => c?.text || c?.coding?.[0]?.display || '';
+  const amount = (q: any): string => (q && typeof q.value === 'number' ? `${q.value}${q.unit ? ` ${q.unit}` : ''}` : '');
+
+  const components: any[] = Array.isArray(r.component) ? r.component : [];
+  const systolic = components.find((c) => c?.code?.coding?.some((k: any) => k?.code === '8480-6'));
+  const diastolic = components.find((c) => c?.code?.coding?.some((k: any) => k?.code === '8462-4'));
+  if (systolic?.valueQuantity?.value != null && diastolic?.valueQuantity?.value != null) {
+    const unit = systolic.valueQuantity.unit === 'mm[Hg]' ? 'mmHg' : (systolic.valueQuantity.unit ?? '');
+    return `Blood pressure ${systolic.valueQuantity.value}/${diastolic.valueQuantity.value}${unit ? ` ${unit}` : ''}`;
+  }
+
+  const name = label(r.code);
+  const value = amount(r.valueQuantity) || (typeof r.valueString === 'string' ? r.valueString : '') || label(r.valueCodeableConcept);
+  if (name !== '' && value !== '') return `${name} ${value}`;
+  return '';
+}
+
 export function titleFor(resource: any): string {
+  // An Observation's code alone is not what a person came to read: "Blood pressure panel with all
+  // children optional" is the LOINC display, and the measurement is the point (yourphr#262, #696).
+  // Only what the record states is used — no unit conversion, no rounding, no inferred label.
+  if (resource?.resourceType === 'Observation') {
+    const measured = observationMeasurement(resource);
+    if (measured !== '') return measured;
+  }
   return (
     resource.code?.text ||
     resource.code?.coding?.[0]?.display ||
@@ -1241,6 +1275,40 @@ export function createYourPhrServer(options: ServerOptions) {
           }
         }
         send(res, 200, {success: true, data: graph});
+        return;
+      }
+
+      // --- a vital the patient measured at home (yourphr#696; the product's #313) ---
+      //
+      // "Add record" is a primary call to action in three places in the app, and this is the route
+      // its form posted to. Until now there was none, so the form filled in, submitted and 404'd.
+      // The Observation is built in src/patient-entry (ported from Go's patient_entry.go) and saved
+      // through the account's own `manual` source, so a hand-typed blood pressure is never
+      // mistaken for one a hospital asserted.
+      if (url.pathname === '/api/secure/resource/patient-entry' && req.method === 'POST') {
+        const body = (await readJsonBody(req)) ?? {};
+        let built;
+        try {
+          built = buildPatientVital(body as PatientEntryRequest);
+        } catch (err) {
+          if (err instanceof PatientEntryError) {
+            send(res, 400, {success: false, error: (err as Error).message});
+            return;
+          }
+          throw err;
+        }
+        const saved = await engine.managers.records.savePatientRecord(ctx, built.observation);
+        const manual = await engine.managers.sources.manualSource(ctx);
+        send(res, 200, {
+          success: true,
+          data: {
+            resource_type: 'Observation',
+            source_resource_id: saved.id,
+            source_id: `source-${manual.id}`,
+            sort_title: built.sortTitle,
+            resource: built.observation,
+          },
+        });
         return;
       }
 
