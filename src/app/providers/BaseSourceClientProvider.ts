@@ -20,6 +20,10 @@ export interface FetchReport {
   received: number;
   created: number;
   updated: number;
+  /** Pages fetched for this type, so a sync can budget across types (yourphr#759). */
+  pages?: number;
+  /** The per-type page budget ran out before the provider did; what arrived is kept. */
+  truncated?: boolean;
   /**
    * What the client had to do differently for this type, when it did — e.g. asking once per
    * category because the server refused a plain patient search (yourphr#754). Surfaced in the job

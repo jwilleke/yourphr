@@ -309,6 +309,47 @@ async function main(): Promise<void> {
   check('a statement that cannot be read is a reason, never a throw', notThere.capability === undefined && notThere.reason !== '', notThere.reason);
   epic.close();
 
+  // --- transient failures and the page budget (yourphr#759) ---
+  let flakeHits = 0;
+  const flaky = createServer((req, res) => {
+    flakeHits++;
+    // 502 once, then the real answer: a gateway blip must not cost the type its whole cycle.
+    if (flakeHits === 1) { res.writeHead(502, { 'content-type': 'text/html' }); res.end('<html>bad gateway</html>'); return; }
+    res.writeHead(200, { 'content-type': 'application/fhir+json' });
+    res.end(JSON.stringify({ resourceType: 'Bundle', type: 'searchset', entry: [{ resource: condition('flaky-1', 'Retried') }] }));
+  });
+  const flakyBase = await listen(flaky as never);
+  const retried = await syncFrom(`${flakyBase}/Condition?patient=p1`, { repo, accessToken: 'at', sourceId: 'flaky', allowInternal: true });
+  check('a 502 is retried once, and the records arrive', retried.created === 1 && flakeHits === 2, `${flakeHits} requests, ${retried.created} created`);
+  flaky.close();
+
+  let refusalHits = 0;
+  const refusing = createServer((_req, res) => {
+    refusalHits++;
+    res.writeHead(400, { 'content-type': 'application/fhir+json' });
+    res.end(JSON.stringify({ resourceType: 'OperationOutcome', issue: [{ severity: 'error', code: 'invalid', diagnostics: 'no' }] }));
+  });
+  const refusingBase = await listen(refusing as never);
+  let refused: unknown;
+  try { await syncFrom(`${refusingBase}/Condition?patient=p1`, { repo, accessToken: 'at', sourceId: 'refusing', allowInternal: true }); } catch (err) { refused = err; }
+  check('a 4xx is NOT retried — it will say the same thing again', refusalHits === 1 && refused instanceof FhirHttpError, `${refusalHits} requests`);
+  refusing.close();
+
+  const endless = createServer((req, res) => {
+    const base = `http://127.0.0.1:${(endless.address() as AddressInfo).port}`;
+    res.writeHead(200, { 'content-type': 'application/fhir+json' });
+    res.end(JSON.stringify({
+      resourceType: 'Bundle', type: 'searchset',
+      link: [{ relation: 'next', url: `${base}/Condition?page=${Number(new URL(req.url ?? '', base).searchParams.get('page') ?? '0') + 1}` }],
+      entry: [{ resource: condition(`endless-${new URL(req.url ?? '', base).searchParams.get('page') ?? '0'}`, 'Forever') }],
+    }));
+  });
+  const endlessBase = await listen(endless as never);
+  const capped2 = await syncFrom(`${endlessBase}/Condition?page=0`, { repo, accessToken: 'at', sourceId: 'endless', maxPages: 3, allowInternal: true });
+  check('a provider that always returns a next link is TRUNCATED, not thrown away',
+    capped2.truncated === true && capped2.pages === 3 && capped2.created === 3, `${capped2.pages} pages, ${capped2.created} created, truncated=${capped2.truncated}`);
+  endless.close();
+
   repo.db.close();
   rmSync(dir, { recursive: true, force: true });
 

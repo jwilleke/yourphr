@@ -43,12 +43,17 @@ class ScriptedClient extends BaseSourceClientProvider {
   capabilityReason = 'no statement in this spec';
   /** What a refresh restates as granted (yourphr#757); '' is a server that says nothing. */
   grantedScope = '';
+  /** Pages a type claims to have spent, and whether it hit its cap (yourphr#759). */
+  pagesPerType = 1;
+  truncate = false;
+  budgets: number[] = [];
   async readCapability(): Promise<{ capability?: SourceCapability; reason: string }> {
     this.capabilityReads++;
     return this.capability ? { capability: this.capability, reason: '' } : { reason: this.capabilityReason };
   }
-  async fetchPages(source: ConnectedSource, resourceType: string, accessToken: string, writer: RecordsWriter): Promise<FetchReport> {
+  async fetchPages(source: ConnectedSource, resourceType: string, accessToken: string, writer: RecordsWriter, maxPages: number): Promise<FetchReport> {
     this.fetches.push(`${source.id}:${resourceType}:${accessToken}`);
+    this.budgets.push(maxPages);
     if (this.failFetch) throw new Error('FHIR HTTP 500');
     const refusal = this.failTypes.get(resourceType);
     if (refusal) throw refusal;
@@ -59,7 +64,7 @@ class ScriptedClient extends BaseSourceClientProvider {
       if (r === 'created') created++;
       else updated++;
     }
-    return { received: this.perType, created, updated };
+    return { received: this.perType, created, updated, pages: this.pagesPerType, truncated: this.truncate };
   }
 }
 
@@ -352,6 +357,37 @@ describe('SourcesManager — the pass (what src/worker was)', () => {
     await sources.add(alice, newSource('alice', { grantedScopes: '' }));
     await sources.pass(NOW);
     expect(client.fetches).toEqual(['1:Condition:tok', '1:Observation:tok']);
+  });
+
+  // yourphr#759: one big type must not spend the whole run.
+  it('spends the sync budget across types, and says which ones it never reached', async () => {
+    // Its own engine: the shared one is already initialised, and this needs a tighter budget.
+    const tight = new Engine();
+    const sp = new FakeSourcesProvider();
+    const jp = new FakeJobsProvider((id) => sp.rows.get(id)?.userId);
+    const scripted = new ScriptedClient();
+    scripted.pagesPerType = 2;
+    const tightJobs = new JobsManager(tight, jp);
+    tight.register('records', new RecordsManager(tight, new FakeRecordsProvider())).register('jobs', tightJobs)
+      .register('sources', new SourcesManager(tight, sp, scripted, { maxPages: 5, maxPagesPerSync: 3 }));
+    await tight.initialize();
+    const who = ApiContext.from({ username: 'alice', role: 'user' }, tight);
+    const s = await tight.managers.sources.add(who, newSource('alice', { resourceTypes: ['Condition', 'Observation', 'Procedure'] }));
+    await tight.managers.sources.pass(NOW);
+    expect(scripted.fetches).toEqual(['1:Condition:tok', '1:Observation:tok']); // the budget ran out before Procedure
+    expect(scripted.budgets).toEqual([3, 1]); // each type gets the smaller of its own cap and what is left
+    const job = await tightJobs.latest(s.id);
+    expect(job?.error).toContain('the page budget ran out: Procedure not fetched this cycle');
+    expect(job?.outcome).toBe('success'); // what did arrive is real
+  });
+
+  it('a type that hits its own cap keeps what it fetched and says it was truncated', async () => {
+    client.truncate = true;
+    const s = await sources.add(alice, newSource('alice', { resourceTypes: ['Condition'] }));
+    await sources.pass(NOW);
+    const job = await jobs.latest(s.id);
+    expect(job).toMatchObject({ outcome: 'success', received: 2 });
+    expect(job?.error).toContain('Condition: stopped at the page cap');
   });
 
   it('the worker acts for each owner: records land under the source\'s owner, never anyone else', async () => {

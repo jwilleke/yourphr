@@ -70,7 +70,14 @@ export interface SourceImportReport {
 }
 
 export interface SourcesOptions {
+  /** Pages one TYPE may fetch (yourphr#759). */
   maxPages: number;
+  /**
+   * Pages one SOURCE's whole sync may fetch (yourphr#759). Without it a provider with years of one
+   * type spends the run on that type and the rest of the record never arrives — and #754's
+   * per-category fan-out multiplies the searches a single type makes.
+   */
+  maxPagesPerSync?: number;
   /** Tests only — lets a loopback fake serve `/metadata`; the SSRF guard stays on everywhere else. */
   allowInternal?: boolean;
   log?: (line: string) => void;
@@ -593,12 +600,20 @@ export class SourcesManager extends BaseManager {
       // for at all rather than refused every cycle. An unreadable statement changes nothing.
       const types = fatal ? [] : await this.typesToFetch(source, accessToken, now, notes);
 
+      // The budget for this source's whole sync (yourphr#759): each type may spend up to the
+      // per-type cap, and no more than what the sync has left. Exhausting it truncates the rest
+      // LOUDLY — a partial import that looks complete is the failure worth avoiding.
+      let pagesLeft = this.options.maxPagesPerSync ?? Number.MAX_SAFE_INTEGER;
+      const notFetched: string[] = [];
       for (const resourceType of types) {
+        if (pagesLeft <= 0) { notFetched.push(resourceType); continue; }
         try {
-          const r = await this.client.fetchPages(source, resourceType, accessToken, writer, this.options.maxPages);
+          const r = await this.client.fetchPages(source, resourceType, accessToken, writer, Math.min(this.options.maxPages, pagesLeft));
           received += r.received;
           created += r.created;
           updated += r.updated;
+          pagesLeft -= r.pages ?? 0;
+          if (r.truncated) notes.push(`${resourceType}: stopped at the page cap — this provider has more than the budget allows`);
           if (r.detail) notes.push(`${resourceType}: ${r.detail}`);
           succeeded++;
         } catch (err) {
@@ -610,6 +625,7 @@ export class SourcesManager extends BaseManager {
           skipped.push(message);
         }
       }
+      if (notFetched.length) notes.push(`the page budget ran out: ${notFetched.join(', ')} not fetched this cycle`);
       const ok = !fatal && (succeeded > 0 || types.length === 0);
       const detail = [fatal, ...(skipped.length ? [`skipped ${skipped.length} of ${types.length} types: ${skipped.join('; ')}`] : []), ...notes].filter(Boolean).join('; ');
       if (ok) await this.provider.markSynced(source.id, now);

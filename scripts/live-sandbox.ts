@@ -38,18 +38,16 @@ async function main(): Promise<void> {
 
   // Paging first, against a server with far more data than the cap allows. Hitting the cap is the
   // expected outcome and proves the guard fires on a real provider, not just a fixture.
-  let capped = '';
-  try {
-    await syncFrom(`${BASE}/Patient?_count=10`, {
-      repo,
-      accessToken: '',
-      sourceId: 'smarthealthit',
-      maxPages: 2,
-    });
-  } catch (err) {
-    capped = (err as Error).message;
-  }
-  check('follows real next links and stops at the page cap', capped.includes('stopped after 2 pages'), capped || 'no cap hit');
+  // Since yourphr#759 the cap TRUNCATES rather than throwing: the pages already stored are real
+  // records, and a provider with more history than the budget is not an error.
+  const capped = await syncFrom(`${BASE}/Patient?_count=10`, {
+    repo,
+    accessToken: '',
+    sourceId: 'smarthealthit',
+    maxPages: 2,
+  });
+  check('follows real next links and stops at the page cap, keeping what it fetched',
+    capped.truncated === true && capped.pages === 2, `${capped.pages} pages, truncated=${capped.truncated}`);
 
   const seeded = await repo.search({ resourceType: 'Patient', count: 100, total: 'accurate' });
   check('records from the capped run were stored, not discarded', (seeded.total ?? 0) > 0, `${seeded.total} Patients`);

@@ -51,9 +51,18 @@ export interface SyncReport {
   duplicatesWithinRun: number;
   byType: Record<string, number>;
   skipped: { reason: string; detail: string }[];
+  /**
+   * The page budget ran out before the provider ran out of pages (yourphr#759). Soft, as Go's was:
+   * what arrived is kept and the caller SAYS so, because a truncated import that looks complete is
+   * the failure worth avoiding.
+   */
+  truncated: boolean;
 }
 
 const DEFAULT_MAX_PAGES = 500;
+
+/** Long enough to outlast a blip, short enough that a sync does not hang on a dead provider. */
+const RETRY_BACKOFF_MS = 750;
 
 /**
  * A FHIR server answered with something other than 200. Carries the status so a caller can tell
@@ -126,12 +135,13 @@ export async function syncFrom(startUrl: string, options: SyncOptions): Promise<
   try {
     while (url) {
       if (report.pages >= maxPages) {
-        throw new Error(`stopped after ${maxPages} pages — a provider that always returns a next link`);
+        // Truncate rather than throw (yourphr#759): the pages already stored are real records, and
+        // a provider with more history than the budget is not an error. The caller reports it.
+        report.truncated = true;
+        break;
       }
 
-      const response = await http.get(url, {
-          headers: accessToken ? { authorization: `Bearer ${accessToken}` } : {},
-        });
+      const response = await getWithOneRetry(http, url, accessToken);
       if (response.status !== 200) {
         throw new FhirHttpError(response.status, `HTTP ${response.status} fetching ${url}: ${response.body.toString('utf8').slice(0, 256)}`, response.body.toString('utf8'));
       }
@@ -155,6 +165,33 @@ export async function syncFrom(startUrl: string, options: SyncOptions): Promise<
   }
 
   return report;
+}
+
+/**
+ * One GET, retried once after a transient failure (yourphr#759).
+ *
+ * Transient means the server did not answer, or answered 5xx: a timeout, a reset, a gateway between
+ * us and the provider. Those succeed on a second attempt often enough that treating them like a
+ * refusal — skipping the type for the whole cycle, as before — loses records for no reason. A 4xx
+ * is NOT retried: it will say the same thing again, and 401 in particular ends the sync (#753).
+ */
+async function getWithOneRetry(http: OutboundHttp, url: string, accessToken: string): Promise<{ status: number; body: Buffer }> {
+  const headers: Record<string, string> = accessToken ? { authorization: `Bearer ${accessToken}` } : {};
+  try {
+    const first = await http.get(url, { headers });
+    if (first.status < 500) return first;
+  } catch (err) {
+    // A thrown error is the network itself failing; fall through to the second attempt.
+    if (!isTransient(err)) throw err;
+  }
+  await new Promise((resolve) => setTimeout(resolve, RETRY_BACKOFF_MS));
+  return http.get(url, { headers });
+}
+
+/** A guard refusal is not transient and must never be retried; anything else thrown here is. */
+function isTransient(err: unknown): boolean {
+  const message = (err as Error)?.message ?? '';
+  return !/refusing to connect|internal address|blocked/i.test(message);
 }
 
 /**
@@ -186,7 +223,7 @@ export async function syncResource(url: string, options: SyncOptions): Promise<S
 }
 
 export function emptySyncReport(): SyncReport {
-  return { pages: 0, collisions: [], received: 0, created: 0, updated: 0, duplicatesWithinRun: 0, byType: {}, skipped: [] };
+  return { pages: 0, collisions: [], received: 0, created: 0, updated: 0, duplicatesWithinRun: 0, byType: {}, skipped: [], truncated: false };
 }
 
 /**

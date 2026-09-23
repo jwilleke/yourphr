@@ -382,6 +382,7 @@ export async function openStores(dataDir: string, env: Record<string, string | u
   }));
   engine.register('sources', new SourcesManager(engine, new SqliteSourcesProvider(db), sourceClient, {
     maxPages: config.getInt('yourphr.sync.max-pages'),
+    maxPagesPerSync: config.getInt('yourphr.sync.max-pages-per-sync'),
     events,
     log: (line) => appLog.info(line),
     converters: [cdaConverter],
