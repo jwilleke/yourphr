@@ -17,7 +17,7 @@ import {
   s256Challenge,
   statesMatch,
   validateDiscoveredEndpoint,
-} from '../src/smart/index.js';
+} from '../src/sources/index.js';
 
 const results: { name: string; ok: boolean; detail: string }[] = [];
 function check(name: string, ok: boolean, detail = ''): void {

@@ -19,7 +19,7 @@
  *     rest of the registration would wire that theft in.
  */
 import { OutboundHttp } from '../http/index.js';
-import { validateDiscoveredEndpoint } from '../smart/index.js';
+import { validateDiscoveredEndpoint } from '../sources/index.js';
 
 export interface DcrRequest {
   registrationEndpoint: string;

@@ -31,8 +31,8 @@ import type { BaseSourceClientProvider } from '../providers/BaseSourceClientProv
 import type { BaseDocumentConverterProvider, ConverterStatus } from '../providers/BaseDocumentConverterProvider.js';
 import type { EventBus } from '../../events/index.js';
 import { providerRequiresLegalConsent } from '../../account/index.js';
-import { FhirHttpError, emptySyncReport, storeEntries } from '../../sync/index.js';
-import { decodeCapability, encodeCapability, narrowTypes } from '../../sources/capability.js';
+import { emptySyncReport, storeEntries } from '../../sync/index.js';
+import { FhirHttpError, decodeCapability, encodeCapability, narrowTypes } from '../../sources/index.js';
 import { resourceTypesFromScopes } from '../../migrate/index.js';
 import { UploadFormatError, parseFhirUpload, patientOf } from '../../upload/index.js';
 

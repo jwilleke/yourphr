@@ -1,9 +1,9 @@
 /** The SMART on FHIR source client (yourphr#612, #613) over src/smart (authorize, exchange, refresh) and src/sync (paging). */
 import { randomUUID } from 'node:crypto';
-import { SmartClient, generateVerifier, type Endpoints } from '../../smart/index.js';
-import { FhirHttpError, syncFrom, syncResource } from '../../sync/index.js';
-import { categorySearches, plainSearch, refusalReason, refusalWantsMoreParameters } from '../../sources/query-plan.js';
-import { readCapability, type SourceCapability } from '../../sources/capability.js';
+import {
+  FhirHttpError, SmartClient, categorySearches, generateVerifier, plainSearch, readCapability, refusalReason, refusalWantsMoreParameters, syncFrom, syncResource,
+  type Endpoints, type SourceCapability,
+} from '../../sources/index.js';
 import { BaseSourceClientProvider, SourceClientError, type AuthorizationResult, type AuthorizationStart, type FetchReport, type RefreshedTokens, type SmartApp } from './BaseSourceClientProvider.js';
 import type { ConnectedSource } from './BaseSourcesProvider.js';
 import type { RecordsWriter } from './BaseRecordsProvider.js';

@@ -21,7 +21,7 @@
  * So: one search, and if the server answers "required", ask again once per category. What each
  * type's categories are comes from US Core (`us-core-search.ts`), never from a vendor table.
  */
-import { FhirHttpError } from '../sync/index.js';
+import { FhirHttpError } from './fetch.js';
 import { CATEGORY_CODES, categoryIsCombinable } from './us-core-search.js';
 
 /** One search to run: the query parameters, and a label for the job and the log. */

@@ -25,10 +25,10 @@ import { randomBytes } from 'node:crypto';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { SmartClient, generateVerifier, statesMatch, type Endpoints, type TokenResponse } from '../src/smart/index.js';
+import { SmartClient, generateVerifier, statesMatch, type Endpoints, type TokenResponse } from '../src/sources/index.js';
 import { OutboundHttp } from '../src/http/index.js';
 import { SqliteFhirRepository } from '../src/SqliteFhirRepository.js';
-import { syncFrom } from '../src/sync/index.js';
+import { syncFrom } from '../src/sources/index.js';
 
 // The same open sandbox the Go stack seeds: launch_type patient-standalone, any client_id accepted.
 const BASE = argValue('--base') ?? 'https://launch.smarthealthit.org/v/r4/sim/eyJsYXVuY2hfdHlwZSI6InBhdGllbnQtc3RhbmRhbG9uZSJ9/fhir';

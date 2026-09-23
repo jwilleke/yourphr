@@ -16,7 +16,7 @@ import type { ConnectedSource } from '../../providers/BaseSourcesProvider.js';
 import type { SourceCapability } from '../../../sources/capability.js';
 import type { RecordsWriter } from '../../providers/BaseRecordsProvider.js';
 import { ConfigurationManager } from '../../../framework/ConfigurationManager.js';
-import { FhirHttpError } from '../../../sync/index.js';
+import { FhirHttpError } from '../../../sources/index.js';
 import { PolicyManager } from '../../../framework/managers/PolicyManager.js';
 import { FakeConfigProvider } from '../../../framework/providers/__tests__/FakeConfigProvider.js';
 

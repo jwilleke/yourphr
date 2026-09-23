@@ -18,7 +18,7 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { SqliteFhirRepository } from '../src/SqliteFhirRepository.js';
-import { syncFrom } from '../src/sync/index.js';
+import { syncFrom } from '../src/sources/index.js';
 
 const BASE = process.argv.includes('--base')
   ? (process.argv[process.argv.indexOf('--base') + 1] as string)

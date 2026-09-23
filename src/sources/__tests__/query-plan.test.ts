@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { FhirHttpError } from '../../sync/index.js';
+import { FhirHttpError } from '../fetch.js';
 import { categorySearches, plainSearch, refusalReason, refusalWantsMoreParameters } from '../query-plan.js';
 import { CATEGORY_CODES, REQUIRED_COMBINATIONS, US_CORE_SOURCE, categoryIsCombinable } from '../us-core-search.js';
 

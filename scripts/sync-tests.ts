@@ -16,10 +16,11 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { Bundle } from '@medplum/fhirtypes';
 import { SqliteFhirRepository } from '../src/SqliteFhirRepository.js';
-import { FhirHttpError, repositoryWriter, syncFrom, nextPageUrl } from '../src/sync/index.js';
+import { repositoryWriter } from '../src/sync/index.js';
+import { FhirHttpError, syncFrom, nextPageUrl } from '../src/sources/index.js';
 import { SmartSourceClientProvider } from '../src/app/providers/SmartSourceClientProvider.js';
 import type { ConnectedSource } from '../src/app/providers/BaseSourcesProvider.js';
-import { narrowTypes, readCapability } from '../src/sources/capability.js';
+import { narrowTypes, readCapability } from '../src/sources/index.js';
 
 const results: { name: string; ok: boolean; detail: string }[] = [];
 function check(name: string, ok: boolean, detail = ''): void {
