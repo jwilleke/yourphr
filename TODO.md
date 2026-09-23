@@ -20,7 +20,6 @@ Open work in [jwilleke/yourphr](https://github.com/jwilleke/yourphr), ranked. Ge
 
 ## 🟠 P1
 
-- [#762](https://github.com/jwilleke/yourphr/issues/762) — [FEATURE] Review queue: see and resolve the records held out of the chart
 - [#737](https://github.com/jwilleke/yourphr/issues/737) — [BUG] PDF, DICOM and image uploads (v2's #255) are gone in v3
 - [#719](https://github.com/jwilleke/yourphr/issues/719) — [BUG] Settings still offers device pairing for an app that does not exist — replace it with the agent-token minting screen
 - [#713](https://github.com/jwilleke/yourphr/issues/713) — [BUG] A fix to the search index reaches no record already stored — reindexAll() has no caller outside a test
@@ -108,6 +107,7 @@ Open work in [jwilleke/yourphr](https://github.com/jwilleke/yourphr), ranked. Ge
 
 ## 🔵 In review
 
+- [#762](https://github.com/jwilleke/yourphr/issues/762) — [FEATURE] Review queue: see and resolve the records held out of the chart
 - [#696](https://github.com/jwilleke/yourphr/issues/696) — [BUG] "Add record" opens a form that cannot save — manual entry 404s
 
 ## ⏸ Deferred
