@@ -81,6 +81,35 @@ describe('RecordsManager — the one door, scoped to whoever is asking', () => {
     expect((await records.detail(alice, 'o-review'))['source_resource_id']).toBe('o-review');
   });
 
+  // yourphr#762: the person can see what is waiting and say it is right.
+  it('lists what awaits review with the reasons in the words they were shown, and confirming returns it to the chart', async () => {
+    const waiting = {
+      resourceType: 'Observation',
+      id: 'o-wait',
+      status: 'final',
+      code: { text: 'peak flow' },
+      note: [{ text: '"peak flow" is not a measurement this release knows how to code, so it is stored as written' }],
+      meta: { tag: [{ system: 'https://yourphr.org/fhir/CodeSystem/record-origin', code: 'needs-review' }] },
+    };
+    await records.writer(alice, 'source-1').upsert(waiting as never);
+
+    const queue = await records.awaitingReview(alice);
+    expect(queue).toEqual([{ source_id: 'source-1', source_resource_type: 'Observation', source_resource_id: 'o-wait', title: 'peak flow', reasons: [waiting.note[0]!.text] }]);
+    expect(await records.awaitingReview(bob)).toEqual([]); // never another account's
+
+    await records.confirmReview(alice, 'o-wait');
+    expect(await records.awaitingReview(alice)).toEqual([]);
+    expect((await records.list(alice, 'Observation')).map((r) => r['source_resource_id'])).toContain('o-wait'); // now a chart fact
+
+    // The note stays: why it was once uncertain is part of the record's story.
+    expect(((await records.detail(alice, 'o-wait'))['resource_raw'] as { note?: unknown[] }).note).toHaveLength(1);
+  });
+
+  it('refuses to confirm a record that is not waiting, and one that is not the caller\'s', async () => {
+    await expect(records.confirmReview(alice, 'o1')).rejects.toMatchObject({ status: 409 });
+    await expect(records.confirmReview(alice, 'o9')).rejects.toMatchObject({ status: 404 }); // bob's
+  });
+
   it('detail finds a record by id without its type; a missing one is a 404', async () => {
     expect((await records.detail(alice, 'c1'))['source_resource_type']).toBe('Condition');
     await expect(records.detail(alice, 'o9')).rejects.toMatchObject({ status: 404 }); // bob's

@@ -851,10 +851,31 @@ async function main(): Promise<void> {
       && (selfPatients.data ?? []).some((p) => `Patient/${p.resource_raw?.id}` === storedBp.data?.resource_raw?.subject?.reference),
     String(storedBp.data?.resource_raw?.subject?.reference));
 
+  // yourphr#762: the person sees what is waiting, and says whether it is right as written.
+  const queue = (await (await fetch(`${base}/api/secure/records/review`, authed(upToken))).json()) as { data?: { source_resource_id?: string; reasons?: string[] }[] };
+  const waiting = (queue.data ?? []).map((r) => r.source_resource_id);
+  check('the review queue lists exactly what is held back, with the reason in the words they were shown',
+    waiting.includes(halfBody.data?.source_resource_id) && waiting.includes(unknownBody.data?.source_resource_id) && !waiting.includes(bp.data?.source_resource_id)
+      && (queue.data ?? []).some((r) => (r.reasons ?? []).some((x) => x.includes('only the systolic half'))),
+    `${waiting.length} waiting`);
+
+  const confirmed = await fetch(`${base}/api/secure/records/review/${halfBody.data?.source_resource_id}/confirm`, { method: 'POST', headers: authed(upToken).headers });
+  const afterQueue = (await (await fetch(`${base}/api/secure/records/review`, authed(upToken))).json()) as { data?: { source_resource_id?: string }[] };
+  const afterList = (await (await fetch(`${base}/api/secure/resource/fhir?sourceResourceType=Observation`, authed(upToken))).json()) as { data?: { source_resource_id?: string }[] };
+  const confirmAgain = await fetch(`${base}/api/secure/records/review/${halfBody.data?.source_resource_id}/confirm`, { method: 'POST', headers: authed(upToken).headers });
+  check('confirming as-written returns that record to the chart, leaves the others waiting, and cannot be done twice',
+    confirmed.status === 200
+      && !(afterQueue.data ?? []).map((r) => r.source_resource_id).includes(halfBody.data?.source_resource_id)
+      && (afterQueue.data ?? []).map((r) => r.source_resource_id).includes(unknownBody.data?.source_resource_id)
+      && (afterList.data ?? []).map((r) => r.source_resource_id).includes(halfBody.data?.source_resource_id)
+      && confirmAgain.status === 409,
+    `confirm ${confirmed.status} again ${confirmAgain.status}`);
+
+  const anonQueue = await fetch(`${base}/api/secure/records/review`);
   const anonEntry = await fetch(`${base}/api/secure/resource/patient-entry`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{"vital":"heart_rate","value":64}' });
   const nothing = await entry(upToken, {});
-  check('only an empty submission is refused, and no session is 401',
-    nothing.status === 400 && anonEntry.status === 401, `empty ${nothing.status} anon ${anonEntry.status}`);
+  check('only an empty submission is refused, and no session is 401 on either route',
+    nothing.status === 400 && anonEntry.status === 401 && anonQueue.status === 401, `empty ${nothing.status} anon ${anonEntry.status}/${anonQueue.status}`);
 
   // C-CDA: unconfigured first — the page must be able to say so BEFORE anyone uploads (yourphr#397, #686).
   const ccd = '<?xml version="1.0"?><ClinicalDocument xmlns="urn:hl7-org:v3"><recordTarget><patientRole><id root="2.16.840.1.113883.19.5" extension="996-756-495"/><patient><name><given>Una</given></name></patient></patientRole></recordTarget></ClinicalDocument>';

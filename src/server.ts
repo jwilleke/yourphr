@@ -1278,6 +1278,27 @@ export function createYourPhrServer(options: ServerOptions) {
         return;
       }
 
+      // --- what is waiting for the person to resolve (yourphr#762) ---
+      //
+      // A record they wrote that could not be fully understood is kept and held out of the chart.
+      // This is where they see it and say what it should be. Read from the records themselves —
+      // the tag says a record is waiting, its notes say why — so the list cannot fall out of step
+      // with what is stored.
+      if (url.pathname === '/api/secure/records/review' && req.method === 'GET') {
+        send(res, 200, {success: true, data: await engine.managers.records.awaitingReview(ctx)});
+        return;
+      }
+      {
+        const confirm = url.pathname.match(/^\/api\/secure\/records\/review\/([^/]+)\/confirm$/);
+        if (confirm && req.method === 'POST') {
+          // "Yes, that is right as written." Nothing missing is filled in here: confirming an
+          // undated record leaves it undated. Supplying the missing piece is an ordinary edit.
+          const done = await engine.managers.records.confirmReview(ctx, decodeURIComponent(confirm[1]!));
+          send(res, 200, {success: true, data: done});
+          return;
+        }
+      }
+
       // --- a vital the patient measured at home (yourphr#696; the product's #313) ---
       //
       // "Add record" is a primary call to action in three places in the app, and this is the route

@@ -179,6 +179,10 @@ export function buildPatientVital(req: PatientEntryRequest, now = new Date(), co
 
   if (review.length) {
     observation.meta.tag = [...(observation.meta.tag ?? []), { system: RECORD_ORIGIN, code: NEEDS_REVIEW, display: 'Needs review' }];
+    // Why it is waiting, kept ON the record in the words the person was shown (yourphr#762). The
+    // queue is then a read over the records themselves — no second store to fall out of step with
+    // them, and a record that travels keeps its own explanation.
+    observation.note = [...(observation.note ?? []), ...review.map((text) => ({ text }))];
   }
   return { observation, sortTitle: title, review };
 }

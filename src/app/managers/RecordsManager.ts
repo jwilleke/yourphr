@@ -102,6 +102,53 @@ export class RecordsManager extends BaseManager {
     return rows.filter((r) => !RecordsManager.needsReview(r.resource));
   }
 
+  /**
+   * What is waiting for the person to resolve (yourphr#762).
+   *
+   * Computed from the records themselves rather than a queue table: the tag says a record is
+   * waiting and its notes say why, in the words the person was shown when they saved it. One store,
+   * so the list can never fall out of step with the records — and a record that travels carries its
+   * own explanation.
+   */
+  async awaitingReview(ctx: ApiContext): Promise<{ source_id: string; source_resource_type: string; source_resource_id: string; title: string; date?: string; reasons: string[] }[]> {
+    const out: { source_id: string; source_resource_type: string; source_resource_id: string; title: string; date?: string; reasons: string[] }[] = [];
+    for (const row of await this.provider.list(this.who(ctx))) {
+      if (!RecordsManager.needsReview(row.resource)) continue;
+      const shaped = toResourceFhir(row.resource, row.sourceId);
+      const date = String(shaped['sort_date'] ?? '').slice(0, 10);
+      out.push({
+        source_id: row.sourceId,
+        source_resource_type: row.resourceType,
+        source_resource_id: row.id,
+        title: String(shaped['sort_title'] ?? '') || row.resourceType,
+        ...(date ? { date } : {}),
+        reasons: ((row.resource as { note?: { text?: string }[] }).note ?? []).map((n) => n.text ?? '').filter(Boolean),
+      });
+    }
+    return out.sort((a, b) => a.source_resource_id.localeCompare(b.source_resource_id));
+  }
+
+  /**
+   * The person says "yes, that is right as written" — the record becomes a chart fact.
+   *
+   * Only the tag is removed. The notes stay, because why it was once uncertain is part of the
+   * record's story, and the store keeps the previous version, so the moment it entered the chart is
+   * visible in its history. Nothing missing is filled in here: confirming an undated record leaves
+   * it undated. Supplying the missing piece is an ordinary edit, not this.
+   */
+  async confirmReview(ctx: ApiContext, id: string): Promise<{ id: string; outcome: 'created' | 'updated' }> {
+    const stored = await this.provider.readById(this.who(ctx), id);
+    if (!stored) throw new ApiError(404, 'not found');
+    if (!RecordsManager.needsReview(stored.resource)) throw new ApiError(409, 'this record is not waiting for review');
+    const resource = stored.resource as { meta?: { tag?: { system?: string; code?: string }[] } };
+    const kept = (resource.meta?.tag ?? []).filter((t) => !(t.system === RECORD_ORIGIN && t.code === NEEDS_REVIEW));
+    const confirmed = { ...resource, meta: { ...(resource.meta ?? {}), ...(kept.length ? { tag: kept } : { tag: undefined }) } };
+    // Written back where it already lives. Confirming is not authoring: a record does not change
+    // which source it came from because someone agreed with it.
+    const outcome = await this.writer(ctx, stored.sourceId).upsert(confirmed as Resource);
+    return { id: stored.id, outcome };
+  }
+
   // --- the record pages ---
 
   /** GET /resource/fhir?sourceResourceType=…[&sourceID=…] — YourPHR's resource_fhir rows. */
