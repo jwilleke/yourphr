@@ -149,6 +149,26 @@ export class RecordsManager extends BaseManager {
     return { id: stored.id, outcome };
   }
 
+  /**
+   * The person says "no, drop it" — the record goes, and leaves no trace (yourphr#762, decided
+   * 2026-09-23).
+   *
+   * No tombstone, no audit row naming what was removed. A quarantined record was never a chart
+   * fact: it is something the person typed that nobody confirmed, held out of every read path
+   * precisely because it does not speak for their health. Keeping a shadow of it would make a
+   * mistyped entry permanent in a system whose premise is that the records are theirs.
+   *
+   * Only what is waiting for review can be discarded this way. A record already in the chart, or
+   * one a provider sent, is a different act and is refused here.
+   */
+  async discardReview(ctx: ApiContext, id: string): Promise<{ id: string }> {
+    const stored = await this.provider.readById(this.who(ctx), id);
+    if (!stored) throw new ApiError(404, 'not found');
+    if (!RecordsManager.needsReview(stored.resource)) throw new ApiError(409, 'this record is not waiting for review');
+    await this.provider.removeRecord(this.who(ctx), stored.resourceType, stored.id);
+    return { id: stored.id };
+  }
+
   // --- the record pages ---
 
   /** GET /resource/fhir?sourceResourceType=…[&sourceID=…] — YourPHR's resource_fhir rows. */

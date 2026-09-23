@@ -14,6 +14,9 @@
   @if (confirmedTitle) {
     <div class="alert alert-success">Added to your records: {{ confirmedTitle }}</div>
   }
+  @if (discardedTitle) {
+    <div class="alert alert-secondary">Deleted: {{ discardedTitle }}. Nothing was kept.</div>
+  }
 
   @if (loading) {
     <app-loading-spinner></app-loading-spinner>
@@ -49,8 +52,22 @@
             <button type="button" class="btn btn-az-primary" [disabled]="confirmingId === item.source_resource_id" (click)="confirm(item)">
               {{ confirmingId === item.source_resource_id ? 'Adding…' : 'Right as written' }}
             </button>
+            <button type="button" class="btn btn-outline-danger" (click)="askDiscard(item)">Delete</button>
           </div>
         </div>
+
+        @if (pendingDiscardId === item.source_resource_id) {
+          <div class="alert alert-warning mg-t-15 mg-b-0">
+            <p class="mg-b-10">
+              Delete <strong>{{ item.title }}</strong>? It is removed for good — no copy is kept, nothing records that it
+              was here, and it cannot be undone.
+            </p>
+            <button type="button" class="btn btn-danger" [disabled]="discardingId === item.source_resource_id" (click)="discard(item)">
+              {{ discardingId === item.source_resource_id ? 'Deleting…' : 'Yes, delete it' }}
+            </button>
+            <button type="button" class="btn btn-outline-secondary mg-l-10" (click)="keepIt()">Keep it</button>
+          </div>
+        }
       </div>
     </div>
   }

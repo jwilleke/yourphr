@@ -110,6 +110,32 @@ describe('RecordsManager — the one door, scoped to whoever is asking', () => {
     await expect(records.confirmReview(alice, 'o9')).rejects.toMatchObject({ status: 404 }); // bob's
   });
 
+  // yourphr#762, decided 2026-09-23: discarding leaves NOTHING behind.
+  it('discards a waiting record without a trace — no row, no history, nothing to say it existed', async () => {
+    const mistake = {
+      resourceType: 'Observation',
+      id: 'o-oops',
+      status: 'final',
+      code: { text: 'peek flow' },
+      note: [{ text: '"peek flow" is not a measurement this release knows how to code, so it is stored as written' }],
+      meta: { tag: [{ system: 'https://yourphr.org/fhir/CodeSystem/record-origin', code: 'needs-review' }] },
+    };
+    await records.writer(alice, 'source-1').upsert(mistake as never);
+
+    await records.discardReview(alice, 'o-oops');
+
+    expect(await records.awaitingReview(alice)).toEqual([]);
+    await expect(records.detail(alice, 'o-oops')).rejects.toMatchObject({ status: 404 });
+    expect(await provider.history('alice', 'Observation', 'o-oops')).toEqual({ firstReceivedAt: null, versions: 0 });
+    expect(await records.searchText(alice, 'peek flow')).toEqual([]);
+  });
+
+  it('refuses to discard a record that is a chart fact, and one that is not the caller\'s', async () => {
+    await expect(records.discardReview(alice, 'o1')).rejects.toMatchObject({ status: 409 }); // in the chart, not waiting
+    await expect(records.discardReview(alice, 'o9')).rejects.toMatchObject({ status: 404 }); // bob's
+    expect((await records.detail(alice, 'o1'))['source_resource_id']).toBe('o1'); // still there
+  });
+
   it('detail finds a record by id without its type; a missing one is a 404', async () => {
     expect((await records.detail(alice, 'c1'))['source_resource_type']).toBe('Condition');
     await expect(records.detail(alice, 'o9')).rejects.toMatchObject({ status: 404 }); // bob's

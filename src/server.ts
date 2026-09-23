@@ -1303,6 +1303,14 @@ export function createYourPhrServer(options: ServerOptions) {
           send(res, 200, {success: true, data: done});
           return;
         }
+        const discard = url.pathname.match(/^\/api\/secure\/records\/review\/([^/]+)$/);
+        if (discard && req.method === 'DELETE') {
+          // "No, drop it." Gone without a trace, by the decision on yourphr#762: a record nobody
+          // confirmed was never a chart fact, so nothing is kept to say it once existed.
+          const gone = await engine.managers.records.discardReview(ctx, decodeURIComponent(discard[1]!));
+          send(res, 200, {success: true, data: gone});
+          return;
+        }
       }
 
       // --- a vital the patient measured at home (yourphr#696; the product's #313) ---

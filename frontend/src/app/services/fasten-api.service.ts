@@ -821,6 +821,13 @@ export class FastenApiService {
       .pipe(map((response: ResponseWrapper) => response.data))
   }
 
+  // "No, drop it" — the record goes and leaves no trace (yourphr#762). Only a record awaiting
+  // review can be discarded this way; the server refuses anything that is already a chart fact.
+  discardRecordReview(sourceResourceId: string): Observable<{id: string}> {
+    return this._httpClient.delete<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/records/review/${encodeURIComponent(sourceResourceId)}`)
+      .pipe(map((response: ResponseWrapper) => response.data))
+  }
+
   createResourceComposition(title: string, resources: ResourceFhir[]){
     return this._httpClient.post<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/resource/composition`, {
       "resources": resources,

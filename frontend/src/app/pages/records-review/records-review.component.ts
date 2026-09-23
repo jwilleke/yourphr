@@ -33,6 +33,14 @@ export class RecordsReviewComponent implements OnInit {
    */
   confirmingId = '';
   confirmedTitle = '';
+  /**
+   * The record whose delete has been asked for but not yet agreed to, and the one being deleted.
+   * Deleting leaves no trace (#762, decided 2026-09-23), so it is asked in two steps — in the page,
+   * where the warning can say plainly what "gone" means, rather than in a browser dialog.
+   */
+  pendingDiscardId = '';
+  discardingId = '';
+  discardedTitle = '';
 
   constructor(private api: FastenApiService) {}
 
@@ -60,6 +68,7 @@ export class RecordsReviewComponent implements OnInit {
       return;
     }
     this.error = '';
+    this.pendingDiscardId = '';
     this.confirmingId = item.source_resource_id;
     this.api.confirmRecordReview(item.source_resource_id).subscribe({
       next: () => {
@@ -70,6 +79,38 @@ export class RecordsReviewComponent implements OnInit {
       error: (err) => {
         this.confirmingId = '';
         this.error = extractErrorFromResponse(err) || `Could not confirm ${item.title}.`;
+      },
+    });
+  }
+
+  /** First click on Delete: ask. Nothing is sent until the person says yes. */
+  askDiscard(item: RecordAwaitingReview): void {
+    this.error = '';
+    this.pendingDiscardId = item.source_resource_id;
+  }
+
+  keepIt(): void {
+    this.pendingDiscardId = '';
+  }
+
+  /** The person said yes. The record is deleted outright — no copy is kept anywhere. */
+  discard(item: RecordAwaitingReview): void {
+    if (this.discardingId !== '') {
+      return;
+    }
+    this.error = '';
+    this.discardingId = item.source_resource_id;
+    this.api.discardRecordReview(item.source_resource_id).subscribe({
+      next: () => {
+        this.discardingId = '';
+        this.pendingDiscardId = '';
+        this.items = this.items.filter((i) => i.source_resource_id !== item.source_resource_id);
+        this.discardedTitle = item.title;
+        this.confirmedTitle = '';
+      },
+      error: (err) => {
+        this.discardingId = '';
+        this.error = extractErrorFromResponse(err) || `Could not delete ${item.title}.`;
       },
     });
   }

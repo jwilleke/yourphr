@@ -62,6 +62,12 @@ export abstract class BaseRecordsProvider {
   abstract writer(userId: string, sourceId: string): RecordsWriter;
   abstract removeBySource(userId: string, sourceId: string): Promise<number>;
   abstract removeAll(userId: string): Promise<number>;
+  /**
+   * One record, gone without a trace (yourphr#762): the row, its index entries and its history.
+   * Not the soft delete the FHIR repository does — a discarded record leaves nothing behind, which
+   * is the decision for a record that was never a chart fact. Returns false if it was not there.
+   */
+  abstract removeRecord(userId: string, resourceType: string, id: string): Promise<boolean>;
   /** Drops the account's handle after removeAll, so a returning account starts clean. */
   abstract release(userId: string): Promise<void>;
 

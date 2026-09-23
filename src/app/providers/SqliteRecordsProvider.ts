@@ -221,6 +221,17 @@ export class SqliteRecordsProvider extends BaseRecordsProvider {
     return remove();
   }
 
+  async removeRecord(userId: string, resourceType: string, id: string): Promise<boolean> {
+    const db = this.anyDb();
+    const remove = db.transaction((): boolean => {
+      db.prepare('DELETE FROM search_index WHERE resource_type = ? AND resource_id = ? AND user_id = ?').run(resourceType, id, userId);
+      db.prepare('DELETE FROM search_text WHERE resource_type = ? AND resource_id = ? AND user_id = ?').run(resourceType, id, userId);
+      db.prepare('DELETE FROM resource_history WHERE resource_type = ? AND id = ?').run(resourceType, id);
+      return db.prepare('DELETE FROM resources WHERE user_id = ? AND resource_type = ? AND id = ?').run(userId, resourceType, id).changes > 0;
+    });
+    return remove();
+  }
+
   async removeAll(userId: string): Promise<number> {
     const db = this.anyDb();
     const remove = db.transaction((): number => {

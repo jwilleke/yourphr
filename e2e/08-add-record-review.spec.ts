@@ -50,3 +50,28 @@ test('half a reading is kept, waits for the person, and joins their records when
 
   expect(errors).toEqual([]);
 });
+
+test('a record the person deletes from the queue is gone, and says nothing was kept', async ({ page }) => {
+  const errors = trackPageErrors(page);
+  await login(page, E2E_USER, E2E_PASS);
+  await page.goto(`${BASE}/resource/add`);
+
+  // The other half this time, so this journey has its own record to delete.
+  await page.selectOption('#vital-type', 'blood_pressure');
+  await page.fill('#vital-dia', '78');
+  await page.getByRole('button', { name: /save/i }).click();
+  await expect(page.getByText(/not part of your records yet/)).toBeVisible({ timeout: 20_000 });
+
+  await page.getByRole('link', { name: 'Waiting for you', exact: true }).click();
+  await expect(page.getByText(/Blood pressure 78 diastolic/)).toBeVisible({ timeout: 20_000 });
+
+  // Asked first, in the page, in words that say what "gone" means (#762).
+  await page.getByRole('button', { name: 'Delete' }).first().click();
+  await expect(page.getByText(/no copy is kept/)).toBeVisible();
+  await page.getByRole('button', { name: 'Yes, delete it' }).click();
+
+  await expect(page.getByText(/Deleted: Blood pressure 78 diastolic/)).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByText(/Nothing is waiting/)).toBeVisible();
+
+  expect(errors).toEqual([]);
+});

@@ -24,9 +24,10 @@ describe('RecordsReviewComponent', () => {
   ];
 
   beforeEach(waitForAsync(() => {
-    apiSpy = jasmine.createSpyObj('FastenApiService', ['getRecordsAwaitingReview', 'confirmRecordReview']);
+    apiSpy = jasmine.createSpyObj('FastenApiService', ['getRecordsAwaitingReview', 'confirmRecordReview', 'discardRecordReview']);
     apiSpy.getRecordsAwaitingReview.and.returnValue(of(waiting));
     apiSpy.confirmRecordReview.and.returnValue(of({id: 'o-1', outcome: 'updated'}));
+    apiSpy.discardRecordReview.and.returnValue(of({id: 'o-1'}));
 
     TestBed.configureTestingModule({
       imports: [RecordsReviewComponent, RouterTestingModule],
@@ -42,6 +43,12 @@ describe('RecordsReviewComponent', () => {
   /** The "Right as written" button of the nth waiting record. */
   const confirmButton = (n: number): HTMLButtonElement =>
     fixture.nativeElement.querySelectorAll('button.btn-az-primary')[n] as HTMLButtonElement;
+
+  /** The "Delete" button of the nth waiting record, and the "Yes, delete it" that follows it. */
+  const deleteButton = (n: number): HTMLButtonElement =>
+    fixture.nativeElement.querySelectorAll('button.btn-outline-danger')[n] as HTMLButtonElement;
+  const reallyDeleteButton = (): HTMLButtonElement =>
+    fixture.nativeElement.querySelector('button.btn-danger') as HTMLButtonElement;
 
   it('shows each waiting record with the reason in the words the person was shown', () => {
     fixture.detectChanges();
@@ -79,6 +86,49 @@ describe('RecordsReviewComponent', () => {
     fixture.detectChanges();
     apiSpy.confirmRecordReview.and.returnValue(throwError(() => ({error: {error: 'this record is not waiting for review'}})));
     confirmButton(0).click();
+    fixture.detectChanges();
+    expect(component.items.length).toBe(2);
+    expect(fixture.nativeElement.textContent).toContain('this record is not waiting for review');
+  });
+
+  // yourphr#762, decided 2026-09-23: a discarded record leaves NO trace, so the person is asked
+  // first — in the page, where the warning can say what "gone" actually means.
+  it('asks before deleting, and sends nothing until the person says yes', () => {
+    fixture.detectChanges();
+    deleteButton(0).click();
+    fixture.detectChanges();
+    expect(apiSpy.discardRecordReview).not.toHaveBeenCalled();
+    expect(fixture.nativeElement.textContent).toContain('no copy is kept');
+    expect(component.items.length).toBe(2);
+  });
+
+  it('keeps the record when the person backs out of the delete', () => {
+    fixture.detectChanges();
+    deleteButton(0).click();
+    fixture.detectChanges();
+    (fixture.nativeElement.querySelectorAll('button.btn-outline-secondary')[0] as HTMLButtonElement).click(); // "Keep it"
+    fixture.detectChanges();
+    expect(apiSpy.discardRecordReview).not.toHaveBeenCalled();
+    expect(component.pendingDiscardId).toBe('');
+  });
+
+  it('deleting removes that record and says nothing was kept', () => {
+    fixture.detectChanges();
+    deleteButton(0).click();
+    fixture.detectChanges();
+    reallyDeleteButton().click();
+    fixture.detectChanges();
+    expect(apiSpy.discardRecordReview).toHaveBeenCalledWith('o-1');
+    expect(component.items.map((i) => i.source_resource_id)).toEqual(['o-2']);
+    expect(fixture.nativeElement.textContent).toContain('Deleted: Blood pressure 128 systolic mmHg. Nothing was kept.');
+  });
+
+  it('keeps the record listed when deleting fails, and says why', () => {
+    fixture.detectChanges();
+    apiSpy.discardRecordReview.and.returnValue(throwError(() => ({error: {error: 'this record is not waiting for review'}})));
+    deleteButton(0).click();
+    fixture.detectChanges();
+    reallyDeleteButton().click();
     fixture.detectChanges();
     expect(component.items.length).toBe(2);
     expect(fixture.nativeElement.textContent).toContain('this record is not waiting for review');

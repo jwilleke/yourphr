@@ -119,6 +119,9 @@ export class FakeRecordsProvider extends BaseRecordsProvider {
     for (const [k, r] of this.rows) if (r.userId === userId && r.sourceId === sourceId) { this.rows.delete(k); n++; }
     return n;
   }
+  async removeRecord(userId: string, resourceType: string, id: string): Promise<boolean> {
+    return this.rows.delete(this.key(userId, resourceType, id));
+  }
   async removeAll(userId: string): Promise<number> {
     let n = 0;
     for (const [k, r] of this.rows) if (r.userId === userId) { this.rows.delete(k); n++; }
