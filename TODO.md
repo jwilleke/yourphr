@@ -21,6 +21,7 @@ Open work in [jwilleke/yourphr](https://github.com/jwilleke/yourphr), ranked. Ge
 
 ## 🟠 P1
 
+- [#737](https://github.com/jwilleke/yourphr/issues/737) — [BUG] PDF, DICOM and image uploads (v2's #255) are gone in v3
 - [#719](https://github.com/jwilleke/yourphr/issues/719) — [BUG] Settings still offers device pairing for an app that does not exist — replace it with the agent-token minting screen
 - [#713](https://github.com/jwilleke/yourphr/issues/713) — [BUG] A fix to the search index reaches no record already stored — reindexAll() has no caller outside a test
 - [#708](https://github.com/jwilleke/yourphr/issues/708) — [ARCH] relay/main.go is the last Go module — port it to TypeScript or record that it stays Go
@@ -105,12 +106,7 @@ Open work in [jwilleke/yourphr](https://github.com/jwilleke/yourphr), ranked. Ge
 
 ## 🔵 In review
 
-- [#751](https://github.com/jwilleke/yourphr/issues/751) — [SECURITY] Demo admin can read Admin → Configuration, including login-throttle thresholds (D18)
-- [#743](https://github.com/jwilleke/yourphr/issues/743) — [security] csv-parse — prototype replacement via columns (GHSA-8cw4-87c7-c6xx), ships via fhirpath
-- [#742](https://github.com/jwilleke/yourphr/issues/742) — [security] hono — toSSG path escape, fragment query parsing, parseBody nesting (3 moderate, build tree)
-- [#741](https://github.com/jwilleke/yourphr/issues/741) — [security] smol-toml — DoS via malformed TOML (GHSA-7w5x-hrqm-74c2), dev-only via markdownlint-cli2
-- [#740](https://github.com/jwilleke/yourphr/issues/740) — [security] js-yaml — maxTotalMergeKeys CPU DoS (GHSA-2883-xcg3-v3hh), ships via fhirpath
-- [#739](https://github.com/jwilleke/yourphr/issues/739) — [security] src/upload C-CDA id scan — CodeQL js/incomplete-multi-character-sanitization (1 high, false positive in context)
+*None.*
 
 ## ⏸ Deferred
 
@@ -121,4 +117,4 @@ Open work in [jwilleke/yourphr](https://github.com/jwilleke/yourphr), ranked. Ge
 
 ## ❓ Needs triage
 
-- [#737](https://github.com/jwilleke/yourphr/issues/737) — [BUG] PDF, DICOM and image uploads (v2's #255) are gone in v3
+*None.*
