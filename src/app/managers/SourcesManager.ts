@@ -546,6 +546,24 @@ export class SourcesManager extends BaseManager {
     return keep;
   }
 
+  /** Records what a sync did, marks the source synced when it worked, and says it once in the log. */
+  private async recordJob(
+    ctx: ApiContext,
+    source: ConnectedSource,
+    now: number,
+    outcome: { received: number; created: number; updated: number; detail: string; failed?: boolean }
+  ): Promise<JobRecord> {
+    const ok = !outcome.failed;
+    if (ok) await this.provider.markSynced(source.id, now);
+    const job: JobRecord = {
+      sourceId: source.id, outcome: ok ? 'success' : 'failure',
+      received: outcome.received, created: outcome.created, updated: outcome.updated,
+      error: outcome.detail.slice(0, 512), startedAt: now, finishedAt: now,
+    };
+    this.log(`sync: source ${source.id} (${source.display}): ${job.outcome}, ${outcome.received} received (${outcome.created} new, ${outcome.updated} updated)${outcome.detail ? ` — ${outcome.detail.slice(0, 1024)}` : ''}`);
+    return this.engine.managers.jobs.record(ctx, job);
+  }
+
   /** One source, refresh-then-sync, the job recorded either way. */
   private async syncOne(ctx: ApiContext, source: ConnectedSource, now = Math.floor(Date.now() / 1000), report?: PassReport): Promise<JobRecord> {
     const publicId = `source-${source.id}`;
@@ -580,7 +598,6 @@ export class SourcesManager extends BaseManager {
       let received = 0;
       let created = 0;
       let updated = 0;
-      let job: JobRecord;
       // Each type is fetched on its own (yourphr#753, Go parity). A real server refuses some types
       // routinely — Epic answers 403 for a type the app was not granted and 400 for a search it
       // will not run without a category — and one refusal used to abandon every type after it,
@@ -604,8 +621,30 @@ export class SourcesManager extends BaseManager {
       // per-type cap, and no more than what the sync has left. Exhausting it truncates the rest
       // LOUDLY — a partial import that looks complete is the failure worth avoiding.
       let pagesLeft = this.options.maxPagesPerSync ?? Number.MAX_SAFE_INTEGER;
+
+      // One operation instead of a search per type, where the server advertises it (yourphr#758).
+      // A server that advertises it and then refuses costs one request, not the sync: the per-type
+      // path below runs exactly as it would have.
+      if (!fatal && types.length > 0 && decodeCapability(source.capability)?.everything) {
+        try {
+          const all = await this.client.fetchEverything(source, accessToken, writer, Math.min(this.options.maxPages, pagesLeft));
+          const job = await this.recordJob(ctx, source, now, {
+            received: all.received, created: all.created, updated: all.updated,
+            detail: `fetched through Patient/$everything${all.truncated ? ' — stopped at the page cap, this provider has more than the budget allows' : ''}`,
+          });
+          return job;
+        } catch (err) {
+          if (err instanceof FhirHttpError && err.status === 401) {
+            fatal = `Patient/$everything: ${(err as Error).message} — the provider refused the access token; reconnect the source`;
+          } else {
+            notes.push(`Patient/$everything was advertised but refused (${(err as Error).message.slice(0, 120)}); asked type by type instead`);
+          }
+        }
+      }
       const notFetched: string[] = [];
-      for (const resourceType of types) {
+      // `fatal` can be set above by a 401 from $everything: the token is refused, so every search
+      // below would be refused the same way.
+      for (const resourceType of fatal ? [] : types) {
         if (pagesLeft <= 0) { notFetched.push(resourceType); continue; }
         try {
           const r = await this.client.fetchPages(source, resourceType, accessToken, writer, Math.min(this.options.maxPages, pagesLeft));
@@ -628,12 +667,9 @@ export class SourcesManager extends BaseManager {
       if (notFetched.length) notes.push(`the page budget ran out: ${notFetched.join(', ')} not fetched this cycle`);
       const ok = !fatal && (succeeded > 0 || types.length === 0);
       const detail = [fatal, ...(skipped.length ? [`skipped ${skipped.length} of ${types.length} types: ${skipped.join('; ')}`] : []), ...notes].filter(Boolean).join('; ');
-      if (ok) await this.provider.markSynced(source.id, now);
-      job = { sourceId: source.id, outcome: ok ? 'success' : 'failure', received, created, updated, error: detail.slice(0, 512), startedAt: now, finishedAt: now };
       // One line per sync, success or not: the job row alone was the only trace, and the container
       // log said nothing when an import came back empty.
-      this.log(`sync: source ${source.id} (${source.display}): ${job.outcome}, ${received} received (${created} new, ${updated} updated)${detail ? ` — ${detail.slice(0, 1024)}` : ''}`);
-      return await this.engine.managers.jobs.record(ctx, job);
+      return await this.recordJob(ctx, source, now, { received, created, updated, detail, failed: !ok });
     } finally {
       this.options.events?.publish(source.userId, { event_type: 'source_complete', source_id: publicId });
     }

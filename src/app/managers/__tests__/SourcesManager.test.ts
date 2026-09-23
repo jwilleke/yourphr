@@ -51,6 +51,20 @@ class ScriptedClient extends BaseSourceClientProvider {
     this.capabilityReads++;
     return this.capability ? { capability: this.capability, reason: '' } : { reason: this.capabilityReason };
   }
+  /** What `Patient/$everything` does when the spec turns it on (yourphr#758). */
+  everythingCalls = 0;
+  everythingFails?: Error;
+  async fetchEverything(source: ConnectedSource, accessToken: string, writer: RecordsWriter): Promise<FetchReport> {
+    this.everythingCalls++;
+    if (this.everythingFails) throw this.everythingFails;
+    let created = 0;
+    for (const type of ['Condition', 'Observation', 'Immunization']) {
+      const r = await writer.upsert({ resourceType: type, id: `all-${type.toLowerCase()}-${source.patient}`, code: { text: `from $everything` } } as Resource);
+      if (r === 'created') created++;
+    }
+    return { received: 3, created, updated: 3 - created, pages: 1 };
+  }
+
   async fetchPages(source: ConnectedSource, resourceType: string, accessToken: string, writer: RecordsWriter, maxPages: number): Promise<FetchReport> {
     this.fetches.push(`${source.id}:${resourceType}:${accessToken}`);
     this.budgets.push(maxPages);
@@ -388,6 +402,47 @@ describe('SourcesManager — the pass (what src/worker was)', () => {
     const job = await jobs.latest(s.id);
     expect(job).toMatchObject({ outcome: 'success', received: 2 });
     expect(job?.error).toContain('Condition: stopped at the page cap');
+  });
+
+  // yourphr#758: one operation instead of a search per type, where the server advertises it.
+  const ADVERTISES_EVERYTHING = JSON.stringify({ readAt: NOW, types: { Patient: ['_id'], Condition: ['patient'], Observation: ['patient'] }, everything: true, fhirVersion: '4.0.1' });
+
+  it('uses Patient/$everything when the server advertises it, instead of a search per type', async () => {
+    const s = await sources.add(alice, newSource('alice', { capability: ADVERTISES_EVERYTHING }));
+    await sources.pass(NOW);
+    expect(client.everythingCalls).toBe(1);
+    expect(client.fetches).toEqual([]); // no per-type search at all
+    const job = await jobs.latest(s.id);
+    expect(job).toMatchObject({ outcome: 'success', received: 3 });
+    expect(job?.error).toContain('fetched through Patient/$everything');
+    expect((await sources.owned(alice, s.id))?.lastSyncAt).toBe(NOW);
+  });
+
+  it('falls back to per-type searches when a server advertises the operation and then refuses it', async () => {
+    client.everythingFails = new FhirHttpError(404, 'HTTP 404 fetching …/$everything', '');
+    const s = await sources.add(alice, newSource('alice', { capability: ADVERTISES_EVERYTHING }));
+    await sources.pass(NOW);
+    expect(client.everythingCalls).toBe(1);
+    expect(client.fetches).toEqual(['1:Condition:tok', '1:Observation:tok']); // the sync went on as it would have
+    const job = await jobs.latest(s.id);
+    expect(job).toMatchObject({ outcome: 'success', received: 4 });
+    expect(job?.error).toContain('Patient/$everything was advertised but refused');
+  });
+
+  it('a 401 from the operation still ends the sync — the token itself was refused', async () => {
+    client.everythingFails = new FhirHttpError(401, 'HTTP 401 fetching …/$everything', '');
+    const s = await sources.add(alice, newSource('alice', { capability: ADVERTISES_EVERYTHING }));
+    expect(await sources.pass(NOW)).toMatchObject({ synced: 0, failed: 1 });
+    expect(client.fetches).toEqual([]);
+    expect((await jobs.latest(s.id))?.error).toContain('reconnect the source');
+  });
+
+  it('does not reach for the operation on a server that does not advertise it', async () => {
+    client.capability = { readAt: NOW, types: { Condition: ['patient'], Observation: ['patient'] }, everything: false, fhirVersion: '4.0.1' };
+    await sources.add(alice, newSource('alice'));
+    await sources.pass(NOW);
+    expect(client.everythingCalls).toBe(0);
+    expect(client.fetches).toEqual(['1:Condition:tok', '1:Observation:tok']);
   });
 
   it('the worker acts for each owner: records land under the source\'s owner, never anyone else', async () => {

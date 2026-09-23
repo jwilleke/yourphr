@@ -49,6 +49,7 @@ class ScriptedClient extends BaseSourceClientProvider {
   /** What the token response states as GRANTED (yourphr#757); '' is a server that omits the field. */
   grantedScope = '';
   async readCapability(): Promise<{ capability?: SourceCapability; reason: string }> { return this.capability ? { capability: this.capability, reason: '' } : { reason: 'no statement in this spec' }; }
+  async fetchEverything(): Promise<FetchReport> { return { received: 0, created: 0, updated: 0 }; }
   async fetchPages(): Promise<FetchReport> { return { received: 0, created: 0, updated: 0 }; }
 }
 

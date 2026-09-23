@@ -71,6 +71,17 @@ export class SmartSourceClientProvider extends BaseSourceClientProvider {
     return readCapability(source.fhirBaseUrl, accessToken, { allowInternal: this.options.allowInternal, nowSeconds });
   }
 
+  /**
+   * `Patient/{id}/$everything` (yourphr#758): one operation instead of a search per type, where the
+   * server advertises it. The answer is an ordinary searchset Bundle, so paging, the same-origin
+   * `next` check and the page budget all apply unchanged.
+   */
+  async fetchEverything(source: ConnectedSource, accessToken: string, writer: RecordsWriter, maxPages: number): Promise<FetchReport> {
+    const url = `${source.fhirBaseUrl}/Patient/${encodeURIComponent(source.patient)}/$everything?_count=100`;
+    const r = await syncFrom(url, { writer, accessToken, maxPages, allowInternal: this.options.allowInternal });
+    return { received: r.received, created: r.created, updated: r.updated, pages: r.pages, truncated: r.truncated };
+  }
+
   async fetchPages(source: ConnectedSource, resourceType: string, accessToken: string, writer: RecordsWriter, maxPages: number): Promise<FetchReport> {
     const patient = encodeURIComponent(source.patient);
     // Patient is READ by id, never searched: `Patient?patient=` names a parameter Patient does not

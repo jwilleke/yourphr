@@ -82,6 +82,13 @@ export abstract class BaseSourceClientProvider {
    */
   abstract readCapability(source: ConnectedSource, accessToken: string, nowSeconds: number): Promise<{ capability?: SourceCapability; reason: string }>;
 
+  /**
+   * The whole record in one operation — `Patient/{id}/$everything` — for a server that advertises
+   * it (yourphr#758). undefined means "not attempted"; a throw means it was attempted and refused,
+   * and the caller falls back to per-type searches either way.
+   */
+  abstract fetchEverything(source: ConnectedSource, accessToken: string, writer: RecordsWriter, maxPages: number): Promise<FetchReport>;
+
   abstract fetchPages(source: ConnectedSource, resourceType: string, accessToken: string, writer: RecordsWriter, maxPages: number): Promise<FetchReport>;
 }
 
@@ -95,5 +102,6 @@ export class NullSourceClientProvider extends BaseSourceClientProvider {
   async completeAuthorization(): Promise<AuthorizationResult> { return this.refuse('a provider cannot be connected'); }
   async refresh(): Promise<RefreshedTokens> { return this.refuse('tokens cannot be refreshed'); }
   async readCapability(): Promise<{ capability?: SourceCapability; reason: string }> { return { reason: 'no source client is configured' }; }
+  async fetchEverything(): Promise<FetchReport> { return this.refuse('nothing can be synced'); }
   async fetchPages(): Promise<FetchReport> { return this.refuse('nothing can be synced'); }
 }

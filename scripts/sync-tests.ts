@@ -310,6 +310,34 @@ async function main(): Promise<void> {
   check('a statement that cannot be read is a reason, never a throw', notThere.capability === undefined && notThere.reason !== '', notThere.reason);
   epic.close();
 
+  // --- Patient/$everything where advertised (yourphr#758) ---
+  const everythingSeen: string[] = [];
+  const everythingServer = createServer((req, res) => {
+    everythingSeen.push(req.url ?? '');
+    const json = (status: number, body: unknown) => { res.writeHead(status, { 'content-type': 'application/fhir+json' }); res.end(JSON.stringify(body)); };
+    if (req.url === '/metadata') return json(200, {
+      resourceType: 'CapabilityStatement', fhirVersion: '4.0.1',
+      rest: [{ mode: 'server', resource: [{ type: 'Patient', searchParam: [{ name: '_id' }], operation: [{ name: 'everything' }] }, { type: 'Condition', searchParam: [{ name: 'patient' }] }] }],
+    });
+    if ((req.url ?? '').startsWith('/Patient/ev-1/%24everything') || (req.url ?? '').startsWith('/Patient/ev-1/$everything')) {
+      return json(200, { resourceType: 'Bundle', type: 'searchset', entry: [
+        { resource: { resourceType: 'Patient', id: 'ev-1' } },
+        { resource: condition('ev-c1', 'From $everything') },
+      ] });
+    }
+    json(404, { resourceType: 'OperationOutcome', issue: [{ severity: 'error', code: 'not-found' }] });
+  });
+  const everythingBase = await listen(everythingServer as never);
+  const everythingCap = await readCapability(everythingBase, 'tok', { allowInternal: true });
+  check('a server that advertises Patient/$everything is recognised', everythingCap.capability?.everything === true, everythingCap.reason);
+
+  const everythingClient = new SmartSourceClientProvider({ allowInternal: true });
+  const everythingSource = { ...epicSource, id: 10, fhirBaseUrl: everythingBase, patient: 'ev-1' } as ConnectedSource;
+  const everythingReport = await everythingClient.fetchEverything(everythingSource, 'tok', repositoryWriter(repo, 'source-10'), 5);
+  check('the operation returns the record in one call, paged and stored like any other fetch',
+    everythingReport.created === 2 && everythingSeen.some((u) => u.includes('everything')), `${everythingReport.created} created`);
+  everythingServer.close();
+
   // --- transient failures and the page budget (yourphr#759) ---
   let flakeHits = 0;
   const flaky = createServer((req, res) => {
