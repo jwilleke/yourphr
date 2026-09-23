@@ -1,0 +1,57 @@
+<div class="az-content-body">
+  <div class="mg-b-20">
+    <h4 class="mg-b-5"><i class="fas fa-clipboard-check"></i>&nbsp; Waiting for you</h4>
+    <p class="tx-gray-500 mg-b-0">
+      Records you added that this instance could not fully understand. They are kept exactly as you wrote them,
+      but they are <strong>not part of your chart</strong> — they stay out of your record lists, counts, search and
+      anything you share — until you confirm them here. Nothing is filled in for you.
+    </p>
+  </div>
+
+  @if (error) {
+    <div class="alert alert-danger">{{ error }}</div>
+  }
+  @if (confirmedTitle) {
+    <div class="alert alert-success">Added to your records: {{ confirmedTitle }}</div>
+  }
+
+  @if (loading) {
+    <app-loading-spinner></app-loading-spinner>
+  }
+
+  @if (!loading && items.length === 0) {
+    <div class="card">
+      <div class="card-body tx-center tx-gray-500">
+        <p class="mg-b-0">Nothing is waiting. Everything you have added is part of your records.</p>
+      </div>
+    </div>
+  }
+
+  @for (item of items; track item.source_resource_id) {
+    <div class="card mg-b-15">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start flex-wrap">
+          <div>
+            <h6 class="mg-b-5">{{ item.title }}</h6>
+            <p class="tx-gray-500 mg-b-10">
+              {{ item.source_resource_type }}
+              @if (item.date) { <span>&middot; {{ item.date }}</span> }
+              @if (!item.date) { <span>&middot; no date</span> }
+            </p>
+            <ul class="mg-b-0 tx-gray-600">
+              @for (reason of item.reasons; track reason) {
+                <li>{{ reason }}</li>
+              }
+            </ul>
+          </div>
+          <div class="btn-group mg-t-10">
+            <a class="btn btn-outline-secondary" [routerLink]="['/explore', item.source_id, 'resource', item.source_resource_id]">Look at it</a>
+            <button type="button" class="btn btn-az-primary" [disabled]="confirmingId === item.source_resource_id" (click)="confirm(item)">
+              {{ confirmingId === item.source_resource_id ? 'Adding…' : 'Right as written' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+</div>

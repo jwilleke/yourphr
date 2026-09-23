@@ -23,6 +23,8 @@ export class PatientEntryComponent {
   saving = false;
   error = '';
   successMsg = '';
+  /** Why the last entry is waiting, in the words the server used (#762). */
+  needsReview: string[] = [];
   lastSourceId = '';
   lastResourceId = '';
 
@@ -49,6 +51,7 @@ export class PatientEntryComponent {
   submit(): void {
     this.error = '';
     this.successMsg = '';
+    this.needsReview = [];
     this.saving = true;
 
     const payload: any = {
@@ -60,13 +63,15 @@ export class PatientEntryComponent {
       payload.unit = this.unit.trim();
     }
     if (this.vital === 'blood_pressure') {
-      if (this.systolic == null || this.diastolic == null) {
+      // Half a reading is still a fact (#696): the server keeps what was measured and asks you to
+      // confirm it, rather than refusing the whole entry. Only an empty form is refused.
+      if (this.systolic == null && this.diastolic == null) {
         this.saving = false;
-        this.error = 'Enter both systolic and diastolic blood pressure.';
+        this.error = 'Enter a blood pressure reading.';
         return;
       }
-      payload.systolic = Number(this.systolic);
-      payload.diastolic = Number(this.diastolic);
+      if (this.systolic != null) payload.systolic = Number(this.systolic);
+      if (this.diastolic != null) payload.diastolic = Number(this.diastolic);
     } else {
       if (this.value == null || isNaN(Number(this.value))) {
         this.saving = false;
@@ -81,7 +86,12 @@ export class PatientEntryComponent {
         this.saving = false;
         this.lastSourceId = data.source_id;
         this.lastResourceId = data.source_resource_id;
-        this.successMsg = `Saved: ${data.sort_title}. Stored as patient-reported on your YourPHR records.`;
+        // What was kept but still needs the person: they are told here AND it waits for them on
+        // the review screen, rather than being announced once and forgotten (#762).
+        this.needsReview = data.needs_review ?? [];
+        this.successMsg = this.needsReview.length
+          ? `Kept: ${data.sort_title}. It is not part of your records yet — see why below.`
+          : `Saved: ${data.sort_title}. Stored as patient-reported on your YourPHR records.`;
         this.value = null;
         this.systolic = null;
         this.diastolic = null;

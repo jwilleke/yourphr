@@ -7,17 +7,28 @@
         on this instance, marked <strong>patient-reported</strong>, and show up with your other records.
       </p>
     </div>
-    <a routerLink="/resource/create" class="btn btn-outline-secondary mg-t-5">
-      Full visit wizard (encounter, meds, labs)…
-    </a>
+    <div class="mg-t-5">
+      <a routerLink="/records/review" class="btn btn-outline-secondary">Waiting for you…</a>
+      <a routerLink="/resource/create" class="btn btn-outline-secondary mg-l-5">
+        Full visit wizard (encounter, meds, labs)…
+      </a>
+    </div>
   </div>
 
   @if (error) {
     <div class="alert alert-danger">{{ error }}</div>
   }
   @if (successMsg) {
-    <div class="alert alert-success">
+    <div class="alert" [class.alert-success]="needsReview.length === 0" [class.alert-warning]="needsReview.length > 0">
       {{ successMsg }}
+      @if (needsReview.length) {
+        <ul class="mg-t-10 mg-b-10">
+          @for (reason of needsReview; track reason) {
+            <li>{{ reason }}</li>
+          }
+        </ul>
+        <a routerLink="/records/review" class="btn btn-sm btn-outline-dark">Waiting for you</a>
+      }
       @if (lastResourceId) {
         <button type="button" class="btn btn-sm btn-outline-success mg-l-10" (click)="viewInExplore()">
           View in Explore
@@ -50,11 +61,11 @@
         @if (!needsSingleValue) {
           <div class="col-md-2 mg-b-15">
             <label class="form-label" for="vital-sys">Systolic</label>
-            <input id="vital-sys" type="number" step="any" class="form-control" [(ngModel)]="systolic" name="systolic" required />
+            <input id="vital-sys" type="number" step="any" class="form-control" [(ngModel)]="systolic" name="systolic" />
           </div>
           <div class="col-md-2 mg-b-15">
             <label class="form-label" for="vital-dia">Diastolic</label>
-            <input id="vital-dia" type="number" step="any" class="form-control" [(ngModel)]="diastolic" name="diastolic" required />
+            <input id="vital-dia" type="number" step="any" class="form-control" [(ngModel)]="diastolic" name="diastolic" />
           </div>
         }
 

@@ -35,6 +35,7 @@ import { PatientProfileComponent } from './pages/patient-profile/patient-profile
 import { ReportLabsComponent } from './pages/report-labs/report-labs.component';
 import { ResourceCreatorComponent } from './pages/resource-creator/resource-creator.component';
 import { PatientEntryComponent } from './pages/patient-entry/patient-entry.component';
+import { RecordsReviewComponent } from './pages/records-review/records-review.component';
 import { ResourceDetailComponent } from './pages/resource-detail/resource-detail.component';
 import { SourceDetailComponent } from './pages/source-detail/source-detail.component';
 import { UserCreateComponent } from './pages/user-create/user-create.component';
@@ -79,6 +80,8 @@ const routes: Routes = [
   { path: 'resource/create', component: ResourceCreatorComponent, canActivate: [ IsAuthenticatedAuthGuard ] },
   // Patient-generated data (#313) — home vitals first; visit wizard at resource/create
   { path: 'resource/add', component: PatientEntryComponent, canActivate: [ IsAuthenticatedAuthGuard ] },
+  // What you wrote that is kept but not yet part of your chart (#762).
+  { path: 'records/review', component: RecordsReviewComponent, canActivate: [ IsAuthenticatedAuthGuard ] },
 
   { path: 'desktop/callback/:state', component: DesktopCallbackComponent, canActivate: [ IsAuthenticatedAuthGuard ] },
 

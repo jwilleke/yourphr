@@ -798,13 +798,27 @@ export class FastenApiService {
     diastolic?: number
     unit?: string
     effective_date_time?: string
-  }): Observable<{resource_type: string, source_resource_id: string, source_id: string, sort_title: string}> {
+  }): Observable<{resource_type: string, source_resource_id: string, source_id: string, sort_title: string, needs_review?: string[]}> {
     return this._httpClient.post<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/resource/patient-entry`, {
       kind: payload.kind || 'vital',
       ...payload,
     }).pipe(
       map((response: ResponseWrapper) => response.data)
     )
+  }
+
+  // Records kept but held out of the chart until the person confirms them (#762). The reasons come
+  // back in the words they were shown when they saved, because they are stored on the record itself.
+  getRecordsAwaitingReview(): Observable<RecordAwaitingReview[]> {
+    return this._httpClient.get<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/records/review`)
+      .pipe(map((response: ResponseWrapper) => response.data as RecordAwaitingReview[]))
+  }
+
+  // "Yes, that is right as written" — the record becomes part of the chart. Nothing missing is
+  // filled in by confirming; supplying a missing value is an ordinary edit.
+  confirmRecordReview(sourceResourceId: string): Observable<{id: string, outcome: string}> {
+    return this._httpClient.post<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/records/review/${encodeURIComponent(sourceResourceId)}/confirm`, {})
+      .pipe(map((response: ResponseWrapper) => response.data))
   }
 
   createResourceComposition(title: string, resources: ResourceFhir[]){
@@ -1194,6 +1208,22 @@ export class FastenApiService {
       );
     
   }
+}
+
+/**
+ * A record the person wrote that is kept but is NOT yet part of their chart (#762).
+ *
+ * It is held back because something could not be understood — a measurement with no code, half a
+ * blood pressure, a date nobody could read. The reasons are stored on the record itself, in the
+ * words shown when it was saved, so this list can never disagree with what the record says.
+ */
+export interface RecordAwaitingReview {
+  source_id: string;
+  source_resource_type: string;
+  source_resource_id: string;
+  title: string;
+  date?: string;
+  reasons: string[];
 }
 
 // InstanceInfo is the frontend view of an instance's identity. Every field is optional and empty

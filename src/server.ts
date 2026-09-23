@@ -143,9 +143,15 @@ function observationMeasurement(r: any): string {
   const components: any[] = Array.isArray(r.component) ? r.component : [];
   const systolic = components.find((c) => c?.code?.coding?.some((k: any) => k?.code === '8480-6'));
   const diastolic = components.find((c) => c?.code?.coding?.some((k: any) => k?.code === '8462-4'));
-  if (systolic?.valueQuantity?.value != null && diastolic?.valueQuantity?.value != null) {
-    const unit = systolic.valueQuantity.unit === 'mm[Hg]' ? 'mmHg' : (systolic.valueQuantity.unit ?? '');
-    return `Blood pressure ${systolic.valueQuantity.value}/${diastolic.valueQuantity.value}${unit ? ` ${unit}` : ''}`;
+  const sys = systolic?.valueQuantity?.value;
+  const dia = diastolic?.valueQuantity?.value;
+  if (sys != null || dia != null) {
+    const raw = (sys != null ? systolic : diastolic)?.valueQuantity?.unit;
+    const unit = raw === 'mm[Hg]' ? 'mmHg' : (raw ?? '');
+    // Half a reading is a record in its own right since yourphr#696, so it gets its own words
+    // rather than falling through to the panel's LOINC display, which names no measurement at all.
+    const reading = sys != null && dia != null ? `${sys}/${dia}` : sys != null ? `${sys} systolic` : `${dia} diastolic`;
+    return `Blood pressure ${reading}${unit ? ` ${unit}` : ''}`;
   }
 
   const name = label(r.code);

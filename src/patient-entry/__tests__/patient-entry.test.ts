@@ -161,6 +161,12 @@ describe('what the record list shows for a vital (yourphr#696, and the display r
     expect(titleFor(fromEpic)).toBe('Hemoglobin A1c 5.9 %');
   });
 
+  it('names half a reading too, rather than falling back to the panel LOINC display (yourphr#696)', () => {
+    const { observation } = buildPatientVital({ vital: 'blood_pressure', systolic: 128 }, NOW);
+    expect(titleFor(observation)).toBe('Blood pressure 128 systolic mmHg');
+    expect(titleFor(buildPatientVital({ vital: 'blood_pressure', diastolic: 78 }, NOW).observation)).toBe('Blood pressure 78 diastolic mmHg');
+  });
+
   it('falls back to the code text rather than inventing one when the record states no value yet', () => {
     expect(titleFor({ resourceType: 'Observation', code: { text: 'Lipid panel' } })).toBe('Lipid panel');
     expect(titleFor({ resourceType: 'Observation', code: { text: 'Blood pressure' }, component: [{ code: { coding: [{ code: '8480-6' }] } }] })).toBe('Blood pressure');

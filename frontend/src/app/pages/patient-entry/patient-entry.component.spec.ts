@@ -40,13 +40,33 @@ describe('PatientEntryComponent', () => {
     expect(component.successMsg).toContain('Body weight');
   });
 
-  it('requires systolic and diastolic for blood pressure', () => {
+  // yourphr#696: half a reading is a fact. The form no longer refuses it — the server keeps what
+  // was measured and asks the person to confirm it. Only an empty reading is refused.
+  it('sends half a blood pressure rather than refusing it, and says what is waiting', () => {
+    api.createPatientEntry.and.returnValue(of({
+      resource_type: 'Observation', source_resource_id: 'o-1', source_id: 'source-1',
+      sort_title: 'Blood pressure 128 systolic mmHg',
+      needs_review: ['only the systolic half of this blood pressure was given'],
+    }));
+    component.vital = 'blood_pressure';
+    component.systolic = 128;
+    component.diastolic = null;
+    component.submit();
+    expect(api.createPatientEntry).toHaveBeenCalled();
+    const arg = api.createPatientEntry.calls.mostRecent().args[0] as Record<string, unknown>;
+    expect(arg['systolic']).toBe(128);
+    expect(arg['diastolic']).toBeUndefined(); // nothing invented for the half that was not given
+    expect(component.needsReview).toEqual(['only the systolic half of this blood pressure was given']);
+    expect(component.successMsg).toContain('not part of your records yet');
+  });
+
+  it('refuses only an empty blood pressure — nothing to record', () => {
     component.vital = 'blood_pressure';
     component.systolic = null;
     component.diastolic = null;
     component.submit();
     expect(api.createPatientEntry).not.toHaveBeenCalled();
-    expect(component.error).toContain('systolic');
+    expect(component.error).toContain('blood pressure reading');
   });
 
   it('surfaces API errors', () => {
