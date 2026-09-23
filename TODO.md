@@ -25,7 +25,6 @@ Open work in [jwilleke/yourphr](https://github.com/jwilleke/yourphr), ranked. Ge
 - [#719](https://github.com/jwilleke/yourphr/issues/719) — [BUG] Settings still offers device pairing for an app that does not exist — replace it with the agent-token minting screen
 - [#713](https://github.com/jwilleke/yourphr/issues/713) — [BUG] A fix to the search index reaches no record already stored — reindexAll() has no caller outside a test
 - [#708](https://github.com/jwilleke/yourphr/issues/708) — [ARCH] relay/main.go is the last Go module — port it to TypeScript or record that it stays Go
-- [#696](https://github.com/jwilleke/yourphr/issues/696) — [BUG] "Add record" opens a form that cannot save — manual entry 404s
 - [#690](https://github.com/jwilleke/yourphr/issues/690) — [BUG] No E2E coverage of any interaction path — only sign-in-and-look
 - [#685](https://github.com/jwilleke/yourphr/issues/685) — [BUG] Provider connection errors are never recorded — POST /secure/jobs/error 404s
 - [#684](https://github.com/jwilleke/yourphr/issues/684) — [BUG] The record wizard cannot link or unlink related records
@@ -109,7 +108,7 @@ Open work in [jwilleke/yourphr](https://github.com/jwilleke/yourphr), ranked. Ge
 
 ## 🔵 In review
 
-*None.*
+- [#696](https://github.com/jwilleke/yourphr/issues/696) — [BUG] "Add record" opens a form that cannot save — manual entry 404s
 
 ## ⏸ Deferred
 
