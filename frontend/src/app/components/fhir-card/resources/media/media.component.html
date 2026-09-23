@@ -2,7 +2,6 @@
   <div class="card-header" (click)="isCollapsed = ! isCollapsed">
     <div>
       <h6 class="card-title">{{displayModel?.sort_title}}</h6>
-      <!--      <p class="card-text tx-gray-400" *ngIf="displayModel?.created_at"><strong>Created at</strong> {{displayModel?.created_at | date}}</p>-->
     </div>
     <fhir-ui-badge class="float-end" [status]="$safeNavigationMigration(displayModel?.status)">{{displayModel?.status}}</fhir-ui-badge>
     <!--    <div class="btn-group">-->

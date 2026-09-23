@@ -76,7 +76,7 @@ function setup(
   });
   const fixture = TestBed.createComponent(AdminDashboardComponent);
   fixture.detectChanges();
-  // Second pass so *ngIf cards (Instance form after load) bind ngModel values into inputs.
+  // Second pass so @if cards (Instance form after load) bind ngModel values into inputs.
   fixture.detectChanges();
   return fixture;
 }
