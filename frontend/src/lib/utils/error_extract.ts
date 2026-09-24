@@ -1,13 +1,12 @@
 
 //https://stackoverflow.com/a/18391400/1157633
 export function extractErrorFromResponse(errResp: any): string {
-  let errMsg = ""
+  // The "" it used to be initialised with was overwritten on both paths and never read — ESLint 10's
+  // no-useless-assignment says so, and it is right.
   if(errResp.name == "HttpErrorResponse" && errResp.error && errResp.error?.error){
-    errMsg = errResp.error.error
-  } else {
-    errMsg = JSON.stringify(errResp, replaceErrors)
+    return errResp.error.error
   }
-  return errMsg
+  return JSON.stringify(errResp, replaceErrors)
 }
 
 //stringify error objects

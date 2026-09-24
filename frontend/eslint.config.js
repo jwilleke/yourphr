@@ -32,6 +32,11 @@ module.exports = tseslint.config(
       "@typescript-eslint/class-literal-property-style": "off",
       "@typescript-eslint/prefer-for-of": "off",
       "@angular-eslint/prefer-inject": "off",
+      // angular-eslint 22 added this to its recommended set. It is a migration nudge, and this app
+      // has deliberately gone the other way: the components carry ChangeDetectionStrategy.Eager
+      // because the pages bind to plain fields that change outside Angular's notice. Leaving it on
+      // would mean 179 errors telling us to undo a decision we made on purpose.
+      "@angular-eslint/prefer-on-push-component-change-detection": "off",
       "@angular-eslint/prefer-standalone": "off",
       "@angular-eslint/component-selector": "off",
       "@angular-eslint/directive-selector": "off",
