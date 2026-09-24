@@ -20,6 +20,7 @@ Open work in [jwilleke/yourphr](https://github.com/jwilleke/yourphr), ranked. Ge
 
 ## 🟠 P1
 
+- [#774](https://github.com/jwilleke/yourphr/issues/774) — [BUG] Forms send what the patient types to NLM and Wikipedia, straight from their browser
 - [#772](https://github.com/jwilleke/yourphr/issues/772) — [CHORE] check-routes compares paths, not methods — a GET-only path reads as served for PATCH and DELETE
 - [#737](https://github.com/jwilleke/yourphr/issues/737) — [BUG] PDF, DICOM and image uploads (v2's #255) are gone in v3
 - [#713](https://github.com/jwilleke/yourphr/issues/713) — [BUG] A fix to the search index reaches no record already stored — reindexAll() has no caller outside a test
