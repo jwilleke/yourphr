@@ -47,7 +47,6 @@ Open work in [jwilleke/yourphr](https://github.com/jwilleke/yourphr), ranked. Ge
 ## 🟡 P2
 
 - [#770](https://github.com/jwilleke/yourphr/issues/770) — [FEATURE] Patient self-report forms as QuestionnaireResponse — the questionnaire has to exist first
-- [#761](https://github.com/jwilleke/yourphr/issues/761) — [FEATURE] Cross-source patient identity: assert sameness on evidence, review conflicts, never merge silently
 - [#714](https://github.com/jwilleke/yourphr/issues/714) — [FEATURE] Maintenance mode — no way to say the instance is briefly not itself
 - [#709](https://github.com/jwilleke/yourphr/issues/709) — [FEATURE] Per-user settings have no store — Go's user_settings table got no successor, so preferences live in one browser
 - [#705](https://github.com/jwilleke/yourphr/issues/705) — [FEATURE] Reconnect an expired source through the catalog — re-authorize without disconnect + re-import
@@ -106,6 +105,7 @@ Open work in [jwilleke/yourphr](https://github.com/jwilleke/yourphr), ranked. Ge
 
 ## 🔵 In review
 
+- [#761](https://github.com/jwilleke/yourphr/issues/761) — [FEATURE] Cross-source patient identity: assert sameness on evidence, review conflicts, never merge silently
 - [#764](https://github.com/jwilleke/yourphr/issues/764) — [FEATURE] Record which device a home reading came from
 - [#763](https://github.com/jwilleke/yourphr/issues/763) — [FEATURE] Patient-entered allergies, medications and self-report forms go in their own resource types
 - [#762](https://github.com/jwilleke/yourphr/issues/762) — [FEATURE] Review queue: see and resolve the records held out of the chart
