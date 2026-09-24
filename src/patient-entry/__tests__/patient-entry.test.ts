@@ -190,7 +190,7 @@ describe('an allergy the patient states (yourphr#763)', () => {
 
   it('invents no criticality, severity, reaction or verification — the form never asked', () => {
     const { resource } = buildPatientRecord({ kind: 'allergy', name: 'penicillin' }, NOW, { subject: 'Patient/self-1' });
-    const allergy = resource as Record<string, unknown>;
+    const allergy = resource as unknown as Record<string, unknown>;
     expect(allergy['criticality']).toBeUndefined();
     expect(allergy['reaction']).toBeUndefined();
     expect(allergy['verificationStatus']).toBeUndefined();
@@ -249,7 +249,7 @@ describe('a medication the patient says they take (yourphr#763)', () => {
 
   it('invents no dose, route or frequency, and no coding', () => {
     const { resource } = buildPatientRecord({ kind: 'medication', name: 'metformin', status: 'active' }, NOW);
-    const statement = resource as Record<string, unknown>;
+    const statement = resource as unknown as Record<string, unknown>;
     expect(statement['dosage']).toBeUndefined();
     expect((statement['medicationCodeableConcept'] as { coding?: unknown }).coding).toBeUndefined();
   });
