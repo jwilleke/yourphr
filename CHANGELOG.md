@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.7.1](https://github.com/jwilleke/yourphr/compare/v3.7.0...v3.7.1) (2026-09-24)
+
+### Bug Fixes
+
+- __A source with no name of its own is named by the record it holds__ ([#761](https://github.com/jwilleke/yourphr/issues/761)) — an uploaded file, and anything carried over from the Go stack, has an empty display name, which left the identity question reading " has this record as John Doe" under a blank heading. It now reads "the record for John Doe", or "an unnamed source" where even that is not known. Found by driving v3.7.0 on a real instance, where every source is one of these.
+- __A record kind named after something every object inherits is the ordinary unknown it looks like__ — `kind: "constructor"` reached an inherited, callable member of the lookup table rather than falling through to "this release cannot store that". Reported by CodeQL as an unvalidated dynamic method call, which is what it was.
+
 ## [3.7.0](https://github.com/jwilleke/yourphr/compare/v3.6.0...v3.7.0) (2026-09-24)
 
 __"Add record" works, and what you write is kept even when nobody can fully understand it.__ The button was a primary call to action in three places and its form 404'd on submit. This release is that path and the rules around it: what you say is stored, what you did not say is never invented, and anything nobody has confirmed waits for you instead of counting as a chart fact.
