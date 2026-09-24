@@ -97,7 +97,9 @@ test('an allergy is stored as an allergy, waits for the person, and joins their 
 
   await page.getByRole('link', { name: 'Waiting for you', exact: true }).click();
   await expect(page.getByText(/Allergy to penicillin/)).toBeVisible({ timeout: 20_000 });
-  await expect(page.getByText('AllergyIntolerance')).toBeVisible();
+  // Shown as a person says it, not as FHIR names it (#262): the row reads "Allergy · <date>".
+  await expect(page.locator('p', { hasText: /^\s*Allergy\s*·/ }).first()).toBeVisible();
+  await expect(page.getByText('AllergyIntolerance')).toHaveCount(0);
 
   await page.getByRole('button', { name: 'Right as written' }).first().click();
   await expect(page.getByText(/Added to your records: Allergy to penicillin/)).toBeVisible({ timeout: 20_000 });

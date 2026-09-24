@@ -97,7 +97,8 @@
           <div>
             <h6 class="mg-b-5">{{ item.title }}</h6>
             <p class="tx-gray-500 mg-b-10">
-              {{ item.source_resource_type }}
+              <!-- "AllergyIntolerance" is the standard's name for it, and no patient calls it that (#262). -->
+              {{ item.source_resource_type | resourceTypeLabel }}
               @if (item.date) { <span>&middot; {{ item.date }}</span> }
               @if (!item.date) { <span>&middot; no date</span> }
             </p>

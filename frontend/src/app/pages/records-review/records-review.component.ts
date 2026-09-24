@@ -2,6 +2,7 @@ import {Component, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {RouterModule} from '@angular/router';
 import {FastenApiService, RecordAwaitingReview, SourceIdentity} from '../../services/fasten-api.service';
 import {LoadingSpinnerComponent} from '../../components/loading-spinner/loading-spinner.component';
+import {PipesModule} from '../../pipes/pipes.module';
 import {extractErrorFromResponse} from '../../../lib/utils/error_extract';
 
 /**
@@ -22,7 +23,7 @@ import {extractErrorFromResponse} from '../../../lib/utils/error_extract';
  */
 @Component({
   standalone: true,
-  imports: [RouterModule, LoadingSpinnerComponent],
+  imports: [RouterModule, LoadingSpinnerComponent, PipesModule],
   selector: 'app-records-review',
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './records-review.component.html',
