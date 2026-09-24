@@ -105,11 +105,7 @@ Open work in [jwilleke/yourphr](https://github.com/jwilleke/yourphr), ranked. Ge
 
 ## 🔵 In review
 
-- [#761](https://github.com/jwilleke/yourphr/issues/761) — [FEATURE] Cross-source patient identity: assert sameness on evidence, review conflicts, never merge silently
-- [#764](https://github.com/jwilleke/yourphr/issues/764) — [FEATURE] Record which device a home reading came from
-- [#763](https://github.com/jwilleke/yourphr/issues/763) — [FEATURE] Patient-entered allergies, medications and self-report forms go in their own resource types
-- [#762](https://github.com/jwilleke/yourphr/issues/762) — [FEATURE] Review queue: see and resolve the records held out of the chart
-- [#696](https://github.com/jwilleke/yourphr/issues/696) — [BUG] "Add record" opens a form that cannot save — manual entry 404s
+*None.*
 
 ## ⏸ Deferred
 
@@ -120,4 +116,8 @@ Open work in [jwilleke/yourphr](https://github.com/jwilleke/yourphr), ranked. Ge
 
 ## ❓ Needs triage
 
-*None.*
+- [#769](https://github.com/jwilleke/yourphr/pull/769) — chore(deps): bump @fortawesome/fontawesome-free from 6.7.2 to 7.3.1 in /frontend *(PR · ready)* — no linked issue
+- [#768](https://github.com/jwilleke/yourphr/pull/768) — chore(deps): bump karma-jasmine-html-reporter from 2.2.0 to 2.3.0 in /frontend *(PR · ready)* — no linked issue
+- [#767](https://github.com/jwilleke/yourphr/pull/767) — chore(deps): bump @eslint/js from 9.39.4 to 10.0.1 in /frontend *(PR · ready)* — no linked issue
+- [#766](https://github.com/jwilleke/yourphr/pull/766) — chore(deps): bump @fortawesome/free-solid-svg-icons from 7.2.0 to 7.3.1 in /frontend *(PR · ready)* — no linked issue
+- [#765](https://github.com/jwilleke/yourphr/pull/765) — chore(deps): bump typescript-eslint from 8.68.0 to 8.70.0 in /frontend *(PR · ready)* — no linked issue
