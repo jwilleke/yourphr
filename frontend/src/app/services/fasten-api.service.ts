@@ -823,6 +823,20 @@ export class FastenApiService {
       .pipe(map((response: ResponseWrapper) => (response.data ?? []) as {id: string, name: string}[]))
   }
 
+  // Which source identities are the same person (#761). A read that reports: what each source
+  // sent, what is known about how it got here, what the person has answered, and what two sources
+  // disagree about. Nothing here resolves anything.
+  getSourceIdentities(): Observable<SourceIdentity[]> {
+    return this._httpClient.get<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/records/identities`)
+      .pipe(map((response: ResponseWrapper) => (response.data ?? []) as SourceIdentity[]))
+  }
+
+  // The person answers, once, per source. Their chart's attribution does not move either way.
+  assertSourceIdentity(sourceId: string, answer: 'self' | 'not-self'): Observable<{source_id: string, answer: string}> {
+    return this._httpClient.post<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/records/identities/${encodeURIComponent(sourceId)}`, {answer})
+      .pipe(map((response: ResponseWrapper) => response.data))
+  }
+
   getRecordsAwaitingReview(): Observable<RecordAwaitingReview[]> {
     return this._httpClient.get<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/records/review`)
       .pipe(map((response: ResponseWrapper) => response.data as RecordAwaitingReview[]))
@@ -1238,6 +1252,20 @@ export class FastenApiService {
  * blood pressure, a date nobody could read. The reasons are stored on the record itself, in the
  * words shown when it was saved, so this list can never disagree with what the record says.
  */
+// One source's Patient, and what is known about whether it is about the account holder (#761).
+export interface SourceIdentity {
+  sourceId: string;
+  display: string;
+  patientId: string;
+  demographics: {name: string, birthDate: string, gender: string};
+  /** 'self', 'not-self', or '' when nobody has answered yet. */
+  answer: 'self' | 'not-self' | '';
+  /** What the evidence offers as the answer — preselected, never applied on its own. */
+  suggested: 'self' | 'not-self' | '';
+  evidence: string[];
+  conflicts: string[];
+}
+
 export interface RecordAwaitingReview {
   source_id: string;
   source_resource_type: string;

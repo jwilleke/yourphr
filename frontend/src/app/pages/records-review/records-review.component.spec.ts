@@ -3,7 +3,7 @@ import {RouterTestingModule} from '@angular/router/testing';
 import {NEVER, of, throwError} from 'rxjs';
 
 import {RecordsReviewComponent} from './records-review.component';
-import {FastenApiService, RecordAwaitingReview} from '../../services/fasten-api.service';
+import {FastenApiService, RecordAwaitingReview, SourceIdentity} from '../../services/fasten-api.service';
 
 describe('RecordsReviewComponent', () => {
   let component: RecordsReviewComponent;
@@ -23,8 +23,27 @@ describe('RecordsReviewComponent', () => {
     },
   ];
 
+  const identities: SourceIdentity[] = [
+    {
+      sourceId: 'source-2', display: 'Fake Regional Health', patientId: 'pa',
+      demographics: {name: 'Jane Doe', birthDate: '1971-04-02', gender: ''},
+      answer: '', suggested: 'self',
+      evidence: ['You signed in to Fake Regional Health yourself, and the connection was issued for this record.'],
+      conflicts: [],
+    },
+    {
+      sourceId: 'source-3', display: 'Old records.xml', patientId: 'px',
+      demographics: {name: 'Sam Doe', birthDate: '2014-06-01', gender: ''},
+      answer: '', suggested: '',
+      evidence: ['This came from a file you uploaded. A file says nothing about whose record it is, so nobody has checked.'],
+      conflicts: ['Fake Regional Health has a different date of birth (1971-04-02) from Old records.xml (2014-06-01).'],
+    },
+  ];
+
   beforeEach(waitForAsync(() => {
-    apiSpy = jasmine.createSpyObj('FastenApiService', ['getRecordsAwaitingReview', 'confirmRecordReview', 'discardRecordReview']);
+    apiSpy = jasmine.createSpyObj('FastenApiService', ['getRecordsAwaitingReview', 'confirmRecordReview', 'discardRecordReview', 'getSourceIdentities', 'assertSourceIdentity']);
+    apiSpy.getSourceIdentities.and.returnValue(of(identities));
+    apiSpy.assertSourceIdentity.and.returnValue(of({source_id: 'source-2', answer: 'self'}));
     apiSpy.getRecordsAwaitingReview.and.returnValue(of(waiting));
     apiSpy.confirmRecordReview.and.returnValue(of({id: 'o-1', outcome: 'updated'}));
     apiSpy.discardRecordReview.and.returnValue(of({id: 'o-1'}));
@@ -40,13 +59,15 @@ describe('RecordsReviewComponent', () => {
     component = fixture.componentInstance;
   });
 
+  /** Buttons by what they say, not by position: the identity question (#761) shares these styles. */
+  const buttonsSaying = (text: string): HTMLButtonElement[] =>
+    Array.from(fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>).filter((b) => b.textContent!.includes(text));
+
   /** The "Right as written" button of the nth waiting record. */
-  const confirmButton = (n: number): HTMLButtonElement =>
-    fixture.nativeElement.querySelectorAll('button.btn-az-primary')[n] as HTMLButtonElement;
+  const confirmButton = (n: number): HTMLButtonElement => buttonsSaying('Right as written')[n]!;
 
   /** The "Delete" button of the nth waiting record, and the "Yes, delete it" that follows it. */
-  const deleteButton = (n: number): HTMLButtonElement =>
-    fixture.nativeElement.querySelectorAll('button.btn-outline-danger')[n] as HTMLButtonElement;
+  const deleteButton = (n: number): HTMLButtonElement => buttonsSaying('Delete')[n]!;
   const reallyDeleteButton = (): HTMLButtonElement =>
     fixture.nativeElement.querySelector('button.btn-danger') as HTMLButtonElement;
 
@@ -106,7 +127,7 @@ describe('RecordsReviewComponent', () => {
     fixture.detectChanges();
     deleteButton(0).click();
     fixture.detectChanges();
-    (fixture.nativeElement.querySelectorAll('button.btn-outline-secondary')[0] as HTMLButtonElement).click(); // "Keep it"
+    buttonsSaying('Keep it')[0]!.click();
     fixture.detectChanges();
     expect(apiSpy.discardRecordReview).not.toHaveBeenCalled();
     expect(component.pendingDiscardId).toBe('');
@@ -132,6 +153,53 @@ describe('RecordsReviewComponent', () => {
     fixture.detectChanges();
     expect(component.items.length).toBe(2);
     expect(fixture.nativeElement.textContent).toContain('this record is not waiting for review');
+  });
+
+  // yourphr#761: sameness is asserted by the person, prefilled from the evidence.
+  it('asks which records are about the person, and shows what each answer would rest on', () => {
+    fixture.detectChanges();
+    const text = fixture.nativeElement.textContent;
+    expect(text).toContain('Which of these records are about you?');
+    expect(text).toContain('You signed in to Fake Regional Health yourself');
+    expect(text).toContain('A file says nothing about whose record it is');
+  });
+
+  it('preselects only the source the person authenticated to — the uploaded file offers nothing', () => {
+    fixture.detectChanges();
+    // Both sources offer the answer; only the authenticated one offers it as the preselected button.
+    expect(buttonsSaying('Yes, this is me').length).toBe(2);
+    expect(buttonsSaying('Yes, this is me').filter((b) => b.classList.contains('btn-az-primary')).length).toBe(1);
+  });
+
+  it('sends the answer and re-reads, because one answer changes what the others conflict about', () => {
+    fixture.detectChanges();
+    buttonsSaying('Yes, this is me')[0]!.click();
+    fixture.detectChanges();
+    expect(apiSpy.assertSourceIdentity).toHaveBeenCalledWith('source-2', 'self');
+    expect(apiSpy.getSourceIdentities).toHaveBeenCalledTimes(2);
+  });
+
+  it('offers "someone I care for" as an equal answer, not an exception', () => {
+    fixture.detectChanges();
+    buttonsSaying('No, someone I care for')[0]!.click();
+    fixture.detectChanges();
+    expect(apiSpy.assertSourceIdentity).toHaveBeenCalledWith('source-2', 'not-self');
+  });
+
+  it('shows a disagreement between answered sources without offering to resolve it', () => {
+    apiSpy.getSourceIdentities.and.returnValue(of([{...identities[1], answer: 'self' as const}]));
+    fixture.detectChanges();
+    const text = fixture.nativeElement.textContent;
+    expect(text).toContain('Your sources disagree about something');
+    expect(text).toContain('different date of birth');
+    expect(text).toContain('Shown, not settled');
+  });
+
+  it('still shows the record queue when the identity read fails', () => {
+    apiSpy.getSourceIdentities.and.returnValue(throwError(() => ({error: {error: 'nope'}})));
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Blood pressure 128 systolic mmHg');
+    expect(component.identities).toEqual([]);
   });
 
   it('says plainly when nothing is waiting, rather than showing an empty page', () => {

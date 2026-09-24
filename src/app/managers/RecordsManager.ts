@@ -13,6 +13,7 @@
 import type { Bundle, Resource } from '@medplum/fhirtypes';
 import { randomUUID } from 'node:crypto';
 import { NEEDS_REVIEW, RECORD_ORIGIN } from '../../patient-entry/index.js';
+import { IDENTITY_ASSERTION, demographicsOf, evidenceFor, identifierConflicts, type IdentityAnswer, type SourceIdentity } from './identity.js';
 import type { SearchRequest, WithId } from '@medplum/core';
 import { BaseManager, type BackupData } from '../../framework/BaseManager.js';
 import type { Engine } from '../../framework/Engine.js';
@@ -320,15 +321,19 @@ export class RecordsManager extends BaseManager {
    * `Patient/456` are different resources about the same human.
    *
    * So the account's own `manual` source carries one person record, and it learns identifiers from
-   * the sources the person connected. Each identifier keeps __the system that issued it__: an MRN is
-   * exclusive to the organisation that issued it (it is the number on that hospital's wristband), so
-   * recording "Epic knows this person as E12345" is a fact, while re-stamping it as a YourPHR number
-   * would not be. Each is recorded because the person AUTHENTICATED there — a SMART launch proves
-   * the login and the token names the Patient it was issued for, which is stronger evidence than any
-   * demographic score.
+   * the sources the person has CONFIRMED are about them (yourphr#761). Each identifier keeps __the
+   * system that issued it__: an MRN is exclusive to the organisation that issued it (it is the
+   * number on that hospital's wristband), so recording "Epic knows this person as E12345" is a
+   * fact, while re-stamping it as a YourPHR number would not be.
+   *
+   * Confirmation is the point. Until #761 this learned from EVERY source, which quietly assumed
+   * that every portal someone can read is a portal about them — and portals grant proxy access, so
+   * a parent reading a child's record had the child's MRN land on their own person record. A SMART
+   * launch proves the login and names the Patient the token was issued for; it does not say the two
+   * are the same human. The person says that, once, per source.
    *
    * What this deliberately does NOT do: merge clinical data, rewrite a provider's Patient, or
-   * resolve a disagreement between two sources. That is yourphr#761.
+   * resolve a disagreement between two sources.
    */
   async selfPatient(ctx: ApiContext): Promise<{ reference: string; id: string }> {
     const userId = this.who(ctx);
@@ -337,8 +342,10 @@ export class RecordsManager extends BaseManager {
     // Every identifier the connected sources have told us about this person, each under its own
     // issuing system. Sorted so the record does not churn on every call.
     const learned = new Map<string, { system: string; value: string }>();
+    const confirmed = await this.identityAnswers(ctx);
     for (const held of await this.provider.list(userId, { resourceType: 'Patient' })) {
       if (held.sourceId === manual) continue; // our own record is not evidence about itself
+      if (confirmed.get(held.id)?.answer !== 'self') continue; // unanswered, or someone they care for
       for (const identifier of ((held.resource as { identifier?: { system?: string; value?: string }[] }).identifier ?? [])) {
         const system = (identifier.system ?? '').trim();
         const value = (identifier.value ?? '').trim();
@@ -363,6 +370,119 @@ export class RecordsManager extends BaseManager {
       } as Resource);
     }
     return { reference: `Patient/${id}`, id };
+  }
+
+  /**
+   * What the person has said about each source's Patient: theirs, or someone they care for
+   * (yourphr#761).
+   *
+   * Read from Provenance records in their own manual source — one per answer, naming the source
+   * Patient it is about. Nothing is assumed from their absence: no answer means the question has
+   * not been put yet, which is what the review screen is for.
+   */
+  private async identityAnswers(ctx: ApiContext): Promise<Map<string, { answer: IdentityAnswer; at: string }>> {
+    const manual = `source-${(await this.engine.managers.sources.manualSource(ctx)).id}`;
+    const out = new Map<string, { answer: IdentityAnswer; at: string }>();
+    for (const held of await this.provider.list(this.who(ctx), { resourceType: 'Provenance', sourceId: manual })) {
+      const p = held.resource as { target?: { reference?: string }[]; recorded?: string; activity?: { coding?: { system?: string; code?: string }[] } };
+      const code = (p.activity?.coding ?? []).find((c) => c.system === IDENTITY_ASSERTION)?.code;
+      const target = (p.target ?? [])[0]?.reference ?? '';
+      if ((code !== 'self' && code !== 'not-self') || !target.startsWith('Patient/')) continue;
+      const id = target.slice('Patient/'.length);
+      const at = p.recorded ?? '';
+      // The latest answer stands: someone may correct themselves.
+      if (!out.has(id) || at >= (out.get(id)?.at ?? '')) out.set(id, { answer: code, at });
+    }
+    return out;
+  }
+
+  /**
+   * Every connected source's identity, what is known about it, and what the person has said
+   * (yourphr#761).
+   *
+   * The account's own manual source is not in this list: a record the person typed is theirs by
+   * construction. Nothing here merges anything — it reports.
+   */
+  async sourceIdentities(ctx: ApiContext): Promise<SourceIdentity[]> {
+    const userId = this.who(ctx);
+    const manualId = (await this.engine.managers.sources.manualSource(ctx)).id;
+    const sources = (await this.engine.managers.sources.list(ctx)).filter((s) => s.id !== manualId);
+    const answers = await this.identityAnswers(ctx);
+
+    const held: { source: (typeof sources)[number]; patient: StoredRecord | undefined }[] = [];
+    for (const source of sources) {
+      const patients = await this.provider.list(userId, { resourceType: 'Patient', sourceId: `source-${source.id}` });
+      held.push({ source, patient: patients.sort((a, b) => a.id.localeCompare(b.id))[0] });
+    }
+
+    const identities: SourceIdentity[] = held
+      .filter((h) => h.patient !== undefined)
+      .map(({ source, patient }) => {
+        const demographics = demographicsOf(patient!.resource);
+        const uploaded = source.platformType === 'manual';
+        // The token named this very record — the evidence a hospital MPI cannot have. An upload
+        // carries no such statement, whatever the file contains.
+        const authenticated = !uploaded && source.patient !== '' && source.patient === patient!.id;
+        const others = held
+          .filter((o) => o.patient !== undefined && o.source.id !== source.id)
+          .map((o) => ({ display: o.source.display, demographics: demographicsOf(o.patient!.resource) }));
+        const { evidence, suggested, conflicts } = evidenceFor({ display: source.display, authenticated, uploaded, demographics, others });
+        return {
+          sourceId: `source-${source.id}`,
+          display: source.display,
+          patientId: patient!.id,
+          demographics,
+          answer: answers.get(patient!.id)?.answer ?? '',
+          suggested,
+          evidence,
+          conflicts,
+        };
+      });
+
+    // A number issued by one organisation turning up under another's system is worth a person's
+    // attention, and is reported against the identities the person has confirmed as their own.
+    const confirmed = identities.filter((i) => i.answer === 'self');
+    const clashes = identifierConflicts(
+      confirmed.map((i) => ({
+        display: i.display,
+        identifiers: (((held.find((h) => h.patient?.id === i.patientId)?.patient?.resource as { identifier?: { system?: string; value?: string }[] })?.identifier) ?? [])
+          .map((id) => ({ system: (id.system ?? '').trim(), value: (id.value ?? '').trim() })),
+      })),
+    );
+    for (const identity of confirmed) identity.conflicts = [...identity.conflicts, ...clashes];
+    return identities.sort((a, b) => a.display.localeCompare(b.display));
+  }
+
+  /**
+   * The person answers: this source's records are about me, or about someone I care for
+   * (yourphr#761).
+   *
+   * Recorded as a Provenance — who said it, when, about which Patient — in their own manual source,
+   * so the statement is a record of its own and the provider's Patient is never rewritten. The
+   * answer changes what the person record learns; it changes no clinical record's attribution.
+   */
+  async assertIdentity(ctx: ApiContext, sourceId: string, answer: IdentityAnswer): Promise<{ sourceId: string; answer: IdentityAnswer }> {
+    if (answer !== 'self' && answer !== 'not-self') throw new ApiError(400, 'the answer is either self or not-self');
+    const identity = (await this.sourceIdentities(ctx)).find((i) => i.sourceId === sourceId);
+    if (!identity) throw new ApiError(404, 'no such source identity');
+
+    const manual = `source-${(await this.engine.managers.sources.manualSource(ctx)).id}`;
+    await this.writer(ctx, manual).upsert({
+      resourceType: 'Provenance',
+      id: randomUUID(),
+      target: [{ reference: `Patient/${identity.patientId}` }],
+      recorded: new Date().toISOString().replace(/\.\d{3}Z$/, 'Z'),
+      activity: {
+        coding: [{ system: IDENTITY_ASSERTION, code: answer, display: answer === 'self' ? 'The account holder says this is their own record' : 'The account holder says this record is about someone else' }],
+      },
+      agent: [{ who: { reference: (await this.selfPatient(ctx)).reference } }],
+      meta: { tag: [{ system: RECORD_ORIGIN, code: 'patient-reported', display: 'Patient-reported (YourPHR)' }] },
+    } as Resource);
+
+    // What the person record knows follows from the answer, so it is rebuilt here rather than at
+    // the next read: an identifier learned from a source they have just disowned must go.
+    await this.selfPatient(ctx);
+    return { sourceId, answer };
   }
 
   /**

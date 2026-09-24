@@ -48,7 +48,7 @@ await app.users.createUser(seed, E2E_RESET_USER, E2E_RESET_PASS);
 await app.users.setConsent(ApiContext.system('e2e-seed', E2E_USER, app.engine), new Date().toISOString().replace(/\.\d{3}Z$/, 'Z'));
 await app.sources.add(ApiContext.system('e2e-seed', E2E_USER, app.engine), {
   userId: E2E_USER, display: 'Fake Regional Health', fhirBaseUrl: fakeBase, tokenUrl: `${fakeBase}/token`, clientId: 'fake-cid',
-  patient: 'pa', resourceTypes: ['Condition', 'MedicationStatement'], accessToken: 'tok', refreshToken: '', expiresAt: 99_999_999,
+  patient: 'pa', resourceTypes: ['Condition', 'MedicationStatement', 'Patient'], accessToken: 'tok', refreshToken: '', expiresAt: 99_999_999,
   platformType: 'ehr', environment: 'production', // a production source for the member's Explore page; the catalog seed stays a sandbox entry
 });
 await app.syncNow(1_000_000);

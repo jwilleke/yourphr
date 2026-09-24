@@ -1,6 +1,6 @@
 import {Component, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {RouterModule} from '@angular/router';
-import {FastenApiService, RecordAwaitingReview} from '../../services/fasten-api.service';
+import {FastenApiService, RecordAwaitingReview, SourceIdentity} from '../../services/fasten-api.service';
 import {LoadingSpinnerComponent} from '../../components/loading-spinner/loading-spinner.component';
 import {extractErrorFromResponse} from '../../../lib/utils/error_extract';
 
@@ -14,6 +14,11 @@ import {extractErrorFromResponse} from '../../../lib/utils/error_extract';
  *
  * Confirming fills nothing in. A record with no date stays undated; correcting it is an edit, not
  * this. That is deliberate: the screen exists so that nothing is ever guessed on your behalf.
+ *
+ * The same screen asks the one question about identity (#761): each provider you connect sent a
+ * record of a person, and a portal can be one you read on someone else's behalf. You say which are
+ * about you. The answer is preselected from what is known — you signed in there yourself — so it is
+ * a confirmation, not a puzzle, and nothing about your chart moves either way.
  */
 @Component({
   standalone: true,
@@ -41,11 +46,50 @@ export class RecordsReviewComponent implements OnInit {
   pendingDiscardId = '';
   discardingId = '';
   discardedTitle = '';
+  /** The identity question (#761): one per connected source, answered once. */
+  identities: SourceIdentity[] = [];
+  answeringSourceId = '';
 
   constructor(private api: FastenApiService) {}
 
   ngOnInit(): void {
     this.load();
+    this.loadIdentities();
+  }
+
+  loadIdentities(): void {
+    // A failure here costs the identity question, not the record queue: they are separate answers
+    // to separate questions, and one being unavailable must not hide the other.
+    this.api.getSourceIdentities().subscribe({next: (identities) => this.identities = identities, error: () => this.identities = []});
+  }
+
+  /** The ones still to answer, preselected where the evidence says something. */
+  get unanswered(): SourceIdentity[] {
+    return this.identities.filter((i) => i.answer === '');
+  }
+
+  /** Answered, and carrying a disagreement between sources that nobody has looked at. */
+  get answeredWithConflicts(): SourceIdentity[] {
+    return this.identities.filter((i) => i.answer !== '' && i.conflicts.length > 0);
+  }
+
+  answer(identity: SourceIdentity, answer: 'self' | 'not-self'): void {
+    if (this.answeringSourceId !== '') {
+      return;
+    }
+    this.error = '';
+    this.answeringSourceId = identity.sourceId;
+    this.api.assertSourceIdentity(identity.sourceId, answer).subscribe({
+      next: () => {
+        this.answeringSourceId = '';
+        // Re-read rather than patch: answering changes what other identities conflict about.
+        this.loadIdentities();
+      },
+      error: (err) => {
+        this.answeringSourceId = '';
+        this.error = extractErrorFromResponse(err) || `Could not record your answer about ${identity.display}.`;
+      },
+    });
   }
 
   load(): void {

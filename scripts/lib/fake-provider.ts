@@ -36,6 +36,14 @@ export function startFakeProvider(token: string) {
       return;
     }
     const type = url.pathname.replace('/', '');
+    // The person this connection was issued for (yourphr#761): the id the token names, with the
+    // demographics a portal states. What makes the identity question answerable end to end.
+    // Read by id, as the sync does it (`GET Patient/{id}`), and as a search — one person either way.
+    if (type === 'Patient' || type.startsWith('Patient/')) {
+      const patient = { resourceType: 'Patient', id: 'pa', name: [{ given: ['Jane'], family: 'Doe' }], birthDate: '1971-04-02', gender: 'female', identifier: [{ system: 'http://fake.example.org/mrn', value: 'E12345' }] };
+      send(200, type === 'Patient' ? { resourceType: 'Bundle', type: 'searchset', entry: [{ resource: patient }] } : patient);
+      return;
+    }
     const entry = type === 'MedicationStatement'
       ? [{ resource: { resourceType: type, id: 'ms-1', status: 'active', medicationCodeableConcept: { text: 'Lisinopril 10 MG' } } }]
       : [1, 2, 3].map((i) => ({ resource: { resourceType: type, id: `${type.toLowerCase()}-${i}`, code: { text: `synthetic ${type} ${i}` }, recordedDate: '2024-01-10' } }));

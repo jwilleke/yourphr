@@ -31,7 +31,16 @@ beforeEach(async () => {
   engine.register('records', records);
   // The person's own records — their Patient, their devices — live in the account's `manual`
   // source, so this spec needs something that names one. Only manualSource is ever reached here.
-  engine.register('sources', { dependsOn: [], initialize: async () => {}, shutdown: async () => {}, manualSource: async () => ({ id: 7 }) } as never);
+  engine.register('sources', {
+    dependsOn: [], initialize: async () => {}, shutdown: async () => {},
+    manualSource: async () => ({ id: 7 }),
+    // Two connected sources: one the person signed in to, one they uploaded a file from.
+    list: async () => [
+      { id: 7, display: 'Added by you', platformType: 'manual', patient: '' },
+      { id: 2, display: 'Fake Regional Health', platformType: 'ehr', patient: 'pa' },
+      { id: 3, display: 'Old records.xml', platformType: 'manual', patient: 'px' },
+    ],
+  } as never);
   await engine.initialize();
   alice = ApiContext.from({ username: 'alice', role: 'user' }, engine);
   bob = ApiContext.from({ username: 'bob', role: 'user' }, engine);
@@ -42,6 +51,15 @@ beforeEach(async () => {
   provider.seed('alice', '', { resourceType: 'Condition', id: 'c2', code: { text: 'Typed in' } } as Resource);
   provider.seed('bob', 'source-9', obs('o9', '718-7', 'Hemoglobin', '2025-01-01'));
 });
+
+/**
+ * The Patient each source sent, as it arrived (yourphr#761) — seeded per test rather than for every
+ * one, so the counts the other specs assert stay about the records those specs are describing.
+ */
+const seedSourcePatients = (): void => {
+  provider.seed('alice', 'source-2', { resourceType: 'Patient', id: 'pa', name: [{ given: ['Jane'], family: 'Doe' }], birthDate: '1971-04-02', identifier: [{ system: 'http://fake.example.org/mrn', value: 'E12345' }] } as Resource);
+  provider.seed('alice', 'source-3', { resourceType: 'Patient', id: 'px', name: [{ given: ['Sam'], family: 'Doe' }], birthDate: '2014-06-01', identifier: [{ system: 'http://city.example.org/mrn', value: 'C999' }] } as Resource);
+};
 
 describe('RecordsManager — the one door, scoped to whoever is asking', () => {
   it('initialises its provider with the engine and closes it on shutdown', async () => {
@@ -163,6 +181,64 @@ describe('RecordsManager — the one door, scoped to whoever is asking', () => {
     expect(await records.deviceReference(alice, '', '')).toBe(''); // naming none is an answer
     // A device that is not theirs is a client mistake, not a fact to record.
     await expect(records.deviceReference(bob, cuff.id, '')).rejects.toMatchObject({ status: 400 });
+  });
+
+  // yourphr#761: sameness is asserted by the person, prefilled from the evidence, never inferred.
+  it('reports each source identity with its evidence, and preselects only what the person authenticated to', async () => {
+    seedSourcePatients();
+    const identities = await records.sourceIdentities(alice);
+    expect(identities.map((i) => [i.sourceId, i.suggested, i.answer])).toEqual([
+      ['source-2', 'self', ''],   // signed in there, and the token named this record
+      ['source-3', '', ''],       // a file they uploaded says nothing about whose record it is
+    ]);
+    expect(identities[0]!.evidence[0]).toContain('You signed in to Fake Regional Health yourself');
+    expect(identities[0]!.demographics).toEqual({ name: 'Jane Doe', birthDate: '1971-04-02', gender: '' });
+    // Two records about different people: surfaced as a disagreement, never resolved here.
+    expect(identities[0]!.conflicts.join(' ')).toContain('different date of birth');
+  });
+
+  // The bug this issue exists to fix: until #761 the person record learned from EVERY source, so a
+  // parent with proxy access to a child's portal had the child's MRN land on their own record.
+  it('learns an identifier only from a source the person has confirmed is about them', async () => {
+    seedSourcePatients();
+    const before = (await records.detail(alice, (await records.selfPatient(alice)).id))['resource_raw'] as { identifier?: unknown[] };
+    expect(before.identifier).toBeUndefined(); // nothing is assumed from a connection alone
+
+    await records.assertIdentity(alice, 'source-2', 'self');
+    await records.assertIdentity(alice, 'source-3', 'not-self');
+
+    const after = (await records.detail(alice, (await records.selfPatient(alice)).id))['resource_raw'] as { identifier?: { value?: string }[] };
+    expect(after.identifier?.map((i) => i.value)).toEqual(['E12345']); // theirs only
+    expect((await records.sourceIdentities(alice)).map((i) => i.answer)).toEqual(['self', 'not-self']);
+  });
+
+  it('lets the person change their mind, and the person record follows', async () => {
+    seedSourcePatients();
+    await records.assertIdentity(alice, 'source-2', 'self');
+    await records.assertIdentity(alice, 'source-2', 'not-self');
+    const person = (await records.detail(alice, (await records.selfPatient(alice)).id))['resource_raw'] as { identifier?: unknown[] };
+    expect(person.identifier).toBeUndefined();
+  });
+
+  it('records the assertion as a Provenance about that Patient, and moves no clinical record', async () => {
+    seedSourcePatients();
+    await records.assertIdentity(alice, 'source-2', 'self');
+    const provenance = (await records.list(alice, 'Provenance'));
+    expect(provenance).toHaveLength(1);
+    const raw = provenance[0]!['resource_raw'] as { target?: { reference?: string }[]; agent?: { who?: { reference?: string } }[]; activity?: { coding?: { code?: string }[] } };
+    expect(raw.target?.[0]?.reference).toBe('Patient/pa');
+    expect(raw.activity?.coding?.[0]?.code).toBe('self');
+    expect(raw.agent?.[0]?.who?.reference).toMatch(/^Patient\//);
+    // The source's own Patient is untouched, and its records still belong to it.
+    expect((await records.detail(alice, 'pa'))['source_id']).toBe('source-2');
+    // The reading that source sent still belongs to it: an identity answer moves no clinical record.
+    expect((await records.list(alice, 'Observation', { sourceId: 'source-2' })).map((r) => r['source_resource_id'])).toEqual(['o3']);
+  });
+
+  it('refuses an answer that is neither, and a source that is not theirs', async () => {
+    seedSourcePatients();
+    await expect(records.assertIdentity(alice, 'source-2', 'maybe' as never)).rejects.toMatchObject({ status: 400 });
+    await expect(records.assertIdentity(alice, 'source-99', 'self')).rejects.toMatchObject({ status: 404 });
   });
 
   it('detail finds a record by id without its type; a missing one is a 404', async () => {

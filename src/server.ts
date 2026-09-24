@@ -1297,6 +1297,25 @@ export function createYourPhrServer(options: ServerOptions) {
       // This is where they see it and say what it should be. Read from the records themselves —
       // the tag says a record is waiting, its notes say why — so the list cannot fall out of step
       // with what is stored.
+      // Which source identities are the same person (yourphr#761). A read that reports and never
+      // resolves: the answers, the evidence behind each, and any disagreement between sources.
+      if (url.pathname === '/api/secure/records/identities' && req.method === 'GET') {
+        send(res, 200, {success: true, data: await engine.managers.records.sourceIdentities(ctx)});
+        return;
+      }
+      {
+        const assert = url.pathname.match(/^\/api\/secure\/records\/identities\/([^/]+)$/);
+        if (assert && req.method === 'POST') {
+          // The person answers, once, per source. Their chart's attribution does not move either
+          // way — only what their own person record has learned.
+          const body = (await readJsonBody(req)) ?? {};
+          const answer = String((body as {answer?: unknown}).answer ?? '');
+          const done = await engine.managers.records.assertIdentity(ctx, decodeURIComponent(assert[1]!), answer as 'self' | 'not-self');
+          send(res, 200, {success: true, data: done});
+          return;
+        }
+      }
+
       // The machines the person measures themselves with (yourphr#764). Only the ones they named:
       // a Device a hospital sent describes an implant, not something to pick from when typing a
       // reading.

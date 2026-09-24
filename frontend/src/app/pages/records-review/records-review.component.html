@@ -18,6 +18,66 @@
     <div class="alert alert-secondary">Deleted: {{ discardedTitle }}. Nothing was kept.</div>
   }
 
+  @if (unanswered.length) {
+    <div class="card mg-b-20">
+      <div class="card-body">
+        <h6 class="mg-b-5">Which of these records are about you?</h6>
+        <p class="tx-gray-500 tx-13">
+          Each provider you connect sent a record of a person. A portal can also be one you read for someone else &mdash;
+          a child, a parent &mdash; so this is asked rather than assumed. Your answer changes nothing about the records
+          themselves: they stay exactly as that provider sent them, under that provider's name.
+        </p>
+
+        @for (identity of unanswered; track identity.sourceId) {
+          <div class="alert alert-light mg-b-10">
+            <h6 class="mg-b-5">{{ identity.display }}</h6>
+            <ul class="tx-13 tx-gray-600 mg-b-10">
+              @for (line of identity.evidence; track line) {
+                <li>{{ line }}</li>
+              }
+            </ul>
+            @if (identity.conflicts.length) {
+              <ul class="tx-13 tx-orange mg-b-10">
+                @for (conflict of identity.conflicts; track conflict) {
+                  <li>{{ conflict }}</li>
+                }
+              </ul>
+            }
+            <button type="button" class="btn btn-sm"
+                    [class.btn-az-primary]="identity.suggested === 'self'"
+                    [class.btn-outline-secondary]="identity.suggested !== 'self'"
+                    [disabled]="answeringSourceId === identity.sourceId" (click)="answer(identity, 'self')">
+              Yes, this is me
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-secondary mg-l-10"
+                    [disabled]="answeringSourceId === identity.sourceId" (click)="answer(identity, 'not-self')">
+              No, someone I care for
+            </button>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  @if (answeredWithConflicts.length) {
+    <div class="card mg-b-20">
+      <div class="card-body">
+        <h6 class="mg-b-5">Your sources disagree about something</h6>
+        <p class="tx-gray-500 tx-13">
+          Shown, not settled. People change names, portals hold old ones, and a mistake at one provider is not something
+          this instance can correct at another.
+        </p>
+        @for (identity of answeredWithConflicts; track identity.sourceId) {
+          <ul class="tx-13 mg-b-10">
+            @for (conflict of identity.conflicts; track conflict) {
+              <li>{{ conflict }}</li>
+            }
+          </ul>
+        }
+      </div>
+    </div>
+  }
+
   @if (loading) {
     <app-loading-spinner></app-loading-spinner>
   }
