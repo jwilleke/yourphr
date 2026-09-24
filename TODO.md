@@ -54,7 +54,6 @@ Open work in [jwilleke/yourphr](https://github.com/jwilleke/yourphr), ranked. Ge
 - [#699](https://github.com/jwilleke/yourphr/issues/699) — [CHORE] Migrate the frontend off Yarn Classic to npm — one package manager, one audit surface
 - [#697](https://github.com/jwilleke/yourphr/issues/697) — [ARCH] ngdpbase is already the framework — decide what YourPHR is relative to it
 - [#693](https://github.com/jwilleke/yourphr/issues/693) — [BUG] IdP callback posts to a route that does not exist
-- [#687](https://github.com/jwilleke/yourphr/issues/687) — [BUG] "Email this summary" calls an endpoint that does not exist
 - [#674](https://github.com/jwilleke/yourphr/issues/674) — [BUG] A display label is used as a feature flag — "sandbox mode" keys off the instance's name
 - [#639](https://github.com/jwilleke/yourphr/issues/639) — [SPIKE] Remove the SOPS Secret — .env on the volume supersedes it
 - [#552](https://github.com/jwilleke/yourphr/issues/552) — [CHORE] Port the DICOM viewer to dwv 0.36 — removed APIs and a build path that no longer exists
@@ -103,6 +102,7 @@ Open work in [jwilleke/yourphr](https://github.com/jwilleke/yourphr), ranked. Ge
 
 ## 🔵 In review
 
+- [#687](https://github.com/jwilleke/yourphr/issues/687) — [BUG] "Email this summary" calls an endpoint that does not exist
 - [#771](https://github.com/jwilleke/yourphr/issues/771) — [BUG] Deleting a practitioner calls a route that does not exist — the button does nothing
 - [#719](https://github.com/jwilleke/yourphr/issues/719) — [BUG] Settings still offers device pairing for an app that does not exist — replace it with the agent-token minting screen
 - [#685](https://github.com/jwilleke/yourphr/issues/685) — [BUG] Provider connection errors are never recorded — POST /secure/jobs/error 404s
