@@ -78,7 +78,7 @@ interface VitalSpec {
 }
 
 /** The five the form offers. Aliases are Go's, kept so a v2-era client still works. */
-const VITALS: Record<string, VitalSpec> = {
+const VITALS = new Map<string, VitalSpec>(Object.entries({
   body_weight: { code: '29463-7', display: 'Body weight', defaultUnit: 'kg' },
   weight: { code: '29463-7', display: 'Body weight', defaultUnit: 'kg' },
   heart_rate: { code: '8867-4', display: 'Heart rate', defaultUnit: '/min' },
@@ -107,7 +107,7 @@ const VITALS: Record<string, VitalSpec> = {
       'mmol/l': { code: '14743-9', display: 'Glucose [Moles/volume] in Capillary blood by Glucometer' },
     },
   },
-};
+} satisfies Record<string, VitalSpec>));
 
 const codeable = (code: string, display: string) => ({ coding: [{ system: LOINC, code, display }], text: display });
 const quantity = (value: number, unit: string, code = unit) => ({ value, unit, system: UCUM, code });
@@ -120,13 +120,19 @@ export interface BuiltEntry {
   review: string[];
 }
 
-/** The kinds this release can store in a record type of their own (yourphr#763). */
-const KINDS: Record<string, (req: PatientEntryRequest, now: Date, context: PatientEntryContext) => BuiltRecord> = {
-  allergy: buildPatientAllergy,
-  allergies: buildPatientAllergy,
-  medication: buildPatientMedication,
-  medications: buildPatientMedication,
-};
+/**
+ * The kinds this release can store in a record type of their own (yourphr#763).
+ *
+ * A Map, not an object: the key comes from the request, and a plain object answers `constructor` or
+ * `toString` with something inherited and callable. CodeQL called that what it is — an unvalidated
+ * dynamic method call — and a Map simply has no such keys.
+ */
+const KINDS = new Map<string, (req: PatientEntryRequest, now: Date, context: PatientEntryContext) => BuiltRecord>([
+  ['allergy', buildPatientAllergy],
+  ['allergies', buildPatientAllergy],
+  ['medication', buildPatientMedication],
+  ['medications', buildPatientMedication],
+]);
 
 /**
  * Whatever the person entered, as the kind of record FHIR has for it (yourphr#763).
@@ -138,7 +144,7 @@ const KINDS: Record<string, (req: PatientEntryRequest, now: Date, context: Patie
  */
 export function buildPatientRecord(req: PatientEntryRequest, now = new Date(), context: PatientEntryContext = { subject: '' }): BuiltRecord {
   const kind = (req.kind ?? 'vital').trim().toLowerCase() || 'vital';
-  const builder = KINDS[kind];
+  const builder = KINDS.get(kind);
   if (builder) return builder(req, now, context);
   const built = buildPatientVital(req, now, context);
   return { resource: built.observation as Resource, sortTitle: built.sortTitle, review: built.review };
@@ -168,7 +174,7 @@ export function buildPatientVital(req: PatientEntryRequest, now = new Date(), co
     review.push(`recorded as a measurement because this release cannot yet store a "${kind}" in a record of its own`);
   }
 
-  const spec = VITALS[lower];
+  const spec = VITALS.get(lower);
   const { observation, title } = spec
     ? codedObservation(spec, lower, req, review)
     : uncodedObservation(name, review);

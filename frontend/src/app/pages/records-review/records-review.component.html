@@ -30,7 +30,7 @@
 
         @for (identity of unanswered; track identity.sourceId) {
           <div class="alert alert-light mg-b-10">
-            <h6 class="mg-b-5">{{ identity.display }}</h6>
+            <h6 class="mg-b-5">{{ identity.label }}</h6>
             <ul class="tx-13 tx-gray-600 mg-b-10">
               @for (line of identity.evidence; track line) {
                 <li>{{ line }}</li>

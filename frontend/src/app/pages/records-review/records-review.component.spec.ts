@@ -25,14 +25,14 @@ describe('RecordsReviewComponent', () => {
 
   const identities: SourceIdentity[] = [
     {
-      sourceId: 'source-2', display: 'Fake Regional Health', patientId: 'pa',
+      sourceId: 'source-2', display: 'Fake Regional Health', label: 'Fake Regional Health', patientId: 'pa',
       demographics: {name: 'Jane Doe', birthDate: '1971-04-02', gender: ''},
       answer: '', suggested: 'self',
       evidence: ['You signed in to Fake Regional Health yourself, and the connection was issued for this record.'],
       conflicts: [],
     },
     {
-      sourceId: 'source-3', display: 'Old records.xml', patientId: 'px',
+      sourceId: 'source-3', display: '', label: 'the record for Sam Doe', patientId: 'px',
       demographics: {name: 'Sam Doe', birthDate: '2014-06-01', gender: ''},
       answer: '', suggested: '',
       evidence: ['This came from a file you uploaded. A file says nothing about whose record it is, so nobody has checked.'],
@@ -200,6 +200,12 @@ describe('RecordsReviewComponent', () => {
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('Blood pressure 128 systolic mmHg');
     expect(component.identities).toEqual([]);
+  });
+
+  // Found on the live instance: sources there have no display name, and the heading was blank.
+  it('names a source that has none of its own by the record it holds', () => {
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('the record for Sam Doe');
   });
 
   it('says plainly when nothing is waiting, rather than showing an empty page', () => {

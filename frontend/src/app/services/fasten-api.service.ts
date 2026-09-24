@@ -1256,6 +1256,8 @@ export class FastenApiService {
 export interface SourceIdentity {
   sourceId: string;
   display: string;
+  /** What to call this source on screen. Never blank — an unnamed source is named by what it holds. */
+  label: string;
   patientId: string;
   demographics: {name: string, birthDate: string, gender: string};
   /** 'self', 'not-self', or '' when nobody has answered yet. */

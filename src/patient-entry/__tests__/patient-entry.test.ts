@@ -103,6 +103,18 @@ describe('what it keeps when it cannot code what was said (yourphr#696)', () => 
     expect(review[0]).toContain('no reading was given');
   });
 
+  // CodeQL alert 70: a kind or a vital named after something every object inherits used to reach an
+  // inherited member — "constructor" was a callable, "toString" a function standing in for a spec.
+  it('treats an inherited property name as the ordinary unknown it is', () => {
+    const asKind = buildPatientRecord({ kind: 'constructor', name: 'peak flow', value: 400 }, NOW);
+    expect(asKind.resource.resourceType).toBe('Observation');
+    expect(asKind.review.some((r) => r.includes('cannot yet store a "constructor"'))).toBe(true);
+
+    const asVital = buildPatientVital({ vital: 'toString', value: 1 }, NOW);
+    expect(asVital.observation.code).toEqual({ text: 'toString' }); // their words, uncoded
+    expect(asVital.review[0]).toContain('not a measurement this release knows how to code');
+  });
+
   it('refuses ONLY an empty submission — no name and no reading is not a fact', () => {
     expect(() => buildPatientVital({}, NOW)).toThrow(PatientEntryError);
     expect(() => buildPatientVital({}, NOW)).toThrow('there is nothing to record');

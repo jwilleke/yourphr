@@ -36,6 +36,8 @@ export interface PatientDemographics {
 export interface SourceIdentity {
   sourceId: string;
   display: string;
+  /** What to call this source on screen — never blank, and never invented. See `labelFor`. */
+  label: string;
   /** The Patient that source sent, as it arrived. Empty when it sent none. */
   patientId: string;
   demographics: PatientDemographics;
@@ -48,6 +50,23 @@ export interface SourceIdentity {
   /** Disagreements worth a person's attention. Never resolved here, only surfaced. */
   conflicts: string[];
 }
+
+/**
+ * What to call a source that has no name (yourphr#761).
+ *
+ * Plenty of real sources have none: an uploaded file and anything carried over from the Go stack
+ * arrive with an empty display, and a sentence built around it reads " has this record as John Doe".
+ * The fallback says only what IS known — the person the record is about — and where even that is
+ * absent, says plainly that the source has no name rather than inventing one.
+ */
+export function labelFor(display: string, patientName: string): string {
+  const named = display.trim();
+  if (named !== '') return named;
+  return patientName.trim() !== '' ? `the record for ${patientName.trim()}` : 'an unnamed source';
+}
+
+/** A label at the start of a sentence. Only the first letter changes; a real name is left alone. */
+const opening = (label: string): string => (label === '' ? label : label[0]!.toUpperCase() + label.slice(1));
 
 /** The name a Patient states, as one line. Only what the record says — no initials invented. */
 export function displayName(patient: unknown): string {
@@ -75,41 +94,42 @@ const differs = (a: string, b: string): boolean => a !== '' && b !== '' && a.toL
  * this Patient. It is the strongest signal available here and still not proof — hence the question.
  */
 export function evidenceFor(input: {
-  display: string;
+  /** What to call this source — `labelFor`'s answer, never the raw display. */
+  label: string;
   authenticated: boolean;
   uploaded: boolean;
   demographics: PatientDemographics;
-  others: { display: string; demographics: PatientDemographics }[];
+  others: { label: string; demographics: PatientDemographics }[];
 }): { evidence: string[]; suggested: IdentityAnswer | ''; conflicts: string[] } {
   const evidence: string[] = [];
   const conflicts: string[] = [];
 
   if (input.authenticated) {
-    evidence.push(`You signed in to ${input.display} yourself, and the connection was issued for this record.`);
+    evidence.push(`You signed in to ${input.label} yourself, and the connection was issued for this record.`);
   } else if (input.uploaded) {
     evidence.push(`This came from a file you uploaded. A file says nothing about whose record it is, so nobody has checked.`);
   } else {
-    evidence.push(`Nothing is known about how this record reached ${input.display}.`);
+    evidence.push(`Nothing is known about how this record reached ${input.label}.`);
   }
 
   const stated = [
     input.demographics.name !== '' ? input.demographics.name : '',
     input.demographics.birthDate !== '' ? `born ${input.demographics.birthDate}` : '',
   ].filter(Boolean).join(', ');
-  if (stated !== '') evidence.push(`${input.display} has this record as ${stated}.`);
+  if (stated !== '') evidence.push(`${opening(input.label)} has this record as ${stated}.`);
 
   // Corroboration, and only that: matching demographics never make an identity, and differing ones
   // never settle it either — people change names, and portals hold old ones.
   for (const other of input.others) {
     const d = other.demographics;
     if (differs(d.birthDate, input.demographics.birthDate)) {
-      conflicts.push(`${other.display} has a different date of birth (${d.birthDate}) from ${input.display} (${input.demographics.birthDate}).`);
+      conflicts.push(`${opening(other.label)} has a different date of birth (${d.birthDate}) from ${input.label} (${input.demographics.birthDate}).`);
     }
     if (differs(d.gender, input.demographics.gender)) {
-      conflicts.push(`${other.display} states a different sex (${d.gender}) from ${input.display} (${input.demographics.gender}).`);
+      conflicts.push(`${opening(other.label)} states a different sex (${d.gender}) from ${input.label} (${input.demographics.gender}).`);
     }
     if (differs(d.name, input.demographics.name)) {
-      conflicts.push(`${other.display} has this person as ${d.name}, and ${input.display} as ${input.demographics.name}.`);
+      conflicts.push(`${opening(other.label)} has this person as ${d.name}, and ${input.label} as ${input.demographics.name}.`);
     }
   }
 
@@ -126,20 +146,20 @@ export function evidenceFor(input: {
  * either a coincidence or a mistake — and which one it is is not for this instance to decide.
  */
 export function identifierConflicts(
-  identities: { display: string; identifiers: { system: string; value: string }[] }[],
+  identities: { label: string; identifiers: { system: string; value: string }[] }[],
 ): string[] {
-  const byValue = new Map<string, { display: string; system: string }[]>();
+  const byValue = new Map<string, { label: string; system: string }[]>();
   for (const identity of identities) {
     for (const { system, value } of identity.identifiers) {
       if (system === '' || value === '') continue;
-      byValue.set(value, [...(byValue.get(value) ?? []), { display: identity.display, system }]);
+      byValue.set(value, [...(byValue.get(value) ?? []), { label: identity.label, system }]);
     }
   }
   const out: string[] = [];
   for (const [value, held] of byValue) {
     const systems = new Set(held.map((h) => h.system));
     if (systems.size > 1) {
-      out.push(`The number ${value} appears under ${systems.size} different issuing systems (${held.map((h) => h.display).join(', ')}). A medical record number belongs to the organisation that issued it, so this is worth a look.`);
+      out.push(`The number ${value} appears under ${systems.size} different issuing systems (${held.map((h) => h.label).join(', ')}). A medical record number belongs to the organisation that issued it, so this is worth a look.`);
     }
   }
   return out.sort();

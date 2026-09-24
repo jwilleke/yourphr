@@ -13,7 +13,7 @@
 import type { Bundle, Resource } from '@medplum/fhirtypes';
 import { randomUUID } from 'node:crypto';
 import { NEEDS_REVIEW, RECORD_ORIGIN } from '../../patient-entry/index.js';
-import { IDENTITY_ASSERTION, demographicsOf, evidenceFor, identifierConflicts, type IdentityAnswer, type SourceIdentity } from './identity.js';
+import { IDENTITY_ASSERTION, demographicsOf, evidenceFor, identifierConflicts, labelFor, type IdentityAnswer, type SourceIdentity } from './identity.js';
 import type { SearchRequest, WithId } from '@medplum/core';
 import { BaseManager, type BackupData } from '../../framework/BaseManager.js';
 import type { Engine } from '../../framework/Engine.js';
@@ -419,17 +419,24 @@ export class RecordsManager extends BaseManager {
       .filter((h) => h.patient !== undefined)
       .map(({ source, patient }) => {
         const demographics = demographicsOf(patient!.resource);
+        // Real sources routinely have no display name — an upload, and anything carried over from
+        // the Go stack — so what to call one is decided once, here (yourphr#761).
+        const label = labelFor(source.display, demographics.name);
         const uploaded = source.platformType === 'manual';
         // The token named this very record — the evidence a hospital MPI cannot have. An upload
         // carries no such statement, whatever the file contains.
         const authenticated = !uploaded && source.patient !== '' && source.patient === patient!.id;
         const others = held
           .filter((o) => o.patient !== undefined && o.source.id !== source.id)
-          .map((o) => ({ display: o.source.display, demographics: demographicsOf(o.patient!.resource) }));
-        const { evidence, suggested, conflicts } = evidenceFor({ display: source.display, authenticated, uploaded, demographics, others });
+          .map((o) => {
+            const theirs = demographicsOf(o.patient!.resource);
+            return { label: labelFor(o.source.display, theirs.name), demographics: theirs };
+          });
+        const { evidence, suggested, conflicts } = evidenceFor({ label, authenticated, uploaded, demographics, others });
         return {
           sourceId: `source-${source.id}`,
           display: source.display,
+          label,
           patientId: patient!.id,
           demographics,
           answer: answers.get(patient!.id)?.answer ?? '',
@@ -444,13 +451,13 @@ export class RecordsManager extends BaseManager {
     const confirmed = identities.filter((i) => i.answer === 'self');
     const clashes = identifierConflicts(
       confirmed.map((i) => ({
-        display: i.display,
+        label: i.label,
         identifiers: (((held.find((h) => h.patient?.id === i.patientId)?.patient?.resource as { identifier?: { system?: string; value?: string }[] })?.identifier) ?? [])
           .map((id) => ({ system: (id.system ?? '').trim(), value: (id.value ?? '').trim() })),
       })),
     );
     for (const identity of confirmed) identity.conflicts = [...identity.conflicts, ...clashes];
-    return identities.sort((a, b) => a.display.localeCompare(b.display));
+    return identities.sort((a, b) => a.label.localeCompare(b.label));
   }
 
   /**

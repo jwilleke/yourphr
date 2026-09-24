@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { demographicsOf, displayName, evidenceFor, identifierConflicts } from '../identity.js';
+import { demographicsOf, displayName, evidenceFor, identifierConflicts, labelFor } from '../identity.js';
 
 /**
  * The rules for deciding what is KNOWN about a source identity (yourphr#761). Sameness is asserted
@@ -23,7 +23,7 @@ describe('what a Patient states about who it is', () => {
 });
 
 describe('the evidence behind one source identity', () => {
-  const base = { display: 'Fake Regional Health', demographics: demographics('Jane Doe', '1971-04-02', 'female'), others: [] };
+  const base = { label: 'Fake Regional Health', demographics: demographics('Jane Doe', '1971-04-02', 'female'), others: [] };
 
   it('offers "this is me" for a connection the person signed in to, which is the strongest signal a PHR has', () => {
     const { evidence, suggested } = evidenceFor({ ...base, authenticated: true, uploaded: false });
@@ -49,7 +49,7 @@ describe('the evidence behind one source identity', () => {
       ...base,
       authenticated: true,
       uploaded: false,
-      others: [{ display: 'City Clinic', demographics: demographics('Jane Doe', '1971-09-30', 'female') }],
+      others: [{ label: 'City Clinic', demographics: demographics('Jane Doe', '1971-09-30', 'female') }],
     });
     expect(conflicts).toEqual(['City Clinic has a different date of birth (1971-09-30) from Fake Regional Health (1971-04-02).']);
     expect(suggested).toBe('self'); // demographics corroborate; they never decide
@@ -60,7 +60,7 @@ describe('the evidence behind one source identity', () => {
       ...base,
       authenticated: true,
       uploaded: false,
-      others: [{ display: 'City Clinic', demographics: demographics('', '', '') }],
+      others: [{ label: 'City Clinic', demographics: demographics('', '', '') }],
     });
     expect(conflicts).toEqual([]);
   });
@@ -70,7 +70,7 @@ describe('the evidence behind one source identity', () => {
       ...base,
       authenticated: true,
       uploaded: false,
-      others: [{ display: 'City Clinic', demographics: demographics('JANE DOE', '1971-04-02', 'Female') }],
+      others: [{ label: 'City Clinic', demographics: demographics('JANE DOE', '1971-04-02', 'Female') }],
     });
     expect(conflicts).toEqual([]);
   });
@@ -79,8 +79,8 @@ describe('the evidence behind one source identity', () => {
 describe('the same number under two issuing systems', () => {
   it('is surfaced, because a medical record number belongs to the organisation that issued it', () => {
     const clashes = identifierConflicts([
-      { display: 'Fake Regional Health', identifiers: [{ system: 'http://fake.example.org/mrn', value: 'E12345' }] },
-      { display: 'City Clinic', identifiers: [{ system: 'http://city.example.org/mrn', value: 'E12345' }] },
+      { label: 'Fake Regional Health', identifiers: [{ system: 'http://fake.example.org/mrn', value: 'E12345' }] },
+      { label: 'City Clinic', identifiers: [{ system: 'http://city.example.org/mrn', value: 'E12345' }] },
     ]);
     expect(clashes).toHaveLength(1);
     expect(clashes[0]).toContain('The number E12345 appears under 2 different issuing systems');
@@ -88,15 +88,42 @@ describe('the same number under two issuing systems', () => {
 
   it('is not raised for the same number under the same system, which is just the same number', () => {
     expect(identifierConflicts([
-      { display: 'Fake Regional Health', identifiers: [{ system: 'http://fake.example.org/mrn', value: 'E12345' }] },
-      { display: 'Fake Regional Health (old)', identifiers: [{ system: 'http://fake.example.org/mrn', value: 'E12345' }] },
+      { label: 'Fake Regional Health', identifiers: [{ system: 'http://fake.example.org/mrn', value: 'E12345' }] },
+      { label: 'Fake Regional Health (old)', identifiers: [{ system: 'http://fake.example.org/mrn', value: 'E12345' }] },
     ])).toEqual([]);
   });
 
   it('ignores an identifier with no system — it names nothing', () => {
     expect(identifierConflicts([
-      { display: 'A', identifiers: [{ system: '', value: 'E12345' }] },
-      { display: 'B', identifiers: [{ system: 'http://b.example.org/mrn', value: 'E12345' }] },
+      { label: 'A', identifiers: [{ system: '', value: 'E12345' }] },
+      { label: 'B', identifiers: [{ system: 'http://b.example.org/mrn', value: 'E12345' }] },
     ])).toEqual([]);
+  });
+});
+
+/**
+ * Found on the live instance, not in a test: every source there had an EMPTY display — an upload and
+ * anything carried over from Go — so the sentences read " has this record as John Doe" and the card
+ * heading was blank. The fake provider always had a name, which is why nothing caught it.
+ */
+describe('a source with no name of its own', () => {
+  it('is named by the record it holds, which is the only thing actually known about it', () => {
+    expect(labelFor('', 'John Doe')).toBe('the record for John Doe');
+    expect(labelFor('  ', 'Eve Betterhalf')).toBe('the record for Eve Betterhalf');
+    expect(labelFor('Fake Regional Health', 'John Doe')).toBe('Fake Regional Health'); // a real name wins
+    expect(labelFor('', '')).toBe('an unnamed source'); // nothing known, and it says so
+  });
+
+  it('reads as sentences, with no blank subject and no lower-case opening', () => {
+    const { evidence, conflicts } = evidenceFor({
+      label: labelFor('', 'John Doe'),
+      authenticated: false,
+      uploaded: true,
+      demographics: demographics('John Doe', '2002-04-15', 'male'),
+      others: [{ label: labelFor('', 'Eve Betterhalf'), demographics: demographics('Eve Betterhalf', '1975-05-01', 'female') }],
+    });
+    expect(evidence[1]).toBe('The record for John Doe has this record as John Doe, born 2002-04-15.');
+    expect(conflicts[0]).toBe('The record for Eve Betterhalf has a different date of birth (1975-05-01) from the record for John Doe (2002-04-15).');
+    expect(evidence.join(' ')).not.toMatch(/^ | {2}/);
   });
 });
