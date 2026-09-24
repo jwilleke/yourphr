@@ -25,6 +25,10 @@ export interface PatientEntryRequest {
   unit?: string;
   /** Medication only: whether they are taking it. Absent means they did not say. */
   status?: string;
+  /** A device of theirs, by id, that this reading came from (yourphr#764). */
+  device?: string;
+  /** A device by the name they call it. The server reuses one of that name or makes it. */
+  device_name?: string;
   effective_date_time?: string;
 }
 
@@ -35,6 +39,12 @@ export class PatientEntryError extends Error {}
 export interface PatientEntryContext {
   /** `Patient/<id>` — the account's own Patient, in its `manual` source. */
   subject: string;
+  /**
+   * `Device/<id>` — the machine the person said this reading came from (yourphr#764). Empty when
+   * they named none, which is the honest answer rather than a default: a reading measured by a cuff
+   * and one remembered from this morning are different evidence, and nothing here guesses which.
+   */
+  device?: string;
 }
 
 /** What was stored, the title a list shows, and whatever still needs a human. */

@@ -29,6 +29,9 @@ beforeEach(async () => {
   engine.register('configuration', new ConfigurationManager(engine, new FakeConfigProvider(), { env: {} }))
     .register('policy', new PolicyManager(engine));
   engine.register('records', records);
+  // The person's own records — their Patient, their devices — live in the account's `manual`
+  // source, so this spec needs something that names one. Only manualSource is ever reached here.
+  engine.register('sources', { dependsOn: [], initialize: async () => {}, shutdown: async () => {}, manualSource: async () => ({ id: 7 }) } as never);
   await engine.initialize();
   alice = ApiContext.from({ username: 'alice', role: 'user' }, engine);
   bob = ApiContext.from({ username: 'bob', role: 'user' }, engine);
@@ -134,6 +137,32 @@ describe('RecordsManager — the one door, scoped to whoever is asking', () => {
     await expect(records.discardReview(alice, 'o1')).rejects.toMatchObject({ status: 409 }); // in the chart, not waiting
     await expect(records.discardReview(alice, 'o9')).rejects.toMatchObject({ status: 404 }); // bob's
     expect((await records.detail(alice, 'o1'))['source_resource_id']).toBe('o1'); // still there
+  });
+
+  // yourphr#764: a measured reading and a remembered one are different evidence.
+  it('makes a device record from the name the person typed, and reuses it next time', async () => {
+    const first = await records.deviceFor(alice, 'Omron cuff');
+    const again = await records.deviceFor(alice, '  omron CUFF  '); // the same cuff, typed differently
+    expect(again.id).toBe(first.id);
+
+    const stored = (await records.detail(alice, first.id))['resource_raw'] as Record<string, unknown>;
+    expect(stored['deviceName']).toEqual([{ name: 'Omron cuff', type: 'user-friendly-name' }]);
+    // Nothing a name is not: no manufacturer, no model, no serial number, no type coding.
+    expect(stored['manufacturer']).toBeUndefined();
+    expect(stored['modelNumber']).toBeUndefined();
+    expect(stored['serialNumber']).toBeUndefined();
+    expect(stored['type']).toBeUndefined();
+    expect(await records.ownDevices(alice)).toEqual([{ id: first.id, name: 'Omron cuff' }]);
+    expect(await records.ownDevices(bob)).toEqual([]); // never another account's
+  });
+
+  it('resolves a device by id, by name, or to nothing when none was named', async () => {
+    const cuff = await records.deviceFor(alice, 'Omron cuff');
+    expect(await records.deviceReference(alice, cuff.id, '')).toBe(`Device/${cuff.id}`);
+    expect(await records.deviceReference(alice, '', 'Omron cuff')).toBe(`Device/${cuff.id}`);
+    expect(await records.deviceReference(alice, '', '')).toBe(''); // naming none is an answer
+    // A device that is not theirs is a client mistake, not a fact to record.
+    await expect(records.deviceReference(bob, cuff.id, '')).rejects.toMatchObject({ status: 400 });
   });
 
   it('detail finds a record by id without its type; a missing one is a 404', async () => {

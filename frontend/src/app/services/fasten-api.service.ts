@@ -802,6 +802,8 @@ export class FastenApiService {
     diastolic?: number
     unit?: string
     status?: string
+    device?: string
+    device_name?: string
     effective_date_time?: string
   }): Observable<{resource_type: string, source_resource_id: string, source_id: string, sort_title: string, needs_review?: string[]}> {
     return this._httpClient.post<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/resource/patient-entry`, {
@@ -814,6 +816,13 @@ export class FastenApiService {
 
   // Records kept but held out of the chart until the person confirms them (#762). The reasons come
   // back in the words they were shown when they saved, because they are stored on the record itself.
+  // The machines the person measures themselves with (#764) — the ones they named, so the entry
+  // form can offer them again rather than asking them to retype the cuff every morning.
+  getOwnDevices(): Observable<{id: string, name: string}[]> {
+    return this._httpClient.get<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/devices`)
+      .pipe(map((response: ResponseWrapper) => (response.data ?? []) as {id: string, name: string}[]))
+  }
+
   getRecordsAwaitingReview(): Observable<RecordAwaitingReview[]> {
     return this._httpClient.get<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/records/review`)
       .pipe(map((response: ResponseWrapper) => response.data as RecordAwaitingReview[]))

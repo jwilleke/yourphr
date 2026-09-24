@@ -140,6 +140,18 @@ describe('who the record is about and who measured it (PGHD)', () => {
     expect(observation.subject).toEqual({ reference: 'Patient/self-1' });
     expect(observation.performer).toEqual([{ reference: 'Patient/self-1' }]);
   });
+
+  // yourphr#764: what measured it is evidence, and only ever what the person said.
+  it('states the device when one was named', () => {
+    const { observation } = buildPatientVital({ vital: 'blood_pressure', systolic: 128, diastolic: 78 }, NOW, { subject: 'Patient/self-1', device: 'Device/cuff-1' });
+    expect(observation.device).toEqual({ reference: 'Device/cuff-1' });
+  });
+
+  it('leaves the device absent when none was named — a remembered reading is not a measured one', () => {
+    expect(buildPatientVital({ vital: 'heart_rate', value: 64 }, NOW, { subject: 'Patient/self-1' }).observation.device).toBeUndefined();
+    // Nor is one inferred from a value or a unit: mg/dL does not mean a meter produced it.
+    expect(buildPatientVital({ vital: 'blood_sugar', value: 96, unit: 'mg/dL' }, NOW, { subject: 'Patient/self-1' }).observation.device).toBeUndefined();
+  });
 });
 
 describe('what the record list shows for a vital (yourphr#696, and the display rule in #262)', () => {

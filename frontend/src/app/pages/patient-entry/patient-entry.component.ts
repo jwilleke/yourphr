@@ -1,4 +1,4 @@
-import {Component, ChangeDetectionStrategy} from '@angular/core';
+import {Component, ChangeDetectionStrategy, OnInit} from '@angular/core';
 
 import {FormsModule} from '@angular/forms';
 import {Router, RouterModule} from '@angular/router';
@@ -21,8 +21,15 @@ import {extractErrorFromResponse} from '../../../lib/utils/error_extract';
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './patient-entry.component.html',
 })
-export class PatientEntryComponent {
+export class PatientEntryComponent implements OnInit {
   kind: 'vital' | 'allergy' | 'medication' = 'vital';
+  /**
+   * What measured it (#764). '' means they named no device, which is the honest answer and not a
+   * default; '__new' reveals the box for one they have not named here before.
+   */
+  deviceId = '';
+  newDeviceName = '';
+  devices: {id: string, name: string}[] = [];
   /** The substance or the medicine, in the person's own words. */
   name = '';
   /** Medication only. Empty means they did not say, and the record says so rather than guessing. */
@@ -47,12 +54,22 @@ export class PatientEntryComponent {
     this.effectiveDate = today.toISOString().slice(0, 10);
   }
 
+  ngOnInit(): void {
+    // Their own devices, so a cuff named once is a choice from then on. A failure here costs the
+    // convenience, not the entry: they can still type a name.
+    this.api.getOwnDevices().subscribe({next: (devices) => this.devices = devices, error: () => this.devices = []});
+  }
+
   get needsSingleValue(): boolean {
     return this.vital !== 'blood_pressure';
   }
 
   get isVital(): boolean {
     return this.kind === 'vital';
+  }
+
+  get namingNewDevice(): boolean {
+    return this.deviceId === '__new';
   }
 
   get nameLabel(): string {
@@ -101,6 +118,13 @@ export class PatientEntryComponent {
     if (this.unit.trim()) {
       payload.unit = this.unit.trim();
     }
+    // Only when they said so. No device is the honest answer for a reading they did not measure
+    // with one, and nothing here guesses from the vital or the unit (#764).
+    if (this.namingNewDevice && this.newDeviceName.trim()) {
+      payload.device_name = this.newDeviceName.trim();
+    } else if (this.deviceId && !this.namingNewDevice) {
+      payload.device = this.deviceId;
+    }
     if (this.vital === 'blood_pressure') {
       // Half a reading is still a fact (#696): the server keeps what was measured and asks you to
       // confirm it, rather than refusing the whole entry. Only an empty form is refused.
@@ -140,6 +164,13 @@ export class PatientEntryComponent {
         this.systolic = null;
         this.diastolic = null;
         this.name = '';
+        // A device named here is one they can pick next time, so the list is refreshed rather than
+        // left a request behind.
+        if (payload.device_name) {
+          this.newDeviceName = '';
+          this.deviceId = '';
+          this.api.getOwnDevices().subscribe({next: (devices) => this.devices = devices, error: () => {}});
+        }
       },
       error: (err) => {
         this.saving = false;

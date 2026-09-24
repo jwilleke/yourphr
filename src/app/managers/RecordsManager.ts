@@ -365,6 +365,65 @@ export class RecordsManager extends BaseManager {
     return { reference: `Patient/${id}`, id };
   }
 
+  /**
+   * The machines the person says they measure themselves with (yourphr#764).
+   *
+   * Only the ones they named themselves: a Device a hospital sent describes an implant or a piece of
+   * their equipment, not something the person picks from a list when entering a reading.
+   */
+  async ownDevices(ctx: ApiContext): Promise<{ id: string; name: string }[]> {
+    const manual = `source-${(await this.engine.managers.sources.manualSource(ctx)).id}`;
+    return this.chartOnly(await this.provider.list(this.who(ctx), { resourceType: 'Device', sourceId: manual }))
+      .map((held) => ({
+        id: held.id,
+        name: ((held.resource as { deviceName?: { name?: string }[] }).deviceName ?? []).map((n) => n.name ?? '').find((n) => n !== '') ?? '',
+      }))
+      .filter((d) => d.name !== '')
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  /**
+   * The Device record for a machine the person named, made once and reused after that (yourphr#764).
+   *
+   * It carries the name they typed and nothing else. A cuff called "Omron" is not evidence of a
+   * manufacturer, a model or a serial number, so none is recorded — a device record that claims more
+   * than the person said would be the same invention this entry path refuses everywhere else.
+   *
+   * Reuse is by the name as written, ignoring case and surrounding space, within the person's own
+   * devices. Two readings they both attributed to "Omron cuff" came from one cuff.
+   */
+  async deviceFor(ctx: ApiContext, name: string): Promise<{ reference: string; id: string }> {
+    const stated = name.trim();
+    if (stated === '') throw new ApiError(400, 'a device needs a name');
+    const existing = (await this.ownDevices(ctx)).find((d) => d.name.toLowerCase() === stated.toLowerCase());
+    if (existing) return { reference: `Device/${existing.id}`, id: existing.id };
+
+    const manual = `source-${(await this.engine.managers.sources.manualSource(ctx)).id}`;
+    const id = randomUUID();
+    await this.writer(ctx, manual).upsert({
+      resourceType: 'Device',
+      id,
+      // `user-friendly-name` is FHIR's own type for what someone calls a device, as opposed to a
+      // manufacturer's model name — which is what this is, and all it is.
+      deviceName: [{ name: stated, type: 'user-friendly-name' }],
+      patient: { reference: (await this.selfPatient(ctx)).reference },
+      meta: { tag: [{ system: RECORD_ORIGIN, code: 'patient-reported', display: 'Patient-reported (YourPHR)' }] },
+    } as Resource);
+    return { reference: `Device/${id}`, id };
+  }
+
+  /** The reference to use for a device the caller names, by id or by name. Empty when they named none. */
+  async deviceReference(ctx: ApiContext, byId: string, byName: string): Promise<string> {
+    if (byId.trim() !== '') {
+      const held = (await this.ownDevices(ctx)).find((d) => d.id === byId.trim());
+      // A device id that is not one of theirs is a client mistake, not a fact to record.
+      if (!held) throw new ApiError(400, 'that is not one of your devices');
+      return `Device/${held.id}`;
+    }
+    if (byName.trim() === '') return ''; // they named no device, which is an answer
+    return (await this.deviceFor(ctx, byName)).reference;
+  }
+
   async patientOf(ctx: ApiContext, sourceId: string): Promise<Record<string, unknown> | null> {
     const patients = (await this.provider.list(this.who(ctx), { resourceType: 'Patient', sourceId })).sort((a, b) => b.lastUpdated.localeCompare(a.lastUpdated));
     return patients[0] ? toResourceFhir(patients[0].resource, sourceId) : null;

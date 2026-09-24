@@ -99,3 +99,27 @@ test('an allergy is stored as an allergy, waits for the person, and joins their 
 
   expect(errors).toEqual([]);
 });
+
+// yourphr#764: a reading measured by a cuff and one remembered are different evidence.
+test('a device named once is offered again, and the reading says it was measured with it', async ({ page }) => {
+  const errors = trackPageErrors(page);
+  await login(page, E2E_USER, E2E_PASS);
+  await page.goto(`${BASE}/resource/add`);
+
+  // First time: the device does not exist yet, so it is named here.
+  await page.selectOption('#vital-type', 'heart_rate');
+  await page.fill('#vital-value', '64');
+  await page.selectOption('#vital-device', '__new');
+  await page.fill('#vital-device-name', 'Omron cuff');
+  await page.getByRole('button', { name: /save/i }).click();
+  await expect(page.getByText(/Saved: Heart rate 64/)).toBeVisible({ timeout: 20_000 });
+
+  // Second time: it is a choice, not something to retype.
+  await expect(page.locator('#vital-device option', { hasText: 'Omron cuff' })).toHaveCount(1, { timeout: 20_000 });
+  await page.fill('#vital-value', '66');
+  await page.selectOption('#vital-device', { label: 'Omron cuff' });
+  await page.getByRole('button', { name: /save/i }).click();
+  await expect(page.getByText(/Saved: Heart rate 66/)).toBeVisible({ timeout: 20_000 });
+
+  expect(errors).toEqual([]);
+});

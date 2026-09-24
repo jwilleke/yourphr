@@ -107,6 +107,26 @@
           </div>
         }
 
+        @if (isVital) {
+          <div class="col-md-3 mg-b-15">
+            <label class="form-label" for="vital-device">Measured with <span class="tx-gray-500 tx-11">(optional)</span></label>
+            <select id="vital-device" class="form-control" [(ngModel)]="deviceId" name="deviceId">
+              <option value="">Not measured with a device</option>
+              @for (device of devices; track device.id) {
+                <option [value]="device.id">{{ device.name }}</option>
+              }
+              <option value="__new">Another device…</option>
+            </select>
+          </div>
+        }
+
+        @if (isVital && namingNewDevice) {
+          <div class="col-md-3 mg-b-15">
+            <label class="form-label" for="vital-device-name">What do you call it?</label>
+            <input id="vital-device-name" type="text" class="form-control" [(ngModel)]="newDeviceName" name="newDeviceName" placeholder="Omron cuff" />
+          </div>
+        }
+
         <div class="col-md-3 mg-b-15">
           <label class="form-label" for="vital-date">Date</label>
           <input id="vital-date" type="date" class="form-control" [(ngModel)]="effectiveDate" name="effectiveDate" />

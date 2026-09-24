@@ -11,7 +11,8 @@ describe('PatientEntryComponent', () => {
   let api: jasmine.SpyObj<FastenApiService>;
 
   beforeEach(async () => {
-    api = jasmine.createSpyObj('FastenApiService', ['createPatientEntry']);
+    api = jasmine.createSpyObj('FastenApiService', ['createPatientEntry', 'getOwnDevices']);
+    api.getOwnDevices.and.returnValue(of([{id: 'cuff-1', name: 'Omron cuff'}]));
     api.createPatientEntry.and.returnValue(of({
       resource_type: 'Observation',
       source_resource_id: 'obs-1',
@@ -113,6 +114,38 @@ describe('PatientEntryComponent', () => {
     component.submit();
     expect(api.createPatientEntry).not.toHaveBeenCalled();
     expect(component.error).toContain('medication');
+  });
+
+  // yourphr#764: what measured it is evidence, and only when they said so.
+  it('sends the device they picked, and nothing when they picked none', () => {
+    component.vital = 'heart_rate';
+    component.value = 64;
+    component.submit();
+    let arg = api.createPatientEntry.calls.mostRecent().args[0] as Record<string, unknown>;
+    expect(arg['device']).toBeUndefined(); // no device named is an answer, not a gap to fill
+    expect(arg['device_name']).toBeUndefined();
+
+    component.deviceId = 'cuff-1';
+    component.value = 64;
+    component.submit();
+    arg = api.createPatientEntry.calls.mostRecent().args[0] as Record<string, unknown>;
+    expect(arg['device']).toBe('cuff-1');
+  });
+
+  it('sends a device named for the first time by name, and offers it next time', () => {
+    component.vital = 'body_weight';
+    component.value = 70;
+    component.deviceId = '__new';
+    component.newDeviceName = ' Withings scale ';
+    component.submit();
+    const arg = api.createPatientEntry.calls.mostRecent().args[0] as Record<string, unknown>;
+    expect(arg['device_name']).toBe('Withings scale');
+    expect(arg['device']).toBeUndefined(); // it has no id yet — the server makes or finds it
+    expect(api.getOwnDevices).toHaveBeenCalledTimes(2); // re-read, so the new one is a choice now
+  });
+
+  it('offers the devices the person already named', () => {
+    expect(component.devices).toEqual([{id: 'cuff-1', name: 'Omron cuff'}]);
   });
 
   it('surfaces API errors', () => {

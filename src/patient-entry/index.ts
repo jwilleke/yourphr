@@ -178,6 +178,9 @@ export function buildPatientVital(req: PatientEntryRequest, now = new Date(), co
     observation.subject = { reference: context.subject };
     observation.performer = [{ reference: context.subject }];
   }
+  // What measured it, when they said so. Never inferred from the value or the unit (yourphr#764):
+  // a glucose reading in mg/dL says nothing about whether a meter produced it.
+  if ((context.device ?? '') !== '') observation.device = { reference: context.device as string };
 
   const effective = effectiveDateTime(req.effective_date_time, now, review);
   if (effective !== '') observation.effectiveDateTime = effective;

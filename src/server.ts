@@ -1297,6 +1297,14 @@ export function createYourPhrServer(options: ServerOptions) {
       // This is where they see it and say what it should be. Read from the records themselves —
       // the tag says a record is waiting, its notes say why — so the list cannot fall out of step
       // with what is stored.
+      // The machines the person measures themselves with (yourphr#764). Only the ones they named:
+      // a Device a hospital sent describes an implant, not something to pick from when typing a
+      // reading.
+      if (url.pathname === '/api/secure/devices' && req.method === 'GET') {
+        send(res, 200, {success: true, data: await engine.managers.records.ownDevices(ctx)});
+        return;
+      }
+
       if (url.pathname === '/api/secure/records/review' && req.method === 'GET') {
         send(res, 200, {success: true, data: await engine.managers.records.awaitingReview(ctx)});
         return;
@@ -1332,9 +1340,13 @@ export function createYourPhrServer(options: ServerOptions) {
         const body = (await readJsonBody(req)) ?? {};
         // Who it is about and who measured it — the account's own person record (yourphr#696).
         const self = await engine.managers.records.selfPatient(ctx);
+        // What measured it, when they said so (yourphr#764). Resolved before the record is built,
+        // because a device id that is not theirs is a client mistake and must not become a record.
+        const entry = body as PatientEntryRequest;
+        const device = await engine.managers.records.deviceReference(ctx, entry.device ?? '', entry.device_name ?? '');
         let built;
         try {
-          built = buildPatientRecord(body as PatientEntryRequest, new Date(), {subject: self.reference});
+          built = buildPatientRecord(entry, new Date(), {subject: self.reference, device});
         } catch (err) {
           // The only refusal left: nothing was said at all.
           if (err instanceof PatientEntryError) {
