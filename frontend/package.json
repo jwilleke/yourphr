@@ -70,7 +70,7 @@
     "@angular/compiler-cli": "^22.1.7",
     "@angular/language-service": "^22.1.7",
     "@compodoc/compodoc": "^2.0.0",
-    "@eslint/js": "^9.39.1",
+    "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.61.0",
     "@storybook/addon-docs": "^10.5.10",
     "@storybook/addon-links": "^10.5.10",
