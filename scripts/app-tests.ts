@@ -159,6 +159,18 @@ async function main(): Promise<void> {
   const ips = (await (await fetch(`${base}/api/secure/summary/ips`, authed(aliceToken))).json()) as { data: { type: string; entry: unknown[] } };
   check('summary/ips serves the IPS document bundle', ips.data.type === 'document' && ips.data.entry.length > 1);
 
+  // yourphr#687: the format was accepted and ignored, so "save as a web page" wrote the API
+  // envelope into a .html file. The file must BE what it says it is.
+  const ipsHtml = await fetch(`${base}/api/secure/summary/ips?format=html`, authed(aliceToken));
+  const ipsHtmlBody = await ipsHtml.text();
+  check('summary/ips?format=html serves an HTML document, not the API envelope',
+    (ipsHtml.headers.get('content-type') ?? '').startsWith('text/html') && ipsHtmlBody.startsWith('<!DOCTYPE html>') && !ipsHtmlBody.includes('"success"'));
+
+  const ipsJson = await fetch(`${base}/api/secure/summary/ips?format=json`, authed(aliceToken));
+  const ipsJsonBody = (await ipsJson.json()) as { resourceType?: string; success?: boolean };
+  check('summary/ips?format=json serves the bundle itself as FHIR, for a system to import',
+    (ipsJson.headers.get('content-type') ?? '').startsWith('application/fhir+json') && ipsJsonBody.resourceType === 'Bundle' && ipsJsonBody.success === undefined);
+
   const prov = (await (await fetch(`${base}/api/secure/resource/provenance/Condition/condition-1`, authed(aliceToken))).json()) as { data: { sourceDisplay: string } };
   check('provenance names the source, by display name, over the wire', prov.data.sourceDisplay === 'Fake Regional Health');
 

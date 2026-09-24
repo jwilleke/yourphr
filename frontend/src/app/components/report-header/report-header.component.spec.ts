@@ -83,72 +83,51 @@ describe('ReportHeaderComponent', () => {
       expect(mockedFastenApiService.getIPSExport).not.toHaveBeenCalled();
     });
 
-    it('should leave Export to PDF on the PDF format', () => {
+    // Was "Export to PDF", which saved a .pdf holding the API's JSON envelope — the endpoint has
+    // never been able to render a PDF (#687).
+    it('exports the summary as a web page a person can read or print', () => {
       component.getIPSExport(new MouseEvent('click'));
 
-      expect(mockedFastenApiService.getIPSExport).toHaveBeenCalledWith('pdf');
+      expect(mockedFastenApiService.getIPSExport).toHaveBeenCalledWith('html');
     });
   });
 
-  describe('Send to Email (#524)', () => {
-    beforeEach(() => {
-      mockedFastenApiService.sendIPSExportByEmail = jasmine.createSpy('sendIPSExportByEmail');
+  describe('Send to Email (#524, #687)', () => {
+    // #687: the instance has no mail transport, so rather than a button that 404s, the dialog hands
+    // the person the file and the warning and they attach it themselves. Same outcome as #524
+    // settled — their data, sent by them — with nothing in the middle pretending to send it.
+    it('downloads the summary to attach, rather than asking the server to send it', async () => {
+      const modal = TestBed.inject(NgbModal);
+      spyOn(modal, 'open').and.returnValue({result: Promise.resolve('download')} as any);
+
+      component.sendToEmail(new MouseEvent('click'));
+      await Promise.resolve();
+      await Promise.resolve();
+
+      expect(mockedFastenApiService.getIPSExport).toHaveBeenCalledWith('html');
     });
 
-    it('should not send without a recipient', () => {
-      component.emailRecipient = '   ';
+    it('downloads nothing when the dialog is dismissed', async () => {
+      const modal = TestBed.inject(NgbModal);
+      spyOn(modal, 'open').and.returnValue({result: Promise.reject('dismissed')} as any);
 
-      component.confirmSendEmail();
+      component.sendToEmail(new MouseEvent('click'));
+      await Promise.resolve();
+      await Promise.resolve();
 
-      expect(mockedFastenApiService.sendIPSExportByEmail).not.toHaveBeenCalled();
-      expect(component.emailError).toContain('Enter the address');
+      expect(mockedFastenApiService.getIPSExport).not.toHaveBeenCalled();
     });
 
-    it('should send the trimmed address, defaulting to PDF', () => {
-      mockedFastenApiService.sendIPSExportByEmail.and.returnValue(of({sent_to: 'doc@example.org'}));
-      component.emailRecipient = '  doc@example.org  ';
+    it('offers the FHIR bundle for a system that will import it', async () => {
+      const modal = TestBed.inject(NgbModal);
+      spyOn(modal, 'open').and.returnValue({result: Promise.resolve('download')} as any);
 
-      component.confirmSendEmail();
-
-      expect(mockedFastenApiService.sendIPSExportByEmail).toHaveBeenCalledWith('doc@example.org', 'pdf');
-      expect(component.emailSentTo).toEqual('doc@example.org');
-      expect(component.emailSending).toBeFalse();
-    });
-
-    // A PDF is for a person to read; the FHIR bundle is what a receiving system can import, which is
-    // usually the actual goal of sending records to a new provider.
-    it('should send the FHIR bundle when that format is chosen', () => {
-      mockedFastenApiService.sendIPSExportByEmail.and.returnValue(of({sent_to: 'clinic@example.org'}));
-      component.emailRecipient = 'clinic@example.org';
+      component.sendToEmail(new MouseEvent('click'));
       component.emailFormat = 'json';
+      await Promise.resolve();
+      await Promise.resolve();
 
-      component.confirmSendEmail();
-
-      expect(mockedFastenApiService.sendIPSExportByEmail).toHaveBeenCalledWith('clinic@example.org', 'json');
-    });
-
-    // The relay's own reason is the only thing that tells somebody whether to fix the address, wait,
-    // or ask their administrator. A generic "failed" is #527 all over again.
-    it('should surface the server error rather than a generic failure', () => {
-      mockedFastenApiService.sendIPSExportByEmail.and.returnValue(
-        throwError(() => ({error: {error: 'email is not enabled on this instance'}}))
-      );
-      component.emailRecipient = 'doc@example.org';
-
-      component.confirmSendEmail();
-
-      expect(component.emailError).toEqual('email is not enabled on this instance');
-      expect(component.emailSending).toBeFalse();
-      expect(component.emailSentTo).toEqual('');
-    });
-
-    it('should fall back to a plain message when the server sends none', () => {
-      mockedFastenApiService.sendIPSExportByEmail.and.returnValue(throwError(() => ({})));
-      component.emailRecipient = 'doc@example.org';
-
-      component.confirmSendEmail();
-
-      expect(component.emailError).toEqual('The report could not be sent.');
+      expect(mockedFastenApiService.getIPSExport).toHaveBeenCalledWith('json');
     });
   });
 });

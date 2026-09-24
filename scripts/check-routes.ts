@@ -44,7 +44,6 @@ const KNOWN_MISSING: Record<string, string> = {
   // comes back with a server side or is retired with its components.
   '/api/secure/resource/related': 'yourphr#773',
   '/api/secure/encounter/:p/related/:p/:p': 'yourphr#773',
-  '/api/secure/summary/ips/email': 'yourphr#687',
   // Found by this check on its first run — none was in yourphr#680's original twelve, because that
   // list came from a grep of fasten-api.service.ts alone and these live in auth.service.ts.
   '/api/auth/callback/:p': 'yourphr#693',

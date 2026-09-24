@@ -34,6 +34,7 @@ import {clientIp} from './framework/managers/SessionsManager.js';
 import {SqliteRecordsProvider} from './app/providers/SqliteRecordsProvider.js';
 import {PatientEntryError, buildPatientRecord, type PatientEntryRequest} from './patient-entry/index.js';
 import {backgroundJobShape} from './framework/managers/JobsManager.js';
+import {renderIpsHtml} from './ips/render.js';
 
 /**
  * The session cookie. HttpOnly throughout: the Angular app (yourphr#118 Phase 2b) never sees a
@@ -988,7 +989,26 @@ export function createYourPhrServer(options: ServerOptions) {
         }
       }
       if (url.pathname === '/api/secure/summary/ips' && req.method === 'GET') {
-        send(res, 200, {success: true, data: (await engine.managers.records.ips(ctx)).bundle});
+        const bundle = (await engine.managers.records.ips(ctx)).bundle;
+        // `?format=` was accepted and ignored (yourphr#687): Save Report asked for HTML and got the
+        // API envelope in a file called .html. The formats offered are the ones this can actually
+        // produce — a document to read, or the bundle another system can import.
+        const format = (url.searchParams.get('format') ?? '').toLowerCase();
+        if (format === 'html') {
+          const body = renderIpsHtml(bundle);
+          res.writeHead(200, {'content-type': 'text/html; charset=utf-8', 'content-length': Buffer.byteLength(body)});
+          res.end(body);
+          return;
+        }
+        if (format === 'json') {
+          // The registered FHIR media type and the bundle ITSELF — a receiving system imports this
+          // file, and `{success, data}` around it is this API talking to its own frontend.
+          const body = JSON.stringify(bundle, null, 2);
+          res.writeHead(200, {'content-type': 'application/fhir+json; charset=utf-8', 'content-length': Buffer.byteLength(body)});
+          res.end(body);
+          return;
+        }
+        send(res, 200, {success: true, data: bundle});
         return;
       }
       const provMatch = url.pathname.match(/^\/api\/secure\/resource\/provenance\/([^/]+)\/([^/]+)$/);

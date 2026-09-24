@@ -22,17 +22,14 @@ export class ReportHeaderComponent implements OnInit {
   @ViewChild('saveReportWarning') saveReportWarning: TemplateRef<any>
   @ViewChild('sendEmailDialog') sendEmailDialog: TemplateRef<any>
 
-  // Send-to-email dialog state (#524)
-  emailRecipient = ''
-  // PDF for a person to read, FHIR JSON for a system to import. Both are "their records"; which one
-  // is useful depends entirely on who is receiving it (#524).
-  emailFormat: 'pdf' | 'json' = 'pdf'
+  // Send-to-email dialog state (#524, #687)
+  // A web page for a person to read, FHIR JSON for a system to import. Both are "their records";
+  // which one is useful depends entirely on who is receiving it. PDF is not offered because this
+  // stack cannot render one, and a .pdf holding something else is the defect #687 fixed.
+  emailFormat: 'html' | 'json' = 'html'
   // Save Report offers the same choice for the same reason: a document to read, or a bundle another
   // system can import (#523).
   saveFormat: 'html' | 'json' = 'html'
-  emailSending = false
-  emailError = ''
-  emailSentTo = ''
 
   constructor(
     private fastenApi: FastenApiService,
@@ -68,7 +65,9 @@ export class ReportHeaderComponent implements OnInit {
   }
   getIPSExport(event: Event){
     event.preventDefault()
-    return this.fastenApi.getIPSExport("pdf")
+    // "pdf" until #687: the endpoint ignored the format and returned the API envelope, so this
+    // saved a .pdf holding JSON. It renders a web page, which prints.
+    return this.fastenApi.getIPSExport("html")
   }
 
   /**
@@ -82,43 +81,20 @@ export class ReportHeaderComponent implements OnInit {
    * Deliberately not a browser confirm(): it cannot say this much, and it is not styleable.
    */
   /**
-   * Send the record to an address the patient chooses (#524).
+   * Send the record by email — with the person doing the sending (#524, #687).
    *
-   * The operator's decision, and it corrects the earlier position on that issue: the app already
-   * lets somebody DOWNLOAD this same file unencrypted, so refusing to email it protects nothing and
-   * only makes them do by hand what they could already do. It is their data. What is owed is an
-   * honest warning first — which this dialog gives — not a locked door beside an open window.
+   * #524 settled that emailing their own summary is theirs to do and what is owed is an honest
+   * warning, not a locked door beside an open window. #687 settled who sends it: this instance has
+   * no mail transport (#536), so rather than a button that 404s, the dialog gives them the file and
+   * the warning, and they attach it from their own address. Same outcome, nothing in the middle.
    */
   sendToEmail(event: Event){
     event.preventDefault()
-    this.emailRecipient = ''
-    this.emailFormat = 'pdf'
-    this.emailError = ''
-    this.emailSentTo = ''
-    this.emailSending = false
-    this.modalService.open(this.sendEmailDialog, {ariaLabelledBy: 'send-email-title'})
-  }
-
-  confirmSendEmail(){
-    if (!this.emailRecipient.trim()) {
-      this.emailError = 'Enter the address to send to.'
-      return
-    }
-    this.emailSending = true
-    this.emailError = ''
-    this.fastenApi.sendIPSExportByEmail(this.emailRecipient.trim(), this.emailFormat).subscribe({
-      next: (result) => {
-        this.emailSending = false
-        this.emailSentTo = result?.sent_to || this.emailRecipient.trim()
-      },
-      error: (err) => {
-        this.emailSending = false
-        // The SERVER's sentence, not a generic failure. It is the only thing that tells somebody
-        // whether to fix the address, wait, or ask their administrator (#527 is what the generic
-        // version costs).
-        this.emailError = err?.error?.error || 'The report could not be sent.'
-      },
-    })
+    this.emailFormat = 'html'
+    this.modalService.open(this.sendEmailDialog, {ariaLabelledBy: 'send-email-title'}).result.then(
+      () => this.fastenApi.getIPSExport(this.emailFormat),
+      () => {}, // dismissed — nothing to do
+    )
   }
 
   saveReport(event: Event){
