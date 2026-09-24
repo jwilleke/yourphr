@@ -911,7 +911,10 @@ export class FastenApiService {
       );
   }
 
-  //this method will persist client side errors in the database for later review & easier debugging. Primarily used for source/provider connection errors
+  // A connection failure only the browser saw, written down (#685) — a blocked popup, a provider's
+  // sign-in page returning an OAuth error, a window closed mid-flow. The server records its own
+  // failures; these are the ones it cannot see, and without them an empty job history reads exactly
+  // like a healthy instance. The message is redacted and bounded server-side before it is stored.
   createBackgroundJobError(errorData: BackgroundJobSyncData){
     return this._httpClient.post<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/jobs/error`, errorData)
       .pipe(

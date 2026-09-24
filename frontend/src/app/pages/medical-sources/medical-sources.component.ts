@@ -7,6 +7,7 @@ import {environment} from '../../../environments/environment';
 import {CDAConverterStatus} from '../../models/fasten/cda-converter-status';
 import {PatientAccessBrand} from '../../models/patient-access-brands';
 import {extractErrorFromResponse} from '../../../lib/utils/error_extract';
+import {BackgroundJobSyncData} from '../../models/fasten/background-job';
 import {
   formatSmartConnectFailure,
   isRetryableSmartConnectError,
@@ -259,6 +260,7 @@ export class MedicalSourcesComponent implements OnInit {
 
       if (lastErr) {
         this.connectErrorMsg = formatSmartConnectFailure(lastErr)
+        this.recordConnectFailure(provider.display, lastErr)
         return
       }
 
@@ -266,9 +268,27 @@ export class MedicalSourcesComponent implements OnInit {
       this.refreshConnectedList()
     } catch (err) {
       this.connectErrorMsg = formatSmartConnectFailure(err)
+      this.recordConnectFailure(provider.display, err)
     } finally {
       this.connectingProviderId = null
     }
+  }
+
+  /**
+   * Write the failure down where the Background Jobs page will show it (#685).
+   *
+   * Best effort on purpose: a person whose connection just failed must not then be told that
+   * recording the failure failed. The message is the one they were shown, so it says what went
+   * wrong without carrying whatever the raw error object held; the server redacts and bounds it
+   * again before storing.
+   */
+  private recordConnectFailure(providerDisplay: string, err: any): void {
+    const errData = new BackgroundJobSyncData()
+    errData.brand_id = ''
+    // No source_id: a connect that failed never made one. The provider goes in the words instead,
+    // so the job history says WHICH connection failed.
+    errData.error_data = {error: `Connecting to ${providerDisplay} failed: ${formatSmartConnectFailure(err)}`}
+    this.fastenApi.createBackgroundJobError(errData).subscribe({next: () => {}, error: () => {}})
   }
 
   // Forces <app-medical-sources-connected> to re-render so a freshly connected source shows up.

@@ -6,8 +6,9 @@
  */
 import { BaseManager, type BackupData } from '../BaseManager.js';
 import type { Engine } from '../Engine.js';
-import type { ApiContext } from '../ApiContext.js';
+import { ApiError, type ApiContext } from '../ApiContext.js';
 import type { BaseJobsProvider, JobRecord } from '../providers/BaseJobsProvider.js';
+import { redact } from '../../log/redact.js';
 
 declare module '../Engine.js' {
   interface ManagerRegistry {
@@ -73,6 +74,46 @@ export class JobsManager extends BaseManager {
   async record(ctx: ApiContext, job: JobRecord): Promise<JobRecord> {
     ctx.requireAuthenticated();
     return this.provider.record(job);
+  }
+
+  /**
+   * A failure only the BROWSER saw, written down (yourphr#685).
+   *
+   * Most connection failures are the server's own and it records them itself — it is the one making
+   * the token exchange. What it cannot see is the half that happens in the person's browser: a
+   * popup blocked, a provider's sign-in page returning an OAuth error to it, a window closed
+   * mid-flow. Without this, the record of that failure is the thing that goes missing, and an empty
+   * job history reads exactly like a healthy instance.
+   *
+   * What the client is trusted for, and what it is not:
+   *
+   *   - __Not trusted for identity.__ The job belongs to whoever is signed in, never to a user id in
+   *     the payload. Where a source is named, it is resolved through the sources manager before this
+   *     is called, which is what refuses another account's — a numeric id off the wire would not.
+   *     A failed CONNECT names none, because the source does not exist until the connect succeeds.
+   *   - __Not trusted to be safe to store.__ The message describes a failure, so it arrives holding
+   *     provider names, URLs and — the reason this matters — whatever a token exchange put in an
+   *     error string. It goes through the same redaction as a log line and is cut to a bounded
+   *     length, so the error history cannot become a place credentials accumulate.
+   */
+  async recordClientError(ctx: ApiContext, input: { sourceId: number; message: string; at?: number }): Promise<JobRecord> {
+    ctx.requireAuthenticated();
+    const message = redact(String(input.message ?? '')).trim().slice(0, 512);
+    if (message === '') throw new ApiError(400, 'an error needs a message');
+    const at = Number.isFinite(input.at) && (input.at as number) > 0 ? Math.floor(input.at as number) : Math.floor(Date.now() / 1000);
+    return this.provider.record({
+      sourceId: Number.isFinite(input.sourceId) ? Math.floor(input.sourceId) : 0,
+      // A connection that failed before a source existed has nothing to join to, so it carries its
+      // owner directly. Without this it would be stored and never shown — the silence, again.
+      userId: ctx.username,
+      outcome: 'failure',
+      received: 0,
+      created: 0,
+      updated: 0,
+      error: message,
+      startedAt: at,
+      finishedAt: at,
+    });
   }
 
   /** The newest run of one source — the `latest_background_job` a source carries. */

@@ -33,6 +33,7 @@ import {SimpleRateLimiter} from './http/rate-limit.js';
 import {clientIp} from './framework/managers/SessionsManager.js';
 import {SqliteRecordsProvider} from './app/providers/SqliteRecordsProvider.js';
 import {PatientEntryError, buildPatientRecord, type PatientEntryRequest} from './patient-entry/index.js';
+import {backgroundJobShape} from './framework/managers/JobsManager.js';
 
 /**
  * The session cookie. HttpOnly throughout: the Angular app (yourphr#118 Phase 2b) never sees a
@@ -1314,6 +1315,30 @@ export function createYourPhrServer(options: ServerOptions) {
           send(res, 200, {success: true, data: done});
           return;
         }
+      }
+
+      // A connection failure only the BROWSER saw (yourphr#685). The server records its own —
+      // it makes the token exchange — but a blocked popup, a provider's sign-in page returning an
+      // OAuth error, or a window closed mid-flow are invisible to it. Without this the record of
+      // the failure is what goes missing, and an empty job history reads like a healthy instance.
+      if (engine.has('jobs') && url.pathname === '/api/secure/jobs/error' && req.method === 'POST') {
+        const body = (await readJsonBody(req)) ?? {};
+        // A source is named only when one exists — a connect that failed has none, because the
+        // source is created when the connect succeeds. Where one IS named it goes through the
+        // sources manager, which is what refuses another account's; a numeric id off the wire
+        // would not. An id that is not a source of theirs is refused rather than silently dropped.
+        const publicId = String((body as {source_id?: unknown}).source_id ?? '');
+        const named = /^source-\d+$/.test(publicId);
+        const source = named ? await engine.managers.sources.get(ctx, publicId) : undefined;
+        if (named && !source) {
+          send(res, 404, {success: false, error: 'no such source'});
+          return;
+        }
+        const data = (body as {error_data?: {error?: unknown}}).error_data ?? {};
+        const message = String(data.error ?? (body as {error?: unknown}).error ?? '');
+        const job = await engine.managers.jobs.recordClientError(ctx, {sourceId: source?.id ?? 0, message});
+        send(res, 200, {success: true, data: backgroundJobShape(job, ctx.username)});
+        return;
       }
 
       // The machines the person measures themselves with (yourphr#764). Only the ones they named:

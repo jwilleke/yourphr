@@ -76,3 +76,45 @@ describe('JobsManager — the history of background runs', () => {
     expect((ok['data'] as Record<string, unknown>)).not.toHaveProperty('error_data');
   });
 });
+
+/**
+ * A failure only the browser saw (yourphr#685). The gap this closes is not "an endpoint 404s" — it
+ * is that the record of a failed connection was the thing going missing, and an empty job history
+ * reads exactly like a healthy instance.
+ */
+describe('a connection failure the browser reports', () => {
+  it('is stored as a failed job the Background Jobs page can show', async () => {
+    const recorded = await jobs.recordClientError(alice, { sourceId: 1, message: 'the sign-in window was closed before the provider answered' });
+    expect(recorded.outcome).toBe('failure');
+    expect(recorded.error).toBe('the sign-in window was closed before the provider answered');
+
+    const shown = await jobs.forUser(alice, { limit: 50, page: 0 });
+    const mine = shown.find((j) => (j['data'] as { error_data?: { error?: string } })?.error_data?.error?.includes('closed before the provider answered'));
+    expect(mine, 'the failure reaches the page a person actually reads').toBeDefined();
+    expect(mine!['job_status']).toBe('STATUS_FAILED');
+  });
+
+  it('redacts the payload the way a log line is redacted, rather than storing it verbatim', async () => {
+    const { refreshRedactedSecrets, clearRedactedSecrets } = await import('../../../log/redact.js');
+    refreshRedactedSecrets({
+      getStringList: (key: string) => (key === 'yourphr.config.secret-keys' ? ['yourphr.relay.secret'] : []),
+      getString: (key: string) => (key === 'yourphr.relay.secret' ? 'super-secret-value' : ''),
+    });
+    try {
+      const recorded = await jobs.recordClientError(alice, { sourceId: 1, message: 'token exchange failed: secret=super-secret-value' });
+      expect(recorded.error).not.toContain('super-secret-value');
+    } finally {
+      clearRedactedSecrets();
+    }
+  });
+
+  it('bounds what it stores, so an error history cannot be filled by one message', async () => {
+    const recorded = await jobs.recordClientError(alice, { sourceId: 1, message: 'x'.repeat(5_000) });
+    expect(recorded.error.length).toBe(512);
+  });
+
+  it('refuses an empty message and an anonymous caller — neither records anything', async () => {
+    await expect(jobs.recordClientError(alice, { sourceId: 1, message: '   ' })).rejects.toMatchObject({ status: 400 });
+    await expect(jobs.recordClientError(ApiContext.anonymous(engine), { sourceId: 1, message: 'boom' })).rejects.toMatchObject({ status: 401 });
+  });
+});

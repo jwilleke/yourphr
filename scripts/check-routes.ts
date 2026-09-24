@@ -40,7 +40,6 @@ const FRONTEND = 'frontend/src/app';
 const KNOWN_MISSING: Record<string, string> = {
   '/api/secure/resource/related': 'yourphr#684',
   '/api/secure/encounter/:p/related/:p/:p': 'yourphr#684',
-  '/api/secure/jobs/error': 'yourphr#685',
   '/api/secure/summary/ips/email': 'yourphr#687',
   // Found by this check on its first run — none was in yourphr#680's original twelve, because that
   // list came from a grep of fasten-api.service.ts alone and these live in auth.service.ts.

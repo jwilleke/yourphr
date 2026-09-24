@@ -7,6 +7,7 @@ import {
 } from '../../../lib/utils/smart-connect-error';
 import {SmartAuthorizeResponse} from '../../models/fasten/smart-authorize';
 import {ConnectableProvider} from '../../models/fasten/provider-catalog';
+import {BackgroundJobSyncData} from '../../models/fasten/background-job';
 
 // Max time to wait for the admin to finish logging in at the sandbox provider (the relay-poll phase,
 // across retries) before giving up. A first login (consent, pick account, authorize) can be slow,
@@ -120,6 +121,7 @@ export class SandboxComponent implements OnInit {
 
       if (lastErr) {
         this.errorMsg = formatSmartConnectFailure(lastErr)
+        this.recordConnectFailure(provider.display, lastErr)
         return
       }
 
@@ -127,9 +129,25 @@ export class SandboxComponent implements OnInit {
       this.refreshConnectedList()
     } catch (err) {
       this.errorMsg = formatSmartConnectFailure(err)
+      this.recordConnectFailure(provider.display, err)
     } finally {
       this.connectingProviderId = null
     }
+  }
+
+  /**
+   * Write the failure down where the Background Jobs page will show it (#685).
+   *
+   * Best effort on purpose: someone whose connection just failed must not then be told that
+   * recording the failure failed.
+   */
+  private recordConnectFailure(providerDisplay: string, err: any): void {
+    const errData = new BackgroundJobSyncData()
+    errData.brand_id = ''
+    // No source_id: a connect that failed never made one. The provider goes in the words instead,
+    // so the job history says WHICH connection failed.
+    errData.error_data = {error: `Connecting to ${providerDisplay} failed: ${formatSmartConnectFailure(err)}`}
+    this.fastenApi.createBackgroundJobError(errData).subscribe({next: () => {}, error: () => {}})
   }
 
   // Forces <app-medical-sources-connected> to be destroyed and recreated so it re-runs its

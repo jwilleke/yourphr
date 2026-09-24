@@ -204,6 +204,20 @@ const APP_MIGRATIONS: Migration[] = [
       if (!columns.includes('granted_scopes')) addColumnWithDefault(db, 'connected_sources', 'granted_scopes', 'TEXT', '');
     },
   },
+  {
+    id: '20260924120000',
+    description: 'sync_jobs.user_id (yourphr#685) — a failure with no connected source still belongs to somebody',
+    up: (db) => {
+      // sync_jobs is created by its provider, which is constructed AFTER migrations run — so on a
+      // fresh database there is nothing to alter, and the CREATE already has the column.
+      const exists = db.prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'sync_jobs'").get();
+      if (!exists) return;
+      const columns = (db.pragma('table_info(sync_jobs)') as { name: string }[]).map((c) => c.name);
+      // Every existing row HAS a source, and its owner is read through that join as before. The
+      // column exists for the rows that cannot: a connection that failed before a source existed.
+      if (!columns.includes('user_id')) addColumnWithDefault(db, 'sync_jobs', 'user_id', 'TEXT', '');
+    },
+  },
 ];
 
 /** Everything that owns data, opened the one way the server opens it. */
