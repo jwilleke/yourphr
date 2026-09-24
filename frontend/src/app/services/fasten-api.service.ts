@@ -856,17 +856,6 @@ export class FastenApiService {
       .pipe(map((response: ResponseWrapper) => response.data))
   }
 
-  createResourceComposition(title: string, resources: ResourceFhir[]){
-    return this._httpClient.post<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/resource/composition`, {
-      "resources": resources,
-      "title": title,
-    })
-      .pipe(
-        map((response: ResponseWrapper) => {
-          return response.data
-        })
-      );
-  }
 
   getBinaryModel(sourceId: string, attachmentModel: AttachmentModel): Observable<BinaryModel> {
     if(attachmentModel.url && !attachmentModel.data){

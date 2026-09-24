@@ -18,7 +18,6 @@ export class ResourceCreatorComponent implements OnInit {
   ngOnInit(): void {
 
     const modalRef = this.modalService.open(MedicalRecordWizardComponent, {
-      // const modalRef = this.modalService.open(ReportMedicalHistoryEditorComponent, {
       size: 'xl',
     });
 
