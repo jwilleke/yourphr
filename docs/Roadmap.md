@@ -89,7 +89,6 @@ Grouped by theme — each row is its own GitHub issue (no multi-step phases insi
 
 | Item | Issue |
 |---|---|
-| Retire legacy Lighthouse `connect-gateway.service.ts` | [#409](https://github.com/jwilleke/yourphr/issues/409) |
 | Resume-here preserved across `/pstatus` | [#410](https://github.com/jwilleke/yourphr/issues/410) (kit: [mjs-project-template#38](https://github.com/jwilleke/mjs-project-template/issues/38)) |
 | Manual SMART golden-path checklist | [#415](https://github.com/jwilleke/yourphr/issues/415) |
 | `fasten-sources-stub` fold vs keep | [#288](https://github.com/jwilleke/yourphr/issues/288) |

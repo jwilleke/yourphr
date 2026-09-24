@@ -293,5 +293,4 @@ Comments in `ConnectSource` / catalog connect: __browser never handles tokens__;
 
 ## Not on the live UI path
 
-- `frontend/src/app/services/connect-gateway.service.ts` — Fasten Lighthouse-style connect-gateway client; __not__ used by `connectCatalogProvider` / sandbox connect.
 - `POST /secure/source/authorize` + `/connect` — implemented and tested; __no__ current page wires them (catalog path is what the UI runs).
