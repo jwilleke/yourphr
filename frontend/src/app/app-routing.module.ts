@@ -33,7 +33,6 @@ import { MedicalSourcesComponent } from './pages/medical-sources/medical-sources
 import { SandboxComponent } from './pages/sandbox/sandbox.component';
 import { PatientProfileComponent } from './pages/patient-profile/patient-profile.component';
 import { ReportLabsComponent } from './pages/report-labs/report-labs.component';
-import { ResourceCreatorComponent } from './pages/resource-creator/resource-creator.component';
 import { PatientEntryComponent } from './pages/patient-entry/patient-entry.component';
 import { RecordsReviewComponent } from './pages/records-review/records-review.component';
 import { ResourceDetailComponent } from './pages/resource-detail/resource-detail.component';
@@ -77,8 +76,10 @@ const routes: Routes = [
 
   { path: 'sources', component: MedicalSourcesComponent, canActivate: [ IsAuthenticatedAuthGuard ] },
   { path: 'sources/callback/:state', component: MedicalSourcesComponent, canActivate: [ IsAuthenticatedAuthGuard ] },
-  { path: 'resource/create', component: ResourceCreatorComponent, canActivate: [ IsAuthenticatedAuthGuard ] },
-  // Patient-generated data (#313) — home vitals first; visit wizard at resource/create
+  // 'resource/create' is NOT routed (#684): the visit wizard's only submit path,
+  // POST /secure/resource/related, is not served, so the flow 404s after the person has typed
+  // everything. The component stays in the tree for when it returns with a server side.
+  // Patient-generated data (#313) — home vitals, allergies and medications, which do save
   { path: 'resource/add', component: PatientEntryComponent, canActivate: [ IsAuthenticatedAuthGuard ] },
   // What you wrote that is kept but not yet part of your chart (#762).
   { path: 'records/review', component: RecordsReviewComponent, canActivate: [ IsAuthenticatedAuthGuard ] },

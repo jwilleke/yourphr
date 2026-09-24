@@ -6,8 +6,7 @@ import {FastenApiService} from '../../services/fasten-api.service';
 import {extractErrorFromResponse} from '../../../lib/utils/error_extract';
 
 /**
- * What a person adds about themselves (#313, #696, #763). Full visit wizard remains at
- * /resource/create.
+ * What a person adds about themselves (#313, #696, #763).
  *
  * The kinds offered here are exactly the kinds the server can store in a record type of their own:
  * a home vital as an Observation, an allergy as an AllergyIntolerance, a medication as a

@@ -15,6 +15,11 @@ test('a home vital saves, and says so', async ({ page }) => {
   await login(page, E2E_USER, E2E_PASS);
   await page.goto(`${BASE}/resource/add`);
 
+  // The visit wizard is not offered (yourphr#684): its only submit path is unserved, so the flow
+  // failed after the person had typed everything. An action that visibly is not there beats one
+  // that fails halfway.
+  await expect(page.getByRole('link', { name: /visit wizard/i })).toHaveCount(0);
+
   await page.selectOption('#vital-type', 'heart_rate');
   await page.fill('#vital-value', '64');
   await page.getByRole('button', { name: /save/i }).click();

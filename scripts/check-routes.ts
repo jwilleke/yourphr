@@ -38,8 +38,12 @@ const FRONTEND = 'frontend/src/app';
  * every entry here is a feature a person can reach and cannot use. It should only ever shrink.
  */
 const KNOWN_MISSING: Record<string, string> = {
-  '/api/secure/resource/related': 'yourphr#684',
-  '/api/secure/encounter/:p/related/:p/:p': 'yourphr#684',
+  // The visit wizard's submit path and its unlink. Its entry points went in yourphr#684 — the flow
+  // 404'd after the person had typed everything — so nothing reaches these today. They stay listed
+  // because the CALLS are still in the tree, waiting on yourphr#773 to decide whether the wizard
+  // comes back with a server side or is retired with its components.
+  '/api/secure/resource/related': 'yourphr#773',
+  '/api/secure/encounter/:p/related/:p/:p': 'yourphr#773',
   '/api/secure/summary/ips/email': 'yourphr#687',
   // Found by this check on its first run — none was in yourphr#680's original twelve, because that
   // list came from a grep of fasten-api.service.ts alone and these live in auth.service.ts.

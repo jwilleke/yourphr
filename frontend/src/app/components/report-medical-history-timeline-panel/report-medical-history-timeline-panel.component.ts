@@ -48,13 +48,8 @@ export class ReportMedicalHistoryTimelinePanelComponent implements OnInit {
   }
 
 
-  openMedicalRecordWizard(): void {
-
-
-    const modalRef = this.modalService.open(MedicalRecordWizardComponent, {
-      size: 'xl',
-    });
-    modalRef.componentInstance.existingEncounter = this.displayModel;
-  }
+  // openMedicalRecordWizard() is gone with the button (#684): the wizard's submit path is not
+  // served, so the flow failed after the person had typed everything. It returns when it has a
+  // server side.
 
 }
