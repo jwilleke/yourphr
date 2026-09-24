@@ -115,6 +115,10 @@ export class SettingsManager extends BaseManager {
       // offer an admin tour on an instance that is not a demo.
       'demo.enabled': config.getBool('yourphr.demo.enabled'),
       'demo.admin.enabled': config.getBool('yourphr.demo.enabled') && config.getBool('yourphr.demo.admin.enabled'),
+      // Whether this instance offers agent tokens (yourphr#695, yourphr#719). The Settings screen
+      // hides the whole section when it is off, rather than offering a mint the server refuses.
+      // It is already in the `yourphr.public` allow-list; it was simply never published.
+      'agent_token.enabled': config.getBool('yourphr.auth.agent-token.enabled'),
     };
   }
 

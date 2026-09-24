@@ -44,15 +44,6 @@ const KNOWN_MISSING: Record<string, string> = {
   // Found by this check on its first run — none was in yourphr#680's original twelve, because that
   // list came from a grep of fasten-api.service.ts alone and these live in auth.service.ts.
   '/api/auth/callback/:p': 'yourphr#693',
-  // Invisible until yourphr#694 widened this check past the services layer — settings.component.ts
-  // injects HttpClient and calls it directly.
-  //
-  // Repointed from yourphr#695 to yourphr#719: the server half of #695 shipped (the routes are
-  // /api/secure/account/agent-tokens), so what keeps these two unrouted is the frontend never having
-  // been moved off the Go endpoints. Neither is repaired by routing it — #719 DELETES both, because
-  // the screen they belong to pairs a companion mobile app that does not exist.
-  '/api/secure/access/token': 'yourphr#719',
-  '/api/secure/sync/discovery': 'yourphr#719',
 };
 
 /**
@@ -125,7 +116,11 @@ function serverRoutes(): ServerRoutes {
     [...text.matchAll(/'(\/api\/[^']*)'/g)].map((m) => m[1] as string)
   );
   const patterns: RegExp[] = [];
-  for (const m of text.matchAll(/\.match\((\/\^[^;\n]+?\/)\)/g)) {
+  // Both spellings the server uses: `url.pathname.match(/^…/)` and `/^…/.exec(url.pathname)`. Only
+  // the first was read, so an .exec route was invisible here — reported as unrouted when it is
+  // served, and, worse, its KNOWN_MISSING entry could never go stale. A route the check cannot see
+  // is a route it cannot vouch for, in either direction.
+  for (const m of [...text.matchAll(/\.match\((\/\^[^;\n]+?\/)\)/g), ...text.matchAll(/(\/\^[^;\n]+?\/)\.exec\(/g)]) {
     const body = (m[1] as string).slice(1, -1);
     try {
       patterns.push(new RegExp(body.replace(/\\\//g, '/')));

@@ -1,9 +1,27 @@
 import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
-import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
-import QRCode from 'qrcode';
+import { FastenApiService, AgentToken, AgentTokenPage } from '../../services/fasten-api.service';
+import { extractErrorFromResponse } from '../../../lib/utils/error_extract';
 
+/**
+ * Settings: who you are on this instance, and the keys you have given your own AI client (#719).
+ *
+ * This page used to be a device-pairing screen — a QR code and a "companion mobile app" that does
+ * not exist, no client repository, nothing to scan it. Four endpoints behind it were never served,
+ * and its "No Expiration" option would have minted a key that never dies, which is the defect
+ * #695 was filed against. None of it worked, so none of it is repaired here: it is replaced by the
+ * screen the server was built for.
+ *
+ * What an agent token is, in the words the screen uses: a key you mint so an AI client of your
+ * choosing can READ the categories you tick, until it expires. Three things follow, and the screen
+ * has to say all three:
+ *
+ *   - __The secret is shown once.__ It rides back from the mint and is never stored, so there is no
+ *     second chance to copy it. Losing it means minting another.
+ *   - __Scopes are chosen, never assumed.__ An unscoped mint is refused by the server: empty is not
+ *     "everything", it is nothing.
+ *   - __Every token expires.__ The instance sets the ceiling; this screen offers what it allows and
+ *     never a "never".
+ */
 @Component({
     selector: 'app-settings',
     templateUrl: './settings.component.html',
@@ -12,243 +30,159 @@ import QRCode from 'qrcode';
     standalone: false
 })
 export class SettingsComponent implements OnInit {
-  tokens: any[] = [];
-  qrCodeUrl: SafeUrl | null = null;
-  qrCodeData = '';
-  isLoading = false;
-  hasError = false;
-  isRawQrCodeCollapsed = true;
-  errorMessage = '';
-  accessToken = '';
-  serverInfo: any = null;
   currentUser: any = null;
-  newDeviceName = '';
-  newDeviceExpiration = 0; // 0 for no expiration, otherwise days
-  expirationOptions = [
-    { value: 0, label: 'No Expiration' },
-    { value: 7, label: '7 Days' },
-    { value: 30, label: '30 Days' },
-    { value: 60, label: '60 Days' },
-    { value: 90, label: '90 Days' },
-  ];
-  step: 'askDetails' | 'showQR' = 'askDetails';
 
-  constructor(
-    private http: HttpClient,
-    private sanitizer: DomSanitizer,
-    private modalService: NgbModal
-  ) { }
+  /** Off unless the instance says otherwise — the shipped default, and what the server enforces. */
+  agentTokensEnabled = false;
+  page: AgentTokenPage | null = null;
+  loading = true;
+  error = '';
+
+  // The mint form. Scopes start empty on purpose: the person ticks what an agent may read.
+  newName = '';
+  chosenScopes: string[] = [];
+  ttlHours = 0;
+  minting = false;
+
+  /** The cleartext, held only until they navigate away. Never stored, never re-fetchable. */
+  mintedSecret = '';
+  mintedName = '';
+
+  busyTokenId = '';
+
+  constructor(private api: FastenApiService) { }
 
   ngOnInit(): void {
-    this.loadCurrentUser();
-    this.loadTokens();
-  }
-
-  loadCurrentUser(): void {
-
-    this.http.get<any>('/api/secure/account/me').subscribe({
-      next: (response) => {
-        if (response && response.success) {
-          this.currentUser = response.data;
-        }
-      },
-      error: (error) => {
-        console.error('Error loading current user:', error);
-      }
+    this.api.getCurrentUser().subscribe({
+      next: (user) => this.currentUser = user,
+      error: () => this.currentUser = null,
     });
-  }
-
-  generateAccessToken(): void {
-
-    console.log('Generating access token...');
-    this.isLoading = true;
-
-    const body: { name?: string; expiration?: number } = {};
-    if (this.newDeviceName) {
-      body.name = this.newDeviceName;
-    }
-    if (this.newDeviceExpiration !== undefined) {
-      body.expiration = this.newDeviceExpiration;
-    }
-
-    this.http.post<any>('/api/secure/access/token', body).subscribe({
-      next: (response) => {
-        console.log('Generate token response:', response);
-        if (response.success) {
-          this.accessToken = response.data;
-          this.loadTokens();
-          this.getServerDiscovery();
-          this.newDeviceName = ''; // Clear the input after successful generation
-          this.step = 'showQR'; // Move to the QR code display step
+    this.api.getPublicInstanceInfo().subscribe({
+      next: (info) => {
+        this.agentTokensEnabled = info?.agent_token_enabled === true;
+        if (this.agentTokensEnabled) {
+          this.load();
         } else {
-          console.error('Failed to generate access token');
+          this.loading = false;
         }
-        this.isLoading = false;
       },
-      error: (error) => {
-        console.error('Error generating access token:', error);
-        this.isLoading = false;
-      }
+      error: () => this.loading = false,
     });
   }
 
-  generateAndShowQR(content: any): void {
-    this.step = 'askDetails';
-    this.newDeviceName = '';
-    this.newDeviceExpiration = 0; // Reset to default
-    this.qrCodeUrl = null;
-    this.qrCodeData = '';
-
-    this.modalService.open(content, {
-      size: 'lg',
-      centered: true,
-      backdrop: 'static'
-    }).result.then(
-      (result) => {
-        this.step = 'askDetails';
+  load(): void {
+    this.loading = true;
+    this.api.getAgentTokens().subscribe({
+      next: (page) => {
+        this.page = page;
+        this.ttlHours = page.default_ttl_hours || page.max_ttl_hours;
+        this.loading = false;
       },
-      (reason) => {
-        this.step = 'askDetails';
-      }
-    );
-  }
-
-  connectDevice(): void {
-    this.isLoading = true;
-    this.generateAccessToken();
-  }
-
-  getServerDiscovery(): void {
-
-    this.http.get<any>('/api/secure/sync/discovery').subscribe({
-      next: (response) => {
-        if (response.success) {
-          this.serverInfo = response.data;
-          this.generateQRCode();
-        }
+      error: (err) => {
+        this.error = extractErrorFromResponse(err) || 'Could not load your keys.';
+        this.loading = false;
       },
-      error: (error) => {
-        console.error('Error getting server discovery:', error);
-      }
     });
   }
 
-  generateQRCode(): void {
-    if (!this.accessToken || !this.serverInfo) {
+  toggleScope(scope: string): void {
+    this.chosenScopes = this.chosenScopes.includes(scope)
+      ? this.chosenScopes.filter((s) => s !== scope)
+      : [...this.chosenScopes, scope];
+  }
+
+  get canMint(): boolean {
+    return this.newName.trim() !== '' && this.chosenScopes.length > 0 && !this.minting;
+  }
+
+  /** Whether they already hold as many as the instance allows — asked before the server refuses. */
+  get atLimit(): boolean {
+    const live = (this.page?.tokens ?? []).filter((t) => t.live).length;
+    return !!this.page && this.page.max_per_user > 0 && live >= this.page.max_per_user;
+  }
+
+  mint(): void {
+    if (!this.canMint) {
       return;
     }
-
-    const qrData = {
-      token: this.accessToken,
-      server_base_urls: this.serverInfo.server_base_urls,
-      sync_endpoint: this.serverInfo.sync_endpoint,
-    };
-
-    this.qrCodeData = JSON.stringify(qrData, null, 2);
-
-    try {
-      QRCode.toDataURL(this.qrCodeData, {
-        errorCorrectionLevel: 'M',
-        type: 'image/png',
-        margin: 1,
-        color: {
-          dark: '#000000',
-          light: '#FFFFFF'
-        }
-      })
-        .then((url) => {
-          this.qrCodeUrl = this.sanitizer.bypassSecurityTrustUrl(url);
-          // Modal will be opened by the button click
-        })
-        .catch((error) => {
-          console.error('QR Code generation error:', error);
-          this.setError('Failed to generate QR code: ' + error.message);
-        });
-    } catch (error) {
-      console.error('QR Code generation caught error:', error);
-      this.setError('Failed to generate QR code: ' + (error as Error).message);
-    }
-  }
-
-  loadTokens(): void {
-
-    this.http.get<any>('/api/secure/access/token').subscribe({
-      next: (response) => {
-        const list = response && response.success ? (response.data || []) : [];
-        this.tokens = list.map((t: any) => ({
-          ...t,
-          name: t.name,
-          status: t.status,
-          issuedAt: t.issued_at,
-          expiresAt: t.expires_at,
-          tokenId: t.token_id,
-        }));
+    this.error = '';
+    this.minting = true;
+    this.api.mintAgentToken(this.newName.trim(), this.chosenScopes, this.ttlHours).subscribe({
+      next: (result) => {
+        this.minting = false;
+        // Shown once, and only here: the server does not keep it either.
+        this.mintedSecret = result.token;
+        this.mintedName = result.record?.name ?? this.newName.trim();
+        this.newName = '';
+        this.chosenScopes = [];
+        this.load();
       },
-      error: (error) => {
-        console.error('Error loading access tokens:', error);
-        this.tokens = [];
-      }
+      error: (err) => {
+        this.minting = false;
+        this.error = extractErrorFromResponse(err) || 'Could not create that key.';
+      },
     });
   }
 
-
-  deleteToken(tokenId: string): void {
-
-    if (confirm('Are you sure you want to delete this access token?')) {
-      this.http.delete<any>('/api/secure/access/token', { 
-        body: { token_id: tokenId }
-      }).subscribe({
-        next: () => {
-          this.loadTokens();
-          // Clear QR code data if this was the current token
-          this.qrCodeUrl = null;
-          this.qrCodeData = '';
-          this.accessToken = '';
-        },
-        error: (error) => {
-          this.setError('Error deleting token');
-        }
-      });
-    }
+  dismissSecret(): void {
+    this.mintedSecret = '';
+    this.mintedName = '';
   }
 
-  formatDate(dateString: string | Date): string {
-    if (!dateString) {
-      return 'N/A';
+  revoke(token: AgentToken): void {
+    if (this.busyTokenId !== '') {
+      return;
     }
-    const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
-    return date.toLocaleDateString();
-  }
-
-  formatExpiryDate(dateString: string | Date): string {
-    if (!dateString) {
-      return 'N/A';
-    }
-    const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
-    const options: Intl.DateTimeFormatOptions = {
-      weekday: 'short',
-      month: 'short',
-      day: '2-digit',
-      year: 'numeric',
-    };
-    return `on ${date.toLocaleDateString('en-US', options)}`;
-  }
-
-  copyRawQR(): void {
-    if (this.qrCodeData) {
-      navigator.clipboard.writeText(this.qrCodeData);
-    }
-  }
-
-  openQRModal(content: any): void {
-    this.modalService.open(content, {
-      size: 'lg',
-      centered: true
+    this.error = '';
+    this.busyTokenId = token.id;
+    this.api.revokeAgentToken(token.id).subscribe({
+      next: () => {
+        this.busyTokenId = '';
+        this.load();
+      },
+      error: (err) => {
+        this.busyTokenId = '';
+        this.error = extractErrorFromResponse(err) || `Could not revoke ${token.name}.`;
+      },
     });
   }
 
-  private setError(message: string): void {
-    this.hasError = true;
-    this.errorMessage = message;
+  /** Renewing issues a NEW secret and revokes the old record, so it is shown once as a mint is. */
+  renew(token: AgentToken): void {
+    if (this.busyTokenId !== '') {
+      return;
+    }
+    this.error = '';
+    this.busyTokenId = token.id;
+    this.api.renewAgentToken(token.id).subscribe({
+      next: (result) => {
+        this.busyTokenId = '';
+        this.mintedSecret = result.token;
+        this.mintedName = result.record?.name ?? token.name;
+        this.load();
+      },
+      error: (err) => {
+        this.busyTokenId = '';
+        this.error = extractErrorFromResponse(err) || `Could not renew ${token.name}.`;
+      },
+    });
+  }
+
+  /** "in 3 days" / "in 5 hours" / "expired", from the seconds the SERVER computed. */
+  remaining(token: AgentToken): string {
+    if (!token.live) {
+      return token.revokedAt ? 'revoked' : 'expired';
+    }
+    const seconds = token.expiresInSeconds;
+    if (seconds >= 172800) {
+      return `in ${Math.floor(seconds / 86400)} days`;
+    }
+    if (seconds >= 7200) {
+      return `in ${Math.floor(seconds / 3600)} hours`;
+    }
+    if (seconds >= 120) {
+      return `in ${Math.floor(seconds / 60)} minutes`;
+    }
+    return 'in under a minute';
   }
 }

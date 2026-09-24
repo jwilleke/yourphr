@@ -9,7 +9,7 @@
  *   SPIKE_E2E_WEB_DIR   the built Angular bundle (default /tmp/spike-web — what the audit uses)
  *   SPIKE_E2E_PORT      default 18111
  */
-import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { assembleApp } from '../src/app.js';
@@ -24,6 +24,11 @@ if (!existsSync(join(webDir, 'index.html'))) {
 }
 
 const dir = mkdtempSync(join(tmpdir(), 'spike-e2e-'));
+// Agent tokens are off by default and the Settings screen hides itself when they are (yourphr#719).
+// Written BEFORE the app assembles: AgentTokensManager reads its policy once, at initialize, so a
+// set() afterwards would leave the screen offering a mint the manager refuses.
+mkdirSync(join(dir, 'config'), { recursive: true });
+writeFileSync(join(dir, 'config', 'app-custom-config.json'), JSON.stringify({ 'yourphr.auth.agent-token.enabled': true }, null, 2));
 const fake = startFakeProvider('tok');
 const fakeBase = await listenFake(fake);
 

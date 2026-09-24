@@ -10,12 +10,7 @@
         </div>
         <div class="card-body">
           @if (!currentUser) {
-            <div class="text-center py-4">
-              <div class="spinner-border" role="status">
-                <span class="visually-hidden">Loading...</span>
-              </div>
-              <p class="mg-t-10">Loading user profile...</p>
-            </div>
+            <p class="tx-gray-500 mg-b-0">Loading your profile…</p>
           }
           @if (currentUser) {
             <dl class="row profile-dl">
@@ -30,130 +25,135 @@
         </div>
       </section>
 
-      <!-- Connected Devices Section -->
-      <section class="card card-dashboard-table">
-        <div class="card-header d-flex justify-content-between align-items-center">
-          <h4 class="card-title mb-0"><i class="fas fa-key me-3"></i>Connected Devices</h4>
-          <div>
-            <button class="btn btn-az-primary btn-sm" (click)="generateAndShowQR(qrModal)" [disabled]="isLoading">
-              <i class="fas fa-qrcode me-2"></i>Connect New Device
-            </button>
+      <!-- Keys you have given an AI client (#719) -->
+      @if (agentTokensEnabled) {
+        <section class="card card-dashboard-table">
+          <div class="card-header">
+            <h4 class="card-title mb-0"><i class="fas fa-key me-3"></i>Keys for your AI assistant</h4>
           </div>
-        </div>
-        <div class="card-body">
-          @if (isLoading) {
-            <div class="text-center py-4">
-              <div class="spinner-border" role="status">
-                <span class="visually-hidden">Loading...</span>
+          <div class="card-body">
+            <p class="tx-gray-500">
+              A key lets an AI client you choose <strong>read</strong> the parts of your records you tick below, until the key
+              expires. It cannot change anything, and you can revoke it at any moment. Nothing is sent anywhere by creating
+              one — the client you give it to does the asking.
+            </p>
+
+            @if (error) {
+              <div class="alert alert-danger">{{ error }}</div>
+            }
+
+            @if (mintedSecret) {
+              <div class="alert alert-warning">
+                <h6 class="mg-b-5">Copy this now — it is shown once</h6>
+                <p class="mg-b-10">
+                  This is the key for <strong>{{ mintedName }}</strong>. It is not stored anywhere, here or on the server,
+                  so this is the only time it can be read. If you lose it, revoke this key and make another.
+                </p>
+                <pre class="mg-b-10 tx-13" data-testid="minted-secret">{{ mintedSecret }}</pre>
+                <button type="button" class="btn btn-sm btn-outline-dark" (click)="dismissSecret()">I have copied it</button>
               </div>
-              <p class="mg-t-10">Loading connected devices...</p>
-            </div>
-          }
+            }
 
-          @if (tokens.length === 0 && !isLoading) {
-            <div class="text-muted text-center py-4">
-              <i class="fas fa-qrcode fa-3x text-muted mb-3"></i>
-              <p class="text-muted mb-0">No devices connected yet. Click "Connect New Device" to get started.</p>
-            </div>
-          }
+            @if (loading) {
+              <p class="tx-gray-500">Loading your keys…</p>
+            }
 
-          @if (tokens.length > 0) {
-            <div class="list-group list-group-flush">
-              @for (token of tokens; track token) {
-                <div class="list-group-item d-flex align-items-center justify-content-between">
-                  <div class="d-flex flex-column">
-                    <h6 class="mb-0">{{ token.name || 'Unnamed Device' }}</h6>
-                    <small class="text-muted">Expires {{ formatExpiryDate(token.expiresAt) }}</small>
+            @if (!loading && page) {
+              @if (page.tokens.length === 0) {
+                <p class="tx-gray-500"><em>You have not made any keys yet.</em></p>
+              }
+
+              @if (page.tokens.length > 0) {
+                <table class="table table-striped mg-b-20">
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Can read</th>
+                      <th>Expires</th>
+                      <th>Last used</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (token of page.tokens; track token.id) {
+                      <tr>
+                        <td>{{ token.name }} <span class="tx-gray-500 tx-12">{{ token.prefix }}…</span></td>
+                        <td class="tx-13">{{ token.scopes.join(', ') }}</td>
+                        <td>{{ remaining(token) }}</td>
+                        <td class="tx-13">{{ token.lastUsedAt || 'never' }}</td>
+                        <td class="tx-right">
+                          @if (token.live) {
+                            @if (page.renewable) {
+                              <button type="button" class="btn btn-sm btn-outline-secondary mg-r-5"
+                                      [disabled]="busyTokenId === token.id" (click)="renew(token)">Renew</button>
+                            }
+                            <button type="button" class="btn btn-sm btn-outline-danger"
+                                    [disabled]="busyTokenId === token.id" (click)="revoke(token)">Revoke</button>
+                          }
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              }
+
+              <h6 class="mg-b-10">Make a key</h6>
+              @if (atLimit) {
+                <p class="alert alert-secondary">
+                  You already hold {{ page.max_per_user }} keys, which is all this instance allows. Revoke one to make another.
+                </p>
+              }
+              @if (!atLimit) {
+                <div class="row row-sm">
+                  <div class="col-md-5 mg-b-15">
+                    <label class="form-label" for="token-name">What is it for?</label>
+                    <input id="token-name" type="text" class="form-control" [(ngModel)]="newName" name="newName"
+                           placeholder="My AI assistant" />
                   </div>
-                  <div class="d-flex align-items-center">
-                    <button class="btn btn-outline-danger btn-sm ms-2" ngbTooltip="Delete Device" (click)="deleteToken(token.tokenId)">
-                      <i class="fas fa-trash-alt me-0"></i>
-                    </button>
+                  <div class="col-md-3 mg-b-15">
+                    <label class="form-label" for="token-ttl">Lasts for</label>
+                    <select id="token-ttl" class="form-control" [(ngModel)]="ttlHours" name="ttlHours">
+                      @if (page.max_ttl_hours >= 1) { <option [ngValue]="1">1 hour</option> }
+                      @if (page.max_ttl_hours >= 8) { <option [ngValue]="8">8 hours</option> }
+                      @if (page.max_ttl_hours >= 24) { <option [ngValue]="24">24 hours</option> }
+                      @if (page.max_ttl_hours > 24) { <option [ngValue]="page.max_ttl_hours">{{ page.max_ttl_hours }} hours (the most this instance allows)</option> }
+                    </select>
                   </div>
                 </div>
+
+                <p class="form-label mg-b-5">What may it read?</p>
+                <div class="mg-b-15">
+                  @for (scope of page.available_scopes; track scope) {
+                    <div class="form-check">
+                      <input class="form-check-input" type="checkbox" [id]="'scope-' + scope"
+                             [checked]="chosenScopes.includes(scope)" (change)="toggleScope(scope)" />
+                      <label class="form-check-label" [for]="'scope-' + scope">{{ scope }}</label>
+                    </div>
+                  }
+                </div>
+                <p class="tx-12 tx-gray-500">
+                  Tick at least one. A key with nothing ticked is refused rather than treated as "everything".
+                </p>
+
+                <button type="button" class="btn btn-az-primary" [disabled]="!canMint" (click)="mint()">
+                  {{ minting ? 'Making…' : 'Make this key' }}
+                </button>
               }
-            </div>
-          }
-        </div>
-      </section>
+            }
+          </div>
+        </section>
+      }
+
+      @if (!agentTokensEnabled && !loading) {
+        <section class="card card-dashboard-table">
+          <div class="card-body tx-gray-500">
+            <p class="mg-b-0">
+              This instance does not offer keys for AI assistants. An administrator can turn them on in
+              Admin &rarr; Configuration.
+            </p>
+          </div>
+        </section>
+      }
     </div>
   </div>
 </div>
-
-<!-- QR Code Modal -->
-<ng-template #qrModal let-modal>
-  <div class="modal-header">
-    <h5 class="modal-title">
-      <i class="fas fa-qrcode me-2"></i>
-      @if (step === 'askDetails') {
-        <span>Connect a New Device</span>
-      }
-      @if (step === 'showQR') {
-        <span>Scan to Connect</span>
-      }
-    </h5>
-    <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss('Cross click')"></button>
-  </div>
-  <div class="modal-body">
-    @if (step === 'askDetails') {
-      <div class="text-start">
-        <p class="text-muted">Give your new device a name so you can recognize it in the list of connected devices.</p>
-        <div class="mb-3 mt-3">
-          <label for="deviceNameInput" class="form-label">Device Name (optional):</label>
-          <input type="text" class="form-control" id="deviceNameInput" [(ngModel)]="newDeviceName" placeholder="e.g., My iPhone, Work Tablet">
-        </div>
-        <div class="mb-3 mt-3">
-          <label for="expirationSelect" class="form-label">Expiration:</label>
-          <select class="form-control" id="expirationSelect" [(ngModel)]="newDeviceExpiration">
-            @for (option of expirationOptions; track option) {
-              <option [ngValue]="option.value">{{ option.label }}</option>
-            }
-          </select>
-        </div>
-      </div>
-    }
-
-    @if (step === 'showQR') {
-      <div class="text-center">
-        <p class="text-muted">Scan this QR code with your companion mobile app to connect your device and sync your medical records.</p>
-        @if (qrCodeUrl) {
-          <div class="qr-code-container mb-4 p-3 border rounded d-inline-block">
-            <img [src]="qrCodeUrl" alt="QR Code" class="img-fluid qr-code-image">
-          </div>
-        }
-        <!-- Development: Raw QR Code Data -->
-        <div class="mt-4 text-start">
-          <h6 class="mb-0">
-            <a href="javascript:void(0);" (click)="isRawQrCodeCollapsed = !isRawQrCodeCollapsed"
-              [attr.aria-expanded]="!isRawQrCodeCollapsed" aria-controls="rawQrCodeDataCollapse"
-              class="d-flex align-items-center text-dark text-decoration-none">
-              Development: Raw QR Code Data
-              <i class="fas ms-2" [class.fa-chevron-down]="isRawQrCodeCollapsed"
-              [class.fa-chevron-up]="!isRawQrCodeCollapsed"></i>
-            </a>
-          </h6>
-          <div id="rawQrCodeDataCollapse" [ngbCollapse]="isRawQrCodeCollapsed">
-            <div class="input-group mt-3">
-              <textarea class="form-control font-monospace" rows="5" readonly [value]="qrCodeData"></textarea>
-              <button class="btn btn-outline-secondary" type="button" (click)="copyRawQR()">
-                <i class="fas fa-copy"></i> Copy
-              </button>
-            </div>
-            <small class="text-muted">You can copy and paste this data manually if needed.</small>
-          </div>
-        </div>
-      </div>
-    }
-  </div>
-  <div class="modal-footer">
-    @if (step === 'askDetails') {
-      <button type="button" class="btn btn-outline-secondary" (click)="modal.dismiss('cancel')">Cancel</button>
-    }
-    @if (step === 'askDetails') {
-      <button type="button" class="btn btn-az-primary" (click)="connectDevice()" [disabled]="isLoading">Connect</button>
-    }
-    @if (step === 'showQR') {
-      <button type="button" class="btn btn-outline-secondary" (click)="modal.close()">Close</button>
-    }
-  </div>
-</ng-template>

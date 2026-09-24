@@ -516,6 +516,33 @@ export class FastenApiService {
   }
 
   // Admin Instance card — operator contact for this deployment (persisted next to the DB).
+  // --- agent tokens (#695 server, #719 this screen) ---
+  //
+  // What an agent token is, in the words the screen uses: a key the patient mints so their own AI
+  // client can READ the categories they tick, until it expires. The secret comes back once, from
+  // the mint, and is never stored — so the screen has to say so.
+
+  getAgentTokens(): Observable<AgentTokenPage> {
+    return this._httpClient.get<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/account/agent-tokens`)
+      .pipe(map((response: ResponseWrapper) => response.data as AgentTokenPage))
+  }
+
+  mintAgentToken(name: string, scopes: string[], ttlHours: number): Observable<{token: string, record: AgentToken}> {
+    return this._httpClient.post<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/account/agent-tokens`, {
+      name, scopes, ttl_hours: ttlHours,
+    }).pipe(map((response: ResponseWrapper) => response.data))
+  }
+
+  revokeAgentToken(id: string): Observable<{revoked: boolean}> {
+    return this._httpClient.post<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/account/agent-tokens/${encodeURIComponent(id)}/revoke`, {})
+      .pipe(map((response: ResponseWrapper) => response.data))
+  }
+
+  renewAgentToken(id: string): Observable<{token: string, record: AgentToken}> {
+    return this._httpClient.post<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/account/agent-tokens/${encodeURIComponent(id)}/renew`, {})
+      .pipe(map((response: ResponseWrapper) => response.data))
+  }
+
   getInstanceSettings(): Observable<InstanceSettings> {
     return this._httpClient.get<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/admin/instance`)
       .pipe(map((response: ResponseWrapper) => response.data as InstanceSettings));
@@ -1269,6 +1296,35 @@ export interface RecordAwaitingReview {
   reasons: string[];
 }
 
+// One agent token as the account page reads it (#695). `expires_in_seconds` and `live` are fields
+// the server computed, so "time remaining" is never this screen's arithmetic against clock skew.
+export interface AgentToken {
+  id: string;
+  name: string;
+  prefix: string;
+  scopes: string[];
+  createdAt: string;
+  expiresAt: string;
+  lastUsedAt: string;
+  revokedAt: string;
+  expiresInSeconds: number;
+  live: boolean;
+}
+
+// The list plus the policy the screen must obey: which categories exist, how long a token may
+// live, how many a person may hold. Served together so the UI never hardcodes a number the server
+// enforces.
+export interface AgentTokenPage {
+  tokens: AgentToken[];
+  available_scopes: string[];
+  max_ttl_hours: number;
+  default_ttl_hours: number;
+  max_per_user: number;
+  renewable: boolean;
+  renew_window_hours: number;
+  read_only: boolean;
+}
+
 // InstanceInfo is the frontend view of an instance's identity. Every field is optional and empty
 // when the operator has not set it, or when this caller is not entitled to see it.
 export interface InstanceInfo {
@@ -1300,6 +1356,9 @@ export interface InstanceInfo {
   // this only decides whether the UI offers the link. Note the FIRST account on an empty
   // instance is always allowed and becomes the owner/admin, whatever this says.
   signup_enabled: boolean;
+  // Whether this instance offers agent tokens at all (#695, #719). The Settings screen hides the
+  // whole section when it is off; the server refuses regardless.
+  agent_token_enabled: boolean;
 }
 
 // mapInstanceInfo translates backend config keys to short names. Both instance endpoints return
@@ -1333,5 +1392,8 @@ function mapInstanceInfo(response: ResponseWrapper): InstanceInfo {
     // key must not silently hide the link on an instance that never set it. Only an explicit
     // false closes it (#498).
     signup_enabled: data['signup.enabled'] !== false,
+    // Strictly true only, like the demo flags: an instance that does not publish the key offers no
+    // agent tokens, which is also the shipped default.
+    agent_token_enabled: data['agent_token.enabled'] === true,
   };
 }
