@@ -1,5 +1,32 @@
 # Changelog
 
+## [3.7.0](https://github.com/jwilleke/yourphr/compare/v3.6.0...v3.7.0) (2026-09-24)
+
+__"Add record" works, and what you write is kept even when nobody can fully understand it.__ The button was a primary call to action in three places and its form 404'd on submit. This release is that path and the rules around it: what you say is stored, what you did not say is never invented, and anything nobody has confirmed waits for you instead of counting as a chart fact.
+
+### Features
+
+- __A vital you measure at home saves__ ([#696](https://github.com/jwilleke/yourphr/issues/696)) — weight, heart rate, temperature, SpO2, blood pressure and a finger-stick glucose, stored with the same LOINC codes and UCUM units the Go stack used, marked patient-reported so a hand-typed reading is never mistaken for one a hospital asserted.
+- __What cannot be fully understood is KEPT, and held out of your chart until you confirm it__ ([#696](https://github.com/jwilleke/yourphr/issues/696)) — half a blood pressure, a measurement this release has no code for, a date nobody could read. It is stored exactly as you wrote it and left out of lists, counts, search and anything you share, rather than refused or silently guessed at.
+- __A screen for what is waiting on you__ ([#762](https://github.com/jwilleke/yourphr/issues/762)) — every held record with the reason in the words you were shown. "Right as written" puts it in your chart; nothing is ever auto-resolved and no missing value is filled in for you.
+- __Deleting one leaves no trace__ ([#762](https://github.com/jwilleke/yourphr/issues/762)) — a record nobody confirmed was never a chart fact, so deleting it removes the record, its search entries and its history. No tombstone, no audit line. You are asked first, in the page, in words that say what "gone" means.
+- __An allergy is an AllergyIntolerance, a medication a MedicationStatement__ ([#763](https://github.com/jwilleke/yourphr/issues/763)) — each with you stated as both who it is about and who says so. No criticality, severity, reaction or verification on an allergy, and no dose, route or frequency on a medication: the form does not ask, so the record does not answer. A medication you did not say you still take has FHIR's own status for that — `unknown`, never `active`.
+- __Say which device a reading came from__ ([#764](https://github.com/jwilleke/yourphr/issues/764)) — name a cuff or a meter once and pick it every time after. The device record carries the name you typed and nothing else, and "not measured with a device" is a complete answer. Nothing is inferred from the reading or its unit.
+- __You say which connected records are about you__ ([#761](https://github.com/jwilleke/yourphr/issues/761)) — asked once per source, with the answer preselected from what is known: you signed in to that portal yourself and the connection was issued for that record. A portal can also be one you read for someone else, so it is asked rather than assumed. Where two sources disagree about a date of birth, a name, or a number issued under two systems, the disagreement is shown and not settled.
+
+### Bug Fixes
+
+- __A source's records no longer teach your own record who you are without being asked__ ([#761](https://github.com/jwilleke/yourphr/issues/761)) — every connected source's identifiers were copied onto your person record automatically. Portals grant access on someone else's behalf, so a parent reading a child's record had the child's medical record number land on their own. Identifiers are now learned only from the sources you have confirmed are about you.
+- __A blood pressure reads as a blood pressure__ ([#696](https://github.com/jwilleke/yourphr/issues/696)) — a saved reading showed as "Blood pressure panel with all children optional", the LOINC panel name, which names no measurement at all. It now reads "Blood pressure 128/78 mmHg", and half a reading reads "Blood pressure 128 systolic mmHg".
+- __An allergy reads "Allergy to penicillin"__ ([#763](https://github.com/jwilleke/yourphr/issues/763)) in a record list, rather than the substance alone, which does not say what the record is about. This applies to allergies a provider sent as well.
+
+### Internal
+
+- Six new end-to-end journeys drive the whole path in a browser ([#690](https://github.com/jwilleke/yourphr/issues/690)): save a vital, be told half a reading is waiting, find it, confirm it, delete one, add an allergy, name a device and pick it again, and answer the identity question.
+- Patient entry is split by kind (`src/patient-entry`), the identity rules are their own unit-tested module, and the records provider gained a hard single-record delete distinct from the FHIR repository's soft one.
+
+__Upgrading:__ an instance with sources already connected will be asked, once per source, whether those records are about you. Until you answer, your own person record carries no identifiers learned from them. That is the point of [#761](https://github.com/jwilleke/yourphr/issues/761) — it was previously assumed — but it is a visible change rather than a silent fix.
+
 ## [3.6.0](https://github.com/jwilleke/yourphr/compare/v3.5.2...v3.6.0) (2026-09-23)
 
 __An Epic sandbox import went from 29 records to 296 in a live run — 250 of them labs and vital signs, which had never arrived at all.__ This release is the epic [#755](https://github.com/jwilleke/yourphr/issues/755): ask each provider the way the standards say that provider must be asked, instead of sending one guessed query shape to everyone.
