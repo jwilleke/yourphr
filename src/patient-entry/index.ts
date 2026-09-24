@@ -1,5 +1,11 @@
 /**
- * A vital the PATIENT measured at home, turned into an Observation (yourphr#696; the product's #313).
+ * What the PATIENT enters about themselves, turned into the record FHIR already has for it
+ * (yourphr#696, #763; the product's #313).
+ *
+ * A home vital is an Observation, built here; an allergy is an AllergyIntolerance and a medication a
+ * MedicationStatement, built in their own files and reached through `buildPatientRecord`. The rules
+ * they share — patient-reported marks, keep what was said, invent nothing, quarantine what is
+ * incomplete — live in `shared.ts`.
  *
  * "Add record" is a primary call to action in three places in the app, and its form posted to a
  * route this stack never had — so the form filled in, submitted, and 404'd. This is the half that
@@ -20,51 +26,36 @@
  *     fact, not counted as a chart fact. Nothing missing is ever invented: no unit conversion, no
  *     guessed code, no date supplied for one that could not be read.
  */
-import { randomUUID } from 'node:crypto';
-import type { Observation } from '@medplum/fhirtypes';
+import type { Observation, Resource } from '@medplum/fhirtypes';
+import { buildPatientAllergy } from './allergy.js';
+import { buildPatientMedication } from './medication.js';
+import {
+  type BuiltRecord,
+  type PatientEntryContext,
+  type PatientEntryRequest,
+  LOINC,
+  PatientEntryError,
+  UCUM,
+  effectiveDateTime,
+  number,
+  stamp,
+  statedName,
+} from './shared.js';
 
-/** What the Add-record form posts. Field names are the frontend's, which were Go's. */
-export interface PatientEntryRequest {
-  /** `vital` today. Other kinds map to other resource types and are their own work. */
-  kind?: string;
-  vital?: string;
-  value?: number;
-  systolic?: number;
-  diastolic?: number;
-  unit?: string;
-  effective_date_time?: string;
-}
+export {
+  NEEDS_REVIEW,
+  PATIENT_ENTRY_SOURCE,
+  PatientEntryError,
+  RECORD_ORIGIN,
+  type BuiltRecord,
+  type PatientEntryContext,
+  type PatientEntryRequest,
+} from './shared.js';
 
-/** Thrown only when there is no fact to keep at all — an empty submission. */
-export class PatientEntryError extends Error {}
-
-/** Who the record is about and who measured it (the PGHD pattern, yourphr#696). */
-export interface PatientEntryContext {
-  /** `Patient/<id>` — the account's own Patient, in its `manual` source. */
-  subject: string;
-}
-
-const LOINC = 'http://loinc.org';
-const UCUM = 'http://unitsofmeasure.org';
 const OBSERVATION_CATEGORY = 'http://terminology.hl7.org/CodeSystem/observation-category';
 
 /** Units kept coded whatever the person types, so the value stays comparable with a provider's. */
 const CANONICAL_UNITS: Record<string, string> = { heart_rate: '/min', pulse: '/min', oxygen_saturation: '%', spo2: '%' };
-
-/** meta.source for a record this instance's own UI wrote, as Go marked it. */
-export const PATIENT_ENTRY_SOURCE = 'yourphr://patient-ui';
-
-/** This instance's code system for how a record came to exist. */
-export const RECORD_ORIGIN = 'https://yourphr.org/fhir/CodeSystem/record-origin';
-
-/**
- * A record kept because the person stated it, and held back from the chart until a human confirms
- * it (yourphr#696). The PGHD rule: what they said is a fact and is never discarded, but an
- * incomplete or uncoded row must not count as a chart fact — so it carries this tag, and the read
- * paths that speak for the record (lists, counts, search, the IPS summary) leave it out until the
- * person resolves it. Nothing here is ever auto-resolved, and nothing missing is invented.
- */
-export const NEEDS_REVIEW = 'needs-review';
 
 interface VitalSpec {
   /** LOINC code and display, as Go used them. */
@@ -121,15 +112,36 @@ const VITALS: Record<string, VitalSpec> = {
 const codeable = (code: string, display: string) => ({ coding: [{ system: LOINC, code, display }], text: display });
 const quantity = (value: number, unit: string, code = unit) => ({ value, unit, system: UCUM, code });
 
-/** Go's `%g`: 70 prints as "70", 70.5 as "70.5" — never "70.000000". */
-const number = (n: number): string => String(n);
-
-/** What was stored, and whether a person still has to look at it. */
+/** What was stored, and whether a person still has to look at it. Kept for the vital path's callers. */
 export interface BuiltEntry {
   observation: Observation;
   sortTitle: string;
   /** Why it needs review, in the person's terms. Empty when nothing is outstanding. */
   review: string[];
+}
+
+/** The kinds this release can store in a record type of their own (yourphr#763). */
+const KINDS: Record<string, (req: PatientEntryRequest, now: Date, context: PatientEntryContext) => BuiltRecord> = {
+  allergy: buildPatientAllergy,
+  allergies: buildPatientAllergy,
+  medication: buildPatientMedication,
+  medications: buildPatientMedication,
+};
+
+/**
+ * Whatever the person entered, as the kind of record FHIR has for it (yourphr#763).
+ *
+ * An allergy is an AllergyIntolerance and a medication a MedicationStatement — not an Observation
+ * wearing a label. A kind this release has no resource type for is still kept: it is stored as the
+ * person's words and flagged, because losing what they said is the one outcome that is never
+ * acceptable. What it is never is silently reshaped into something it is not.
+ */
+export function buildPatientRecord(req: PatientEntryRequest, now = new Date(), context: PatientEntryContext = { subject: '' }): BuiltRecord {
+  const kind = (req.kind ?? 'vital').trim().toLowerCase() || 'vital';
+  const builder = KINDS[kind];
+  if (builder) return builder(req, now, context);
+  const built = buildPatientVital(req, now, context);
+  return { resource: built.observation as Resource, sortTitle: built.sortTitle, review: built.review };
 }
 
 /**
@@ -144,17 +156,16 @@ export interface BuiltEntry {
  */
 export function buildPatientVital(req: PatientEntryRequest, now = new Date(), context: PatientEntryContext = { subject: '' }): BuiltEntry {
   const kind = (req.kind ?? 'vital').trim().toLowerCase() || 'vital';
-  const name = (req.vital ?? '').trim();
+  const name = statedName(req);
   const lower = name.toLowerCase();
   const review: string[] = [];
 
   const hasValue = typeof req.value === 'number' || typeof req.systolic === 'number' || typeof req.diastolic === 'number';
   if (name === '' && !hasValue) throw new PatientEntryError('there is nothing to record: name what was measured, and what it read');
   if (kind !== 'vital') {
-    // An allergy is an AllergyIntolerance, a medication a MedicationStatement — their own resource
-    // types, not an Observation wearing a label (yourphr#696). Until those paths exist, what the
-    // person said is kept and flagged rather than forced into the wrong shape or thrown away.
-    review.push(`recorded as a measurement because this release cannot yet store a "${kind}" — an allergy or medication belongs in its own kind of record`);
+    // A kind with no resource type of its own yet. What the person said is kept and flagged rather
+    // than forced into a shape that would misrepresent it (yourphr#696, #763).
+    review.push(`recorded as a measurement because this release cannot yet store a "${kind}" in a record of its own`);
   }
 
   const spec = VITALS[lower];
@@ -162,12 +173,6 @@ export function buildPatientVital(req: PatientEntryRequest, now = new Date(), co
     ? codedObservation(spec, lower, req, review)
     : uncodedObservation(name, review);
 
-  observation.id = randomUUID();
-  observation.status = 'final';
-  observation.meta = {
-    source: PATIENT_ENTRY_SOURCE,
-    tag: [{ system: RECORD_ORIGIN, code: 'patient-reported', display: 'Patient-reported (YourPHR)' }],
-  };
   if (context.subject !== '') {
     // Who it is about, and who measured it: the PGHD pattern states both in the resource.
     observation.subject = { reference: context.subject };
@@ -177,13 +182,8 @@ export function buildPatientVital(req: PatientEntryRequest, now = new Date(), co
   const effective = effectiveDateTime(req.effective_date_time, now, review);
   if (effective !== '') observation.effectiveDateTime = effective;
 
-  if (review.length) {
-    observation.meta.tag = [...(observation.meta.tag ?? []), { system: RECORD_ORIGIN, code: NEEDS_REVIEW, display: 'Needs review' }];
-    // Why it is waiting, kept ON the record in the words the person was shown (yourphr#762). The
-    // queue is then a read over the records themselves — no second store to fall out of step with
-    // them, and a record that travels keeps its own explanation.
-    observation.note = [...(observation.note ?? []), ...review.map((text) => ({ text }))];
-  }
+  observation.status = 'final';
+  stamp(observation, review);
   return { observation, sortTitle: title, review };
 }
 
@@ -246,19 +246,4 @@ function uncodedObservation(name: string, review: string[]): { observation: Obse
     } as Observation,
     title: name,
   };
-}
-
-/**
- * RFC3339 as given, a date-only value as given, or now in UTC.
- *
- * A date that cannot be read leaves the record with NO date and a note for review. Dating it today
- * would be the worst outcome available: a record that reads as fact and is wrong.
- */
-function effectiveDateTime(given: string | undefined, now: Date, review: string[]): string {
-  const value = (given ?? '').trim();
-  if (value === '') return now.toISOString().replace(/\.\d{3}Z$/, 'Z');
-  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
-  if (!Number.isNaN(Date.parse(value))) return value;
-  review.push(`the date "${value}" could not be read, so this record has no date yet`);
-  return '';
 }

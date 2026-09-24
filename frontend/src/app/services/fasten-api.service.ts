@@ -790,13 +790,18 @@ export class FastenApiService {
   //this method allows a user to manually group related FHIR resources together (conditions, encounters, etc).
   // @deprecated - replaced by Create Manual Record Wizard
   // Patient-generated vitals (#313) — POST /secure/resource/patient-entry
+  // kind says which FHIR resource the server stores this as (#763): a vital is an Observation, an
+  // allergy an AllergyIntolerance, a medication a MedicationStatement. `name` is what the record is
+  // about — the substance, the medicine, the measurement — and `vital` is its older name.
   createPatientEntry(payload: {
     kind?: string
-    vital: string
+    vital?: string
+    name?: string
     value?: number
     systolic?: number
     diastolic?: number
     unit?: string
+    status?: string
     effective_date_time?: string
   }): Observable<{resource_type: string, source_resource_id: string, source_id: string, sort_title: string, needs_review?: string[]}> {
     return this._httpClient.post<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/resource/patient-entry`, {

@@ -32,7 +32,7 @@ import {RecordsManager} from './app/managers/RecordsManager.js';
 import {SimpleRateLimiter} from './http/rate-limit.js';
 import {clientIp} from './framework/managers/SessionsManager.js';
 import {SqliteRecordsProvider} from './app/providers/SqliteRecordsProvider.js';
-import {PatientEntryError, buildPatientVital, type PatientEntryRequest} from './patient-entry/index.js';
+import {PatientEntryError, buildPatientRecord, type PatientEntryRequest} from './patient-entry/index.js';
 
 /**
  * The session cookie. HttpOnly throughout: the Angular app (yourphr#118 Phase 2b) never sees a
@@ -167,6 +167,13 @@ export function titleFor(resource: any): string {
   if (resource?.resourceType === 'Observation') {
     const measured = observationMeasurement(resource);
     if (measured !== '') return measured;
+  }
+  // "penicillin" on its own does not say what the record is about, and a list mixes record types
+  // (yourphr#262, #763). The substance is still the record's own word for it — nothing is added
+  // here that the record does not state.
+  if (resource?.resourceType === 'AllergyIntolerance') {
+    const substance = resource.code?.text || resource.code?.coding?.[0]?.display || '';
+    if (substance !== '') return `Allergy to ${substance}`;
   }
   return (
     resource.code?.text ||
@@ -1317,16 +1324,17 @@ export function createYourPhrServer(options: ServerOptions) {
       //
       // "Add record" is a primary call to action in three places in the app, and this is the route
       // its form posted to. Until now there was none, so the form filled in, submitted and 404'd.
-      // The Observation is built in src/patient-entry (ported from Go's patient_entry.go) and saved
-      // through the account's own `manual` source, so a hand-typed blood pressure is never
-      // mistaken for one a hospital asserted.
+      // The record is built in src/patient-entry and saved through the account's own `manual`
+      // source, so a hand-typed blood pressure is never mistaken for one a hospital asserted. Which
+      // FHIR resource it becomes follows what was entered (yourphr#763): a vital is an Observation,
+      // an allergy an AllergyIntolerance, a medication a MedicationStatement.
       if (url.pathname === '/api/secure/resource/patient-entry' && req.method === 'POST') {
         const body = (await readJsonBody(req)) ?? {};
         // Who it is about and who measured it — the account's own person record (yourphr#696).
         const self = await engine.managers.records.selfPatient(ctx);
         let built;
         try {
-          built = buildPatientVital(body as PatientEntryRequest, new Date(), {subject: self.reference});
+          built = buildPatientRecord(body as PatientEntryRequest, new Date(), {subject: self.reference});
         } catch (err) {
           // The only refusal left: nothing was said at all.
           if (err instanceof PatientEntryError) {
@@ -1335,19 +1343,19 @@ export function createYourPhrServer(options: ServerOptions) {
           }
           throw err;
         }
-        const saved = await engine.managers.records.savePatientRecord(ctx, built.observation);
+        const saved = await engine.managers.records.savePatientRecord(ctx, built.resource);
         const manual = await engine.managers.sources.manualSource(ctx);
         send(res, 200, {
           success: true,
           data: {
-            resource_type: 'Observation',
+            resource_type: built.resource.resourceType,
             source_resource_id: saved.id,
             source_id: `source-${manual.id}`,
             sort_title: built.sortTitle,
             // What was kept but still needs a person: the form shows this instead of an error,
             // because the record was stored either way.
             needs_review: built.review,
-            resource: built.observation,
+            resource: built.resource,
           },
         });
         return;

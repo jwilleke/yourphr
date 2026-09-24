@@ -75,3 +75,27 @@ test('a record the person deletes from the queue is gone, and says nothing was k
 
   expect(errors).toEqual([]);
 });
+
+// yourphr#763: an allergy is an AllergyIntolerance, not an Observation wearing a label.
+test('an allergy is stored as an allergy, waits for the person, and joins their records', async ({ page }) => {
+  const errors = trackPageErrors(page);
+  await login(page, E2E_USER, E2E_PASS);
+  await page.goto(`${BASE}/resource/add`);
+
+  await page.selectOption('#entry-kind', 'allergy');
+  await page.fill('#entry-name', 'penicillin');
+  await page.getByRole('button', { name: /save/i }).click();
+
+  // Kept in their words, and honest about the fact that nothing has coded it.
+  await expect(page.getByText(/not part of your records yet/)).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByText(/nothing has matched it to a known substance/)).toBeVisible();
+
+  await page.getByRole('link', { name: 'Waiting for you', exact: true }).click();
+  await expect(page.getByText(/Allergy to penicillin/)).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByText('AllergyIntolerance')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Right as written' }).first().click();
+  await expect(page.getByText(/Added to your records: Allergy to penicillin/)).toBeVisible({ timeout: 20_000 });
+
+  expect(errors).toEqual([]);
+});

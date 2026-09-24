@@ -69,6 +69,52 @@ describe('PatientEntryComponent', () => {
     expect(component.error).toContain('blood pressure reading');
   });
 
+  // yourphr#763: the form offers the kinds the server can store in a record type of their own.
+  it('sends an allergy as an allergy, with the substance in the person\'s words', () => {
+    api.createPatientEntry.and.returnValue(of({
+      resource_type: 'AllergyIntolerance', source_resource_id: 'a-1', source_id: 'source-1',
+      sort_title: 'Allergy to penicillin',
+      needs_review: ['"penicillin" is stored exactly as you wrote it — nothing has matched it to a known substance yet'],
+    }));
+    component.kind = 'allergy';
+    component.name = ' penicillin ';
+    component.submit();
+    const arg = api.createPatientEntry.calls.mostRecent().args[0] as Record<string, unknown>;
+    expect(arg['kind']).toBe('allergy');
+    expect(arg['name']).toBe('penicillin');
+    expect(arg['vital']).toBeUndefined(); // an allergy is not a measurement
+    expect(component.successMsg).toContain('Allergy to penicillin');
+    expect(component.lastResourceType).toBe('AllergyIntolerance');
+  });
+
+  it('sends a medication, and says nothing about whether it is taken unless the person did', () => {
+    component.kind = 'medication';
+    component.name = 'metformin 500mg';
+    component.submit();
+    let arg = api.createPatientEntry.calls.mostRecent().args[0] as Record<string, unknown>;
+    expect(arg['kind']).toBe('medication');
+    expect(arg['status']).toBeUndefined(); // they did not say; the server records that, not a guess
+
+    component.medicationStatus = 'active';
+    component.name = 'metformin 500mg';
+    component.submit();
+    arg = api.createPatientEntry.calls.mostRecent().args[0] as Record<string, unknown>;
+    expect(arg['status']).toBe('active');
+  });
+
+  it('refuses an unnamed allergy or medication, and sends nothing', () => {
+    component.kind = 'allergy';
+    component.name = '   ';
+    component.submit();
+    expect(api.createPatientEntry).not.toHaveBeenCalled();
+    expect(component.error).toContain('allergic to');
+
+    component.kind = 'medication';
+    component.submit();
+    expect(api.createPatientEntry).not.toHaveBeenCalled();
+    expect(component.error).toContain('medication');
+  });
+
   it('surfaces API errors', () => {
     api.createPatientEntry.and.returnValue(throwError(() => ({error: {error: 'boom'}})));
     component.vital = 'heart_rate';

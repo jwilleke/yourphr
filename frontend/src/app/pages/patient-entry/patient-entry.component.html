@@ -1,10 +1,12 @@
 <div class="az-content-body">
   <div class="d-flex justify-content-between align-items-start flex-wrap mg-b-20">
     <div>
-      <h4 class="mg-b-5"><i class="fas fa-heart-pulse"></i>&nbsp; Add a home vital</h4>
+      <h4 class="mg-b-5"><i class="fas fa-heart-pulse"></i>&nbsp; Add a record</h4>
       <p class="tx-gray-500 mg-b-0">
-        Record measurements you take at home (patient-generated data). They are stored as FHIR Observations
-        on this instance, marked <strong>patient-reported</strong>, and show up with your other records.
+        Measurements you take at home, an allergy, or a medication you take (patient-generated data). Each is stored
+        as the kind of FHIR record it is &mdash; a vital as an Observation, an allergy as an AllergyIntolerance, a
+        medication as a MedicationStatement &mdash; marked <strong>patient-reported</strong>, and shown with your
+        other records.
       </p>
     </div>
     <div class="mg-t-5">
@@ -40,6 +42,34 @@
   <div class="card">
     <div class="card-body">
       <form (ngSubmit)="submit()" class="row row-sm">
+        <div class="col-md-3 mg-b-15">
+          <label class="form-label" for="entry-kind">What are you adding?</label>
+          <select id="entry-kind" class="form-control" [(ngModel)]="kind" name="kind">
+            <option value="vital">A measurement</option>
+            <option value="allergy">An allergy</option>
+            <option value="medication">A medication</option>
+          </select>
+        </div>
+
+        @if (!isVital) {
+          <div class="col-md-5 mg-b-15">
+            <label class="form-label" for="entry-name">{{ nameLabel }}</label>
+            <input id="entry-name" type="text" class="form-control" [(ngModel)]="name" name="name" />
+          </div>
+        }
+
+        @if (kind === 'medication') {
+          <div class="col-md-4 mg-b-15">
+            <label class="form-label" for="entry-status">Are you taking it?</label>
+            <select id="entry-status" class="form-control" [(ngModel)]="medicationStatus" name="medicationStatus">
+              <option value="">I would rather not say yet</option>
+              <option value="active">Yes, I take it now</option>
+              <option value="stopped">No, I stopped</option>
+            </select>
+          </div>
+        }
+
+        @if (isVital) {
         <div class="col-md-4 mg-b-15">
           <label class="form-label" for="vital-type">Vital</label>
           <select id="vital-type" class="form-control" [(ngModel)]="vital" name="vital" required>
@@ -50,15 +80,16 @@
             <option value="blood_pressure">Blood pressure</option>
           </select>
         </div>
+        }
 
-        @if (needsSingleValue) {
+        @if (isVital && needsSingleValue) {
           <div class="col-md-3 mg-b-15">
             <label class="form-label" for="vital-value">Value</label>
             <input id="vital-value" type="number" step="any" class="form-control" [(ngModel)]="value" name="value" required />
           </div>
         }
 
-        @if (!needsSingleValue) {
+        @if (isVital && !needsSingleValue) {
           <div class="col-md-2 mg-b-15">
             <label class="form-label" for="vital-sys">Systolic</label>
             <input id="vital-sys" type="number" step="any" class="form-control" [(ngModel)]="systolic" name="systolic" />
@@ -69,7 +100,7 @@
           </div>
         }
 
-        @if (needsSingleValue) {
+        @if (isVital && needsSingleValue) {
           <div class="col-md-2 mg-b-15">
             <label class="form-label" for="vital-unit">Unit <span class="tx-gray-500 tx-11">(optional)</span></label>
             <input id="vital-unit" type="text" class="form-control" [(ngModel)]="unit" name="unit" [placeholder]="defaultUnitHint" />
@@ -83,11 +114,18 @@
 
         <div class="col-12 mg-t-10">
           <button type="submit" class="btn btn-az-primary" [disabled]="saving">
-            {{ saving ? 'Saving…' : 'Save vital' }}
+            {{ saving ? 'Saving…' : 'Save record' }}
           </button>
           <a routerLink="/medical-history" class="btn btn-outline-secondary mg-l-10">Cancel</a>
           <p class="tx-12 tx-gray-500 mg-t-15 mg-b-0">
-            Default units: {{ defaultUnitHint }}. This does not send data to your providers — only this YourPHR instance.
+            @if (isVital) { <span>Default units: {{ defaultUnitHint }}. </span> }
+            @if (!isVital) {
+              <span>
+                Stored in your words. Nothing is matched to a coded substance or medicine yet, so it waits for you to
+                confirm it before it joins your records.
+              </span>
+            }
+            This does not send data to your providers — only this YourPHR instance.
           </p>
         </div>
       </form>

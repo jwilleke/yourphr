@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { PATIENT_ENTRY_SOURCE, PatientEntryError, buildPatientVital } from '../index.js';
+import { PATIENT_ENTRY_SOURCE, PatientEntryError, buildPatientRecord, buildPatientVital } from '../index.js';
 import { titleFor } from '../../server.js';
 
 /** Fixed, so the default-time assertion is about the shape rather than the clock. */
@@ -89,10 +89,11 @@ describe('what it keeps when it cannot code what was said (yourphr#696)', () => 
   });
 
   it('keeps a kind it cannot yet store in its own resource type, and says so', () => {
-    const { observation, review } = buildPatientVital({ kind: 'allergy', vital: 'penicillin' }, NOW);
-    expect(observation.code).toEqual({ text: 'penicillin' });
-    expect(review.some((r) => r.includes('belongs in its own kind of record'))).toBe(true);
-    expect(tagged(observation)).toBe(true);
+    const { resource, review } = buildPatientRecord({ kind: 'procedure', name: 'knee arthroscopy' }, NOW);
+    expect(resource.resourceType).toBe('Observation'); // kept, in the only shape available
+    expect((resource as { code?: unknown }).code).toEqual({ text: 'knee arthroscopy' });
+    expect(review.some((r) => r.includes('cannot yet store a "procedure"'))).toBe(true);
+    expect(tagged(resource as { meta?: { tag?: { code?: string }[] } })).toBe(true);
   });
 
   it('records a measurement with no reading yet, rather than dropping the fact that it was named', () => {
@@ -170,5 +171,105 @@ describe('what the record list shows for a vital (yourphr#696, and the display r
   it('falls back to the code text rather than inventing one when the record states no value yet', () => {
     expect(titleFor({ resourceType: 'Observation', code: { text: 'Lipid panel' } })).toBe('Lipid panel');
     expect(titleFor({ resourceType: 'Observation', code: { text: 'Blood pressure' }, component: [{ code: { coding: [{ code: '8480-6' }] } }] })).toBe('Blood pressure');
+  });
+});
+
+
+describe('an allergy the patient states (yourphr#763)', () => {
+  it('is an AllergyIntolerance about the person, asserted by the person — not an Observation wearing a label', () => {
+    const { resource, sortTitle } = buildPatientRecord({ kind: 'allergy', name: 'penicillin' }, NOW, { subject: 'Patient/self-1' });
+    expect(resource).toMatchObject({
+      resourceType: 'AllergyIntolerance',
+      code: { text: 'penicillin' },
+      patient: { reference: 'Patient/self-1' },
+      asserter: { reference: 'Patient/self-1' }, // who says so: the PGHD pattern, stated in FHIR's own field
+      recordedDate: '2026-09-23T10:30:00Z',
+    });
+    expect(sortTitle).toBe('Allergy to penicillin');
+  });
+
+  it('invents no criticality, severity, reaction or verification — the form never asked', () => {
+    const { resource } = buildPatientRecord({ kind: 'allergy', name: 'penicillin' }, NOW, { subject: 'Patient/self-1' });
+    const allergy = resource as Record<string, unknown>;
+    expect(allergy['criticality']).toBeUndefined();
+    expect(allergy['reaction']).toBeUndefined();
+    expect(allergy['verificationStatus']).toBeUndefined();
+    expect(allergy['clinicalStatus']).toBeUndefined();
+  });
+
+  it('waits for the person, because nothing has matched the substance to a coded one', () => {
+    const { resource, review } = buildPatientRecord({ kind: 'allergy', name: 'penicillin' }, NOW, { subject: 'Patient/self-1' });
+    expect(review[0]).toContain('nothing has matched it to a known substance');
+    expect(((resource.meta?.tag ?? []) as { code?: string }[]).some((t) => t.code === 'needs-review')).toBe(true);
+    expect((resource as { note?: { text?: string }[] }).note?.[0]?.text).toBe(review[0]);
+  });
+
+  it('takes the substance under the older field name too, so a v2-era client still works', () => {
+    expect((buildPatientRecord({ kind: 'allergy', vital: 'shellfish' }, NOW).resource as { code?: { text?: string } }).code?.text).toBe('shellfish');
+  });
+
+  it('refuses only an unnamed allergy — there is no fact in it', () => {
+    expect(() => buildPatientRecord({ kind: 'allergy' }, NOW)).toThrow(PatientEntryError);
+  });
+
+  it('leaves the record undated rather than dating it today when the date cannot be read', () => {
+    const { resource, review } = buildPatientRecord({ kind: 'allergy', name: 'penicillin', effective_date_time: 'last spring' }, NOW);
+    expect((resource as { recordedDate?: string }).recordedDate).toBeUndefined();
+    expect(review.some((r) => r.includes('could not be read'))).toBe(true);
+  });
+});
+
+describe('a medication the patient says they take (yourphr#763)', () => {
+  it('is a MedicationStatement about the person, sourced to the person', () => {
+    const { resource, sortTitle } = buildPatientRecord({ kind: 'medication', name: 'metformin 500mg', status: 'active' }, NOW, { subject: 'Patient/self-1' });
+    expect(resource).toMatchObject({
+      resourceType: 'MedicationStatement',
+      status: 'active',
+      medicationCodeableConcept: { text: 'metformin 500mg' },
+      subject: { reference: 'Patient/self-1' },
+      informationSource: { reference: 'Patient/self-1' },
+      dateAsserted: '2026-09-23T10:30:00Z',
+    });
+    expect(sortTitle).toBe('metformin 500mg');
+  });
+
+  // FHIR R4 requires a status. "unknown" is its own value for one nobody stated — "active" would be
+  // this instance asserting that they take it today.
+  it('says unknown, not active, when the person did not say whether they still take it', () => {
+    const { resource, review } = buildPatientRecord({ kind: 'medication', name: 'metformin' }, NOW);
+    expect((resource as { status?: string }).status).toBe('unknown');
+    expect(review.some((r) => r.includes('did not say whether you are still taking this'))).toBe(true);
+  });
+
+  it('keeps a stopped medication as stopped — it is still a fact about them', () => {
+    const { resource, review } = buildPatientRecord({ kind: 'medication', name: 'lisinopril', status: 'stopped' }, NOW);
+    expect((resource as { status?: string }).status).toBe('stopped');
+    expect(review.some((r) => r.includes('did not say whether'))).toBe(false);
+  });
+
+  it('invents no dose, route or frequency, and no coding', () => {
+    const { resource } = buildPatientRecord({ kind: 'medication', name: 'metformin', status: 'active' }, NOW);
+    const statement = resource as Record<string, unknown>;
+    expect(statement['dosage']).toBeUndefined();
+    expect((statement['medicationCodeableConcept'] as { coding?: unknown }).coding).toBeUndefined();
+  });
+
+  it('refuses only an unnamed medication', () => {
+    expect(() => buildPatientRecord({ kind: 'medication' }, NOW)).toThrow(PatientEntryError);
+  });
+});
+
+describe('what the record list shows for the kinds added in yourphr#763', () => {
+  it('names an allergy by what it is an allergy to, so a mixed list reads as sentences', () => {
+    const { resource } = buildPatientRecord({ kind: 'allergy', name: 'penicillin' }, NOW);
+    expect(titleFor(resource)).toBe('Allergy to penicillin');
+    // The same for one a provider sent: the display gap was never specific to hand-entered records.
+    expect(titleFor({ resourceType: 'AllergyIntolerance', code: { coding: [{ display: 'Peanut' }] } })).toBe('Allergy to Peanut');
+  });
+
+  it('names a medication by the medicine, which is what the record states', () => {
+    const { resource, sortTitle } = buildPatientRecord({ kind: 'medication', name: 'metformin 500mg', status: 'active' }, NOW);
+    expect(titleFor(resource)).toBe('metformin 500mg');
+    expect(titleFor(resource)).toBe(sortTitle); // the queue and the list must not disagree (yourphr#762)
   });
 });

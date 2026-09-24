@@ -5,7 +5,15 @@ import {Router, RouterModule} from '@angular/router';
 import {FastenApiService} from '../../services/fasten-api.service';
 import {extractErrorFromResponse} from '../../../lib/utils/error_extract';
 
-/** Simple patient-entered home vitals (#313 first slice). Full visit wizard remains at /resource/create. */
+/**
+ * What a person adds about themselves (#313, #696, #763). Full visit wizard remains at
+ * /resource/create.
+ *
+ * The kinds offered here are exactly the kinds the server can store in a record type of their own:
+ * a home vital as an Observation, an allergy as an AllergyIntolerance, a medication as a
+ * MedicationStatement. Offering a kind the server would have to reshape would be offering to
+ * misfile it.
+ */
 @Component({
   standalone: true,
   imports: [FormsModule, RouterModule],
@@ -14,6 +22,11 @@ import {extractErrorFromResponse} from '../../../lib/utils/error_extract';
   templateUrl: './patient-entry.component.html',
 })
 export class PatientEntryComponent {
+  kind: 'vital' | 'allergy' | 'medication' = 'vital';
+  /** The substance or the medicine, in the person's own words. */
+  name = '';
+  /** Medication only. Empty means they did not say, and the record says so rather than guessing. */
+  medicationStatus: '' | 'active' | 'stopped' = '';
   vital: 'body_weight' | 'heart_rate' | 'body_temperature' | 'oxygen_saturation' | 'blood_pressure' = 'body_weight';
   value: number | null = null;
   systolic: number | null = null;
@@ -27,6 +40,7 @@ export class PatientEntryComponent {
   needsReview: string[] = [];
   lastSourceId = '';
   lastResourceId = '';
+  lastResourceType = 'Observation';
 
   constructor(private api: FastenApiService, private router: Router) {
     const today = new Date();
@@ -35,6 +49,14 @@ export class PatientEntryComponent {
 
   get needsSingleValue(): boolean {
     return this.vital !== 'blood_pressure';
+  }
+
+  get isVital(): boolean {
+    return this.kind === 'vital';
+  }
+
+  get nameLabel(): string {
+    return this.kind === 'allergy' ? 'What are you allergic to?' : 'Which medication?';
   }
 
   get defaultUnitHint(): string {
@@ -55,10 +77,27 @@ export class PatientEntryComponent {
     this.saving = true;
 
     const payload: any = {
-      kind: 'vital',
-      vital: this.vital,
+      kind: this.kind,
       effective_date_time: this.effectiveDate || undefined,
     };
+
+    if (this.kind !== 'vital') {
+      // An allergy or a medication is one stated thing. Nothing about it is coded yet and nothing
+      // about it is guessed: what they typed is what is stored (#763).
+      if (!this.name.trim()) {
+        this.saving = false;
+        this.error = this.kind === 'allergy' ? 'Name what you are allergic to.' : 'Name the medication.';
+        return;
+      }
+      payload.name = this.name.trim();
+      if (this.kind === 'medication' && this.medicationStatus) {
+        payload.status = this.medicationStatus;
+      }
+      this.send(payload);
+      return;
+    }
+
+    payload.vital = this.vital;
     if (this.unit.trim()) {
       payload.unit = this.unit.trim();
     }
@@ -81,11 +120,16 @@ export class PatientEntryComponent {
       payload.value = Number(this.value);
     }
 
+    this.send(payload);
+  }
+
+  private send(payload: any): void {
     this.api.createPatientEntry(payload).subscribe({
       next: (data) => {
         this.saving = false;
         this.lastSourceId = data.source_id;
         this.lastResourceId = data.source_resource_id;
+        this.lastResourceType = data.resource_type || 'Observation';
         // What was kept but still needs the person: they are told here AND it waits for them on
         // the review screen, rather than being announced once and forgotten (#762).
         this.needsReview = data.needs_review ?? [];
@@ -95,17 +139,19 @@ export class PatientEntryComponent {
         this.value = null;
         this.systolic = null;
         this.diastolic = null;
+        this.name = '';
       },
       error: (err) => {
         this.saving = false;
-        this.error = extractErrorFromResponse(err) || 'Could not save vital.';
+        this.error = extractErrorFromResponse(err) || 'Could not save this record.';
       },
     });
   }
 
   viewInExplore(): void {
     if (this.lastSourceId && this.lastResourceId) {
-      this.router.navigate(['/explore', this.lastSourceId, 'resource', 'Observation', this.lastResourceId]);
+      // The type the server actually stored it as — an allergy is not an Observation (#763).
+      this.router.navigate(['/explore', this.lastSourceId, 'resource', this.lastResourceType, this.lastResourceId]);
     }
   }
 }
