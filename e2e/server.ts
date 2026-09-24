@@ -57,6 +57,14 @@ await app.sources.add(ApiContext.system('e2e-seed', E2E_USER, app.engine), {
   platformType: 'ehr', environment: 'production', // a production source for the member's Explore page; the catalog seed stays a sandbox entry
 });
 await app.syncNow(1_000_000);
+
+// A practitioner the member typed in themselves (yourphr#683), so the Address book has one that is
+// theirs to delete (yourphr#771). A provider's would be refused, which is the point of the rule.
+await app.engine.managers.records.savePatientRecord(ApiContext.system('e2e-seed', E2E_USER, app.engine), {
+  resourceType: 'Practitioner',
+  id: 'e2e-practitioner-1',
+  name: [{ text: 'Dr Ada Handentered' }],
+} as never);
 app.config.set('yourphr.backup.destination', join(dir, 'backups'));
 
 await new Promise<void>((resolve) => app.server.listen(E2E_PORT, '127.0.0.1', resolve));

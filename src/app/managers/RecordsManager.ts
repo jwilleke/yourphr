@@ -170,6 +170,34 @@ export class RecordsManager extends BaseManager {
     return { id: stored.id };
   }
 
+  /**
+   * Delete a record the person entered themselves (yourphr#771).
+   *
+   * Deleting a practitioner from the Address book has been a button that does nothing: three call
+   * sites issued the DELETE and no route answered it, which the route check could not see because
+   * it compares paths and the path is served for GET (yourphr#772).
+   *
+   * __What may be deleted, and why the line is there.__ A record in one of the caller's OWN manual
+   * sources is theirs: they typed it, or they uploaded the file it came in, and deleting it is the
+   * correction they asked for. A record a PROVIDER sent is refused — not to protect the provider,
+   * but because deleting it does not last: the next sync fetches it again, and a delete that undoes
+   * itself is worse than one that never happened. Removing the source removes its records, and that
+   * is the honest way to be rid of them.
+   *
+   * The record goes outright, as a discarded review item does — no tombstone. A reference from
+   * another record can be left pointing at nothing, which FHIR tolerates and the graph view simply
+   * does not draw; inventing a replacement would be worse than a missing edge.
+   */
+  async deleteOwnRecord(ctx: ApiContext, resourceType: string, id: string): Promise<{ id: string; resourceType: string }> {
+    const stored = await this.provider.readById(this.who(ctx), id);
+    if (!stored || stored.resourceType !== resourceType) throw new ApiError(404, 'not found');
+    if (!(await this.engine.managers.sources.isManual(ctx, stored.sourceId))) {
+      throw new ApiError(409, 'this record came from a provider, so deleting it here would not last — the next sync would fetch it again. Disconnect the source to remove its records.');
+    }
+    await this.provider.removeRecord(this.who(ctx), stored.resourceType, stored.id);
+    return { id: stored.id, resourceType: stored.resourceType };
+  }
+
   // --- the record pages ---
 
   /** GET /resource/fhir?sourceResourceType=…[&sourceID=…] — YourPHR's resource_fhir rows. */

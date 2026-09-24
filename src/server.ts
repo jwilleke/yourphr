@@ -1476,6 +1476,15 @@ export function createYourPhrServer(options: ServerOptions) {
         send(res, 200, {success: true, data: attributed(await engine.managers.records.detail(ctx, detail[2]!))});
         return;
       }
+      // DELETE on the same path (yourphr#771). The first segment here is the resource TYPE, not a
+      // source: the Address book calls it as /resource/fhir/Practitioner/:id. Only a record in one
+      // of the caller's own manual sources can go — the manager says why, and says it to the person
+      // rather than failing silently, which is what this did for as long as the path has existed.
+      if (detail && req.method === 'DELETE') {
+        const gone = await engine.managers.records.deleteOwnRecord(ctx, decodeURIComponent(detail[1]!), decodeURIComponent(detail[2]!));
+        send(res, 200, {success: true, data: gone});
+        return;
+      }
 
       // GET /api/secure/summary — what the dashboard counts from
       if (url.pathname === '/api/secure/summary' && req.method === 'GET') {

@@ -34,6 +34,9 @@ beforeEach(async () => {
   engine.register('sources', {
     dependsOn: [], initialize: async () => {}, shutdown: async () => {},
     manualSource: async () => ({ id: 7 }),
+    // source-7 is the account's own; source-2 is a provider's, and source-3 an uploaded file,
+    // which is manual too — the person chose it.
+    isManual: async (_ctx: unknown, publicId: string) => publicId === 'source-7' || publicId === 'source-3' || publicId === '',
     // Two connected sources: one the person signed in to, one they uploaded a file from.
     list: async () => [
       { id: 7, display: 'Added by you', platformType: 'manual', patient: '' },
@@ -239,6 +242,36 @@ describe('RecordsManager — the one door, scoped to whoever is asking', () => {
     seedSourcePatients();
     await expect(records.assertIdentity(alice, 'source-2', 'maybe' as never)).rejects.toMatchObject({ status: 400 });
     await expect(records.assertIdentity(alice, 'source-99', 'self')).rejects.toMatchObject({ status: 404 });
+  });
+
+  // yourphr#771: the Address book's delete button did nothing for as long as the path existed.
+  it('deletes a record the person entered themselves', async () => {
+    provider.seed('alice', 'source-7', { resourceType: 'Practitioner', id: 'p-mine', name: [{ text: 'Dr Typed In' }] } as Resource);
+    await records.deleteOwnRecord(alice, 'Practitioner', 'p-mine');
+    await expect(records.detail(alice, 'p-mine')).rejects.toMatchObject({ status: 404 });
+  });
+
+  it('deletes one from a file they uploaded, because they chose that file', async () => {
+    provider.seed('alice', 'source-3', { resourceType: 'Practitioner', id: 'p-upload', name: [{ text: 'Dr From A File' }] } as Resource);
+    await records.deleteOwnRecord(alice, 'Practitioner', 'p-upload');
+    await expect(records.detail(alice, 'p-upload')).rejects.toMatchObject({ status: 404 });
+  });
+
+  // The refusal that matters: the next sync would fetch it again, and a delete that undoes itself
+  // is worse than one that never happened.
+  it('refuses to delete what a provider sent, and says what to do instead', async () => {
+    provider.seed('alice', 'source-2', { resourceType: 'Practitioner', id: 'p-theirs', name: [{ text: 'Dr From Epic' }] } as Resource);
+    await expect(records.deleteOwnRecord(alice, 'Practitioner', 'p-theirs')).rejects.toMatchObject({ status: 409 });
+    await expect(records.deleteOwnRecord(alice, 'Practitioner', 'p-theirs')).rejects.toThrow(/would not last|Disconnect the source/);
+    expect((await records.detail(alice, 'p-theirs'))['source_resource_id']).toBe('p-theirs'); // still there
+  });
+
+  it('refuses another account\'s record, and a type that does not match the id', async () => {
+    provider.seed('alice', 'source-7', { resourceType: 'Practitioner', id: 'p-mine', name: [{ text: 'Dr Typed In' }] } as Resource);
+    await expect(records.deleteOwnRecord(alice, 'Practitioner', 'o9')).rejects.toMatchObject({ status: 404 }); // bob's
+    // A type that does not match the stored record is a 404, not a delete of whatever shares the id.
+    await expect(records.deleteOwnRecord(alice, 'Condition', 'p-mine')).rejects.toMatchObject({ status: 404 });
+    expect((await records.detail(alice, 'p-mine'))['source_resource_id']).toBe('p-mine');
   });
 
   it('detail finds a record by id without its type; a missing one is a 404', async () => {
