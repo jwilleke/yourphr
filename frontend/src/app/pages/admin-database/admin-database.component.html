@@ -74,7 +74,7 @@
             }
             @if (!health.ok && health.schedule_enabled) {
               <span class="d-block mg-t-5 tx-12">
-                Check destination path, disk space, and <code>backup.allowed-roots</code> in config if the path is outside the data volume.
+                Check that the destination path exists, is absolute and writable, and has free space.
               </span>
             }
           </div>

@@ -1,16 +1,5 @@
-// Payloads for POST /secure/source/authorize — the backend performs SMART on FHIR discovery and
-// builds the PKCE authorize URL. The browser opens authorize_url and never handles tokens.
-// EPIC #20, issue #52.
-export interface SmartAuthorizeRequest {
-  api_endpoint_base_url: string;
-  client_id: string;
-  scopes: string;
-  // Optional — the backend derives it from this deployment's relay config (relay.public_url /
-  // YOURPHR_RELAY_PUBLIC_URL) so a self-hosted relay needs no frontend rebuild (#399). Only send
-  // one to override the instance default.
-  redirect_uri?: string;
-}
-
+// The PKCE authorize URL a catalog entry builds (authorizeSourceFromCatalog). The browser opens
+// authorize_url and never handles tokens.
 export interface SmartAuthorizeResponse {
   authorize_url: string;
   state: string;

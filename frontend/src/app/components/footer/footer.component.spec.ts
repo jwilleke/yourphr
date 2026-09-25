@@ -13,7 +13,7 @@ describe('FooterComponent', () => {
   beforeEach(waitForAsync(() => {
     apiSpy = jasmine.createSpyObj('FastenApiService', ['getVersion', 'getPublicInstanceInfo']);
     apiSpy.getVersion.and.returnValue(of({ version: '1.9.0', environment_name: '' }));
-    apiSpy.getPublicInstanceInfo.and.returnValue(of({ name: '', contact_email: '', contact_url: '', theme: '', demo_enabled: false, demo_admin_enabled: false, demo_admin_session: false, password_min_length: 8, password_max_length: 69, password_deny_common: true, password_deny_username: true, username_min_length: 3, signup_enabled: true, agent_token_enabled: false }));
+    apiSpy.getPublicInstanceInfo.and.returnValue(of({ name: '', contact_email: '', contact_url: '', demo_enabled: false, demo_admin_enabled: false, demo_admin_session: false, password_min_length: 8, password_max_length: 69, password_deny_common: true, password_deny_username: true, username_min_length: 3, signup_enabled: true, agent_token_enabled: false }));
     TestBed.configureTestingModule({
       declarations: [ FooterComponent ],
       providers: [ { provide: FastenApiService, useValue: apiSpy } ]

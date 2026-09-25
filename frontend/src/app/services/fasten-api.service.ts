@@ -34,8 +34,7 @@ import {ResourceGraphResponse} from '../models/fasten/resource-graph-response';
 import { fetchEventSource } from '@microsoft/fetch-event-source';
 import {BackgroundJob, BackgroundJobSyncData} from '../models/fasten/background-job';
 import {SupportRequest} from '../models/fasten/support-request';
-import {SmartConnectRequest} from '../models/fasten/smart-connect-request';
-import {SmartAuthorizeRequest, SmartAuthorizeResponse} from '../models/fasten/smart-authorize';
+import {SmartAuthorizeResponse} from '../models/fasten/smart-authorize';
 import {RelayConfig} from '../models/fasten/relay-config';
 import {InstanceSettings} from '../models/fasten/instance-settings';
 import {AdminConfig, RevealedConfigValue} from '../models/fasten/admin-config';
@@ -418,39 +417,6 @@ export class FastenApiService {
 
   createSource(source: Source): Observable<any> {
     return this._httpClient.post<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/source`, source)
-      .pipe(
-        map((response: ResponseWrapper) => {
-          // @ts-ignore
-          return {summary: response.data, source: response.source}
-        })
-      );
-  }
-
-  // authorizeSource asks the backend to perform SMART on FHIR discovery and build the PKCE
-  // authorize URL. The browser opens authorize_url so the user logs in at the provider; the
-  // returned state + code_verifier are then passed to connectSource() to complete the exchange.
-  // See backend handler.AuthorizeSource (#51) and the relay (#50).
-  authorizeSource(req: SmartAuthorizeRequest): Observable<SmartAuthorizeResponse> {
-    return this._httpClient.post<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/source/authorize`, req)
-      .pipe(
-        map((response: any) => {
-          return {
-            authorize_url: response.authorize_url,
-            state: response.state,
-            code_verifier: response.code_verifier,
-            login_wait_seconds: response.login_wait_seconds,
-            relay_poll_seconds: response.relay_poll_seconds,
-            redirect_uri: response.redirect_uri,
-          } as SmartAuthorizeResponse
-        })
-      );
-  }
-
-  // connectSource completes a SMART on FHIR connection: the backend exchanges the authorization
-  // code (with PKCE verifier) for tokens, stores the source, and starts the initial sync. The
-  // browser never handles tokens. See backend handler.ConnectSource (#51) and the relay (#50).
-  connectSource(req: SmartConnectRequest): Observable<any> {
-    return this._httpClient.post<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/source/connect`, req)
       .pipe(
         map((response: ResponseWrapper) => {
           // @ts-ignore
@@ -1285,7 +1251,6 @@ export interface InstanceInfo {
   name: string;
   contact_email: string;
   contact_url: string;
-  theme: string;
   // Public demo instance: offer one-click sign-in to the shared demo account (#495). Absent or
   // false on every ordinary install. Only the flag is published — the demo password is verified
   // server-side by /auth/demo-signin and never reaches the browser.
@@ -1329,7 +1294,6 @@ function mapInstanceInfo(response: ResponseWrapper): InstanceInfo {
     name: str('operator.name'),
     contact_email: str('operator.contact_email'),
     contact_url: str('operator.contact_url'),
-    theme: str('theme.name'),
     // Strictly true only. An absent key, a null, or a string must read as "not a demo" — this
     // flag gates a shared-account login, so anything ambiguous defaults to off.
     demo_enabled: data['demo.enabled'] === true,

@@ -51,8 +51,6 @@ const KNOWN_MISSING: Record<string, string> = {
  * handled as a lookup for a source called "authorize" — a wrong answer rather than an obvious one.
  */
 const KNOWN_SWALLOWED: Record<string, string> = {
-  '/api/secure/source/authorize': 'yourphr#413',
-  '/api/secure/source/connect': 'yourphr#407',
 };
 
 /** Every `.ts` under the Angular app, specs excluded. */
@@ -206,7 +204,7 @@ function main(): void {
 
   if (status === 0) {
     const n = Object.keys(KNOWN_MISSING).length + Object.keys(KNOWN_SWALLOWED).length;
-    console.log(`  routes: clean — every path the frontend calls is routed, or is one of the ${n} known gaps under yourphr#680`);
+    console.log(`  routes: clean — every path the frontend calls is routed, or is one of the ${n} known gap(s), each with its own issue`);
   }
   process.exitCode = status;
 }

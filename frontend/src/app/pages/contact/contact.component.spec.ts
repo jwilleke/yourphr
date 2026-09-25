@@ -13,7 +13,7 @@ describe('ContactComponent', () => {
   let authSpy: jasmine.SpyObj<AuthService>;
 
   const info = (over: Partial<{name: string; contact_email: string; contact_url: string}> = {}) =>
-    of({name: '', contact_email: '', contact_url: '', theme: '', demo_enabled: false, demo_admin_enabled: false, demo_admin_session: false, password_min_length: 8, password_max_length: 69, password_deny_common: true, password_deny_username: true, username_min_length: 3, signup_enabled: true, agent_token_enabled: false, ...over});
+    of({name: '', contact_email: '', contact_url: '', demo_enabled: false, demo_admin_enabled: false, demo_admin_session: false, password_min_length: 8, password_max_length: 69, password_deny_common: true, password_deny_username: true, username_min_length: 3, signup_enabled: true, agent_token_enabled: false, ...over});
 
   beforeEach(waitForAsync(() => {
     apiSpy = jasmine.createSpyObj('FastenApiService', ['getPublicInstanceInfo', 'getInstanceInfo']);
