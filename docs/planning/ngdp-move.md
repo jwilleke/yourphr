@@ -6,6 +6,8 @@
 >
 > __Re-verified 2026-09-21__ against ngdpbase `ed5f8a15` (v4.20.0, 559 commits after the 2026-09-02 amendment) and YourPHR `9964cc22b`. Much of the security comparison had gone stale because ngdpbase fixed what this document filed: the global context slot ([ngdpbase#1132](https://github.com/jwilleke/ngdpbase/issues/1132)), the token-ceiling bypass ([ngdpbase#1164](https://github.com/jwilleke/ngdpbase/issues/1164)), the unguarded fetches ([ngdpbase#1133](https://github.com/jwilleke/ngdpbase/issues/1133)) and the maintenance toggle ([ngdpbase#1147](https://github.com/jwilleke/ngdpbase/issues/1147)) are all closed. Superseded findings are struck through with a dated note rather than deleted, as before; plain facts (counts, line numbers, issue states) are corrected in place. The D18 open question was answered and is a live defect — [#751](https://github.com/jwilleke/yourphr/issues/751). Everything the re-check found is recorded in *Corrections made while writing this*.
 >
+> __Re-verified 2026-09-25__ against ngdpbase `2f02a12f` and YourPHR `4dc9ac26a`. Four days of shipping moved YourPHR under the document: two rows of the overlap table below describe gaps that have since been filled, and two capabilities the table never listed turned out to be the ones the current design work needed. Counts re-measured. Jim's framing, recorded here because it changes what this document is for: __YourPHR is eventually expected to be a set of addons within an ngdpbase implementation__ — so the question is no longer "should we adopt it" but "which of these do we build twice".
+>
 > Read with [`architecture-principles-typescript.md`](https://github.com/jwilleke/ngdpbase/blob/master/docs/planning/architecture-principles-typescript.md), which now lives in ngdpbase. That document is the governing one and already answers part of this.
 
 ## The question, stated properly
@@ -30,16 +32,18 @@ One shape is explicitly ruled out by the governing document, and it is the one p
 
 ## Scale
 
-Non-test TypeScript, counted 2026-09-21 (2026-08-30 figure in brackets):
+Non-test TypeScript, counted 2026-09-25 (2026-09-21 figure in brackets):
 
 | | Lines |
 |---|---|
-| ngdpbase `src/` | 121,558 (110,522) |
-| — its managers alone | 27,830 (25,958) |
-| YourPHR `src/` (whole backend) | 14,641 (13,797) |
-| — `src/framework/` | 3,734 (3,649) |
+| ngdpbase `src/` | 125,955 (121,558) |
+| — its managers alone | 27,909 (27,830) |
+| YourPHR `src/` (whole backend) | 16,802 (14,641) |
+| — `src/framework/` | 3,799 (3,734) |
 
-ngdpbase has 38 `*Manager.ts` files (41 files in `src/managers/`, which is what the earlier "40" counted); YourPHR has 14. Adoption means carrying the platform to reach roughly 4k lines' worth of horizontal services — unless the vertical features below are worth the freight.
+ngdpbase has 36 `*Manager.ts` files (39 files in `src/managers/`); YourPHR has 14. Adoption means carrying the platform to reach roughly 4k lines' worth of horizontal services — unless the vertical features below are worth the freight.
+
+YourPHR grew 2,161 lines in four days while ngdpbase grew 4,397 — worth noting only because it is the shape of the trap this document describes: both ends move, and a comparison written once is wrong within the week.
 
 ## What it would buy: the open-issue overlap
 
@@ -54,14 +58,25 @@ The strongest argument, and the one missing from [yourphr#697](https://github.co
 | [#500](https://github.com/jwilleke/yourphr/issues/500) `ui.theme-name` wired to nothing | ThemeManager lists themes automatically |
 | [#502](https://github.com/jwilleke/yourphr/issues/502) Azia BS4 → Bootstrap 5.3 colour modes | The same theme system, already built |
 | [#536](https://github.com/jwilleke/yourphr/issues/536) Outbound mail transport (__P1__) | `EmailManager` |
-| [#687](https://github.com/jwilleke/yourphr/issues/687) "Email this summary" 404s | `EmailManager` |
+| ~~[#687](https://github.com/jwilleke/yourphr/issues/687) "Email this summary" 404s~~ __Resolved 2026-09-24 without it__ (577becde3). The decision was that the instance does not send: it hands the person the file and says so. `EmailManager` would have answered the question this row assumed — how do we send mail — rather than the one that mattered, which was whether we should. [#536](https://github.com/jwilleke/yourphr/issues/536) still wants a transport for its own reasons. | `EmailManager` |
 | [#631](https://github.com/jwilleke/yourphr/issues/631) Backups must restore the instance (__P1__) | Backup and restore, instance-level |
 | [#709](https://github.com/jwilleke/yourphr/issues/709) per-user settings have no store | `UserManager` + `NotificationManager` per-user state |
-| [#719](https://github.com/jwilleke/yourphr/issues/719) agent tokens — no minting screen (__P1__; was [#695](https://github.com/jwilleke/yourphr/issues/695), closed 2026-09-02 with the UI still missing) | `AgentTokenManager` + the `profile.ejs` card, mint form, live table, revoke, admin oversight |
+| ~~[#719](https://github.com/jwilleke/yourphr/issues/719) agent tokens — no minting screen~~ __Built 2026-09-24__ (25504a4c4): mint with scopes, live table, revoke, renew, hidden when the feature is off. The row stood for three weeks and was answered in a day once someone looked at it, which is the honest counterweight to every "ngdpbase already has this" line in this table. | `AgentTokenManager` + the `profile.ejs` card, mint form, live table, revoke, admin oversight |
 | Token-expiry notification, deferred in [#695](https://github.com/jwilleke/yourphr/issues/695) (no issue of its own) | `NotificationManager` — per-user, with expiry and dismiss |
 | [#714](https://github.com/jwilleke/yourphr/issues/714) Maintenance mode — no way to say the instance is briefly not itself | The gate, the page, the toggle, the notification and the config, all shipped |
 
-Twelve open issues, five of them P1, plus one deferred item with no issue of its own. (Originally counted as thirteen, with #695 appearing twice.)
+Ten still-open issues, four of them P1, plus one deferred item with no issue of its own — two rows having been answered in YourPHR since. (Originally counted as thirteen, with #695 appearing twice.)
+
+### Two capabilities the table missed, found by needing them
+
+Both surfaced on 2026-09-25 from design work that had nothing to do with adoption, which is the more useful way for this list to grow — a capability you reach for is better evidence than one you notice.
+
+| Open issue | ngdpbase core capability |
+|---|---|
+| [#775](https://github.com/jwilleke/yourphr/issues/775) markdown: one module, CommonMark, sanitised before storage (__P1__) — blocks [#353](https://github.com/jwilleke/yourphr/issues/353) and [#632](https://github.com/jwilleke/yourphr/issues/632) | `FilterManager` (ngdpbase#1117), `SecurityFilter`, `FilterChain`, on `markdown-it`. It already draws the distinction YourPHR's rule needs — `SecurityFilter.renderFiltering` is documented as *"Filter RENDERED output. Separate from save-time blocking (ngdpbase#1037)"* — and its docblock names the exact failure YourPHR was about to repeat: filters *"had no contract, no owner and no contributed path"*, reached from two entry points and owned by nobody. |
+| [#353](https://github.com/jwilleke/yourphr/issues/353) patient comments on records | `CommentManager` — comments as a capability: config-gated (`comments.allow`), audit event on write, actor context. The storage does not transfer (its comments are files per page; YourPHR's are FHIR records), but the shape does. |
+
+Neither is a row this document could have predicted. Both were found by designing a feature and discovering the design already existed, which is the argument for reading ngdpbase before building rather than after.
 
 ### The gap nobody had filed: maintenance mode
 
