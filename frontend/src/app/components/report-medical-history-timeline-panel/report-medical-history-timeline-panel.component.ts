@@ -4,8 +4,6 @@ import {EncounterModel} from '../../../lib/models/resources/encounter-model';
 import {RecResourceRelatedDisplayModel} from '../../../lib/utils/resource_related_display_model';
 import {DiagnosticReportModel} from '../../../lib/models/resources/diagnostic-report-model';
 import {FastenDisplayModel} from '../../../lib/models/fasten/fasten-display-model';
-import {MedicalRecordWizardComponent} from '../medical-record-wizard/medical-record-wizard.component';
-import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'app-report-medical-history-timeline-panel',
@@ -19,7 +17,7 @@ export class ReportMedicalHistoryTimelinePanelComponent implements OnInit {
   displayModel: EncounterModel
   showRaw = false // "Details (raw FHIR)" debug toggle
 
-  constructor(private modalService: NgbModal) { }
+  constructor() { }
 
   toggleRaw(): void {
     this.showRaw = !this.showRaw
@@ -46,10 +44,4 @@ export class ReportMedicalHistoryTimelinePanelComponent implements OnInit {
       '/labs/report/'+ diagnosticReport?.source_id + '/' + diagnosticReport?.source_resource_type + '/' + diagnosticReport?.source_resource_id :
       '/explore/'+ diagnosticReport?.source_id + '/resource/' + diagnosticReport?.source_resource_id + '/'
   }
-
-
-  // openMedicalRecordWizard() is gone with the button (#684): the wizard's submit path is not
-  // served, so the flow failed after the person had typed everything. It returns when it has a
-  // server side.
-
 }

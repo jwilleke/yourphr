@@ -30,7 +30,6 @@ import { ProceduresComponent } from './pages/procedures/procedures.component';
 import { MedicalHistoryComponent } from './pages/medical-history/medical-history.component';
 import { ReportLabsComponent } from './pages/report-labs/report-labs.component';
 import {PipesModule} from './pipes/pipes.module';
-import { ResourceCreatorComponent } from './pages/resource-creator/resource-creator.component';
 import { InfiniteScrollModule } from 'ngx-infinite-scroll';
 import { NgSelectModule } from '@ng-select/ng-select';
 import {HTTP_CLIENT_TOKEN} from "./dependency-injection";
@@ -67,7 +66,6 @@ import { GetEncryptionKeyWizardComponent } from './pages/get-encryption-key-wiza
         ProceduresComponent,
         MedicalHistoryComponent,
         ReportLabsComponent,
-        ResourceCreatorComponent,
         ExploreComponent,
         DesktopCallbackComponent,
         BackgroundJobsComponent,

@@ -29,7 +29,7 @@ const password = readFileSync(passwordFile, 'utf8').trim();
 const DEFAULT_ROUTES = [
   'dashboard', 'sources', 'explore', 'medical-history', 'medical-concerns', 'medications', 'allergies',
   'immunizations', 'labs', 'procedures', 'practitioners', 'patient-profile', 'account-profile',
-  'settings', 'users', 'background-jobs', 'resource/add', 'resource/create',
+  'settings', 'users', 'background-jobs', 'resource/add',
   'admin', 'admin/config', 'admin/database', 'admin/logs', 'admin/provider-catalog', 'sandbox',
   'privacy', 'terms', 'contact', 'attributions',
 ];

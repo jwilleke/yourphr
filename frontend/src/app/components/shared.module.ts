@@ -23,14 +23,8 @@ import {NgbCollapseModule, NgbModule, NgbDropdownModule, NgbAccordionModule, Ngb
 import {PipesModule} from '../pipes/pipes.module';
 import {DirectivesModule} from '../directives/directives.module';
 import { ReportMedicalHistoryTimelinePanelComponent } from './report-medical-history-timeline-panel/report-medical-history-timeline-panel.component';
-import { MedicalRecordWizardComponent } from './medical-record-wizard/medical-record-wizard.component';
-import { MedicalRecordWizardAddPractitionerComponent } from './medical-record-wizard-add-practitioner/medical-record-wizard-add-practitioner.component';
-import { MedicalRecordWizardAddOrganizationComponent } from './medical-record-wizard-add-organization/medical-record-wizard-add-organization.component';
-import { MedicalRecordWizardAddAttachmentComponent } from './medical-record-wizard-add-attachment/medical-record-wizard-add-attachment.component';
 import {FhirCardModule} from './fhir-card/fhir-card.module';
 import {FhirDatatableModule} from './fhir-datatable/fhir-datatable.module';
-import { MedicalRecordWizardAddEncounterComponent } from './medical-record-wizard-add-encounter/medical-record-wizard-add-encounter.component';
-import { MedicalRecordWizardAddLabResultsComponent } from './medical-record-wizard-add-lab-results/medical-record-wizard-add-lab-results.component';
 import { FormRequestHealthSystemComponent } from './form-request-health-system/form-request-health-system.component';
 import { RawResourceComponent } from './raw-resource/raw-resource.component';
 
@@ -58,13 +52,7 @@ import { RawResourceComponent } from './raw-resource/raw-resource.component';
     GridstackComponent,
     GridstackItemComponent,
     LoadingSpinnerComponent,
-    MedicalRecordWizardComponent,
     NlmTypeaheadComponent,
-    MedicalRecordWizardAddPractitionerComponent,
-    MedicalRecordWizardAddOrganizationComponent,
-    MedicalRecordWizardAddAttachmentComponent,
-    MedicalRecordWizardAddEncounterComponent,
-    MedicalRecordWizardAddLabResultsComponent,
 
   ],
   declarations: [
@@ -101,12 +89,6 @@ import { RawResourceComponent } from './raw-resource/raw-resource.component';
       GridstackComponent,
       GridstackItemComponent,
       LoadingSpinnerComponent,
-      MedicalRecordWizardAddAttachmentComponent,
-      MedicalRecordWizardAddEncounterComponent,
-      MedicalRecordWizardAddOrganizationComponent,
-      MedicalRecordWizardAddPractitionerComponent,
-      MedicalRecordWizardComponent,
-      MedicalRecordWizardAddLabResultsComponent,
       NlmTypeaheadComponent,
     ]
 })

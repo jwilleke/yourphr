@@ -45,11 +45,7 @@ import {AdminMetrics} from '../models/fasten/admin-metrics';
 import {CDAConverterStatus} from '../models/fasten/cda-converter-status';
 import {UploadResult} from '../models/fasten/upload-result';
 import {ConnectableProvider, ProviderCatalogEntry, ProviderCatalogEntryRequest} from '../models/fasten/provider-catalog';
-import {
-  List
-} from 'fhir/r4';
 import {FormRequestHealthSystem} from '../models/fasten/form-request-health-system';
-import { UpdateResourcePayload } from '../models/fasten/resource_update';
 import { Favorite } from '../pages/practitioner-list/practitioner-list.component';
 
 @Injectable({
@@ -625,32 +621,6 @@ export class FastenApiService {
       );
   }
 
-  createRelatedResourcesFastenSource(resourceList: List): Observable<Source> {
-
-    const bundleBlob = new Blob([JSON.stringify(resourceList)], { type: 'application/json' });
-    const bundleFile = new File([ bundleBlob ], 'related.json', { type: 'application/json' });
-
-    const formData = new FormData();
-    formData.append('file', bundleFile);
-
-    return this._httpClient.post<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/resource/related`, formData)
-      .pipe(
-        map((response: ResponseWrapper) => {
-          return response.data as Source
-        })
-      );
-  }
-
-  removeEncounterRelatedResource(encounterId: string, resourceId: string, resourceType: string) : Observable<any> {
-    return this._httpClient.delete<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/encounter/${encounterId}/related/${resourceType}/${resourceId}`)
-      .pipe(
-        map((response: ResponseWrapper) => {
-          return response.data
-        })
-      );
-  }
-
-
   getSources(): Observable<Source[]> {
     return this._httpClient.get<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/source`)
       .pipe(
@@ -805,17 +775,6 @@ export class FastenApiService {
       );
   }
 
-  updateResource(resourceType: string, resourceId: string, payload: UpdateResourcePayload) : Observable<ResponseWrapper> {
-    return this._httpClient.patch<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/resource/fhir/${resourceType}/${resourceId}`, payload)
-      .pipe(
-        map((response: ResponseWrapper) => {
-          return response
-        })
-      );
-  }
-
-  //this method allows a user to manually group related FHIR resources together (conditions, encounters, etc).
-  // @deprecated - replaced by Create Manual Record Wizard
   // Patient-generated vitals (#313) — POST /secure/resource/patient-entry
   // kind says which FHIR resource the server stores this as (#763): a vital is an Observation, an
   // allergy an AllergyIntolerance, a medication a MedicationStatement. `name` is what the record is
