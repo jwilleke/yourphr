@@ -10,7 +10,7 @@
 - Next steps:
   - Build [#775](https://github.com/jwilleke/yourphr/issues/775) — it blocks both [#353](https://github.com/jwilleke/yourphr/issues/353) and [#632](https://github.com/jwilleke/yourphr/issues/632). Port ngdpbase's `FilterManager` shape: one owner, one chain, both the write and render paths through it, `markdown-it` for CommonMark, save-time refusal naming the offending lines, code fences exempt. Stricter than upstream on one point, decided and recorded: refuse ALL raw HTML outside fences, because a stored note can reach the exported HTML summary where no render filter runs.
   - Then [#353](https://github.com/jwilleke/yourphr/issues/353) (comments as `Communication` records, markdown in `note[].text`, `about[]` absent when standalone, included in an export only by choice) and [#632](https://github.com/jwilleke/yourphr/issues/632) (help pages as plain CommonMark files — already valid ngdpbase pages).
-  - Open decisions Jim owns: [#773](https://github.com/jwilleke/yourphr/issues/773) the visit wizard's fate, and [#774](https://github.com/jwilleke/yourphr/issues/774) whether the NLM lookups move behind the server.
+  - Open decision Jim owns: [#774](https://github.com/jwilleke/yourphr/issues/774) whether the NLM lookups move behind the server.
 - Blockers / significant notes: [#774](https://github.com/jwilleke/yourphr/issues/774) is live egress — Address book → New Practitioner sends what is typed to `clinicaltables.nlm.nih.gov` from the patient's browser, demonstrated by driving the page. Nothing depends on it being fixed first, but it is the only shipped behaviour here that surprises.
 <!-- RESUME:END -->
 
@@ -58,7 +58,6 @@ Open work in [jwilleke/yourphr](https://github.com/jwilleke/yourphr), ranked. Ge
 
 ## 🟡 P2
 
-- [#773](https://github.com/jwilleke/yourphr/issues/773) — [FEATURE] The visit wizard returns with a server side, or is retired
 - [#770](https://github.com/jwilleke/yourphr/issues/770) — [FEATURE] Patient self-report forms as QuestionnaireResponse — the questionnaire has to exist first
 - [#714](https://github.com/jwilleke/yourphr/issues/714) — [FEATURE] Maintenance mode — no way to say the instance is briefly not itself
 - [#709](https://github.com/jwilleke/yourphr/issues/709) — [FEATURE] Per-user settings have no store — Go's user_settings table got no successor, so preferences live in one browser
@@ -115,6 +114,7 @@ Open work in [jwilleke/yourphr](https://github.com/jwilleke/yourphr), ranked. Ge
 
 ## 🔵 In review
 
+- [#773](https://github.com/jwilleke/yourphr/issues/773) — [FEATURE] The visit wizard returns with a server side, or is retired
 - [#687](https://github.com/jwilleke/yourphr/issues/687) — [BUG] "Email this summary" calls an endpoint that does not exist
 - [#771](https://github.com/jwilleke/yourphr/issues/771) — [BUG] Deleting a practitioner calls a route that does not exist — the button does nothing
 - [#719](https://github.com/jwilleke/yourphr/issues/719) — [BUG] Settings still offers device pairing for an app that does not exist — replace it with the agent-token minting screen
