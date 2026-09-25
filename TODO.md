@@ -31,6 +31,7 @@ Open work in [jwilleke/yourphr](https://github.com/jwilleke/yourphr), ranked. Ge
 
 ## 🟠 P1
 
+- [#778](https://github.com/jwilleke/yourphr/issues/778) — [BUG] Bare-metal setup serves no interface — the example sets YOURPHR_WEB_SRC_FRONTEND_PATH, the server reads YOURPHR_WEB_STATIC_DIR
 - [#776](https://github.com/jwilleke/yourphr/issues/776) — [BUG] Sync imports document titles but never fetches the documents — the Binary pass went with the Go stack
 - [#774](https://github.com/jwilleke/yourphr/issues/774) — [BUG] Forms send what the patient types to NLM and Wikipedia, straight from their browser
 - [#772](https://github.com/jwilleke/yourphr/issues/772) — [CHORE] check-routes compares paths, not methods — a GET-only path reads as served for PATCH and DELETE
