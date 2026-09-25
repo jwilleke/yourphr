@@ -6,7 +6,7 @@
 - Last worked on: design threads rather than code — settled how patient comments, markdown and the ngdpbase relationship fit together, after shipping v3.7.0/v3.7.1 and clearing #680 from 12 route gaps to 5.
 - Branch / state: main, clean, in sync with origin, no stashes
 - Running / in-flight: none. All CI green on 5d5af9da2; no open PRs; no background agents or dev servers left running.
-- Parked / half-done: none in the tree. Four issues sit `in-review` awaiting Jim's call to close: [#685](https://github.com/jwilleke/yourphr/issues/685), [#687](https://github.com/jwilleke/yourphr/issues/687), [#719](https://github.com/jwilleke/yourphr/issues/719), [#771](https://github.com/jwilleke/yourphr/issues/771).
+- Parked / half-done: none in the tree.
 - Next steps:
   - Build [#775](https://github.com/jwilleke/yourphr/issues/775) — it blocks both [#353](https://github.com/jwilleke/yourphr/issues/353) and [#632](https://github.com/jwilleke/yourphr/issues/632). Port ngdpbase's `FilterManager` shape: one owner, one chain, both the write and render paths through it, `markdown-it` for CommonMark, save-time refusal naming the offending lines, code fences exempt. Stricter than upstream on one point, decided and recorded: refuse ALL raw HTML outside fences, because a stored note can reach the exported HTML summary where no render filter runs.
   - Then [#353](https://github.com/jwilleke/yourphr/issues/353) (comments as `Communication` records, markdown in `note[].text`, `about[]` absent when standalone, included in an export only by choice) and [#632](https://github.com/jwilleke/yourphr/issues/632) (help pages as plain CommonMark files — already valid ngdpbase pages).
@@ -114,11 +114,7 @@ Open work in [jwilleke/yourphr](https://github.com/jwilleke/yourphr), ranked. Ge
 
 ## 🔵 In review
 
-- [#773](https://github.com/jwilleke/yourphr/issues/773) — [FEATURE] The visit wizard returns with a server side, or is retired
-- [#687](https://github.com/jwilleke/yourphr/issues/687) — [BUG] "Email this summary" calls an endpoint that does not exist
-- [#771](https://github.com/jwilleke/yourphr/issues/771) — [BUG] Deleting a practitioner calls a route that does not exist — the button does nothing
-- [#719](https://github.com/jwilleke/yourphr/issues/719) — [BUG] Settings still offers device pairing for an app that does not exist — replace it with the agent-token minting screen
-- [#685](https://github.com/jwilleke/yourphr/issues/685) — [BUG] Provider connection errors are never recorded — POST /secure/jobs/error 404s
+*None.*
 
 ## ⏸ Deferred
 
