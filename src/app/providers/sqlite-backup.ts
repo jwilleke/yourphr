@@ -131,6 +131,11 @@ export function backupDatabase(
 
   // ATTACH cannot bind the KEY clause, so the key is escaped inline exactly as the repository
   // escapes its own key pragma. The filename IS bindable and stays bound.
+  // One snapshot across stores (yourphr#608): the records file and the app database are exported
+  // one after the other, and nothing can write between them ONLY because this loop is synchronous
+  // (better-sqlite3) and nothing else writes these files — no worker thread, no second process. Keep
+  // it that way: an `await` in here, or an async driver, lets a sync land between the two exports
+  // and the backup restores records from one moment and settings or audit from another.
   for (const db of [repo.db, ...(options.alsoExport ?? [])]) {
     db.prepare(`ATTACH DATABASE ? AS backup KEY ${quoteKey(backupKey)}`).run(file);
     try {

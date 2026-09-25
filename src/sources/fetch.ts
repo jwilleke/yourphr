@@ -18,7 +18,7 @@
  */
 import type { Bundle, BundleEntry, Resource } from '@medplum/fhirtypes';
 import { OutboundHttp } from '../http/index.js';
-import { emptySyncReport, storeEntries, repositoryWriter, type SyncOptions, type SyncReport } from '../sync/index.js';
+import { emptySyncReport, storeEntries, type SyncOptions, type SyncReport } from '../sync/index.js';
 
 
 
@@ -88,8 +88,7 @@ export async function syncFrom(startUrl: string, options: SyncOptions): Promise<
   const maxPages = options.maxPages ?? DEFAULT_MAX_PAGES;
   const http = options.http ?? new OutboundHttp({ allowInternal: options.allowInternal });
   // The door the records go through (yourphr#609): a writer bound to the account and the source.
-  // A repository-bound writer is built here for the harnesses that hand a repository in directly.
-  const writer = options.writer ?? repositoryWriter(options.repo!, options.sourceId ?? '');
+  const { writer } = options;
 
   const report = emptySyncReport();
   const seenThisRun = new Set<string>();
@@ -167,7 +166,7 @@ function isTransient(err: unknown): boolean {
  */
 export async function syncResource(url: string, options: SyncOptions): Promise<SyncReport> {
   const http = options.http ?? new OutboundHttp({ allowInternal: options.allowInternal });
-  const writer = options.writer ?? repositoryWriter(options.repo!, options.sourceId ?? '');
+  const { writer } = options;
   const response = await http.get(url, { headers: options.accessToken ? { authorization: `Bearer ${options.accessToken}` } : {} });
   if (response.status !== 200) {
     throw new FhirHttpError(response.status, `HTTP ${response.status} fetching ${url}: ${response.body.toString('utf8').slice(0, 256)}`, response.body.toString('utf8'));

@@ -28,6 +28,7 @@ import { join } from 'node:path';
 import { SmartClient, generateVerifier, statesMatch, type Endpoints, type TokenResponse } from '../src/sources/index.js';
 import { OutboundHttp } from '../src/http/index.js';
 import { SqliteFhirRepository } from '../src/SqliteFhirRepository.js';
+import { SqliteRecordsProvider } from '../src/app/providers/SqliteRecordsProvider.js';
 import { syncFrom } from '../src/sources/index.js';
 
 // The same open sandbox the Go stack seeds: launch_type patient-standalone, any client_id accepted.
@@ -153,18 +154,18 @@ async function main(): Promise<void> {
   // Fetch and store, holding the real token, guard still ON.
   const dir = mkdtempSync(join(tmpdir(), 'spike-live-smart-'));
   const repo = new SqliteFhirRepository({ file: join(dir, 'live.db'), userId: 'live-user' });
+  const records = SqliteRecordsProvider.overRepository(repo);
+  const writerFor = (sourceId = '') => records.writer(repo.userId ?? '', sourceId);
   try {
     const first = await syncFrom(`${BASE}/Condition?patient=${patient}&_count=50`, {
-      repo,
+      writer: writerFor('smarthealthit-authorized'),
       accessToken: token.accessToken,
-      sourceId: 'smarthealthit-authorized',
     });
     check('an authorized sync fetches and stores records', first.received > 0 && first.created > 0, `${first.received} received, ${first.created} created`);
 
     const observations = await syncFrom(`${BASE}/Observation?patient=${patient}&_count=50`, {
-      repo,
+      writer: writerFor('smarthealthit-authorized'),
       accessToken: token.accessToken,
-      sourceId: 'smarthealthit-authorized',
       maxPages: 20,
     });
     check('a second resource type syncs on the same token', observations.received > 0, `${observations.received} Observations received`);
@@ -181,9 +182,8 @@ async function main(): Promise<void> {
 
     // Resync on the REFRESHED token: idempotence and the refreshed credential proven in one pass.
     const again = await syncFrom(`${BASE}/Condition?patient=${patient}&_count=50`, {
-      repo,
+      writer: writerFor('smarthealthit-authorized'),
       accessToken: refreshed.accessToken,
-      sourceId: 'smarthealthit-authorized',
     });
     const held = await repo.search({ resourceType: 'Condition', count: 500, total: 'accurate' });
     check('a resync on the refreshed token creates nothing new', again.created === 0, `${again.created} created, ${held.total} held`);

@@ -19,7 +19,6 @@
  * transition and already renders the PDF; the spike owes the narrative + bundle only.
  */
 import type { Bundle, BundleEntry, Composition, CompositionSection, Resource } from '@medplum/fhirtypes';
-import type { SqliteFhirRepository } from '../SqliteFhirRepository.js';
 import type { SearchRequest, WithId } from '@medplum/core';
 
 export type SectionGroup = 'required' | 'recommended' | 'optional';

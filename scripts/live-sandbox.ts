@@ -18,6 +18,7 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { SqliteFhirRepository } from '../src/SqliteFhirRepository.js';
+import { SqliteRecordsProvider } from '../src/app/providers/SqliteRecordsProvider.js';
 import { syncFrom } from '../src/sources/index.js';
 
 const BASE = process.argv.includes('--base')
@@ -33,6 +34,8 @@ function check(name: string, ok: boolean, detail = ''): void {
 async function main(): Promise<void> {
   const dir = mkdtempSync(join(tmpdir(), 'spike-live-'));
   const repo = new SqliteFhirRepository({ file: join(dir, 'live.db'), userId: 'live-user' });
+  const records = SqliteRecordsProvider.overRepository(repo);
+  const writerFor = (sourceId = '') => records.writer(repo.userId ?? '', sourceId);
 
   console.log(`\nsyncing from ${BASE}\n`);
 
@@ -41,9 +44,8 @@ async function main(): Promise<void> {
   // Since yourphr#759 the cap TRUNCATES rather than throwing: the pages already stored are real
   // records, and a provider with more history than the budget is not an error.
   const capped = await syncFrom(`${BASE}/Patient?_count=10`, {
-    repo,
+    writer: writerFor('smarthealthit'),
     accessToken: '',
-    sourceId: 'smarthealthit',
     maxPages: 2,
   });
   check('follows real next links and stops at the page cap, keeping what it fetched',
@@ -59,9 +61,8 @@ async function main(): Promise<void> {
   }
 
   const first = await syncFrom(`${BASE}/Condition?patient=${anyPatient.id}&_count=50`, {
-    repo,
+    writer: writerFor('smarthealthit'),
     accessToken: '',
-    sourceId: 'smarthealthit',
   });
   check('a scoped sync completes without hitting the cap', first.pages >= 1, `${first.pages} page(s)`);
   check('it stored what came back', first.received > 0, `${first.received} received, ${first.created} created`);
@@ -72,9 +73,8 @@ async function main(): Promise<void> {
 
   // The property that matters most, now against a server nobody wrote to agree with us.
   const second = await syncFrom(`${BASE}/Condition?patient=${anyPatient.id}&_count=50`, {
-    repo,
+    writer: writerFor('smarthealthit'),
     accessToken: '',
-    sourceId: 'smarthealthit',
   });
   const after = await repo.search({ resourceType: 'Condition', count: 500, total: 'accurate' });
 

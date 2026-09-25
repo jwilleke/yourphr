@@ -16,7 +16,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { Bundle } from '@medplum/fhirtypes';
 import { SqliteFhirRepository } from '../src/SqliteFhirRepository.js';
-import { repositoryWriter } from '../src/sync/index.js';
+import { SqliteRecordsProvider } from '../src/app/providers/SqliteRecordsProvider.js';
 import { FhirHttpError, syncFrom, nextPageUrl } from '../src/sources/index.js';
 import { SmartSourceClientProvider } from '../src/app/providers/SmartSourceClientProvider.js';
 import type { ConnectedSource } from '../src/app/providers/BaseSourcesProvider.js';
@@ -82,6 +82,8 @@ async function main(): Promise<void> {
   const dir = mkdtempSync(join(tmpdir(), 'spike-sync-'));
   const dbFile = join(dir, 'sync.db');
   const repo = new SqliteFhirRepository({ file: dbFile, userId: 'user-a' });
+  const records = SqliteRecordsProvider.overRepository(repo);
+  const writerFor = (sourceId = '') => records.writer(repo.userId ?? '', sourceId);
 
   console.log('\nnext-link handling\n');
   const sameOrigin: Bundle = {
@@ -123,7 +125,7 @@ async function main(): Promise<void> {
   const provider = startFhirServer();
   const base = await listen(provider.server);
 
-  const first = await syncFrom(`${base}/Everything`, { repo, accessToken: 'at-1', allowInternal: true });
+  const first = await syncFrom(`${base}/Everything`, { writer: writerFor(), accessToken: 'at-1', allowInternal: true });
   check('follows the next link across pages', first.pages === 2, `${first.pages} pages`);
   check('receives every resource', first.received === 4, `${first.received}`);
   check('creates all four on a first run', first.created === 4 && first.updated === 0, `${first.created} created, ${first.updated} updated`);
@@ -132,14 +134,14 @@ async function main(): Promise<void> {
   check('three Conditions stored', afterFirst.total === 3, `${afterFirst.total}`);
 
   console.log('\nresync — the gate\n');
-  const second = await syncFrom(`${base}/Everything`, { repo, accessToken: 'at-1', allowInternal: true });
+  const second = await syncFrom(`${base}/Everything`, { writer: writerFor(), accessToken: 'at-1', allowInternal: true });
   check('a resync creates nothing new', second.created === 0, `${second.created} created`);
   check('a resync updates what it already had', second.updated === 4, `${second.updated} updated`);
 
   const afterSecond = await repo.search({ resourceType: 'Condition', count: 100, total: 'accurate' });
   check('the record count is unchanged after a resync', afterSecond.total === 3, `${afterSecond.total} (was ${afterFirst.total})`);
 
-  const third = await syncFrom(`${base}/Everything`, { repo, accessToken: 'at-1', allowInternal: true });
+  const third = await syncFrom(`${base}/Everything`, { writer: writerFor(), accessToken: 'at-1', allowInternal: true });
   const afterThird = await repo.search({ resourceType: 'Condition', count: 100, total: 'accurate' });
   check('and after a third', afterThird.total === 3, `${afterThird.total}`);
   check('a third sync still creates nothing', third.created === 0);
@@ -148,7 +150,7 @@ async function main(): Promise<void> {
   provider.server.close();
   const revised = startFhirServer('Asthma, resolved');
   const revisedBase = await listen(revised.server);
-  await syncFrom(`${revisedBase}/Everything`, { repo, accessToken: 'at-1', allowInternal: true });
+  await syncFrom(`${revisedBase}/Everything`, { writer: writerFor(), accessToken: 'at-1', allowInternal: true });
 
   const c3 = (await repo.readResource('Condition', 'c3')) as { code?: { text?: string } };
   check('the updated text replaced the old one', c3.code?.text === 'Asthma, resolved', c3.code?.text ?? 'missing');
@@ -168,7 +170,7 @@ async function main(): Promise<void> {
     );
   });
   const idlessBase = await listen(idless as never);
-  const idlessReport = await syncFrom(`${idlessBase}/Everything`, { repo, accessToken: 'at-1', allowInternal: true });
+  const idlessReport = await syncFrom(`${idlessBase}/Everything`, { writer: writerFor(), accessToken: 'at-1', allowInternal: true });
   check('a resource with no id is skipped, not stored', idlessReport.created === 0, `${idlessReport.created} created`);
   check('and the skip is reported rather than silent', idlessReport.skipped.length === 2, `${idlessReport.skipped.length} skipped`);
   idless.close();
@@ -188,10 +190,9 @@ async function main(): Promise<void> {
   const providerA = startFhirServer();
   const aBase = await listen(providerA.server);
   const firstRun = await syncFrom(`${aBase}/Everything`, {
-    repo,
+    writer: writerFor('epic'),
     accessToken: 'at-a',
     allowInternal: true,
-    sourceId: 'epic',
   });
   check('a first source stores normally', firstRun.collisions.length === 0);
   providerA.server.close();
@@ -211,10 +212,9 @@ async function main(): Promise<void> {
   });
   const collideBase = await listen(collide as never);
   const crossSource = await syncFrom(`${collideBase}/Everything`, {
-    repo,
+    writer: writerFor('cerner'),
     accessToken: 'at-b',
     allowInternal: true,
-    sourceId: 'cerner',
   });
   collide.close();
 
@@ -274,7 +274,7 @@ async function main(): Promise<void> {
   const epicBase = `http://127.0.0.1:${(epic.address() as AddressInfo).port}`;
   const epicClient = new SmartSourceClientProvider({ allowInternal: true });
   const epicSource = { id: 9, userId: 'default', display: 'Epic sandbox', fhirBaseUrl: epicBase, tokenUrl: '', clientId: 'cid', patient: 'epic-pt+1', resourceTypes: ['Patient', 'Condition', 'Observation'], accessToken: 'tok', refreshToken: '', expiresAt: 0, lastSyncAt: 0, platformType: 'ehr', environment: 'sandbox' } as unknown as ConnectedSource;
-  const epicWriter = repositoryWriter(repo, 'source-9');
+  const epicWriter = writerFor('source-9');
 
   const epicPatient = await epicClient.fetchPages(epicSource, 'Patient', 'tok', epicWriter, 5);
   check('Epic: the patient is READ by id, never searched with ?patient=', epicPatient.created === 1 && epicSeen.includes('/Patient/epic-pt%2B1') && !epicSeen.some((u) => u.startsWith('/Patient?')), epicSeen.join(' '));
@@ -333,7 +333,7 @@ async function main(): Promise<void> {
 
   const everythingClient = new SmartSourceClientProvider({ allowInternal: true });
   const everythingSource = { ...epicSource, id: 10, fhirBaseUrl: everythingBase, patient: 'ev-1' } as ConnectedSource;
-  const everythingReport = await everythingClient.fetchEverything(everythingSource, 'tok', repositoryWriter(repo, 'source-10'), 5);
+  const everythingReport = await everythingClient.fetchEverything(everythingSource, 'tok', writerFor('source-10'), 5);
   check('the operation returns the record in one call, paged and stored like any other fetch',
     everythingReport.created === 2 && everythingSeen.some((u) => u.includes('everything')), `${everythingReport.created} created`);
   everythingServer.close();
@@ -348,7 +348,7 @@ async function main(): Promise<void> {
     res.end(JSON.stringify({ resourceType: 'Bundle', type: 'searchset', entry: [{ resource: condition('flaky-1', 'Retried') }] }));
   });
   const flakyBase = await listen(flaky as never);
-  const retried = await syncFrom(`${flakyBase}/Condition?patient=p1`, { repo, accessToken: 'at', sourceId: 'flaky', allowInternal: true });
+  const retried = await syncFrom(`${flakyBase}/Condition?patient=p1`, { writer: writerFor('flaky'), accessToken: 'at', allowInternal: true });
   check('a 502 is retried once, and the records arrive', retried.created === 1 && flakeHits === 2, `${flakeHits} requests, ${retried.created} created`);
   flaky.close();
 
@@ -360,7 +360,7 @@ async function main(): Promise<void> {
   });
   const refusingBase = await listen(refusing as never);
   let refused: unknown;
-  try { await syncFrom(`${refusingBase}/Condition?patient=p1`, { repo, accessToken: 'at', sourceId: 'refusing', allowInternal: true }); } catch (err) { refused = err; }
+  try { await syncFrom(`${refusingBase}/Condition?patient=p1`, { writer: writerFor('refusing'), accessToken: 'at', allowInternal: true }); } catch (err) { refused = err; }
   check('a 4xx is NOT retried — it will say the same thing again', refusalHits === 1 && refused instanceof FhirHttpError, `${refusalHits} requests`);
   refusing.close();
 
@@ -374,7 +374,7 @@ async function main(): Promise<void> {
     }));
   });
   const endlessBase = await listen(endless as never);
-  const capped2 = await syncFrom(`${endlessBase}/Condition?page=0`, { repo, accessToken: 'at', sourceId: 'endless', maxPages: 3, allowInternal: true });
+  const capped2 = await syncFrom(`${endlessBase}/Condition?page=0`, { writer: writerFor('endless'), accessToken: 'at', maxPages: 3, allowInternal: true });
   check('a provider that always returns a next link is TRUNCATED, not thrown away',
     capped2.truncated === true && capped2.pages === 3 && capped2.created === 3, `${capped2.pages} pages, ${capped2.created} created, truncated=${capped2.truncated}`);
   endless.close();

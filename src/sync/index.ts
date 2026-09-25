@@ -11,14 +11,16 @@
  * idempotent as a resync, and a contested id is refused the same way whichever path brought it.
  */
 import type { Resource } from '@medplum/fhirtypes';
-import type { SqliteFhirRepository } from '../SqliteFhirRepository.js';
 import type { RecordsWriter } from '../app/providers/BaseRecordsProvider.js';
 import type { OutboundHttp } from '../http/index.js';
 
 export interface SyncOptions {
-  /** The door (yourphr#609). When absent, `repo` + `sourceId` build a repository-bound writer. */
-  writer?: RecordsWriter;
-  repo?: SqliteFhirRepository;
+  /**
+   * The door (yourphr#609): a writer bound to one account and one source, from the records
+   * manager or — in a harness — `SqliteRecordsProvider.writer()`. The source it attributes writes to
+   * is what refuses a record already held from a DIFFERENT source (SqliteFhirRepository.COLLISION).
+   */
+  writer: RecordsWriter;
   /**
    * Empty means send no Authorization header at all. Some sandbox and public FHIR endpoints serve
    * open data and reject a malformed bearer token with 401 — sending "Bearer " plus a placeholder
@@ -35,12 +37,6 @@ export interface SyncOptions {
   http?: OutboundHttp;
   /** Refused past this, rather than paging forever on a server that always returns a next link. */
   maxPages?: number;
-  /**
-   * Which connected provider these records come from. When set, a record already held from a
-   * DIFFERENT source is refused rather than overwritten — see SqliteFhirRepository.COLLISION.
-   * Unset keeps the previous behaviour, which is correct for a single-source install.
-   */
-  sourceId?: string;
 }
 
 export interface SyncReport {
@@ -115,32 +111,3 @@ export async function storeEntries(entries: { resource?: Resource }[], writer: R
   }
 }
 
-/** A writer over a repository handle, attributing every write to one source and restoring afterwards. */
-export function repositoryWriter(repo: SqliteFhirRepository, sourceId: string): RecordsWriter {
-  return {
-    upsert: async (resource) => {
-      let existed = true;
-      try {
-        await repo.readResource(resource.resourceType, resource.id as string);
-      } catch {
-        existed = false;
-      }
-      const previous = repo.sourceId;
-      repo.sourceId = sourceId;
-      try {
-        await repo.updateResource(resource);
-      } finally {
-        repo.sourceId = previous;
-      }
-      return existed ? 'updated' : 'created';
-    },
-    exists: async (resourceType, id) => {
-      try {
-        await repo.readResource(resourceType, id);
-        return true;
-      } catch {
-        return false;
-      }
-    },
-  };
-}

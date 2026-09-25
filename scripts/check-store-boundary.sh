@@ -20,9 +20,11 @@ ALLOW_DRIVER='^src/framework/|^src/app/providers/|^src/SqliteFhirRepository\.ts'
 # Not yet converted to managers over providers — each line is a #608 child:
 #   src/migrate       reads the GO database (a different store) and carries rows through the managers
 #   src/app.ts        the composition root: builds providers over the engine-owned handle
-#   src/sync          repositoryWriter for the harnesses that hand a repository in (retire with Favorites/Records fold)
 # Removed: src/config — ConfigurationManager now reaches its files through BaseConfigProvider (#621).
-ALLOW_TRANSITIONAL='^src/(migrate|sync|ips)/|^src/app\.ts'
+# Removed: src/sync and src/ips (#608) — sync writes only through a RecordsWriter handed in, and the
+#   summary reads only through a search port the records manager supplies; harnesses build their
+#   writer from SqliteRecordsProvider.writer().
+ALLOW_TRANSITIONAL='^src/migrate/|^src/app\.ts'
 
 # A type-only import cannot reach a store; it only names the shape a legacy option accepts.
 driver_hits=$(
