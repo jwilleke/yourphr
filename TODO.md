@@ -4,7 +4,6 @@ Open work in [jwilleke/yourphr](https://github.com/jwilleke/yourphr), ranked. Ge
 
 ## 🔴 P0 — Security & Critical
 
-- [#779](https://github.com/jwilleke/yourphr/issues/779) — [security] js/unvalidated-dynamic-method-call in patient-entry — CodeQL high, false positive in context
 - [#507](https://github.com/jwilleke/yourphr/issues/507) — [FEATURE] Authentication policy survey: password reset, MFA, re-auth, audit — decide what to build
 - [#657](https://github.com/jwilleke/yourphr/issues/657) — [FEATURE] Chat over records as an MCP server — the patient's own AI client connects, YourPHR transmits nothing
 
@@ -87,6 +86,7 @@ Open work in [jwilleke/yourphr](https://github.com/jwilleke/yourphr), ranked. Ge
 
 ## 🔵 In review
 
+- [#779](https://github.com/jwilleke/yourphr/issues/779) — [security] js/unvalidated-dynamic-method-call in patient-entry — CodeQL high, false positive in context
 - [#608](https://github.com/jwilleke/yourphr/issues/608) — [SPIKE] Architecture: build on the ngdpbase model throughout — engine, managers as the only door, config-bound providers, request context (the agreed architecture doc, applied)
 
 ## ⏸ Deferred
