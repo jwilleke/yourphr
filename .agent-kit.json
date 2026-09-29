@@ -2,8 +2,8 @@
   "schema": 1,
   "source": "https://github.com/jwilleke/mjs-project-template",
   "installed": "v1.13.0",
-  "installed_ref": "v1.13.0-3-g9e83986",
-  "installed_at": "2026-09-14",
+  "installed_ref": "v1.13.0-8-g7a6fe0a",
+  "installed_at": "2026-09-29",
   "files": {
     ".claude/commands/pstatus.md": { "behavior": "overwrite", "sha256": "5d0d1ba29098745c2f912d9b45daefb4ad25abce67d6010601b53a89f6880e86" },
     ".claude/commands/session-commit.md": { "behavior": "overwrite", "sha256": "2f38aa7347ea3a54e34245c92c518ccfc3667e058e52ad1023ea8f6ebf2a0e05" },
@@ -11,9 +11,10 @@
     ".claude/commands/wrap.md": { "behavior": "overwrite", "sha256": "127301414e538dee5d3a04ac1114dc19e61b7d052f2b7cb841473cb7cc548c4a" },
     "utility/sync-labels.sh": { "behavior": "overwrite", "sha256": "0756f6cefd1645107d86b752b405ce1681234cef4c07870cdee38f295b32e834" },
     ".claude/commands/update-agents.md": { "behavior": "overwrite", "sha256": "1f4c6433448658be783b09007be99fbcad1d1d7b75daab66624e7a45940ac4e6" },
+    ".claude/commands/work-alone.md": { "behavior": "overwrite", "sha256": "4989324e46d0b5be7bc3244730f008400ec8efcb87c64b2f06930a5ca00d2c7e" },
     ".markdownlint-cli2.jsonc": { "behavior": "overwrite", "sha256": "a269ec1af759cd56af8dc9b6393148a587cfcb5d03af3d4c8999a95bbab1057d" },
     "utility/set-version.mjs": { "behavior": "overwrite", "sha256": "292730d5df9c923f57dde984bc132ebfd2ba92fb83c9494f5b6ac3d0f6dcbc6c" },
-    "utility/kit-sync.sh": { "behavior": "overwrite", "sha256": "7267a1fab44be30a04eb20180616a73e50d0891b79b182aa2866371406c362f4" },
+    "utility/kit-sync.sh": { "behavior": "overwrite", "sha256": "297a15ef6c10ca342efa3ecd94d2482b4299cea367a5338a81792c1fbef30764" },
     ".claude/commands/semver-kit.md": { "behavior": "overwrite-or-suffix", "sha256": "2a7aec587f39ce2e5ce63d921cc8565f6855f5f7f7b5d2ba70a29d6dee20d3ce" }
   }
 }

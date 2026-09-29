@@ -84,7 +84,12 @@ fi
 git commit -q -m "chore(kit): sync to $version"
 git push -q -f -u origin "$branch"
 
-if gh pr view "$branch" --json number >/dev/null 2>&1; then
+# Only an OPEN PR counts. `gh pr view "$branch"` also finds a closed or merged PR
+# for the same head, and the branch name is `chore/kit-sync-<installed version>`,
+# so a later sync at the same version (a new ref on master, e.g. v1.13.0-6-g…)
+# reuses the name of the PR that already merged, logged "PR already open", and
+# stopped — its branch pushed with no PR (jwilleke/ngdpbase#1308).
+if [ -n "$(gh pr list --head "$branch" --state open --json number --jq '.[].number')" ]; then
   echo "PR already open for $branch."
   exit 0
 fi

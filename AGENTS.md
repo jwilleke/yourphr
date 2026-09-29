@@ -1,4 +1,4 @@
-<!-- KIT:START v1.13.0-3-g9e83986 — managed by mjs-project-template; edit below the KIT:END marker -->
+<!-- KIT:START v1.13.0-8-g7a6fe0a — managed by mjs-project-template; edit below the KIT:END marker -->
 ## Agent Kit Protocols
 
 This section is __managed by the kit__ (`install-kit.sh`) — it is identical across repos. Put repo-specific context __below the `KIT:END` marker__; do not edit here.
@@ -23,6 +23,7 @@ The long form is the operator's __Do NOT Repeat Yourself (DRY)__ page. It lives 
 - Commit a chunk of work with `/session-commit`: commits code + `TODO.md`, appends a journal entry to `private/project_log.md` (the log is never committed).
 - Run `/pstatus` often (after every `/session-commit`): it ranks open work and recommends the next step.
 - End a session with `/wrap`: commits anything outstanding, refreshes the `▶ Resume here` pointer, and reports whether it is safe to shut down the editor.
+- While the operator is away, `/work-alone` progresses open issues in priority order, doing only reversible work. It logs what needs the operator (Stuck), decisions made without them, abnormalities, and new issues filed to `private/agent-work-alone.md`, which it creates on first use.
 
 ### Priorities — GitHub labels are the source of truth
 
