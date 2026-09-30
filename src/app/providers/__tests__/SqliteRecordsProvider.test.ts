@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { Resource } from '@medplum/fhirtypes';
-import { SqliteRecordsProvider } from '../SqliteRecordsProvider.js';
+import { HISTORY_PER_PERSON_MIGRATION, SqliteRecordsProvider } from '../SqliteRecordsProvider.js';
 import { SqliteFhirRepository } from '../../../SqliteFhirRepository.js';
 import Database from 'better-sqlite3-multiple-ciphers';
 import { backupDatabase, stageInstanceRestore, STAGED_APP, STAGED_RECORDS, RECORDS_LEDGER_TABLE } from '../sqlite-backup.js';
@@ -155,7 +155,7 @@ describe('compact — removing the identical history copies v3.7.2 and earlier w
     repo.db.close();
   });
 
-  it('leaves a record id held by more than one person untouched — their history rows cannot be told apart', async () => {
+  it('compacts each person\'s copies of a shared record id on their own (yourphr#812)', async () => {
     const file = join(dir, 'shared.db');
     const carol = new SqliteFhirRepository({ file, key: 'unit-key', userId: 'carol', sourceId: 'source-1' });
     const dave = new SqliteFhirRepository({ file, key: 'unit-key', userId: 'dave', sourceId: 'source-2' });
@@ -165,11 +165,65 @@ describe('compact — removing the identical history copies v3.7.2 and earlier w
     await carol.updateResource(obs('only-carol', '718-7', '2024-05-10'));
     await carol.updateResource(obs('only-carol', '718-7', '2024-05-10'));
     const p = SqliteRecordsProvider.overRepository(carol);
-    const done = await p.compact();
-    expect(done).toMatchObject({ skippedShared: 1, duplicates: 1, integrity: 'ok' }); // only only-carol's repeat goes
-    const left = carol.db.prepare("SELECT COUNT(*) AS n FROM resource_history WHERE id = 'same-id'").get() as { n: number };
-    expect(left.n).toBe(5); // every row of the shared id is still there
+    expect(await p.compact()).toMatchObject({ skippedShared: 0, duplicates: 4, integrity: 'ok' });
+    const per = (user: string) => (carol.db.prepare("SELECT COUNT(*) AS n FROM resource_history WHERE id = 'same-id' AND user_id = ?").get(user) as { n: number }).n;
+    expect([per('carol'), per('dave')]).toEqual([1, 1]);
+    // Each person's current version still exists in their own history.
+    for (const repo of [carol, dave]) {
+      const v = (await repo.readResource('Observation', 'same-id')).meta?.versionId;
+      expect((carol.db.prepare('SELECT COUNT(*) AS n FROM resource_history WHERE id = ? AND user_id = ? AND version_id = ?').get('same-id', repo.userId, v) as { n: number }).n).toBe(1);
+    }
     carol.db.close(); dave.db.close();
+  });
+});
+
+describe('history is kept per person — a shared record id never mixes two people (yourphr#812)', () => {
+  const practitioner = (family: string): Resource => ({ resourceType: 'Practitioner', id: 'pr-shared', name: [{ family }] } as Resource);
+
+  it('reads count only the asker\'s own versions', async () => {
+    await provider.writer('alice', 'source-1').upsert(practitioner('Smith'));
+    await provider.writer('bob', 'source-9').upsert(practitioner('Smith'));
+    await provider.writer('bob', 'source-9').upsert(practitioner('Smith-Jones'));
+    expect((await provider.history('alice', 'Practitioner', 'pr-shared')).versions).toBe(1);
+    expect((await provider.history('bob', 'Practitioner', 'pr-shared')).versions).toBe(2);
+  });
+
+  it('deleting a record, a source or an account removes only that person\'s history', async () => {
+    for (const [user, source] of [['alice', 'source-1'], ['bob', 'source-9']] as const) await provider.writer(user, source).upsert(practitioner('Smith'));
+    await provider.removeRecord('alice', 'Practitioner', 'pr-shared');
+    expect((await provider.history('bob', 'Practitioner', 'pr-shared')).versions).toBe(1);
+    await provider.writer('alice', 'source-1').upsert(practitioner('Smith'));
+    await provider.removeBySource('alice', 'source-1');
+    expect((await provider.history('bob', 'Practitioner', 'pr-shared')).versions).toBe(1);
+    await provider.writer('alice', 'source-1').upsert(practitioner('Smith'));
+    await provider.removeAll('alice');
+    expect((await provider.history('bob', 'Practitioner', 'pr-shared')).versions).toBe(1);
+    expect((await provider.history('alice', 'Practitioner', 'pr-shared')).versions).toBe(0);
+  });
+});
+
+describe('HISTORY_PER_PERSON_MIGRATION re-keys a database made before #812', () => {
+  it('gives each row to its sole holder, keeps rows of shared ids unassigned, and is idempotent', () => {
+    const db = new Database(join(dir, 'old.db'));
+    db.exec(`
+      CREATE TABLE resources (resource_type TEXT, id TEXT, user_id TEXT, PRIMARY KEY (resource_type, id, user_id));
+      CREATE TABLE resource_history (resource_type TEXT NOT NULL, id TEXT NOT NULL, version_id TEXT NOT NULL, last_updated TEXT NOT NULL, content TEXT NOT NULL, PRIMARY KEY (resource_type, id, version_id));
+      INSERT INTO resources VALUES ('Observation', 'mine', 'alice'), ('Practitioner', 'shared', 'alice'), ('Practitioner', 'shared', 'bob');
+      INSERT INTO resource_history VALUES ('Observation', 'mine', 'v1', 't1', '{}'), ('Observation', 'mine', 'v2', 't2', '{}'),
+        ('Practitioner', 'shared', 'v1', 't1', '{}'), ('Observation', 'gone', 'v1', 't1', '{}');
+    `);
+    const report = runMigrations(db, [HISTORY_PER_PERSON_MIGRATION], RECORDS_LEDGER_TABLE);
+    expect(report.applied).toEqual(['20260930150000']);
+    const rows = db.prepare('SELECT resource_type || \'/\' || id || \'@\' || user_id AS k, COUNT(*) AS n FROM resource_history GROUP BY 1 ORDER BY 1').all();
+    expect(rows).toEqual([
+      { k: 'Observation/gone@', n: 1 }, // no holder left: unassigned, never guessed
+      { k: 'Observation/mine@alice', n: 2 },
+      { k: 'Practitioner/shared@', n: 1 }, // two holders: cannot be told apart
+    ]);
+    // Already in the new shape: the step is a no-op, so a fresh file (created new-shape) is safe.
+    HISTORY_PER_PERSON_MIGRATION.up(db);
+    expect((db.prepare('SELECT COUNT(*) AS n FROM resource_history').get() as { n: number }).n).toBe(4);
+    db.close();
   });
 });
 

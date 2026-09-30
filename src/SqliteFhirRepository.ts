@@ -169,13 +169,18 @@ export class SqliteFhirRepository extends FhirRepository {
         PRIMARY KEY (resource_type, id, user_id)
       );
 
+      -- Keyed by the person as resources is (yourphr#812): two people can hold the same type/id —
+      -- a shared Practitioner or Organization — and their histories must never mix, be read
+      -- across, or be deleted by the other. A database made before this is re-keyed by the
+      -- records ledger's history-per-person migration.
       CREATE TABLE IF NOT EXISTS resource_history (
         resource_type TEXT NOT NULL,
         id            TEXT NOT NULL,
+        user_id       TEXT NOT NULL DEFAULT '',
         version_id    TEXT NOT NULL,
         last_updated  TEXT NOT NULL,
         content       TEXT NOT NULL,
-        PRIMARY KEY (resource_type, id, version_id)
+        PRIMARY KEY (resource_type, id, user_id, version_id)
       );
 
       CREATE TABLE IF NOT EXISTS search_index (
@@ -397,10 +402,10 @@ export class SqliteFhirRepository extends FhirRepository {
         .run(stored.resourceType, stored.id, this.userId ?? '', source, versionId, lastUpdated, content);
       this.db
         .prepare(
-          `INSERT INTO resource_history (resource_type, id, version_id, last_updated, content)
-           VALUES (?, ?, ?, ?, ?)`
+          `INSERT INTO resource_history (resource_type, id, user_id, version_id, last_updated, content)
+           VALUES (?, ?, ?, ?, ?, ?)`
         )
-        .run(stored.resourceType, stored.id, versionId, lastUpdated, content);
+        .run(stored.resourceType, stored.id, this.userId ?? '', versionId, lastUpdated, content);
       this.indexResource(stored);
     });
     tx();

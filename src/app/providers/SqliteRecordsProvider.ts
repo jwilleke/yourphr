@@ -20,6 +20,54 @@ const REFERENCE_SHAPE = /^[A-Z][A-Za-z]+\/[A-Za-z0-9.-]{1,64}$/;
 const PARAM_NAME = /^[a-z][a-z0-9-]*$/i;
 const DATE_PREFIX = /^(eq|ne|gt|ge|lt|le|sa|eb|ap)(\d.*)$/;
 
+/**
+ * One person's history for one record, and any legacy rows for it nobody could be given (yourphr#812).
+ *
+ * The person's own rows are the point. The unassigned rows ('' — an id two people held before
+ * history carried the person) go too: they may hold the deleting person's data, and honouring a
+ * deletion outweighs keeping another person's pre-#812 history of a shared Practitioner.
+ */
+const DELETE_HISTORY = "DELETE FROM resource_history WHERE resource_type = ? AND id = ? AND user_id IN (?, '')";
+
+/**
+ * records.db ledger entry (yourphr#812): resource_history gains the person, as resources has.
+ *
+ * A frozen snapshot of intent, like every ledger entry. SQLite cannot change a primary key in place,
+ * so the table is rebuilt: each history row goes to the one person who holds that type/id. Where
+ * two or more people hold it, the rows cannot be told apart and keep user_id '' — never guessed,
+ * never given to both; they stay out of every person's history and are removed when any holder
+ * deletes the record. A database already in the new shape (a fresh file) is left alone.
+ */
+export const HISTORY_PER_PERSON_MIGRATION: Migration = {
+  id: '20260930150000',
+  description: 'resource_history keyed by person — (resource_type, id, user_id, version_id); rows of ids held by several people keep user_id \'\' (yourphr#812)',
+  up: (db) => {
+    const columns = db.prepare("SELECT name FROM pragma_table_info('resource_history')").all() as { name: string }[];
+    if (columns.some((c) => c.name === 'user_id')) return;
+    db.exec(`
+      CREATE TEMP TABLE sole_holder AS
+        SELECT resource_type, id, MIN(user_id) AS user_id FROM resources
+        GROUP BY resource_type, id HAVING COUNT(DISTINCT user_id) = 1;
+      CREATE UNIQUE INDEX temp.sole_holder_key ON sole_holder (resource_type, id);
+      CREATE TABLE resource_history_812 (
+        resource_type TEXT NOT NULL,
+        id            TEXT NOT NULL,
+        user_id       TEXT NOT NULL DEFAULT '',
+        version_id    TEXT NOT NULL,
+        last_updated  TEXT NOT NULL,
+        content       TEXT NOT NULL,
+        PRIMARY KEY (resource_type, id, user_id, version_id)
+      );
+      INSERT INTO resource_history_812 (resource_type, id, user_id, version_id, last_updated, content)
+        SELECT h.resource_type, h.id, COALESCE(s.user_id, ''), h.version_id, h.last_updated, h.content
+        FROM resource_history h LEFT JOIN sole_holder s ON s.resource_type = h.resource_type AND s.id = h.id;
+      DROP TABLE resource_history;
+      ALTER TABLE resource_history_812 RENAME TO resource_history;
+      DROP TABLE temp.sole_holder;
+    `);
+  },
+};
+
 export class SqliteRecordsProvider extends BaseRecordsProvider {
   private readonly handles = new Map<string, SqliteFhirRepository>();
 
@@ -139,7 +187,7 @@ export class SqliteRecordsProvider extends BaseRecordsProvider {
 
   async history(userId: string, resourceType: string, id: string): Promise<{ firstReceivedAt: string | null; versions: number }> {
     const row = this.anyDb()
-      .prepare('SELECT MIN(h.last_updated) AS first, COUNT(*) AS n FROM resource_history h JOIN resources r ON r.resource_type = h.resource_type AND r.id = h.id WHERE h.resource_type = ? AND h.id = ? AND r.user_id = ?')
+      .prepare('SELECT MIN(last_updated) AS first, COUNT(*) AS n FROM resource_history WHERE resource_type = ? AND id = ? AND user_id = ?')
       .get(resourceType, id, userId) as { first: string | null; n: number };
     return { firstReceivedAt: row.first, versions: row.n };
   }
@@ -228,11 +276,11 @@ export class SqliteRecordsProvider extends BaseRecordsProvider {
       const rows = db.prepare('SELECT resource_type, id FROM resources WHERE user_id = ? AND source_id = ?').all(userId, sourceId) as { resource_type: string; id: string }[];
       const delIndex = db.prepare('DELETE FROM search_index WHERE resource_type = ? AND resource_id = ? AND user_id = ?');
       const delText = db.prepare('DELETE FROM search_text WHERE resource_type = ? AND resource_id = ? AND user_id = ?');
-      const delHistory = db.prepare('DELETE FROM resource_history WHERE resource_type = ? AND id = ?');
+      const delHistory = db.prepare(DELETE_HISTORY);
       for (const r of rows) {
         delIndex.run(r.resource_type, r.id, userId);
         delText.run(r.resource_type, r.id, userId);
-        delHistory.run(r.resource_type, r.id);
+        delHistory.run(r.resource_type, r.id, userId);
       }
       return db.prepare('DELETE FROM resources WHERE user_id = ? AND source_id = ?').run(userId, sourceId).changes;
     });
@@ -244,7 +292,7 @@ export class SqliteRecordsProvider extends BaseRecordsProvider {
     const remove = db.transaction((): boolean => {
       db.prepare('DELETE FROM search_index WHERE resource_type = ? AND resource_id = ? AND user_id = ?').run(resourceType, id, userId);
       db.prepare('DELETE FROM search_text WHERE resource_type = ? AND resource_id = ? AND user_id = ?').run(resourceType, id, userId);
-      db.prepare('DELETE FROM resource_history WHERE resource_type = ? AND id = ?').run(resourceType, id);
+      db.prepare(DELETE_HISTORY).run(resourceType, id, userId);
       return db.prepare('DELETE FROM resources WHERE user_id = ? AND resource_type = ? AND id = ?').run(userId, resourceType, id).changes > 0;
     });
     return remove();
@@ -254,8 +302,8 @@ export class SqliteRecordsProvider extends BaseRecordsProvider {
     const db = this.anyDb();
     const remove = db.transaction((): number => {
       const rows = db.prepare('SELECT resource_type, id FROM resources WHERE user_id = ?').all(userId) as { resource_type: string; id: string }[];
-      const delHistory = db.prepare('DELETE FROM resource_history WHERE resource_type = ? AND id = ?');
-      for (const r of rows) delHistory.run(r.resource_type, r.id);
+      const delHistory = db.prepare(DELETE_HISTORY);
+      for (const r of rows) delHistory.run(r.resource_type, r.id, userId);
       db.prepare('DELETE FROM search_index WHERE user_id = ?').run(userId);
       db.prepare('DELETE FROM search_text WHERE user_id = ?').run(userId);
       return db.prepare('DELETE FROM resources WHERE user_id = ?').run(userId).changes;
@@ -298,16 +346,17 @@ export class SqliteRecordsProvider extends BaseRecordsProvider {
     const count = (sql: string): number => (db.prepare(sql).get() as { n: number }).n;
     const resources = count('SELECT COUNT(*) AS n FROM resources');
     const historyBefore = count('SELECT COUNT(*) AS n FROM resource_history');
-    // resource_history carries no user_id, so two people holding the same type/id share one history
-    // bucket. Those ids are left alone entirely: nothing deleted, nothing repointed. Counted and
-    // reported, so an operator knows. (Fixing the key itself is the records-keyed-by-source issue.)
+    // History is kept per person (yourphr#812), so each person's copies are compacted on their own.
+    // The exception is legacy rows the re-keying migration could not give to one person (an id two
+    // people held before history carried the person, user_id ''): they cannot be told apart, so
+    // they are left alone entirely, counted and reported.
     const shared = new Set<string>();
-    for (const r of db.prepare('SELECT resource_type, id FROM resources GROUP BY resource_type, id HAVING COUNT(DISTINCT user_id) > 1').iterate() as Iterable<{ resource_type: string; id: string }>) {
+    for (const r of db.prepare("SELECT DISTINCT resource_type, id FROM resource_history WHERE user_id = ''").iterate() as Iterable<{ resource_type: string; id: string }>) {
       shared.add(`${r.resource_type}/${r.id}`);
     }
     const current = new Map<string, string>();
-    for (const r of db.prepare('SELECT resource_type, id, version_id FROM resources').iterate() as Iterable<{ resource_type: string; id: string; version_id: string }>) {
-      current.set(`${r.resource_type}/${r.id}`, r.version_id);
+    for (const r of db.prepare('SELECT resource_type, id, user_id, version_id FROM resources').iterate() as Iterable<{ resource_type: string; id: string; user_id: string; version_id: string }>) {
+      current.set(`${r.user_id}\u0000${r.resource_type}/${r.id}`, r.version_id);
     }
 
     // Collected first, deleted after: better-sqlite3 cannot write on a connection mid-iteration.
@@ -315,11 +364,10 @@ export class SqliteRecordsProvider extends BaseRecordsProvider {
     const repoint = new Map<string, { from: string; to: string }>();
     let group = '';
     let kept: { versionId: string; resource: Resource } | undefined;
-    const rows = db.prepare('SELECT rowid, resource_type, id, version_id, content FROM resource_history ORDER BY resource_type, id, last_updated, rowid')
-      .iterate() as Iterable<{ rowid: number; resource_type: string; id: string; version_id: string; content: string }>;
+    const rows = db.prepare("SELECT rowid, resource_type, id, user_id, version_id, content FROM resource_history WHERE user_id <> '' ORDER BY resource_type, id, user_id, last_updated, rowid")
+      .iterate() as Iterable<{ rowid: number; resource_type: string; id: string; user_id: string; version_id: string; content: string }>;
     for (const row of rows) {
-      const key = `${row.resource_type}/${row.id}`;
-      if (shared.has(key)) continue;
+      const key = `${row.user_id}\u0000${row.resource_type}/${row.id}`;
       const resource = JSON.parse(row.content) as Resource;
       if (key !== group) {
         group = key;
@@ -336,7 +384,7 @@ export class SqliteRecordsProvider extends BaseRecordsProvider {
 
     if (!dryRun && doomed.length > 0) {
       const remove = db.prepare('DELETE FROM resource_history WHERE rowid = ?');
-      const move = db.prepare("UPDATE resources SET version_id = ?, content = json_set(content, '$.meta.versionId', ?) WHERE resource_type = ? AND id = ? AND version_id = ?");
+      const move = db.prepare("UPDATE resources SET version_id = ?, content = json_set(content, '$.meta.versionId', ?) WHERE user_id = ? AND resource_type = ? AND id = ? AND version_id = ?");
       const BATCH = 10_000;
       for (let i = 0; i < doomed.length; i += BATCH) {
         const slice = doomed.slice(i, i + BATCH);
@@ -344,8 +392,9 @@ export class SqliteRecordsProvider extends BaseRecordsProvider {
       }
       db.transaction(() => {
         for (const [key, { from, to }] of repoint) {
-          const slash = key.indexOf('/');
-          move.run(to, to, key.slice(0, slash), key.slice(slash + 1), from);
+          const nul = key.indexOf('\u0000');
+          const slash = key.indexOf('/', nul);
+          move.run(to, to, key.slice(0, nul), key.slice(nul + 1, slash), key.slice(slash + 1), from);
         }
       })();
       const after = count('SELECT COUNT(*) AS n FROM resources');

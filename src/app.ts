@@ -40,7 +40,7 @@ import { PolicyManager } from './framework/managers/PolicyManager.js';
 export { coerceToShippedType };
 import { ApiContext } from './framework/ApiContext.js';
 import { RecordsManager } from './app/managers/RecordsManager.js';
-import { SqliteRecordsProvider } from './app/providers/SqliteRecordsProvider.js';
+import { HISTORY_PER_PERSON_MIGRATION, SqliteRecordsProvider } from './app/providers/SqliteRecordsProvider.js';
 import { SourcesManager, sourceShape } from './app/managers/SourcesManager.js';
 import { JobsManager, backgroundJobShape } from './framework/managers/JobsManager.js';
 import { SqliteSourcesProvider } from './app/providers/SqliteSourcesProvider.js';
@@ -246,6 +246,7 @@ const RECORDS_MIGRATIONS: Migration[] = [
     description: 'records baseline — resources, resource_history, search_index, search_text as SqliteFhirRepository creates them (v3.8.1); ledger established',
     up: () => undefined,
   },
+  HISTORY_PER_PERSON_MIGRATION,
 ];
 
 /** Everything that owns data, opened the one way the server opens it. */

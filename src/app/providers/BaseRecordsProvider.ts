@@ -102,8 +102,9 @@ export interface CompactReport {
   /** Records whose current version was a duplicate, repointed to the first copy of that content. */
   repointed: number;
   /**
-   * Record ids held by more than one person, left untouched. resource_history is keyed without the
-   * person, so their histories cannot be told apart; compacting them could cross accounts.
+   * Record ids with legacy history the re-keying migration could not give to one person (yourphr#812:
+   * an id two people held before history carried the person), left untouched — those rows cannot be
+   * told apart, so compacting them could cross accounts. Everything else is compacted per person.
    */
   skippedShared: number;
   bytesBefore: number;
