@@ -48,6 +48,8 @@ import { SqliteJobsProvider } from './framework/providers/SqliteJobsProvider.js'
 import { NullSourceClientProvider, type BaseSourceClientProvider } from './app/providers/BaseSourceClientProvider.js';
 import { NullGlossaryProvider, type BaseGlossaryProvider } from './app/providers/BaseGlossaryProvider.js';
 import { GlossaryManager } from './app/managers/GlossaryManager.js';
+import { LookupsManager } from './app/managers/LookupsManager.js';
+import { NullNpiLookupProvider, type BaseNpiLookupProvider } from './app/providers/BaseNpiLookupProvider.js';
 import { DemoManager } from './app/managers/DemoManager.js';
 import { SqliteGlossaryCache } from './app/providers/SqliteGlossaryCache.js';
 export { sourceShape, backgroundJobShape };
@@ -340,6 +342,20 @@ async function glossaryProviderFor(name: string, env: Record<string, string | un
   throw new Error(`glossary.provider: unknown provider '${name}' (medlineplus or null)`);
 }
 
+/**
+ * The NPI registry lookup (yourphr#774): 'nlm' loads the NLM Clinical Table Search client; 'null'
+ * (the shipped default) loads nothing and the practitioner form is plain text. A dynamic import,
+ * as for the glossary, so an instance bound to 'null' never loads the fetching path.
+ */
+async function npiLookupFor(name: string, env: Record<string, string | undefined>): Promise<BaseNpiLookupProvider> {
+  if (name === 'null') return new NullNpiLookupProvider();
+  if (name === 'nlm') {
+    const { NlmNpiLookupProvider } = await import('./app/providers/NlmNpiLookupProvider.js');
+    return new NlmNpiLookupProvider({ allowInternal: env['SPIKE_TEST_ALLOW_INTERNAL'] === '1' });
+  }
+  throw new Error(`lookups.npi.provider: unknown provider '${name}' (nlm or null)`);
+}
+
 /** The source-client provider configuration names: 'smart' loads the SMART client; 'null' loads nothing; anything else refuses to boot. */
 async function sourceClientFor(name: string, env: Record<string, string | undefined>): Promise<BaseSourceClientProvider> {
   if (name === 'null') return new NullSourceClientProvider();
@@ -484,6 +500,8 @@ export async function openStores(dataDir: string, env: Record<string, string | u
   engine.register('catalog', new CatalogManager(engine, new SqliteCatalogProvider(db), sourceClient, { allowInternal, log: (line) => appLog.warn(line), relay }));
   // The glossary (yourphr#640): plain-language explanations of coded values, cached locally.
   engine.register('glossary', new GlossaryManager(engine, await glossaryProviderFor(config.getString('yourphr.glossary.provider'), env), new SqliteGlossaryCache(db), (line) => appLog.info(line)));
+  // Reference lookups for the patient's forms (yourphr#774), asked by the server, never the browser.
+  engine.register('lookups', new LookupsManager(engine, await npiLookupFor(config.getString('yourphr.lookups.npi.provider'), env), (line) => appLog.info(line)));
   // Demo mode (yourphr#643): inert unless this instance opted in. Registered always, so the
   // connect guard is a manager call rather than an `if` at every door that could forget one.
   engine.register('demo', new DemoManager(engine, (line) => appLog.info(line)));

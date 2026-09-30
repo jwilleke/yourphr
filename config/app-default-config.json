@@ -9,9 +9,8 @@
   "yourphr.web.listen.port": 8080,
   "yourphr.web.listen.host": "0.0.0.0",
   "yourphr.web.secure-cookies": false,
-  "_comment_web_security_headers": "yourphr#813 — security response headers, ported from the Go stack (#105, #124). csp.connect-src lists the ORIGINS (https://host[:port], nothing else — anything else is dropped) the browser may call besides this instance; the default is exactly what the shipped frontend calls today: NLM's clinical-tables typeahead and the lforms service. Removing a host here is how a leak like #774 is closed at the browser, but it also stops the feature that calls it. hsts.enabled sends Strict-Transport-Security for a year: turn it on only when every request reaches this instance over HTTPS, because a browser that saw it will refuse plain HTTP to this host until it expires.",
+  "_comment_web_security_headers": "yourphr#813 — security response headers, ported from the Go stack (#105, #124). csp.connect-src lists the ORIGINS (https://host[:port], nothing else — anything else is dropped) the browser may call besides this instance; the default is exactly what the shipped frontend calls today: the lforms service (#800). NLM's clinical-tables is no longer here — its lookups run on the server since #774 — so the browser is refused it even if old code tried. hsts.enabled sends Strict-Transport-Security for a year: turn it on only when every request reaches this instance over HTTPS, because a browser that saw it will refuse plain HTTP to this host until it expires.",
   "yourphr.web.csp.connect-src": [
-    "https://clinicaltables.nlm.nih.gov",
     "https://lforms-service.nlm.nih.gov"
   ],
   "yourphr.web.hsts.enabled": false,
@@ -78,6 +77,8 @@
   "yourphr.audit.provider": "sqlite",
   "yourphr.sources.client.provider": "smart",
   "yourphr.glossary.provider": "medlineplus",
+  "_comment_lookups_npi": "yourphr#774 — looking up a clinician in the US NPI registry when a patient adds a practitioner. \"null\" (the default): nothing leaves this instance and the name field is plain text. \"nlm\": this SERVER asks NLM's Clinical Table Search through the guarded HTTP client — the person's browser and IP never reach NLM, but what they type as the name does, which is the lookup.",
+  "yourphr.lookups.npi.provider": "null",
   "yourphr.sync.max-pages": 500,
   "_comment_sync_budget": "yourphr#759 — max-pages is what ONE resource type may fetch; max-pages-per-sync is what one source's whole sync may fetch, so a provider with years of one type cannot spend the run on it and leave the rest of the record unfetched. Go used 250 per type and 5000 overall; a type that hits either cap keeps what it fetched and SAYS it was truncated, because a partial import that looks complete is the failure worth avoiding.",
   "yourphr.sync.max-pages-per-sync": 5000,

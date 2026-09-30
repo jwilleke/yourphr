@@ -1,3 +1,4 @@
+import { NlmClinicalTableSearchService } from '../../services/nlm-clinical-table-search.service';
 import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -35,12 +36,21 @@ export class PractitionerCreateComponent implements OnInit {
   
   totalPractitioners = 0;
 
+  /**
+   * Set when this instance does not look clinicians up (yourphr#774): the name field is then plain
+   * text, and the page says so rather than showing an empty suggestion list as if nobody matched.
+   */
+  npiLookupNote = '';
+
   constructor(
     private router: Router,
     private fastenApi: FastenApiService
+  ,
+    private lookups: NlmClinicalTableSearchService
   ) { }
 
   ngOnInit(): void {
+    this.lookups.npiLookupStatus().subscribe({ next: (st) => this.npiLookupNote = st.available ? '' : st.reason, error: () => this.npiLookupNote = '' });
     this.initializeForms();
     this.loadPractitionerCount();
   }

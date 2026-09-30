@@ -5,6 +5,24 @@ import {Observable, of} from 'rxjs';
 import {CodingModel} from '../../lib/models/datatypes/coding-model';
 import {HTTP_CLIENT_TOKEN} from "../dependency-injection";
 import {LabresultsQuestionnaire} from '../models/fasten/labresults-questionnaire';
+import { ISO3166_COUNTRIES, ISO3166_SYSTEM } from '../../lib/iso3166-countries';
+import { GetEndpointAbsolutePath } from '../../lib/utils/endpoint_absolute_path';
+import { environment } from '../../environments/environment';
+
+/** What the server's NPI lookup answers (yourphr#774). */
+export interface NpiLookupAnswer {
+  available: boolean
+  reason: string
+  results: {
+    npi: string
+    name: string
+    providerType: string
+    taxonomyCode: string
+    address: { line1: string, line2: string, city: string, state: string, zip: string, country: string }
+    phone: string
+    fax: string
+  }[]
+}
 
 export interface NlmSearchResults {
   id: string
@@ -38,7 +56,6 @@ export interface NlmSearchResults {
 export class NlmClinicalTableSearchService {
 
   nlm_clinical_table_search_endpoint = 'https://clinicaltables.nlm.nih.gov/api'
-  wikipedia_search_endpoint = 'https://en.wikipedia.org/w/api.php'
 
 
   //TODO: these endpoints should be proxied via the Fasten server
@@ -1026,57 +1043,42 @@ export class NlmClinicalTableSearchService {
     return of(result)
   }
 
+  /**
+   * Clinicians in the NPI registry, asked by the yourPHR SERVER (yourphr#774) — never from the
+   * browser. When the instance has the lookup off, the answer is empty and the name field is plain
+   * text; `npiLookupStatus()` says so for the form to show.
+   */
   searchMedicalContactIndividual(searchTerm: string): Observable<NlmSearchResults[]> {
-    const queryParams = {
-      'terms':searchTerm,
-      'df':'NPI,name.full,provider_type,addr_practice,licenses.taxonomy.code'
-    }
+    return this.npiLookup(searchTerm).pipe(
+      map((answer) => answer.results.map((c): NlmSearchResults => ({
+        id: c.npi,
+        identifier: [{
+          system: 'http://hl7.org/fhir/sid/us-npi',
+          value: c.npi,
+          type: { coding: [{ system: 'http://terminology.hl7.org/CodeSystem/v2-0203', code: 'NPI' }] },
+        }],
+        text: c.name,
+        subtext: `${c.providerType} - ${c.address.state}`,
+        provider_type: {
+          id: c.taxonomyCode,
+          text: c.providerType,
+          identifier: [{ system: 'http://nucc.org/provider-taxonomy', code: c.taxonomyCode, display: c.providerType }],
+        },
+        provider_address: { ...c.address },
+        provider_fax: c.fax,
+        provider_phone: c.phone,
+      })))
+    )
+  }
 
-    //https://clinicaltables.nlm.nih.gov/api/npi_idv/v3/search?df=&terms=xx
-    return this._httpClient.get<any>(`${this.nlm_clinical_table_search_endpoint}/npi_idv/v3/search`, {params: queryParams})
-      .pipe(
-        map((response) => {
-          return response[3].map((item):NlmSearchResults => {
-            const addr_practice = JSON.parse(item[3])
-            return {
-              id: item[0],
-              identifier: [{
-                system: 'http://hl7.org/fhir/sid/us-npi',
-                value: item[0],
-                type: {
-                  coding: [
-                    {
-                      system: "http://terminology.hl7.org/CodeSystem/v2-0203",
-                      code: "NPI"
-                    }
-                  ]
-                }
-              }],
-              text: item[1],
-              subtext: `${item[2]} - ${addr_practice.state}`,
-              provider_type: {
-                id: item[4],
-                text: item[2],
-                identifier: [{
-                  system: 'http://nucc.org/provider-taxonomy',
-                  code: item[4],
-                  display: item[2],
-                }]
-              },
-              provider_address: {
-                line1: addr_practice.line1,
-                line2: addr_practice.line2,
-                city: addr_practice.city,
-                state: addr_practice.state,
-                zip: addr_practice.zip,
-                country: addr_practice.country,
-              },
-              provider_fax: addr_practice.fax,
-              provider_phone: addr_practice.phone,
-            }
-          })
-        })
-      )
+  /** Whether this instance looks clinicians up at all, and if not, why — for the form's note. */
+  npiLookupStatus(): Observable<{ available: boolean, reason: string }> {
+    return this.npiLookup('').pipe(map((a) => ({ available: a.available, reason: a.reason })))
+  }
+
+  private npiLookup(terms: string): Observable<NpiLookupAnswer> {
+    return this._httpClient.get<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/lookups/npi`, {params: {terms}})
+      .pipe(map((response) => response.data as NpiLookupAnswer))
   }
 
 
@@ -1242,44 +1244,22 @@ export class NlmClinicalTableSearchService {
   }
 
   //https://www.devdays.com/wp-content/uploads/2021/12/Jim-Steel-FHIR-Terminology-Service-APIs-DevDays-2019-Redmond.pdf
+  /**
+   * Countries from the list shipped with the app (yourphr#774), not tx.fhir.org: what a person types
+   * into an address never leaves their browser. Same shape as before — `identifier` is the coding.
+   */
   searchCountries(searchTerm: string): Observable<NlmSearchResults[]> {
-
-    //https://tx.fhir.org/r4/ValueSet/$expand?_format=json&filter=Canada&url=http://hl7.org/fhir/ValueSet/iso3166-1-2
-    const queryParams = {
-      '_format': 'json',
-      'filter':searchTerm,
-      'url': 'http://hl7.org/fhir/ValueSet/iso3166-1-2'
-    }
-
-    return this._httpClient.get<any>(`https://tx.fhir.org/r4/ValueSet/$expand`, {params: queryParams})
-      .pipe(
-        map((response) => {
-
-          return (response.expansion.contains || []).map((valueSetItem):NlmSearchResults => {
-            return {
-              id: valueSetItem.code,
-              identifier: [valueSetItem],
-              text: valueSetItem.display,
-            }
-          })
-        })
-      )
+    const term = searchTerm.trim().toLowerCase();
+    const matches = ISO3166_COUNTRIES
+      .filter((c) => term === '' || c.display.toLowerCase().includes(term) || c.code.toLowerCase() === term)
+      .map((c): NlmSearchResults => ({
+        id: c.code,
+        identifier: [{ system: ISO3166_SYSTEM, code: c.code, display: c.display }],
+        text: c.display,
+      }));
+    return of(matches);
   }
 
-  searchWikipediaType(searchTerm: string): Observable<NlmSearchResults[]> {
-    const queryParams = {
-      'action': 'opensearch',
-      'format': 'json',
-      'origin': '*',
-      'search':searchTerm
-    }
-    return this._httpClient.get<any>(`${this.wikipedia_search_endpoint}/procedures/v3/search`)
-      .pipe(
-        map((response: NlmSearchResults[]) => {
-          return response
-        })
-      );
-  }
 
 
   searchAttachmentFileType(searchTerm: string): Observable<NlmSearchResults[]> {

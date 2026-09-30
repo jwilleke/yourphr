@@ -1150,6 +1150,11 @@ export function createYourPhrServer(options: ServerOptions) {
       // serves this unauthenticated; here it sits under /api/secure because it can trigger an
       // outbound request, and an unauthenticated endpoint that does that is an amplification
       // surface for no benefit — a code is not PHI, so nothing is lost by requiring a session.
+      // Reference lookups for the practitioner form (yourphr#774): the server asks, never the browser.
+      if (engine.has('lookups') && url.pathname === '/api/secure/lookups/npi' && req.method === 'GET') {
+        send(res, 200, {success: true, data: await engine.managers.lookups.searchClinicians(ctx, url.searchParams.get('terms') ?? '')});
+        return;
+      }
       if (engine.has('glossary') && url.pathname === '/api/secure/glossary/code' && req.method === 'GET') {
         const glossary = engine.managers.glossary;
         const explanation = await glossary.explain(ctx, url.searchParams.get('code') ?? '', url.searchParams.get('code_system') ?? '');

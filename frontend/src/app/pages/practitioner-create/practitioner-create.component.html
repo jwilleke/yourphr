@@ -61,6 +61,9 @@
                     [debugMode]="debugMode"
                     placeholder="Search or enter practitioner name..."
                   ></app-nlm-typeahead>
+                  @if (npiLookupNote) {
+                    <small class="form-text text-muted" data-testid="npi-lookup-note">{{ npiLookupNote }}</small>
+                  }
                 </div>
               </div>
             </div>

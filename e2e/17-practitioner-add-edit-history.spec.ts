@@ -6,12 +6,16 @@ import { E2E_PASS, E2E_USER } from './constants.js';
 // see — the practitioner in the list, the change on its page, a history that opens. Only delete
 // had a journey (12-practitioner-delete).
 //
-// The name and profession fields are NLM typeaheads that search clinicaltables.nlm.nih.gov from the
-// browser (yourphr#774). Every NLM request is refused here: the journey runs offline, sends nothing
-// anywhere, and proves the free-text path a person without that service still has.
+// yourphr#774: the form's lookups used to search clinicaltables.nlm.nih.gov (names) and tx.fhir.org
+// (countries) FROM THE BROWSER, carrying what the person typed and their IP address. They no longer
+// may: the NPI lookup is the server's, off by default, and countries are a local list. So the
+// journey records every request the page makes and asserts NONE leaves for those hosts — and that
+// the page says the lookup is off, so the empty suggestion list is not mistaken for "no match".
+const OFF_HOST = /nlm\.nih\.gov|tx\.fhir\.org|wikipedia\.org/;
 test('a person adds a practitioner, edits it, and opens its history', async ({ page }) => {
   const errors = trackPageErrors(page);
-  await page.route(/nlm\.nih\.gov/, (route) => route.abort());
+  const leaked: string[] = [];
+  page.on('request', (request) => { if (OFF_HOST.test(request.url())) leaked.push(request.url()); });
   // Create and update report with alert(); accept, as a person would.
   page.on('dialog', (dialog) => dialog.accept());
 
@@ -21,6 +25,7 @@ test('a person adds a practitioner, edits it, and opens its history', async ({ p
   await page.goto(`${BASE}/practitioners/new`);
   // The typeaheads carry the placeholder on their host element; a person types into the input inside.
   const typeahead = (name: string) => page.locator(`app-nlm-typeahead[formcontrolname="${name}"] input`).first();
+  await expect(page.getByTestId('npi-lookup-note')).toContainText('off on this instance', { timeout: 20_000 });
   await typeahead('data').fill('Dr Grace Synthetic');
   await typeahead('data').press('Tab');
   await typeahead('profession').fill('Cardiology');
@@ -62,6 +67,7 @@ test('a person adds a practitioner, edits it, and opens its history', async ({ p
   await expect(page.getByText('Dr Grace Synthetic History')).toBeVisible({ timeout: 20_000 });
   await expect(page.getByText('No Medical History Found!')).toBeVisible();
 
+  expect(leaked).toEqual([]);
   expect(errors).toEqual([]);
 });
 
