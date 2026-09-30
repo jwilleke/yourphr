@@ -59,6 +59,8 @@ export interface ViaToken {
   /** What the patient named it — and what the access log calls the actor. */
   name: string;
   scopes: readonly string[];
+  /** The connected-device grant this key belongs to (yourphr#808); absent for an ordinary agent token. */
+  grantId?: string;
 }
 
 export class ApiContext {

@@ -44,6 +44,7 @@ async function boot(): Promise<Harness> {
   const stores = await openStores(dir, {
     YOURPHR_AUTH_AGENT_TOKEN_ENABLED: 'true',
     YOURPHR_AUTH_SIGNUP_ENABLED: 'true',
+    YOURPHR_DEVICES_ENABLED: 'true',
   });
   const server = createYourPhrServer({ engine: stores.engine, auth: {} }) as Server;
   await new Promise<void>((done) => server.listen(0, '127.0.0.1', done));
@@ -148,6 +149,40 @@ async function main(): Promise<void> {
     });
     check('a revoked token stops working on the very next request',
       (await asAgent(agent, '/api/secure/medications/reconciled')).status === 401);
+
+    // --- connected devices (yourphr#807, #808): the one WRITE an agent credential can ever make ---
+    const json = (body: unknown) => ({ method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${session}` }, body: JSON.stringify(body) });
+    const wrongPw = await fetch(`${h.base}/api/secure/account/devices`, json({ label: "Jim's iPhone", password: 'not-it' }));
+    check('TOOTH: granting a device needs the patient to confirm it is them', wrongPw.status === 401);
+    const granted = (await (await fetch(`${h.base}/api/secure/account/devices`, json({ label: "Jim's iPhone", password: PASSWORD }))).json()) as { data?: { setup_code?: string; grant?: { id: string } } };
+    const setupCode = granted.data?.setup_code ?? '';
+    check('a granted device gets a one-time setup code', setupCode.startsWith('yphr_setup_'));
+    const claim = await fetch(`${h.base}/api/device/claim`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ code: setupCode }) });
+    const keys = ((await claim.json()) as { data?: { access_token?: string; refresh_token?: string } }).data ?? {};
+    check('the device claims its keys with the code, no session', claim.status === 200 && !!keys.access_token && !!keys.refresh_token);
+    const again = await fetch(`${h.base}/api/device/claim`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ code: setupCode }) });
+    check('TOOTH: a setup code works once', again.status === 401);
+
+    const deviceKey = keys.access_token ?? '';
+    check('the device key passes the gate for its one write (no route yet: 404, not 403)',
+      (await asAgent(deviceKey, '/api/secure/health/samples', 'POST')).status === 404);
+    check('and for its sync-state read', (await asAgent(deviceKey, '/api/secure/health/sync-state')).status === 404);
+    check('TOOTH: a device key reads nothing of the record',
+      (await asAgent(deviceKey, '/api/secure/medications/reconciled')).status === 403);
+    check('TOOTH: a device key cannot manage devices', (await asAgent(deviceKey, '/api/secure/account/devices')).status === 403);
+    const reader = await mint(h.base, session, ['Medications']);
+    const readerWrite = await asAgent(reader, '/api/secure/health/samples', 'POST');
+    check('TOOTH: an ordinary agent token can never write', readerWrite.status === 403,
+      ((await readerWrite.json()) as { error: string }).error);
+    const events = JSON.stringify(await (await fetch(`${h.base}/api/secure/account/access-log`, { headers: { authorization: `Bearer ${session}` } })).json());
+    check('the device\'s write is in the access log under its own name', events.includes('Health samples (add)') && events.includes("Jim's iPhone"));
+
+    const refreshed = await fetch(`${h.base}/api/device/token`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ refresh_token: keys.refresh_token }) });
+    check('the device refreshes its keys', refreshed.status === 200);
+    const reused = await fetch(`${h.base}/api/device/token`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ refresh_token: keys.refresh_token }) });
+    check('TOOTH: a spent refresh token is refused, and ends the grant', reused.status === 401);
+    const listedDevices = (await (await fetch(`${h.base}/api/secure/account/devices`, { headers: { authorization: `Bearer ${session}` } })).json()) as { data?: { grants?: { status: string }[] } };
+    check('the patient sees it revoked', listedDevices.data?.grants?.[0]?.status === 'revoked');
   } finally {
     await h.close();
   }

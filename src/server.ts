@@ -17,7 +17,7 @@
  * does not hold. That is the finding; the cost is real but bounded, and it is far smaller than
  * rewriting 76.8k lines of Angular.
  */
-import { accessCategoryFor, consentNow, consentStatus } from './account/index.js';
+import { accessCategoryFor, consentNow, consentStatus, writeCategoryFor } from './account/index.js';
 import { appLog, VALID_LEVELS } from './log/index.js';
 import {createServer, IncomingMessage, ServerResponse} from 'node:http';
 import { applySecurityHeaders, reportOnlyForWebDir } from './security-headers.js';
@@ -448,6 +448,22 @@ export function createYourPhrServer(options: ServerOptions) {
         return;
       }
 
+      // A connected device's own two calls (yourphr#808), before any session exists: spend the
+      // one-time setup code the patient was shown, and trade a refresh token for fresh keys. Both
+      // are rate-limited like sign-in; a wrong or spent value gets one plain refusal.
+      if (engine.has('agentTokens') && url.pathname === '/api/device/claim' && req.method === 'POST') {
+        if (!withinRateLimit()) return;
+        const body = (await readJsonBody(req)) ?? {};
+        send(res, 200, {success: true, data: await engine.managers.agentTokens.claimDeviceGrant(String(body['code'] ?? ''))});
+        return;
+      }
+      if (engine.has('agentTokens') && url.pathname === '/api/device/token' && req.method === 'POST') {
+        if (!withinRateLimit()) return;
+        const body = (await readJsonBody(req)) ?? {};
+        send(res, 200, {success: true, data: await engine.managers.agentTokens.refreshDeviceGrant(String(body['refresh_token'] ?? ''))});
+        return;
+      }
+
       // POST /api/auth/signup — self-service registration (yourphr#691), OFF unless an operator
       // turns it on. The Angular route and form have always existed; the server half never did, so
       // the form rendered and 404'd on submit after the person had typed everything.
@@ -562,7 +578,7 @@ export function createYourPhrServer(options: ServerOptions) {
             return;
           }
           sessionUser = agent.owner;
-          ctx = ApiContext.agent(agent.owner, {id: agent.id, name: agent.name, scopes: agent.scopes}, engine);
+          ctx = ApiContext.agent(agent.owner, {id: agent.id, name: agent.name, scopes: agent.scopes, ...(agent.grantId ? {grantId: agent.grantId} : {})}, engine);
           agentRequest = true;
         } else {
         if (session.renewed) {
@@ -598,9 +614,15 @@ export function createYourPhrServer(options: ServerOptions) {
       // access log cannot record, and an agent's unrecordable read is precisely what yourphr#614
       // says must not happen: "an unaudited disclosure did not happen".
       if (auth && agentRequest && url.pathname.startsWith('/api/secure/')) {
-        const category = req.method === 'GET' ? accessCategoryFor(url.pathname) : undefined;
+        // A write has a category only where writeCategoryFor names it (yourphr#807), and only a
+        // connected device's key — never an ordinary agent token — may use one.
+        const category = req.method === 'GET' ? accessCategoryFor(url.pathname) : writeCategoryFor(req.method ?? '', url.pathname);
         if (!category) {
           send(res, 403, {success: false, error: 'an agent token may only read your records, and only what it was given'});
+          return;
+        }
+        if (req.method !== 'GET' && !ctx.viaToken?.grantId) {
+          send(res, 403, {success: false, error: 'only a connected device the patient allowed may add to the record'});
           return;
         }
         if (!ctx.canRead(category)) {
@@ -616,6 +638,13 @@ export function createYourPhrServer(options: ServerOptions) {
       if (auth && engine.has('audit') && req.method === 'GET') {
         const category = accessCategoryFor(url.pathname);
         if (category) await engine.managers.audit.record(ctx, category);
+      }
+      // A connected device's write (yourphr#808): logged under the device's own name before it is
+      // served, like a read, and stamped on its grant for inactivity suspension (yourphr#809).
+      if (auth && agentRequest && req.method !== 'GET' && ctx.viaToken?.grantId) {
+        const category = writeCategoryFor(req.method ?? '', url.pathname);
+        if (category && engine.has('audit')) await engine.managers.audit.record(ctx, category);
+        if (category && engine.has('agentTokens')) await engine.managers.agentTokens.recordDeviceUpload(ctx.viaToken.grantId);
       }
 
       // Notifications (yourphr#793): the caller's own — targeted at them or at everyone, not
@@ -680,6 +709,58 @@ export function createYourPhrServer(options: ServerOptions) {
             send(res, 200, {success: true, data: {token: minted.token, record: minted.record}});
             return;
           }
+        }
+        // Connected devices (yourphr#807, #808): the patient's grants. Creating and extending need
+        // a fresh proof it is them (decision 3), which the manager checks.
+        const deviceRequest = { remoteAddr: req.socket.remoteAddress ?? '', xff: typeof req.headers['x-forwarded-for'] === 'string' ? req.headers['x-forwarded-for'] : undefined };
+        const credentialsOf = (body: Record<string, unknown>): Record<string, string> => {
+          const given = body['credentials'] && typeof body['credentials'] === 'object' ? (body['credentials'] as Record<string, unknown>) : {};
+          const out: Record<string, string> = {};
+          for (const [k, v] of Object.entries(given)) if (typeof v === 'string') out[k] = v;
+          if (typeof body['password'] === 'string') out['password'] = body['password'] as string;
+          return out;
+        };
+        if (engine.has('agentTokens') && url.pathname === '/api/secure/account/devices') {
+          const tokens = engine.managers.agentTokens;
+          if (req.method === 'GET') {
+            const policy = tokens.deviceSettings;
+            send(res, 200, {success: true, data: {grants: await tokens.listDeviceGrants(ctx), max_days: policy.grantMaxDays, max_per_user: policy.maxPerUser}});
+            return;
+          }
+          if (req.method === 'POST') {
+            if (engine.has('demo')) engine.managers.demo.refuseWrite(ctx, 'connecting a device');
+            const body = (await readJsonBody(req)) ?? {};
+            const label = String(body['label'] ?? '');
+            // The device's own source first, so its records are credited to it (yourphr#806); undone if the grant is refused.
+            const source = await engine.managers.sources.addDeviceSource(ctx, label);
+            try {
+              const created = await tokens.createDeviceGrant(ctx, {
+                label, sourceId: `source-${source.id}`, credentials: credentialsOf(body), request: deviceRequest,
+                ...(body['days'] === undefined ? {} : {days: Number(body['days'])}),
+              });
+              // The setup code rides back ONCE, for the QR code and the "Open in app" link.
+              send(res, 200, {success: true, data: {grant: created.grant, setup_code: created.setupCode}});
+            } catch (err) {
+              await engine.managers.sources.remove(ctx, `source-${source.id}`);
+              throw err;
+            }
+            return;
+          }
+        }
+        const deviceAction = /^\/api\/secure\/account\/devices\/([^/]+)\/(extend|revoke)$/.exec(url.pathname);
+        if (engine.has('agentTokens') && deviceAction && req.method === 'POST') {
+          if (engine.has('demo')) engine.managers.demo.refuseWrite(ctx, 'changing a connected device');
+          const tokens = engine.managers.agentTokens;
+          const id = decodeURIComponent(deviceAction[1] as string);
+          if (deviceAction[2] === 'extend') {
+            const body = (await readJsonBody(req)) ?? {};
+            send(res, 200, {success: true, data: await tokens.extendDeviceGrant(ctx, id, {
+              credentials: credentialsOf(body), request: deviceRequest, ...(body['days'] === undefined ? {} : {days: Number(body['days'])}),
+            })});
+            return;
+          }
+          send(res, 200, {success: true, data: {revoked: await tokens.revokeDeviceGrant(ctx, id)}});
+          return;
         }
         const agentTokenAction = /^\/api\/secure\/account\/agent-tokens\/([^/]+)\/(renew|revoke)$/.exec(url.pathname);
         if (engine.has('agentTokens') && agentTokenAction && req.method === 'POST') {

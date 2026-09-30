@@ -35,6 +35,7 @@ const EXEMPT: Record<string, string> = {
   '/api/secure/account/me': 'who the caller is — their own account, not a record',
   '/api/secure/account/access-log': 'the access log itself; reading it is not an access (#563)',
   '/api/secure/account/agent-tokens': 'the caller\'s own credentials — the management surface tokens are barred from',
+  '/api/secure/account/devices': 'the caller\'s own connected-device permissions (yourphr#808) — a management surface device keys are barred from',
   '/api/secure/account/legal-consent': 'the caller\'s own consent status',
   '/api/secure/notifications': 'the caller\'s own notices (#793)',
   '/api/secure/instance': 'the instance\'s name and operator contact',

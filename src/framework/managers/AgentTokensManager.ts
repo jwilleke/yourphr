@@ -40,10 +40,10 @@
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 import { BaseManager, type BackupData } from '../BaseManager.js';
 import type { Engine } from '../Engine.js';
-import { ApiError, type ApiContext } from '../ApiContext.js';
-import { ACCESS_CATEGORIES, CREDENTIAL_EVENT_CATEGORIES, isAccessCategory } from '../../account/index.js';
+import { ApiContext, ApiError } from '../ApiContext.js';
+import { ACCESS_CATEGORIES, CREDENTIAL_EVENT_CATEGORIES, DEVICE_SCOPES, isAccessCategory } from '../../account/index.js';
 import { boundedNumber } from '../ConfigurationManager.js';
-import type { AgentTokenRecord, BaseAgentTokensProvider } from '../providers/BaseAgentTokensProvider.js';
+import type { AgentTokenRecord, BaseAgentTokensProvider, DeviceGrantRecord } from '../providers/BaseAgentTokensProvider.js';
 
 declare module '../Engine.js' {
   interface ManagerRegistry {
@@ -56,7 +56,35 @@ declare module '../Engine.js' {
  * The host-bound value ngdpbase isolates for the same reason; theirs is `ngdp_at_`.
  */
 export const TOKEN_PREFIX = 'yphr_at_';
+/** A device's one-time setup code and its refresh token (yourphr#808) — greppable like the key. */
+export const SETUP_CODE_PREFIX = 'yphr_setup_';
+export const REFRESH_TOKEN_PREFIX = 'yphr_rt_';
 const CONFIG_PREFIX = 'yourphr.auth.agent-token';
+const DEVICES_PREFIX = 'yourphr.devices';
+
+/** Connected-device grants (yourphr#807, #808). Read from `yourphr.devices.*`. */
+export interface DeviceGrantPolicy {
+  enabled: boolean;
+  grantMaxDays: number;
+  keyTtlHours: number;
+  setupCodeMinutes: number;
+  maxPerUser: number;
+}
+export const DefaultDeviceGrantPolicy: DeviceGrantPolicy = { enabled: false, grantMaxDays: 30, keyTtlHours: 24, setupCodeMinutes: 10, maxPerUser: 5 };
+
+/** A grant as the patient sees it: never a hash. */
+export type DeviceGrantView = Omit<DeviceGrantRecord, 'setupHash' | 'refreshHash'> & { claimed: boolean; live: boolean };
+
+/** What a device holds after claiming or refreshing: an OAuth-shaped token response. */
+export interface DeviceTokens {
+  access_token: string;
+  token_type: 'Bearer';
+  expires_in: number;
+  refresh_token: string;
+  /** The end of the patient's consent — the most any refresh can reach. */
+  grant_ends_at: string;
+  label: string;
+}
 const TOKEN_BYTES = 32;
 
 /** What a caller may see: everything the record holds except the hash. */
@@ -122,6 +150,7 @@ export class AgentTokensManager extends BaseManager {
   override readonly dependsOn = ['configuration', 'audit'] as const;
 
   private policy: AgentTokenPolicy = { ...DefaultAgentTokenPolicy };
+  private devices: DeviceGrantPolicy = { ...DefaultDeviceGrantPolicy };
 
   constructor(engine: Engine, private readonly provider: BaseAgentTokensProvider) {
     super(engine);
@@ -152,6 +181,17 @@ export class AgentTokensManager extends BaseManager {
       // 0 = unlimited, which is why it cannot be read as a positive-only setting.
       maxRenewals: count('max-renewals', DefaultAgentTokenPolicy.maxRenewals),
       renewWindowHours: positive('renew-window-hours', DefaultAgentTokenPolicy.renewWindowHours),
+    };
+
+    const dev = (key: string, fallback: number, min = 1): number =>
+      boundedNumber(cfg.getInt(`${DEVICES_PREFIX}.${key}`), fallback, `${DEVICES_PREFIX}.${key}`, min);
+    this.devices = {
+      enabled: cfg.getBool(`${DEVICES_PREFIX}.enabled`),
+      grantMaxDays: dev('grant-max-days', DefaultDeviceGrantPolicy.grantMaxDays),
+      keyTtlHours: dev('key-ttl-hours', DefaultDeviceGrantPolicy.keyTtlHours),
+      setupCodeMinutes: dev('setup-code-minutes', DefaultDeviceGrantPolicy.setupCodeMinutes),
+      // Zero is an instruction: no devices at all.
+      maxPerUser: dev('max-per-user', DefaultDeviceGrantPolicy.maxPerUser, 0),
     };
 
     // Dead records go on every boot, as ngdpbase does — but unlike ngdpbase (its #1108) this is
@@ -278,6 +318,7 @@ export class AgentTokensManager extends BaseManager {
       revokedBy: '',
       renewals: lineage.renewals,
       renewedFrom: lineage.renewedFrom,
+      grantId: '',
     };
     await this.provider.create(record);
     return { token, record: this.toView(record, now) };
@@ -293,7 +334,7 @@ export class AgentTokensManager extends BaseManager {
    * per read, since the access log writes a row before serving.
    */
   async verify(token: string, now: number = Date.now()): Promise<AgentTokenRecord | undefined> {
-    if (!this.policy.enabled) return undefined;
+    if (!this.policy.enabled && !this.devices.enabled) return undefined;
     if (typeof token !== 'string' || !token.startsWith(TOKEN_PREFIX)) return undefined;
 
     const stored = await this.provider.findByHash(sha256(token));
@@ -305,6 +346,13 @@ export class AgentTokensManager extends BaseManager {
     if (stored.revokedAt !== '') return undefined;
     if (expiryMs(stored) <= now) return undefined;
     if (stored.scopes.length === 0) return undefined; // a corrupt row reads nothing (see the provider)
+    // Each kind of key answers to its own switch; a device key also lives and dies with its grant.
+    if (stored.grantId === '' && !this.policy.enabled) return undefined;
+    if (stored.grantId !== '') {
+      if (!this.devices.enabled) return undefined;
+      const grant = await this.provider.getGrant(stored.grantId);
+      if (!grant || !(await this.grantAlive(grant, now))) return undefined;
+    }
 
     await this.provider.touch(stored.id, new Date(now).toISOString());
     return { ...stored, scopes: [...stored.scopes] };
@@ -376,6 +424,225 @@ export class AgentTokensManager extends BaseManager {
     // Only when this call is what ended it — a second revoke of the same token is not a new event.
     if (revoked) await this.recordLifecycle(ctx, CREDENTIAL_EVENT_CATEGORIES.revoked, new Date(now));
     return revoked;
+  }
+
+  // --- connected-device grants (yourphr#807 design, #808) ------------------------------------
+  //
+  // The GRANT is the patient's consent and carries the term; the device's KEYS are agent tokens
+  // tied to it. Setup: the patient creates a grant (after re-authenticating) and is shown a one-time
+  // code; the device claims it once for an access key and a refresh token. The refresh token
+  // rotates on every use, and presenting a spent one revokes the whole grant (RFC 9700 §4.14). A
+  // refresh never moves the end; only the patient's extend does.
+
+  get deviceSettings(): DeviceGrantPolicy { return { ...this.devices }; }
+
+  private requireDevices(): void {
+    if (!this.devices.enabled) throw new ApiError(404, 'connected devices are not enabled on this instance');
+  }
+
+  /** Is the grant usable now? Ends it (once, logged) when its term or the owner's generation has passed it. */
+  private async grantAlive(grant: DeviceGrantRecord, now: number): Promise<boolean> {
+    if (grant.status !== 'active') return false;
+    const generation = (await this.engine.managers.users.record(grant.owner))?.tokenGeneration;
+    const termOver = expiryMs({ expiresAt: grant.endsAt }) <= now;
+    const generationMoved = generation === undefined || generation !== grant.ownerGeneration;
+    if (!termOver && !generationMoved) return true;
+    await this.endGrant(grant, 'ended', termOver ? 'term' : 'sign-out', now, CREDENTIAL_EVENT_CATEGORIES.deviceEnded);
+    return false;
+  }
+
+  private async endGrant(grant: DeviceGrantRecord, status: 'ended' | 'revoked', by: string, now: number, event: string): Promise<void> {
+    const at = new Date(now).toISOString();
+    await this.provider.updateGrant({ ...grant, status, statusAt: at, statusBy: by, setupHash: '', setupExpiresAt: '', refreshHash: '' });
+    await this.provider.revokeKeysOfGrant(grant.id, at, by);
+    await this.recordLifecycle(this.deviceActor(grant), event, new Date(now));
+  }
+
+  /** The access log names the device by the patient's own label, acting for its owner. */
+  private deviceActor(grant: DeviceGrantRecord): ApiContext {
+    return ApiContext.system(grant.label, grant.owner, this.engine);
+  }
+
+  private grantView(grant: DeviceGrantRecord, now: number): DeviceGrantView {
+    const { setupHash: _s, refreshHash: _r, ...rest } = grant;
+    return { ...rest, scopes: [...grant.scopes], claimed: grant.refreshHash !== '' || grant.lastUploadAt !== '', live: grant.status === 'active' && expiryMs({ expiresAt: grant.endsAt }) > now };
+  }
+
+  private async confirmIsYou(ctx: ApiContext, credentials: Record<string, string>, request: { remoteAddr: string; xff?: string }): Promise<void> {
+    const sessions = this.engine.has('sessions') ? this.engine.managers.sessions : undefined;
+    if (!sessions || !(await sessions.reauthenticate(ctx, credentials, request))) {
+      throw new ApiError(401, 'confirm it is you — sign-in details did not match');
+    }
+  }
+
+  private days(requested: number | undefined): number {
+    const days = requested === undefined ? this.devices.grantMaxDays : Number(requested);
+    if (!Number.isInteger(days) || days < 1) throw new ApiError(400, 'days must be a whole number of at least 1');
+    if (days > this.devices.grantMaxDays) throw new ApiError(400, `a device may be allowed for at most ${this.devices.grantMaxDays} days`);
+    return days;
+  }
+
+  /**
+   * The patient grants a device (after re-authenticating). Returns the grant and the ONE-TIME setup
+   * code, which is shown once, as a QR code and an "Open in app" link, and never stored in clear.
+   * The route creates the device source first (a framework manager does not reach into the app's).
+   */
+  async createDeviceGrant(
+    ctx: ApiContext,
+    input: { label: string; days?: number; sourceId: string; credentials: Record<string, string>; request: { remoteAddr: string; xff?: string } },
+    now: number = Date.now()
+  ): Promise<{ grant: DeviceGrantView; setupCode: string }> {
+    this.requireDevices();
+    this.requireHuman(ctx);
+    await this.confirmIsYou(ctx, input.credentials, input.request);
+    const label = String(input.label ?? '').trim();
+    if (label === '' || label.length > 80) throw new ApiError(400, 'a connected device needs a name of 1 to 80 characters');
+    const days = this.days(input.days);
+    const held = (await this.provider.listGrantsForOwner(ctx.username)).filter((g) => g.status === 'active' || g.status === 'suspended');
+    if (held.length >= this.devices.maxPerUser) {
+      throw new ApiError(409, `you already have ${this.devices.maxPerUser} connected devices — remove one first`);
+    }
+    const generation = (await this.engine.managers.users.record(ctx.username))?.tokenGeneration;
+    if (generation === undefined) throw new ApiError(404, 'no such account');
+
+    const setupCode = `${SETUP_CODE_PREFIX}${randomBytes(18).toString('base64url')}`;
+    const grant: DeviceGrantRecord = {
+      id: `dev_${randomBytes(8).toString('hex')}`,
+      owner: ctx.username,
+      label,
+      scopes: [...DEVICE_SCOPES],
+      sourceId: input.sourceId,
+      createdAt: new Date(now).toISOString(),
+      endsAt: new Date(now + days * 86_400_000).toISOString(),
+      ownerGeneration: generation,
+      lastUploadAt: '',
+      status: 'active',
+      statusAt: '',
+      statusBy: '',
+      setupHash: sha256(setupCode),
+      setupExpiresAt: new Date(now + this.devices.setupCodeMinutes * 60_000).toISOString(),
+      refreshHash: '',
+    };
+    await this.provider.createGrant(grant);
+    await this.recordLifecycle(ctx, CREDENTIAL_EVENT_CATEGORIES.deviceGranted, new Date(now));
+    return { grant: this.grantView(grant, now), setupCode };
+  }
+
+  /** The device, unauthenticated, spends its setup code — once — for its first keys. */
+  async claimDeviceGrant(setupCode: string, now: number = Date.now()): Promise<DeviceTokens> {
+    this.requireDevices();
+    const refused = new ApiError(401, 'that setup code is not valid — ask the patient to show a new one');
+    if (typeof setupCode !== 'string' || !setupCode.startsWith(SETUP_CODE_PREFIX)) throw refused;
+    const grant = await this.provider.findGrantBySetupHash(sha256(setupCode));
+    if (!grant || !hashEquals(grant.setupHash, sha256(setupCode))) throw refused;
+    if (expiryMs({ expiresAt: grant.setupExpiresAt }) <= now) throw refused;
+    if (!(await this.grantAlive(grant, now))) throw refused;
+    const tokens = await this.rotate(grant, now);
+    await this.recordLifecycle(this.deviceActor(grant), CREDENTIAL_EVENT_CATEGORIES.deviceClaimed, new Date(now));
+    return tokens;
+  }
+
+  /**
+   * The device trades its refresh token for new keys. A refresh token works ONCE: presenting one
+   * already spent means it was copied, so the whole grant is revoked and the patient is told.
+   */
+  async refreshDeviceGrant(refreshToken: string, now: number = Date.now()): Promise<DeviceTokens> {
+    this.requireDevices();
+    const refused = new ApiError(401, 'this device is no longer allowed to add to the record — the patient can connect it again');
+    if (typeof refreshToken !== 'string' || !refreshToken.startsWith(REFRESH_TOKEN_PREFIX)) throw refused;
+    const hash = sha256(refreshToken);
+    const grant = await this.provider.findGrantByRefreshHash(hash);
+    if (!grant) {
+      const spentFor = await this.provider.grantOfSpentRefresh(hash);
+      const copied = spentFor ? await this.provider.getGrant(spentFor) : undefined;
+      if (copied && copied.status === 'active') {
+        await this.endGrant(copied, 'revoked', 'copied-refresh-token', now, CREDENTIAL_EVENT_CATEGORIES.deviceCopied);
+      }
+      throw refused;
+    }
+    if (!hashEquals(grant.refreshHash, hash)) throw refused;
+    if (!(await this.grantAlive(grant, now))) throw refused;
+    await this.provider.spendRefresh(hash, grant.id, new Date(now).toISOString());
+    return this.rotate(grant, now);
+  }
+
+  /** New access key and refresh token; every earlier key of the grant is revoked. Never moves the end. */
+  private async rotate(grant: DeviceGrantRecord, now: number): Promise<DeviceTokens> {
+    const at = new Date(now).toISOString();
+    await this.provider.revokeKeysOfGrant(grant.id, at, 'rotated');
+    const refreshToken = `${REFRESH_TOKEN_PREFIX}${randomBytes(TOKEN_BYTES).toString('base64url')}`;
+    await this.provider.updateGrant({ ...grant, setupHash: '', setupExpiresAt: '', refreshHash: sha256(refreshToken) });
+
+    const ends = expiryMs({ expiresAt: grant.endsAt });
+    const expires = Math.min(now + this.devices.keyTtlHours * 3_600_000, ends); // a key never outlives the consent
+    const secret = randomBytes(TOKEN_BYTES).toString('base64url');
+    const token = `${TOKEN_PREFIX}${secret}`;
+    await this.provider.create({
+      id: `tok_${randomBytes(8).toString('hex')}`,
+      owner: grant.owner,
+      name: grant.label,
+      hash: sha256(token),
+      prefix: token.slice(0, TOKEN_PREFIX.length + 4),
+      scopes: [...grant.scopes],
+      createdAt: at,
+      expiresAt: new Date(expires).toISOString(),
+      lastUsedAt: '',
+      revokedAt: '',
+      revokedBy: '',
+      renewals: 0,
+      renewedFrom: '',
+      grantId: grant.id,
+    });
+    return {
+      access_token: token,
+      token_type: 'Bearer',
+      expires_in: Math.max(0, Math.floor((expires - now) / 1000)),
+      refresh_token: refreshToken,
+      grant_ends_at: grant.endsAt,
+      label: grant.label,
+    };
+  }
+
+  /** Only the patient extends, after re-authenticating; at most the maximum from now. */
+  async extendDeviceGrant(
+    ctx: ApiContext, id: string, input: { days?: number; credentials: Record<string, string>; request: { remoteAddr: string; xff?: string } }, now: number = Date.now()
+  ): Promise<DeviceGrantView> {
+    this.requireDevices();
+    this.requireHuman(ctx);
+    const grant = await this.provider.getGrant(id);
+    if (!grant || grant.owner !== ctx.username) throw new ApiError(404, 'no such device');
+    await this.confirmIsYou(ctx, input.credentials, input.request);
+    if (!(await this.grantAlive(grant, now))) throw new ApiError(409, 'that device permission has ended — connect the device again');
+    const updated = { ...grant, endsAt: new Date(now + this.days(input.days) * 86_400_000).toISOString() };
+    await this.provider.updateGrant(updated);
+    await this.recordLifecycle(ctx, CREDENTIAL_EVENT_CATEGORIES.deviceExtended, new Date(now));
+    return this.grantView(updated, now);
+  }
+
+  /** The patient withdraws a device now: the grant and every key it holds. */
+  async revokeDeviceGrant(ctx: ApiContext, id: string, now: number = Date.now()): Promise<boolean> {
+    this.requireDevices();
+    this.requireHuman(ctx);
+    const grant = await this.provider.getGrant(id);
+    if (!grant || grant.owner !== ctx.username) throw new ApiError(404, 'no such device');
+    if (grant.status !== 'active' && grant.status !== 'suspended') return false;
+    const at = new Date(now).toISOString();
+    await this.provider.updateGrant({ ...grant, status: 'revoked', statusAt: at, statusBy: ctx.username, setupHash: '', setupExpiresAt: '', refreshHash: '' });
+    await this.provider.revokeKeysOfGrant(grant.id, at, ctx.username);
+    await this.recordLifecycle(ctx, CREDENTIAL_EVENT_CATEGORIES.deviceRevoked, new Date(now));
+    return true;
+  }
+
+  async listDeviceGrants(ctx: ApiContext, now: number = Date.now()): Promise<DeviceGrantView[]> {
+    this.requireDevices();
+    this.requireHuman(ctx);
+    return (await this.provider.listGrantsForOwner(ctx.username)).map((g) => this.grantView(g, now));
+  }
+
+  /** A device key just wrote: when, for inactivity suspension (yourphr#809). */
+  async recordDeviceUpload(grantId: string, now: number = Date.now()): Promise<void> {
+    const grant = await this.provider.getGrant(grantId);
+    if (grant) await this.provider.updateGrant({ ...grant, lastUploadAt: new Date(now).toISOString() });
   }
 
   /** Drop dead records past the retention window. */

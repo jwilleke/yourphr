@@ -186,6 +186,38 @@ export class SessionsManager extends BaseManager {
     return { ok: true, token: this.mint(username, generation, nowSeconds) };
   }
 
+  /**
+   * "Confirm it is you" for an action that needs a fresh proof inside a live session — granting or
+   * extending a connected device (yourphr#807, decision 3). Answers whether the SIGNED-IN person
+   * just satisfied every configured primary factor (the password today; passkeys and others as
+   * ngdpbase#1523 brings them), under the same per-account and per-IP throttle as sign-in, so it
+   * is no side door for guessing. A delegated credential can never satisfy it.
+   *
+   * Interim by design: ngdpbase#1525's step-up replaces this when it lands.
+   */
+  async reauthenticate(
+    ctx: { username: string; viaToken?: unknown; isAuthenticated: boolean },
+    credentials: Record<string, string>,
+    request: { remoteAddr: string; xff?: string },
+    nowSeconds = Math.floor(Date.now() / 1000)
+  ): Promise<boolean> {
+    if (!ctx.isAuthenticated || ctx.viaToken) return false;
+    const ip = clientIp(request.remoteAddr, request.xff, this.trustedProxies);
+    const accountKey = `acct:${ctx.username}`;
+    const ipKey = `ip:${ip}`;
+    if (this.throttle.isLimited(accountKey, nowSeconds) || this.throttle.isLimited(ipKey, nowSeconds)) return false;
+    const stored = await this.engine.managers.users.record(ctx.username);
+    for (const factor of this.factors) {
+      const result = await this.providers.get(factor)!.authenticate(ctx.username, credentials[factor] ?? '', stored, nowSeconds);
+      if (!result.ok || !stored) {
+        this.throttle.recordFailure(accountKey, nowSeconds);
+        this.throttle.recordFailure(ipKey, nowSeconds);
+        return false;
+      }
+    }
+    return true;
+  }
+
   private mint(username: string, generation: number, nowSeconds: number): string {
     return issueToken(this.sessionKey, { u: username, g: generation, iat: nowSeconds, exp: nowSeconds + this.policy.slidingSeconds, cap: nowSeconds + this.policy.absoluteSeconds });
   }

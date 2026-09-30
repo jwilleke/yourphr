@@ -56,7 +56,33 @@ export const CREDENTIAL_EVENT_CATEGORIES = {
   minted: 'Agent token minted',
   renewed: 'Agent token renewed',
   revoked: 'Agent token revoked',
+  // A connected device's grant (yourphr#807, #808): the patient's consent, in the same log.
+  deviceGranted: 'Device permission granted',
+  deviceClaimed: 'Device connected',
+  deviceExtended: 'Device permission extended',
+  deviceRevoked: 'Device permission revoked',
+  deviceEnded: 'Device permission ended',
+  deviceCopied: 'Device permission revoked: a copied key was used',
 } as const;
+
+/**
+ * What a connected device may be granted (yourphr#807): its one WRITE, and the one read that
+ * write needs. Deliberately NOT in ACCESS_CATEGORIES, so an ordinary agent token can never be
+ * minted with them, and a device grant can never carry a read of the record. The same rule holds
+ * as for reads: a surface that cannot be logged cannot be scoped — each is a log category too.
+ */
+export const DEVICE_SCOPES = ['Health samples (add)', 'Health samples (sync state)'] as const;
+export type DeviceScope = (typeof DEVICE_SCOPES)[number];
+export const isDeviceScope = (value: string): value is DeviceScope => (DEVICE_SCOPES as readonly string[]).includes(value);
+
+/**
+ * The write surfaces an agent credential can ever reach, by method and path (yourphr#807).
+ * Everything absent here stays refused to every agent, whatever it holds.
+ */
+export function writeCategoryFor(method: string, pathname: string): DeviceScope | undefined {
+  if (method === 'POST' && pathname === '/api/secure/health/samples') return 'Health samples (add)';
+  return undefined;
+}
 
 /** Is this a category this build knows? A scope that is not one can never match a request. */
 export function isAccessCategory(value: string): value is AccessCategory {
@@ -89,6 +115,9 @@ export function accessCategoryFor(pathname: string): string | undefined {
   if (/^\/api\/secure\/practitioners\/[^/]+\/history$/.test(pathname)) return 'Records (FHIR)';
   if (/^\/api\/secure\/resource\/provenance\/[^/]+\/[^/]+$/.test(pathname)) return 'Records (FHIR)';
   if (/^\/api\/secure\/source\/[^/]+\/export$/.test(pathname)) return 'Full export';
+  // A device's own read (yourphr#807): where its last upload got to. A device scope, not an access
+  // category a person or an ordinary agent token can be given.
+  if (pathname === '/api/secure/health/sync-state') return 'Health samples (sync state)';
   return undefined;
 }
 
