@@ -1,6 +1,6 @@
 # Design note: a connected device's write scope inside a patient consent grant
 
-> __Status: proposal, awaiting Jim's decisions__ (listed at the end). Issue [#807](https://github.com/jwilleke/yourphr/issues/807), child of the #314 readiness epic [#810](https://github.com/jwilleke/yourphr/issues/810). It unblocks the implementation [#808](https://github.com/jwilleke/yourphr/issues/808) and, through it, [#809](https://github.com/jwilleke/yourphr/issues/809) and [#314](https://github.com/jwilleke/yourphr/issues/314) PR 4. Part of the auth plan in [authorization-framework.md](authorization-framework.md).
+> __Status: decided__ (Jim, 2026-09-30). The six decisions are at the end and on the issue. Issue [#807](https://github.com/jwilleke/yourphr/issues/807), child of the #314 readiness epic [#810](https://github.com/jwilleke/yourphr/issues/810). It unblocks the implementation [#808](https://github.com/jwilleke/yourphr/issues/808) and, through it, [#809](https://github.com/jwilleke/yourphr/issues/809) and [#314](https://github.com/jwilleke/yourphr/issues/314) PR 4. Part of the auth plan in [authorization-framework.md](authorization-framework.md).
 
 ## What is already decided
 
@@ -49,9 +49,9 @@ A new record beside agent tokens, in the app database:
 The OAuth refresh pattern, with both halves bound to the grant:
 
 - An __access key__: an agent token with `grantId` set, lifetime `yourphr.devices.key-ttl-hours` (24). It is what the device sends on every upload.
-- A __refresh secret__: lives until the grant ends, and __rotates on every use__. The device exchanges it at `POST /api/device/token` for a new access key and a new refresh secret. Presenting a refresh secret that was already used means it was copied, so the whole grant is revoked, and the patient is told.
+- A __refresh token__ (OAuth 2.0, rotating, per RFC 9700 §4.14): lives until the grant ends, and __rotates on every use__. The device exchanges it at `POST /api/device/token` for a new access key and a new refresh token. Presenting a refresh token that was already used means it was copied, so the whole grant is revoked, and the patient is told.
 
-Why a refresh secret rather than "exchange the current access key": a phone that is off for a weekend would otherwise come back with an expired key and need the patient to set it up again. With the refresh secret it resumes on its own, still inside the patient's term.
+Why a refresh token rather than "exchange the current access key": a phone that is off for a weekend would otherwise come back with an expired key and need the patient to set it up again. With the refresh token it resumes on its own, still inside the patient's term.
 
 An exchange __never__ moves `endsAt`. Every exchange checks that the grant is active and that the owner's generation still matches.
 
@@ -74,7 +74,7 @@ Every other write stays refused for every agent. The access log names each write
 
 ### Setup (patient-started)
 
-1. Settings → Connected devices → "Add a device". The patient names it, picks the term (default and maximum from configuration), and confirms by __re-entering their password__. This is an interim step-up until [ngdpbase#1525](https://github.com/jwilleke/ngdpbase/issues/1525) gives a real one; a passkey prompt replaces it later.
+1. Settings → Connected devices → "Add a device". The patient names it, picks the term (default and maximum from configuration), and confirms it is them __with any primary auth method their account holds__ (the password today; a passkey and others as they arrive). A delegated credential never satisfies it. [ngdpbase#1525](https://github.com/jwilleke/ngdpbase/issues/1525)'s step-up replaces this interim check when it lands.
 2. The server creates the grant and a __setup code__: single use, `yourphr.devices.setup-code-minutes` (10), shown only in that signed-in page, as a QR code and an "Open in app" button.
 3. The app sends the code to `POST /api/device/claim` and receives the first access key and refresh secret, the grant's `endsAt`, and the patient-visible label.
 
@@ -82,8 +82,8 @@ The code is shown only to the signed-in patient, lives minutes, and is spent on 
 
 ### Extending, and the end of the term
 
-- Notices through `NotificationManager` at 7 days and at 1 day before `endsAt`: the banner, and email when escalation is on.
-- "Extend" needs the signed-in session and the same password re-entry. It sets a new `endsAt` of at most now + the maximum.
+- Notices through `NotificationManager` at the days in `yourphr.devices.notice-days` (default 7 and 1 before `endsAt`), and once when it has ended. They go to __every channel the person has approved__, with the in-app banner always on ([#833](https://github.com/jwilleke/yourphr/issues/833), blocked by #709; until then, the banner plus email when the person has an address and escalation is on). No SMS notices.
+- "Extend" needs the signed-in session and the same re-authentication. It sets a new `endsAt` of at most now + the maximum.
 - With no action, the grant ends. The device's next exchange is refused with a message the app can show ("Your consent for this device ended on …; extend it in yourPHR").
 
 ### What is recorded
@@ -101,7 +101,8 @@ A FHIR `Consent` resource is __not__ written at first. The grant list is exporta
 | `yourphr.devices.key-ttl-hours` | `24` |
 | `yourphr.devices.setup-code-minutes` | `10` |
 | `yourphr.devices.inactive-after-days` | `14` (#809) |
-| `yourphr.devices.max-per-user` | `5` |
+| `yourphr.devices.max-per-user` | `5` (suspended grants count; revoked and ended do not) |
+| `yourphr.devices.notice-days` | `[7, 1]` |
 
 All read through ConfigurationManager.
 
@@ -109,11 +110,11 @@ All read through ConfigurationManager.
 
 __In `AgentTokensManager`, not a new manager.__ A grant is a delegation with a term, and its keys are agent tokens. Keeping them in one manager keeps one door to "who may act for this patient", and it avoids the ask-before-a-new-manager rule. The grant/refresh pattern is what flows back to ngdpbase's `AgentTokenManager`, which has the same one-lifetime gap.
 
-## Decisions for Jim
+## Decisions (Jim, 2026-09-30, recorded on [#807](https://github.com/jwilleke/yourphr/issues/807))
 
-1. __Grants live in `AgentTokensManager`__ (recommended), or a new manager?
-2. __Refresh secret with reuse detection__ (recommended), or plain 24-hour keys that stop when the device is offline past expiry?
-3. __Password re-entry as the interim step-up__ on grant and extend (recommended), or wait for ngdpbase#1525?
-4. __FHIR `Consent` later__ (recommended), or written from the start?
-5. __Notices at 7 days and 1 day__ before the end?
-6. __At most 5 devices per patient__?
+1. __Grants live in `AgentTokensManager`__, not a new manager: one door for who may act for a patient.
+2. __Rotating OAuth refresh tokens with reuse detection__, never moving the grant's end date.
+3. __Re-authentication with any primary auth method the account holds__ on grant and extend (password today; passkeys and others as they arrive), replaced by ngdpbase#1525's step-up when it lands.
+4. __No FHIR `Consent` at first:__ the grant record plus plain-words access-log lines; `Consent` later if the export should carry it.
+5. __Reminders on configurable days__ (`yourphr.devices.notice-days`, default `[7, 1]`), to every channel the person approved ([#833](https://github.com/jwilleke/yourphr/issues/833)). No SMS notices: they look like phishing, and yourPHR does not pay for SMS.
+6. __At most `yourphr.devices.max-per-user` (default 5)__ active grants per patient, suspended ones included.
