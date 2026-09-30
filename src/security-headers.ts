@@ -59,7 +59,8 @@ export function enforcingPolicy(connectSrc: readonly string[]): string {
  */
 export function reportOnlyScriptSrc(indexHtml: string): string {
   let policy = "script-src 'self'";
-  for (const m of indexHtml.matchAll(/<script>([\s\S]*?)<\/script>/g)) {
+  // Case-insensitive, as HTML is: an uppercase <SCRIPT> is a script too, and must not go unhashed.
+  for (const m of indexHtml.matchAll(/<script>([\s\S]*?)<\/script\s*>/gi)) {
     policy += ` 'sha256-${createHash('sha256').update(m[1] ?? '', 'utf8').digest('base64')}'`;
   }
   return policy;

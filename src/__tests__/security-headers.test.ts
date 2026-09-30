@@ -20,5 +20,6 @@ describe('security headers (yourphr#813)', () => {
     const expected = createHash('sha256').update(body).digest('base64');
     expect(reportOnlyScriptSrc(`<head><script src="a.js"></script><script>${body}</script></head>`)).toBe(`script-src 'self' 'sha256-${expected}'`);
     expect(reportOnlyScriptSrc('<p>no scripts</p>')).toBe("script-src 'self'");
+    expect(reportOnlyScriptSrc(`<SCRIPT>${body}</Script >`)).toBe(`script-src 'self' 'sha256-${expected}'`);
   });
 });
