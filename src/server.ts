@@ -20,6 +20,7 @@
 import { accessCategoryFor, consentNow, consentStatus } from './account/index.js';
 import { appLog, VALID_LEVELS } from './log/index.js';
 import {createServer, IncomingMessage, ServerResponse} from 'node:http';
+import { applySecurityHeaders, reportOnlyForWebDir } from './security-headers.js';
 import {createReadStream, existsSync, statSync} from 'node:fs';
 import {dirname, extname, join, resolve, sep} from 'node:path';
 import type {Resource, ResourceType} from '@medplum/fhirtypes';
@@ -379,10 +380,18 @@ export function createYourPhrServer(options: ServerOptions) {
   };
 
 
+  // Hashed once from the index.html this server serves (yourphr#813) — the file does not change under it.
+  const reportOnly = reportOnlyForWebDir(options.webDir);
   return createServer(async (req: IncomingMessage, res: ServerResponse) => {
     try {
       const url = new URL(req.url ?? '/', 'http://localhost');
       const engine = await engineReady;
+      const web = engine.has('configuration') ? engine.managers.configuration : undefined;
+      applySecurityHeaders(res, url.pathname, {
+        connectSrc: web ? web.getStringList('yourphr.web.csp.connect-src') : [],
+        hsts: web ? web.getBool('yourphr.web.hsts.enabled') : false,
+        reportOnlyScriptSrc: reportOnly,
+      });
 
       // The auth routes answer before anything else can slow them down, so the budget is spent on
       // the REQUEST, not on the failure. The failure throttle inside SessionsManager asks a

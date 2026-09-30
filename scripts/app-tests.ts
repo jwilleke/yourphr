@@ -82,6 +82,15 @@ async function main(): Promise<void> {
   check('instance/public tells an anonymous caller whether signup is open, and it is closed by default',
     (bootBodies[2]!.data as Record<string, unknown>)['signup.enabled'] === false,
     JSON.stringify((bootBodies[2]!.data as Record<string, unknown>)['signup.enabled']));
+  // yourphr#813: the Go stack's security headers, dropped in the cut-over, are back on every answer.
+  const h = boot[0]!.headers;
+  check('every response carries nosniff, DENY framing, no-referrer and an enforcing CSP with frame-ancestors none (yourphr#813)',
+    h.get('x-content-type-options') === 'nosniff' && h.get('x-frame-options') === 'DENY' && h.get('referrer-policy') === 'no-referrer' &&
+      /frame-ancestors 'none'/.test(h.get('content-security-policy') ?? '') && /object-src 'none'/.test(h.get('content-security-policy') ?? ''),
+    JSON.stringify(Object.fromEntries(h.entries())));
+  check('API answers are never cached (Cache-Control: no-store), and HSTS is off until the operator turns it on',
+    h.get('cache-control') === 'no-store' && h.get('strict-transport-security') === null);
+  check('a refusal carries the headers too', (await fetch(`${base}/api/secure/account/me`)).headers.get('x-frame-options') === 'DENY');
   check('the boot calls answer in the Go shapes: version, health, instance/public',
     boot.every((r) => r.status === 200) && typeof bootBodies[0]!.data['version'] === 'string' && bootBodies[1]!.data['first_run_wizard'] === false && bootBodies[2]!.data['password.min_length'] === 12);
 
