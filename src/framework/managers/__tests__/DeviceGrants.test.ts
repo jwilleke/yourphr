@@ -148,3 +148,34 @@ describe('extending', () => {
     expect(Date.parse(extended.endsAt)).toBe(later + 30 * DAY);
   });
 });
+
+describe('end-of-term reminders (#807 decision 5)', () => {
+  const titles = () => s.engine.managers.notifications.getUserNotifications('jim').map((n) => n.title);
+
+  it('one notice at 7 days and one at 1 day before the end, each once', async () => {
+    const t0 = Date.now();
+    await grant(t0, PASSWORD, 30);
+    expect(await tokens().remindEndingDevices(t0 + 22 * DAY)).toBe(0); // 8 days left
+    expect(await tokens().remindEndingDevices(t0 + 23 * DAY + 1)).toBe(1); // inside 7 days
+    expect(await tokens().remindEndingDevices(t0 + 24 * DAY)).toBe(0); // not again
+    expect(await tokens().remindEndingDevices(t0 + 29 * DAY + 1)).toBe(1); // inside 1 day
+    expect(titles().filter((t) => t.startsWith("Jim's iPhone — Apple Health can add to your record until"))).toHaveLength(2);
+  });
+
+  it('two thresholds crossed at once send one notice, not two', async () => {
+    const t0 = Date.now();
+    await grant(t0, PASSWORD, 1); // a 1-day grant starts inside both windows
+    expect(await tokens().remindEndingDevices(t0 + 1000)).toBe(1);
+    expect(await tokens().remindEndingDevices(t0 + 2000)).toBe(0);
+  });
+
+  it('extending starts the reminders over, and the end of the term is announced', async () => {
+    const t0 = Date.now();
+    const { grant: g } = await grant(t0, PASSWORD, 5);
+    expect(await tokens().remindEndingDevices(t0 + DAY)).toBe(1);
+    await tokens().extendDeviceGrant(jim, g.id, { days: 10, credentials: { password: PASSWORD }, request: req }, t0 + DAY);
+    expect(await tokens().remindEndingDevices(t0 + 5 * DAY)).toBe(1); // 6 days left on the new term
+    expect(await tokens().remindEndingDevices(t0 + 12 * DAY)).toBe(0); // term over: ends, no reminder
+    expect(titles()).toContain("Jim's iPhone — Apple Health stopped syncing");
+  });
+});

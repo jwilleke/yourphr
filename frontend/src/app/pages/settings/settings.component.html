@@ -165,6 +165,114 @@
         </section>
       }
 
+      <!-- Connected devices (yourphr#807, #808): a phone app or scale allowed to ADD health samples -->
+      @if (devicesEnabled && devicePage) {
+        <section class="card card-dashboard-table mg-t-20" data-testid="connected-devices">
+          <div class="card-header">
+            <h4 class="card-title mb-0"><i class="fas fa-mobile-alt me-3"></i>Connected devices</h4>
+          </div>
+          <div class="card-body">
+            <p class="tx-gray-500">
+              A connected device — a yourPHR-compatible app on your phone, or a scale — may <strong>add</strong> health readings
+              to your record, for as long as you allow. It cannot read your record. Everything it adds is marked as coming from
+              it, and every upload appears in your access log. You can remove it at any moment.
+            </p>
+
+            @if (devicesError) {
+              <div class="alert alert-danger" data-testid="devices-error">{{ devicesError }}</div>
+            }
+
+            @if (deviceSetup) {
+              <div class="alert alert-warning" data-testid="device-setup">
+                <h6 class="mg-b-5">Connect {{ deviceSetup.label }} now</h6>
+                <p class="mg-b-10">
+                  Scan this with the device's app, or open it on the phone itself. It works <strong>once</strong>, within a few
+                  minutes, and is not shown again — if it expires, remove this device and add it again.
+                </p>
+                @if (deviceSetup.qr) {
+                  <img [src]="deviceSetup.qr" alt="Setup code for {{ deviceSetup.label }}" width="240" height="240" class="d-block mg-b-10" />
+                }
+                <p class="mg-b-10"><a [href]="deviceSetup.link">Open in app</a></p>
+                <details class="mg-b-10"><summary class="tx-13">Show the code</summary><pre class="tx-13 mg-b-0" data-testid="device-setup-code">{{ deviceSetup.code }}</pre></details>
+                <button type="button" class="btn btn-sm btn-outline-dark" (click)="dismissDeviceSetup()">Done</button>
+              </div>
+            }
+
+            @if (devicePage.grants.length === 0) {
+              <p class="tx-gray-500"><em>No devices connected.</em></p>
+            } @else {
+              <table class="table table-striped mg-b-20">
+                <thead><tr><th>Device</th><th>Status</th><th>Last upload</th><th></th></tr></thead>
+                <tbody>
+                  @for (grant of devicePage.grants; track grant.id) {
+                    <tr>
+                      <td>{{ grant.label }}</td>
+                      <td class="tx-13">{{ deviceState(grant) }}</td>
+                      <td class="tx-13">{{ grant.lastUploadAt ? grant.lastUploadAt.slice(0, 10) : 'never' }}</td>
+                      <td class="tx-right">
+                        @if (grant.status === 'active') {
+                          <button type="button" class="btn btn-sm btn-outline-secondary mg-r-5" [disabled]="busyDeviceId === grant.id" (click)="startDeviceAction(grant, 'extend')">Extend</button>
+                        }
+                        @if (grant.status === 'suspended') {
+                          <button type="button" class="btn btn-sm btn-outline-secondary mg-r-5" [disabled]="busyDeviceId === grant.id" (click)="startDeviceAction(grant, 'resume')">Resume</button>
+                        }
+                        @if (grant.status === 'active' || grant.status === 'suspended') {
+                          <button type="button" class="btn btn-sm btn-outline-danger" [disabled]="busyDeviceId === grant.id" (click)="revokeDevice(grant)">Remove</button>
+                        }
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            }
+
+            @if (deviceAction) {
+              <form class="alert alert-secondary" (ngSubmit)="confirmDeviceAction()" data-testid="device-action">
+                <p class="mg-b-10">
+                  {{ deviceAction.action === 'extend' ? 'Extend' : 'Resume' }} <strong>{{ deviceAction.grant.label }}</strong> — confirm it is you.
+                </p>
+                @if (deviceAction.action === 'extend') {
+                  <label class="form-label" for="deviceExtendDays">Allow for</label>
+                  <select id="deviceExtendDays" name="deviceExtendDays" class="form-control mg-b-10" style="max-width: 12rem" [(ngModel)]="deviceAction.days">
+                    @for (d of [7, 14, devicePage.max_days]; track d) { @if (d <= devicePage.max_days) { <option [ngValue]="d">{{ d }} days from today</option> } }
+                  </select>
+                }
+                <label class="form-label" for="deviceActionPassword">Your password</label>
+                <input id="deviceActionPassword" name="deviceActionPassword" type="password" autocomplete="current-password" class="form-control mg-b-10" style="max-width: 20rem" [(ngModel)]="deviceAction.password">
+                <button type="submit" class="btn btn-az-primary btn-sm me-2" [disabled]="deviceAction.password === '' || busyDeviceId !== ''">Confirm</button>
+                <button type="button" class="btn btn-link btn-sm" (click)="deviceAction = null">Cancel</button>
+              </form>
+            }
+
+            <h6 class="mg-b-10">Add a device</h6>
+            @if (deviceAtLimit) {
+              <p class="alert alert-secondary">You have {{ devicePage.max_per_user }} devices, which is all this instance allows. Remove one to add another.</p>
+            } @else {
+              <form (ngSubmit)="grantDevice()">
+                <div class="row row-sm">
+                  <div class="col-md-5 mg-b-15">
+                    <label class="form-label" for="deviceLabel">Its name</label>
+                    <input id="deviceLabel" name="deviceLabel" type="text" maxlength="80" class="form-control" placeholder="My iPhone — Apple Health" [(ngModel)]="newDeviceLabel">
+                  </div>
+                  <div class="col-md-3 mg-b-15">
+                    <label class="form-label" for="deviceDays">Allow for</label>
+                    <select id="deviceDays" name="deviceDays" class="form-control" [(ngModel)]="newDeviceDays">
+                      @for (d of [7, 14, devicePage.max_days]; track d) { @if (d <= devicePage.max_days) { <option [ngValue]="d">{{ d }} days</option> } }
+                    </select>
+                  </div>
+                  <div class="col-md-4 mg-b-15">
+                    <label class="form-label" for="devicePassword">Your password</label>
+                    <input id="devicePassword" name="devicePassword" type="password" autocomplete="current-password" class="form-control" [(ngModel)]="devicePassword">
+                  </div>
+                </div>
+                <p class="tx-12 tx-gray-500">You will be reminded before it ends. After that it stops until you extend it or connect it again.</p>
+                <button type="submit" class="btn btn-az-primary" [disabled]="!canGrantDevice">{{ granting ? 'Allowing…' : 'Allow this device' }}</button>
+              </form>
+            }
+          </div>
+        </section>
+      }
+
       @if (!agentTokensEnabled && !loading) {
         <section class="card card-dashboard-table">
           <div class="card-body tx-gray-500">

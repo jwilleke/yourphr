@@ -63,6 +63,8 @@ export interface DeviceGrantRecord {
   setupExpiresAt: string;
   /** sha256 of the current refresh token, '' before the device has claimed the grant. */
   refreshHash: string;
+  /** The reminder days (from `yourphr.devices.notice-days`) already sent for the current end date. */
+  noticedDays: number[];
 }
 
 /**
@@ -93,6 +95,8 @@ export abstract class BaseAgentTokensProvider {
   abstract findGrantByRefreshHash(hash: string): Promise<DeviceGrantRecord | undefined>;
   /** Newest first, every status. */
   abstract listGrantsForOwner(owner: string): Promise<DeviceGrantRecord[]>;
+  /** Every active grant on the instance — the hourly passes read these (yourphr#808, #809). */
+  abstract listActiveGrants(): Promise<DeviceGrantRecord[]>;
   abstract updateGrant(record: DeviceGrantRecord): Promise<void>;
   /** Remember a refresh token that has been used, so presenting it again is recognised as a copy. */
   abstract spendRefresh(hash: string, grantId: string, at: string): Promise<void>;

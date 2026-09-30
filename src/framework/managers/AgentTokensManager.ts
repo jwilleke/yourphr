@@ -73,7 +73,7 @@ export interface DeviceGrantPolicy {
 export const DefaultDeviceGrantPolicy: DeviceGrantPolicy = { enabled: false, grantMaxDays: 30, keyTtlHours: 24, setupCodeMinutes: 10, maxPerUser: 5 };
 
 /** A grant as the patient sees it: never a hash. */
-export type DeviceGrantView = Omit<DeviceGrantRecord, 'setupHash' | 'refreshHash'> & { claimed: boolean; live: boolean };
+export type DeviceGrantView = Omit<DeviceGrantRecord, 'setupHash' | 'refreshHash' | 'noticedDays'> & { claimed: boolean; live: boolean };
 
 /** What a device holds after claiming or refreshing: an OAuth-shaped token response. */
 export interface DeviceTokens {
@@ -448,6 +448,8 @@ export class AgentTokensManager extends BaseManager {
     const generationMoved = generation === undefined || generation !== grant.ownerGeneration;
     if (!termOver && !generationMoved) return true;
     await this.endGrant(grant, 'ended', termOver ? 'term' : 'sign-out', now, CREDENTIAL_EVENT_CATEGORIES.deviceEnded);
+    // The term running out is news to the patient; their own sign-out-everywhere is not.
+    if (termOver) await this.notifyOwner(grant, `${grant.label} stopped syncing`, `The permission you gave ${grant.label} to add to your record ended on ${grant.endsAt.slice(0, 10)}. Connect it again in Settings → Connected devices to keep it syncing.`);
     return false;
   }
 
@@ -464,7 +466,7 @@ export class AgentTokensManager extends BaseManager {
   }
 
   private grantView(grant: DeviceGrantRecord, now: number): DeviceGrantView {
-    const { setupHash: _s, refreshHash: _r, ...rest } = grant;
+    const { setupHash: _s, refreshHash: _r, noticedDays: _n, ...rest } = grant;
     return { ...rest, scopes: [...grant.scopes], claimed: grant.refreshHash !== '' || grant.lastUploadAt !== '', live: grant.status === 'active' && expiryMs({ expiresAt: grant.endsAt }) > now };
   }
 
@@ -522,6 +524,7 @@ export class AgentTokensManager extends BaseManager {
       setupHash: sha256(setupCode),
       setupExpiresAt: new Date(now + this.devices.setupCodeMinutes * 60_000).toISOString(),
       refreshHash: '',
+      noticedDays: [],
     };
     await this.provider.createGrant(grant);
     await this.recordLifecycle(ctx, CREDENTIAL_EVENT_CATEGORIES.deviceGranted, new Date(now));
@@ -613,7 +616,8 @@ export class AgentTokensManager extends BaseManager {
     if (!grant || grant.owner !== ctx.username) throw new ApiError(404, 'no such device');
     await this.confirmIsYou(ctx, input.credentials, input.request);
     if (!(await this.grantAlive(grant, now))) throw new ApiError(409, 'that device permission has ended — connect the device again');
-    const updated = { ...grant, endsAt: new Date(now + this.days(input.days) * 86_400_000).toISOString() };
+    // A new end date is a new term: its reminders start over.
+    const updated = { ...grant, endsAt: new Date(now + this.days(input.days) * 86_400_000).toISOString(), noticedDays: [] };
     await this.provider.updateGrant(updated);
     await this.recordLifecycle(ctx, CREDENTIAL_EVENT_CATEGORIES.deviceExtended, new Date(now));
     return this.grantView(updated, now);
@@ -637,6 +641,38 @@ export class AgentTokensManager extends BaseManager {
     this.requireDevices();
     this.requireHuman(ctx);
     return (await this.provider.listGrantsForOwner(ctx.username)).map((g) => this.grantView(g, now));
+  }
+
+  /** A banner for the grant's owner — every channel they approved, once #833 gives them a choice. */
+  private async notifyOwner(grant: DeviceGrantRecord, title: string, message: string): Promise<void> {
+    if (!this.engine.has('notifications')) return;
+    await this.engine.managers.notifications.createNotification({ type: 'system', level: 'warning', targetUsers: [grant.owner], title, message });
+  }
+
+  /**
+   * End-of-term reminders (#807 decision 5): for each active grant, one notice at each of
+   * `yourphr.devices.notice-days` (default 7 and 1) before it ends — read live, sent once per day
+   * value per term. Returns how many it sent. The notice when a term has ended comes from the
+   * grant ending itself.
+   */
+  async remindEndingDevices(now: number = Date.now()): Promise<number> {
+    if (!this.devices.enabled) return 0;
+    const configured = this.engine.managers.configuration.getStringList(`${DEVICES_PREFIX}.notice-days`).map(Number);
+    const days = [...new Set(configured.filter((d) => Number.isInteger(d) && d > 0))].sort((a, b) => b - a);
+    let sent = 0;
+    for (const grant of await this.provider.listActiveGrants()) {
+      if (!(await this.grantAlive(grant, now))) continue;
+      const left = expiryMs({ expiresAt: grant.endsAt }) - now;
+      // Every threshold already crossed is marked, but one notice goes out: two at once would repeat each other.
+      const due = days.filter((d) => left <= d * 86_400_000 && !grant.noticedDays.includes(d));
+      if (due.length === 0) continue;
+      const when = grant.endsAt.slice(0, 10);
+      await this.notifyOwner(grant, `${grant.label} can add to your record until ${when}`,
+        `Extend it in Settings → Connected devices to keep it syncing. After ${when} it stops until you connect it again.`);
+      await this.provider.updateGrant({ ...grant, noticedDays: [...new Set([...grant.noticedDays, ...due])] });
+      sent += 1;
+    }
+    return sent;
   }
 
   /** A device key just wrote: when, for inactivity suspension (yourphr#809). */

@@ -3,7 +3,7 @@ import {FormsModule} from '@angular/forms';
 import {of, throwError} from 'rxjs';
 
 import {SettingsComponent} from './settings.component';
-import {AgentTokenPage, FastenApiService} from '../../services/fasten-api.service';
+import {AgentTokenPage, DeviceGrantPage, FastenApiService} from '../../services/fasten-api.service';
 
 /**
  * The page had no spec at all, which is how four unrouted endpoints survived a whole stack
@@ -37,7 +37,10 @@ describe('SettingsComponent', () => {
   beforeEach(waitForAsync(() => {
     api = jasmine.createSpyObj('FastenApiService', [
       'getCurrentUser', 'getPublicInstanceInfo', 'getAgentTokens', 'mintAgentToken', 'revokeAgentToken', 'renewAgentToken', 'setAccountEmail',
+      'getDeviceGrants', 'grantDevice', 'changeDeviceGrant',
     ]);
+    // Devices are off unless a test turns them on: the list answers 404, as the server does.
+    api.getDeviceGrants.and.returnValue(throwError(() => ({status: 404})));
     api.getCurrentUser.and.returnValue(of({username: 'jane', role: 'user'} as never));
     api.getPublicInstanceInfo.and.returnValue(instance(true));
     api.getAgentTokens.and.returnValue(of(page));
@@ -204,5 +207,54 @@ describe('SettingsComponent', () => {
     tick('Medications');
     press('Make this key');
     expect(fixture.nativeElement.textContent).toContain('choose at least one thing this agent may read');
+  });
+
+  // Connected devices (yourphr#808): hidden when the instance has them off; granting asks for the
+  // password, and the one-time setup is shown once, with an "Open in app" link and the code.
+  describe('connected devices', () => {
+    const devices: DeviceGrantPage = {
+      max_days: 30, max_per_user: 5,
+      grants: [{
+        id: 'dev_1', label: 'Scale', scopes: ['Health samples (add)'], sourceId: 'source-3', createdAt: '2026-09-01T00:00:00Z',
+        endsAt: '2026-10-01T00:00:00Z', lastUploadAt: '2026-09-10T08:00:00Z', status: 'suspended', statusAt: '2026-09-25T00:00:00Z',
+        claimed: true, live: false,
+      }],
+    };
+
+    it('is not shown when the instance has devices off', () => {
+      fixture.detectChanges();
+      expect(fixture.nativeElement.querySelector('[data-testid="connected-devices"]')).toBeNull();
+    });
+
+    it('allows a device after the password, and shows its one-time setup', async () => {
+      api.getDeviceGrants.and.returnValue(of({...devices, grants: []}));
+      api.grantDevice.and.returnValue(of({grant: {...devices.grants[0]!, id: 'dev_2', label: 'My iPhone', status: 'active', claimed: false}, setup_code: 'yphr_setup_abc'}));
+      fixture.detectChanges();
+      await fixture.whenStable();
+      type('#deviceLabel', 'My iPhone');
+      type('#devicePassword', 'hunter2hunter2');
+      press('Allow this device');
+      await fixture.whenStable();
+      fixture.detectChanges();
+      expect(api.grantDevice).toHaveBeenCalledWith('My iPhone', 30, 'hunter2hunter2');
+      const setup = fixture.nativeElement.querySelector('[data-testid="device-setup"]') as HTMLElement;
+      expect(setup.textContent).toContain('Connect My iPhone now');
+      expect(setup.querySelector('[data-testid="device-setup-code"]')!.textContent).toContain('yphr_setup_abc');
+      expect((setup.querySelector('a') as HTMLAnchorElement).getAttribute('href')).toContain('code=yphr_setup_abc');
+      expect(component.devicePassword).toBe(''); // never kept after use
+    });
+
+    it('a paused device says why, and resumes only after the password', async () => {
+      api.getDeviceGrants.and.returnValue(of(devices));
+      api.changeDeviceGrant.and.returnValue(of({}));
+      fixture.detectChanges();
+      await fixture.whenStable();
+      expect(fixture.nativeElement.textContent).toContain('Paused: nothing received since 2026-09-10');
+      press('Resume');
+      await fixture.whenStable();
+      type('#deviceActionPassword', 'hunter2hunter2');
+      press('Confirm');
+      expect(api.changeDeviceGrant).toHaveBeenCalledWith('dev_1', 'resume', {password: 'hunter2hunter2'});
+    });
   });
 });

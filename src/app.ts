@@ -251,7 +251,8 @@ const APP_MIGRATIONS: Migration[] = [
         status_by TEXT NOT NULL DEFAULT '',
         setup_hash TEXT NOT NULL DEFAULT '',
         setup_expires_at TEXT NOT NULL DEFAULT '',
-        refresh_hash TEXT NOT NULL DEFAULT ''
+        refresh_hash TEXT NOT NULL DEFAULT '',
+        noticed_days TEXT NOT NULL DEFAULT ''
       )`);
       db.exec(`CREATE TABLE IF NOT EXISTS device_refresh_spent (
         hash TEXT PRIMARY KEY,
@@ -563,9 +564,14 @@ export async function assembleApp(dataDir: string, options: { seeds?: CatalogWri
     (a) => { if (a?.notificationId) appLog.warn(`backup alert raised (${a.kind}): ${a.title}`); },
     (err: Error) => appLog.error(`backup alert check failed: ${err.message}`)
   );
-  const alertTimer = options.workerIntervalMs === undefined ? undefined : setInterval(() => { void checkBackupAlerts(); }, 3_600_000);
+  // Connected devices (yourphr#808): end-of-term reminders, on the same hourly beat.
+  const remindDevices = () => engine.managers.agentTokens.remindEndingDevices().then(
+    (sent) => { if (sent) appLog.info(`devices: sent ${sent} end-of-term reminder(s)`); },
+    (err: Error) => appLog.error(`device reminder check failed: ${err.message}`)
+  );
+  const alertTimer = options.workerIntervalMs === undefined ? undefined : setInterval(() => { void checkBackupAlerts(); void remindDevices(); }, 3_600_000);
   alertTimer?.unref?.();
-  if (alertTimer) void checkBackupAlerts();
+  if (alertTimer) { void checkBackupAlerts(); void remindDevices(); }
 
   const server = createYourPhrServer({
     engine,

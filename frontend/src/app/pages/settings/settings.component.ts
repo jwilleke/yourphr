@@ -1,5 +1,8 @@
 import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
-import { FastenApiService, AgentToken, AgentTokenPage } from '../../services/fasten-api.service';
+import { FastenApiService, AgentToken, AgentTokenPage, DeviceGrant, DeviceGrantPage } from '../../services/fasten-api.service';
+import { GetEndpointAbsolutePath } from '../../../lib/utils/endpoint_absolute_path';
+import { environment } from '../../../environments/environment';
+import * as QRCode from 'qrcode';
 import { extractErrorFromResponse } from '../../../lib/utils/error_extract';
 
 /**
@@ -21,6 +24,11 @@ import { extractErrorFromResponse } from '../../../lib/utils/error_extract';
  *     "everything", it is nothing.
  *   - __Every token expires.__ The instance sets the ceiling; this screen offers what it allows and
  *     never a "never".
+ *
+ * Connected devices came back (yourphr#808) only once the server could honour them: a grant the
+ * patient gives for a term, a one-time setup code, keys that can ADD samples and read nothing.
+ * Off unless the instance turns them on, and the screen says a yourPHR-compatible app is needed —
+ * it does not promise an app that is not there.
  */
 @Component({
     selector: 'app-settings',
@@ -56,6 +64,25 @@ export class SettingsComponent implements OnInit {
   savingEmail = false;
   emailError = '';
 
+  /**
+   * Connected devices (yourphr#807, #808): a phone app or scale the patient allows to ADD health
+   * samples, for a term they choose. Granting and extending ask for the password again (decision
+   * 3). The setup code is shown once, as a QR code and an "Open in app" link, and works once.
+   * Hidden entirely when the instance has devices off (the list answers 404).
+   */
+  devicesEnabled = false;
+  devicePage: DeviceGrantPage | null = null;
+  devicesError = '';
+  newDeviceLabel = '';
+  newDeviceDays = 30;
+  devicePassword = '';
+  granting = false;
+  /** The one-time setup, until the patient dismisses it. */
+  deviceSetup: { label: string; code: string; qr: string; link: string } | null = null;
+  /** An extend or resume waiting for the password. */
+  deviceAction: { grant: DeviceGrant; action: 'extend' | 'resume'; days: number; password: string } | null = null;
+  busyDeviceId = '';
+
   constructor(private api: FastenApiService) { }
 
   ngOnInit(): void {
@@ -74,6 +101,106 @@ export class SettingsComponent implements OnInit {
       },
       error: () => this.loading = false,
     });
+    this.loadDevices();
+  }
+
+  loadDevices(): void {
+    this.api.getDeviceGrants().subscribe({
+      next: (page) => {
+        this.devicesEnabled = true;
+        this.devicePage = page;
+        this.newDeviceDays = Math.min(this.newDeviceDays, page.max_days) || page.max_days;
+      },
+      error: () => this.devicesEnabled = false,
+    });
+  }
+
+  get deviceAtLimit(): boolean {
+    const held = (this.devicePage?.grants ?? []).filter((g) => g.status === 'active' || g.status === 'suspended').length;
+    return !!this.devicePage && held >= this.devicePage.max_per_user;
+  }
+
+  get canGrantDevice(): boolean {
+    return this.newDeviceLabel.trim() !== '' && this.devicePassword !== '' && !this.granting;
+  }
+
+  grantDevice(): void {
+    if (!this.canGrantDevice) {
+      return;
+    }
+    this.devicesError = '';
+    this.granting = true;
+    const label = this.newDeviceLabel.trim();
+    this.api.grantDevice(label, this.newDeviceDays, this.devicePassword).subscribe({
+      next: (result) => {
+        this.granting = false;
+        this.devicePassword = '';
+        this.newDeviceLabel = '';
+        const server = GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base);
+        // What the device's app reads from the QR code: where to claim, and the one-time code.
+        const payload = JSON.stringify({ v: 1, server, code: result.setup_code });
+        const link = `yourphr-device://claim?server=${encodeURIComponent(server)}&code=${encodeURIComponent(result.setup_code)}`;
+        this.deviceSetup = { label, code: result.setup_code, qr: '', link };
+        QRCode.toDataURL(payload, { margin: 1, width: 240 }).then(
+          (qr) => { if (this.deviceSetup?.code === result.setup_code) this.deviceSetup = { ...this.deviceSetup, qr }; },
+          () => undefined,
+        );
+        this.loadDevices();
+      },
+      error: (err) => {
+        this.granting = false;
+        this.devicePassword = '';
+        this.devicesError = extractErrorFromResponse(err) || 'Could not allow that device.';
+      },
+    });
+  }
+
+  dismissDeviceSetup(): void {
+    this.deviceSetup = null;
+  }
+
+  startDeviceAction(grant: DeviceGrant, action: 'extend' | 'resume'): void {
+    this.devicesError = '';
+    this.deviceAction = { grant, action, days: this.devicePage?.max_days ?? 30, password: '' };
+  }
+
+  confirmDeviceAction(): void {
+    const pending = this.deviceAction;
+    if (!pending || pending.password === '') {
+      return;
+    }
+    this.busyDeviceId = pending.grant.id;
+    const body = pending.action === 'extend' ? { days: pending.days, password: pending.password } : { password: pending.password };
+    this.api.changeDeviceGrant(pending.grant.id, pending.action, body).subscribe({
+      next: () => { this.busyDeviceId = ''; this.deviceAction = null; this.loadDevices(); },
+      error: (err) => {
+        this.busyDeviceId = '';
+        if (this.deviceAction) this.deviceAction = { ...this.deviceAction, password: '' };
+        this.devicesError = extractErrorFromResponse(err) || `Could not ${pending.action} ${pending.grant.label}.`;
+      },
+    });
+  }
+
+  revokeDevice(grant: DeviceGrant): void {
+    if (this.busyDeviceId !== '') {
+      return;
+    }
+    this.devicesError = '';
+    this.busyDeviceId = grant.id;
+    this.api.changeDeviceGrant(grant.id, 'revoke').subscribe({
+      next: () => { this.busyDeviceId = ''; this.loadDevices(); },
+      error: (err) => { this.busyDeviceId = ''; this.devicesError = extractErrorFromResponse(err) || `Could not remove ${grant.label}.`; },
+    });
+  }
+
+  /** In the patient's words: what the device may do now. */
+  deviceState(grant: DeviceGrant): string {
+    switch (grant.status) {
+      case 'active': return grant.claimed ? `Allowed until ${grant.endsAt.slice(0, 10)}` : 'Waiting for the device to connect';
+      case 'suspended': return grant.lastUploadAt ? `Paused: nothing received since ${grant.lastUploadAt.slice(0, 10)}` : 'Paused: nothing received';
+      case 'revoked': return 'Removed';
+      default: return `Ended ${grant.endsAt.slice(0, 10)}`;
+    }
   }
 
   startEmailEdit(): void {

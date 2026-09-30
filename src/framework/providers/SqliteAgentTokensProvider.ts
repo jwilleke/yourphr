@@ -50,7 +50,8 @@ export const DEVICE_GRANTS_SCHEMA = `CREATE TABLE IF NOT EXISTS device_grants (
   status_by TEXT NOT NULL DEFAULT '',
   setup_hash TEXT NOT NULL DEFAULT '',
   setup_expires_at TEXT NOT NULL DEFAULT '',
-  refresh_hash TEXT NOT NULL DEFAULT ''
+  refresh_hash TEXT NOT NULL DEFAULT '',
+  noticed_days TEXT NOT NULL DEFAULT ''
 )`;
 export const DEVICE_REFRESH_SPENT_SCHEMA = `CREATE TABLE IF NOT EXISTS device_refresh_spent (
   hash TEXT PRIMARY KEY,
@@ -72,7 +73,7 @@ const INDEXES = [
 interface GrantRow {
   id: string; owner: string; label: string; scopes: string; source_id: string; created_at: string;
   ends_at: string; owner_generation: number; last_upload_at: string; status: string; status_at: string;
-  status_by: string; setup_hash: string; setup_expires_at: string; refresh_hash: string;
+  status_by: string; setup_hash: string; setup_expires_at: string; refresh_hash: string; noticed_days: string;
 }
 
 interface Row {
@@ -130,6 +131,7 @@ export class SqliteAgentTokensProvider extends BaseAgentTokensProvider {
       endsAt: r.ends_at, ownerGeneration: r.owner_generation, lastUploadAt: r.last_upload_at, status,
       statusAt: r.status_at, statusBy: r.status_by, setupHash: r.setup_hash, setupExpiresAt: r.setup_expires_at,
       refreshHash: r.refresh_hash,
+      noticedDays: (r.noticed_days ?? '').split(',').filter((d) => /^\d+$/.test(d)).map(Number),
     };
   }
 
@@ -200,10 +202,10 @@ export class SqliteAgentTokensProvider extends BaseAgentTokensProvider {
 
   async createGrant(g: DeviceGrantRecord): Promise<void> {
     this.db.prepare(`INSERT INTO device_grants
-      (id, owner, label, scopes, source_id, created_at, ends_at, owner_generation, last_upload_at, status, status_at, status_by, setup_hash, setup_expires_at, refresh_hash)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+      (id, owner, label, scopes, source_id, created_at, ends_at, owner_generation, last_upload_at, status, status_at, status_by, setup_hash, setup_expires_at, refresh_hash, noticed_days)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
       .run(g.id, g.owner, g.label, JSON.stringify(g.scopes), g.sourceId, g.createdAt, g.endsAt, g.ownerGeneration,
-        g.lastUploadAt, g.status, g.statusAt, g.statusBy, g.setupHash, g.setupExpiresAt, g.refreshHash);
+        g.lastUploadAt, g.status, g.statusAt, g.statusBy, g.setupHash, g.setupExpiresAt, g.refreshHash, g.noticedDays.join(','));
   }
 
   async getGrant(id: string): Promise<DeviceGrantRecord | undefined> {
@@ -228,11 +230,15 @@ export class SqliteAgentTokensProvider extends BaseAgentTokensProvider {
       .map((r) => this.toGrant(r));
   }
 
+  async listActiveGrants(): Promise<DeviceGrantRecord[]> {
+    return (this.db.prepare("SELECT * FROM device_grants WHERE status = 'active' ORDER BY created_at, id").all() as GrantRow[]).map((r) => this.toGrant(r));
+  }
+
   async updateGrant(g: DeviceGrantRecord): Promise<void> {
     this.db.prepare(`UPDATE device_grants SET label = ?, scopes = ?, ends_at = ?, last_upload_at = ?, status = ?, status_at = ?,
-      status_by = ?, setup_hash = ?, setup_expires_at = ?, refresh_hash = ? WHERE id = ?`)
+      status_by = ?, setup_hash = ?, setup_expires_at = ?, refresh_hash = ?, noticed_days = ? WHERE id = ?`)
       .run(g.label, JSON.stringify(g.scopes), g.endsAt, g.lastUploadAt, g.status, g.statusAt, g.statusBy,
-        g.setupHash, g.setupExpiresAt, g.refreshHash, g.id);
+        g.setupHash, g.setupExpiresAt, g.refreshHash, g.noticedDays.join(','), g.id);
   }
 
   async spendRefresh(hash: string, grantId: string, at: string): Promise<void> {
