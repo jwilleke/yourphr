@@ -37,7 +37,7 @@ describe('SettingsComponent', () => {
   beforeEach(waitForAsync(() => {
     api = jasmine.createSpyObj('FastenApiService', [
       'getCurrentUser', 'getPublicInstanceInfo', 'getAgentTokens', 'mintAgentToken', 'revokeAgentToken', 'renewAgentToken', 'setAccountEmail',
-      'getDeviceGrants', 'grantDevice', 'extendDeviceGrant', 'revokeDeviceGrant',
+      'getDeviceGrants', 'grantDevice', 'extendDeviceGrant', 'resumeDeviceGrant', 'revokeDeviceGrant',
     ]);
     // Devices are off unless a test turns them on: the list answers 404, as the server does.
     api.getDeviceGrants.and.returnValue(throwError(() => ({status: 404})));
@@ -242,6 +242,19 @@ describe('SettingsComponent', () => {
       expect(setup.querySelector('[data-testid="device-setup-code"]')!.textContent).toContain('yphr_setup_abc');
       expect((setup.querySelector('a') as HTMLAnchorElement).getAttribute('href')).toContain('code=yphr_setup_abc');
       expect(component.devicePassword).toBe(''); // never kept after use
+    });
+
+    it('a paused device says why, and resumes only after the password (yourphr#809)', async () => {
+      api.getDeviceGrants.and.returnValue(of(devices));
+      api.resumeDeviceGrant.and.returnValue(of(devices.grants[0]!));
+      fixture.detectChanges();
+      await fixture.whenStable();
+      expect(fixture.nativeElement.textContent).toContain('Paused: nothing received since 2026-09-10');
+      press('Resume');
+      await fixture.whenStable();
+      type('#deviceActionPassword', 'hunter2hunter2');
+      press('Confirm');
+      expect(api.resumeDeviceGrant).toHaveBeenCalledWith('dev_1', 'hunter2hunter2');
     });
 
     it('extends only after the password', async () => {

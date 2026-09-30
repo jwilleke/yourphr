@@ -79,8 +79,8 @@ export class SettingsComponent implements OnInit {
   granting = false;
   /** The one-time setup, until the patient dismisses it. */
   deviceSetup: { label: string; code: string; qr: string; link: string } | null = null;
-  /** An extend waiting for the password. */
-  deviceAction: { grant: DeviceGrant; action: 'extend'; days: number; password: string } | null = null;
+  /** An extend or a resume (yourphr#809) waiting for the password. */
+  deviceAction: { grant: DeviceGrant; action: 'extend' | 'resume'; days: number; password: string } | null = null;
   busyDeviceId = '';
 
   constructor(private api: FastenApiService) { }
@@ -159,7 +159,7 @@ export class SettingsComponent implements OnInit {
     this.deviceSetup = null;
   }
 
-  startDeviceAction(grant: DeviceGrant, action: 'extend'): void {
+  startDeviceAction(grant: DeviceGrant, action: 'extend' | 'resume'): void {
     this.devicesError = '';
     this.deviceAction = { grant, action, days: this.devicePage?.max_days ?? 30, password: '' };
   }
@@ -170,7 +170,10 @@ export class SettingsComponent implements OnInit {
       return;
     }
     this.busyDeviceId = pending.grant.id;
-    this.api.extendDeviceGrant(pending.grant.id, pending.days, pending.password).subscribe({
+    const call = pending.action === 'extend'
+      ? this.api.extendDeviceGrant(pending.grant.id, pending.days, pending.password)
+      : this.api.resumeDeviceGrant(pending.grant.id, pending.password);
+    call.subscribe({
       next: () => { this.busyDeviceId = ''; this.deviceAction = null; this.loadDevices(); },
       error: (err) => {
         this.busyDeviceId = '';

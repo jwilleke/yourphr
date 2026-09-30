@@ -213,6 +213,9 @@
                         @if (grant.status === 'active') {
                           <button type="button" class="btn btn-sm btn-outline-secondary mg-r-5" [disabled]="busyDeviceId === grant.id" (click)="startDeviceAction(grant, 'extend')">Extend</button>
                         }
+                        @if (grant.status === 'suspended') {
+                          <button type="button" class="btn btn-sm btn-outline-secondary mg-r-5" [disabled]="busyDeviceId === grant.id" (click)="startDeviceAction(grant, 'resume')">Resume</button>
+                        }
                         @if (grant.status === 'active' || grant.status === 'suspended') {
                           <button type="button" class="btn btn-sm btn-outline-danger" [disabled]="busyDeviceId === grant.id" (click)="revokeDevice(grant)">Remove</button>
                         }
@@ -226,7 +229,7 @@
             @if (deviceAction) {
               <form class="alert alert-secondary" (ngSubmit)="confirmDeviceAction()" data-testid="device-action">
                 <p class="mg-b-10">
-                  Extend <strong>{{ deviceAction.grant.label }}</strong> — confirm it is you.
+                  {{ deviceAction.action === 'extend' ? 'Extend' : 'Resume' }} <strong>{{ deviceAction.grant.label }}</strong> — confirm it is you.
                 </p>
                 @if (deviceAction.action === 'extend') {
                   <label class="form-label" for="deviceExtendDays">Allow for</label>
