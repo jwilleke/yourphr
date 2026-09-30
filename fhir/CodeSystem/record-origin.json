@@ -1,0 +1,45 @@
+{
+  "resourceType": "CodeSystem",
+  "id": "record-origin",
+  "url": "https://yourphr.org/fhir/CodeSystem/record-origin",
+  "name": "YourPHRRecordOrigin",
+  "title": "YourPHR record origin",
+  "status": "active",
+  "experimental": false,
+  "date": "2026-09-30",
+  "publisher": "YourPHR",
+  "description": "How a record came to exist, where FHIR R4 has no standard code. Used in meta.tag.",
+  "caseSensitive": true,
+  "content": "complete",
+  "count": 3,
+  "concept": [
+    {
+      "code": "pghd",
+      "display": "Patient-generated health data (PGHD)",
+      "definition": "The patient, or a personal device acting for them, is the source of this record, not a clinician. Whether a device was involved is said by Observation.device; Observation.performer names the patient. A document the patient uploads from a provider's portal is not PGHD."
+    },
+    {
+      "code": "needs-review",
+      "display": "Needs review",
+      "definition": "Stated by the patient but incomplete or uncoded; kept, and left out of lists, counts, search and summaries until the patient resolves it."
+    },
+    {
+      "code": "patient-reported",
+      "display": "Patient-reported (YourPHR)",
+      "definition": "Retired 2026-09-30, replaced by pghd.",
+      "property": [
+        {
+          "code": "status",
+          "valueCode": "retired"
+        }
+      ]
+    }
+  ],
+  "property": [
+    {
+      "code": "status",
+      "uri": "http://hl7.org/fhir/concept-properties#status",
+      "type": "code"
+    }
+  ]
+}

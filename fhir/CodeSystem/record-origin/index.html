@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>record-origin code system — YourPHR</title>
+  <style>
+    :root { --bg:#0f1419; --panel:#161b22; --fg:#e6edf3; --muted:#9aa7b4; --accent:#4f9cf9; --border:#2a313c; }
+    @media (prefers-color-scheme: light) { :root { --bg:#fff; --panel:#f6f8fa; --fg:#1f2328; --muted:#57606a; --accent:#0969da; --border:#d0d7de; } }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; background:var(--bg); color:var(--fg); line-height:1.6; }
+    .wrap { max-width:760px; margin:0 auto; padding:24px 20px 64px; }
+    a { color:var(--accent); text-decoration:none; } a:hover { text-decoration:underline; }
+    .home { font-weight:800; font-size:1.2rem; } .home span { color:var(--accent); }
+    h1 { font-size:1.7rem; margin:24px 0 4px; } h2 { font-size:1.15rem; margin:28px 0 8px; }
+    .muted { color:var(--muted); } .small { font-size:.9rem; }
+    .lead { background:var(--panel); border:1px solid var(--border); border-left:3px solid var(--accent); border-radius:8px; padding:14px 16px; margin:16px 0; }
+    ol, ul { padding-left:20px; } li { margin:6px 0; }
+    table { width:100%; border-collapse:collapse; margin:12px 0; font-size:.95rem; }
+    th, td { border:1px solid var(--border); padding:8px 10px; text-align:left; vertical-align:top; }
+    th { background:var(--panel); }
+    footer { border-top:1px solid var(--border); margin-top:40px; padding-top:16px; color:var(--muted); font-size:.9rem; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <p><a class="home" href="/">Your<span>PHR</span></a></p>
+    <h1>Code system: record-origin</h1>
+    <p class="muted small">Canonical URL: <code>https://yourphr.org/fhir/CodeSystem/record-origin</code> · FHIR R4 · status: active · <a href="/fhir/CodeSystem/record-origin.json">CodeSystem resource (JSON)</a></p>
+
+    <div class="lead">
+      YourPHR marks, in <code>meta.tag</code>, <strong>how a record came to exist</strong> when FHIR R4 has no standard code for it.
+      A record that carries none of these codes is one a provider sent, unchanged.
+    </div>
+
+    <h2>Codes</h2>
+    <table>
+      <thead><tr><th>Code</th><th>Display</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td><code>pghd</code></td><td>Patient-generated health data (PGHD)</td><td>The patient, or a personal device acting for them, is the source of this record, not a clinician. Covers what the patient types in and what their devices send. Whether a device was involved is said by <code>Observation.device</code> (a <code>Device</code> whose <code>patient</code> is the patient); <code>Observation.performer</code> names the patient. A document the patient uploads from a provider's portal is <em>not</em> PGHD: the code follows who created the data, not who delivered it.</td></tr>
+        <tr><td><code>needs-review</code></td><td>Needs review</td><td>The patient stated this, but it is incomplete or uncoded. It is kept, never discarded, and left out of lists, counts, search and summaries until the patient resolves it. Its reasons are in <code>note</code>.</td></tr>
+        <tr><td><code>patient-reported</code></td><td>Patient-reported (YourPHR)</td><td><strong>Retired</strong> 30 September 2026, replaced by <code>pghd</code>. Records stored before then were rewritten; older history versions may still carry it.</td></tr>
+      </tbody>
+    </table>
+
+    <footer>YourPHR — <a href="https://github.com/jwilleke/yourphr">source</a> · decision recorded on <a href="https://github.com/jwilleke/yourphr/issues/806">yourphr#806</a></footer>
+  </div>
+</body>
+</html>
