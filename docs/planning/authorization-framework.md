@@ -208,6 +208,7 @@ Y2 and Z2 depend on nothing in ngdpbase and can start at once.
 
 - [#507](https://github.com/jwilleke/yourphr/issues/507) — authentication policy survey (MFA, re-auth, sign-in audit)
 - [#314](https://github.com/jwilleke/yourphr/issues/314) — connected devices; needs RFC 8628 and write scopes. [Review](2026-09-30-yourphr-314-device-review.md)
+- [Design note: device write scope and consent grant](2026-09-30-device-write-scope-and-consent-grant.md) — [#807](https://github.com/jwilleke/yourphr/issues/807)
 - [#657](https://github.com/jwilleke/yourphr/issues/657) — MCP server; agent-token onboarding
 - [#695](https://github.com/jwilleke/yourphr/issues/695) — agent tokens
 - [#508](https://github.com/jwilleke/yourphr/issues/508), [#528](https://github.com/jwilleke/yourphr/issues/528) — token generation and revocation
