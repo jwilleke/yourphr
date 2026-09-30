@@ -7,11 +7,11 @@ on:
       - edited
       - synchronize
       - reopened
-    # Docs-only PRs don't need the Go/Angular test suite. (A mixed code+docs PR still runs.)
-    paths-ignore:
-      - '**/*.md'
-      - 'docs/**'
-      - 'LICENSE'
+    # NO paths-ignore here. Four of these jobs are REQUIRED checks on main, and a workflow skipped
+    # by a path filter never reports, so a docs-only PR waited forever for checks that could not
+    # arrive (#830). The `changes` job below decides instead: code jobs are SKIPPED on a docs-only
+    # PR, and a skipped job satisfies a required check. Lint Markdown always runs — a docs-only PR
+    # is exactly the one it exists for.
   workflow_call:
 
 # Least-privilege default for every job: checkout + test + artifact upload only
@@ -21,8 +21,33 @@ permissions:
   contents: read
 
 jobs:
+  # Did this PR change anything but documentation? Anything that is not a pull_request (a push via
+  # ci.yaml's workflow_call) always runs everything.
+  changes:
+    name: Changed files
+    runs-on: ubuntu-latest
+    outputs:
+      code: ${{ steps.diff.outputs.code }}
+    steps:
+      - name: Checkout code
+        if: github.event_name == 'pull_request'
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - id: diff
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          if [ "$GITHUB_EVENT_NAME" != "pull_request" ]; then echo "code=true" >> "$GITHUB_OUTPUT"; exit 0; fi
+          code=$(git diff --name-only "$BASE...$HEAD" | grep -Ev '(\.md$|^docs/|^LICENSE$)' || true)
+          echo "files outside docs:"; echo "${code:-  (none)}"
+          if [ -n "$code" ]; then echo "code=true" >> "$GITHUB_OUTPUT"; else echo "code=false" >> "$GITHUB_OUTPUT"; fi
+
   test-frontend:
     name: Test Frontend
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -42,6 +67,8 @@ jobs:
           retention-days: 1
   audit-frontend-deps:
     name: Audit Frontend Dependencies
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -85,6 +112,8 @@ jobs:
           echo "no critical production advisories"
   compile-storybook:
     name: Compile Storybook
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -98,6 +127,8 @@ jobs:
 
   lint-frontend:
     name: Lint Frontend
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
