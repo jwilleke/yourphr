@@ -473,7 +473,9 @@ export class AgentTokensManager extends BaseManager {
   private async confirmIsYou(ctx: ApiContext, credentials: Record<string, string>, request: { remoteAddr: string; xff?: string }): Promise<void> {
     const sessions = this.engine.has('sessions') ? this.engine.managers.sessions : undefined;
     if (!sessions || !(await sessions.reauthenticate(ctx, credentials, request))) {
-      throw new ApiError(401, 'confirm it is you — sign-in details did not match');
+      // 403, never 401: the person IS signed in, and 401 tells the app their session is gone, which
+      // signs them out for mistyping a password (the #520 rule; caught by E2E journey 21).
+      throw new ApiError(403, 'confirm it is you — sign-in details did not match');
     }
   }
 

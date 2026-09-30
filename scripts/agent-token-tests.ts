@@ -153,7 +153,8 @@ async function main(): Promise<void> {
     // --- connected devices (yourphr#807, #808): the one WRITE an agent credential can ever make ---
     const json = (body: unknown) => ({ method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${session}` }, body: JSON.stringify(body) });
     const wrongPw = await fetch(`${h.base}/api/secure/account/devices`, json({ label: "Jim's iPhone", password: 'not-it' }));
-    check('TOOTH: granting a device needs the patient to confirm it is them', wrongPw.status === 401);
+    // 403, never 401: a 401 tells the app the session is gone and signs the person out.
+    check('TOOTH: granting a device needs the patient to confirm it is them — refused with 403, still signed in', wrongPw.status === 403);
     const granted = (await (await fetch(`${h.base}/api/secure/account/devices`, json({ label: "Jim's iPhone", password: PASSWORD }))).json()) as { data?: { setup_code?: string; grant?: { id: string } } };
     const setupCode = granted.data?.setup_code ?? '';
     check('a granted device gets a one-time setup code', setupCode.startsWith('yphr_setup_'));

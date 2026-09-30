@@ -40,6 +40,8 @@ const app = await assembleApp(dir, {
     YOURPHR_DATABASE_ENCRYPTION_KEY: 'e2e-at-rest-key',
     YOURPHR_BACKUP_ENCRYPTION_KEY: 'e2e-backup-key',
     SPIKE_TEST_ALLOW_INTERNAL: '1',
+    // Connected devices (yourphr#808): on here so journey 21 can drive the Settings screen and the device API.
+    YOURPHR_DEVICES_ENABLED: 'true',
   },
   webDir,
   version: 'e2e',

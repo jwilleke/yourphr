@@ -39,7 +39,7 @@ const grant = (now = Date.now(), password = PASSWORD, days?: number) =>
 
 describe('granting a device (yourphr#808)', () => {
   it('needs the patient to confirm it is them — a wrong password grants nothing', async () => {
-    await expect(grant(Date.now(), 'not-the-password')).rejects.toMatchObject({ status: 401 });
+    await expect(grant(Date.now(), 'not-the-password')).rejects.toMatchObject({ status: 403 }); // 403, not 401: a 401 signs the person out
     expect(await tokens().listDeviceGrants(jim)).toHaveLength(0);
   });
 
@@ -141,7 +141,7 @@ describe('extending', () => {
   it('only the patient, re-authenticated, and at most the maximum from now', async () => {
     const now = Date.now();
     const { grant: g } = await grant(now, PASSWORD, 5);
-    await expect(tokens().extendDeviceGrant(jim, g.id, { credentials: { password: 'wrong' }, request: req }, now)).rejects.toMatchObject({ status: 401 });
+    await expect(tokens().extendDeviceGrant(jim, g.id, { credentials: { password: 'wrong' }, request: req }, now)).rejects.toMatchObject({ status: 403 });
     await expect(tokens().extendDeviceGrant(jim, g.id, { days: 31, credentials: { password: PASSWORD }, request: req }, now)).rejects.toMatchObject({ status: 400 });
     const later = now + 3 * DAY;
     const extended = await tokens().extendDeviceGrant(jim, g.id, { days: 30, credentials: { password: PASSWORD }, request: req }, later);
@@ -208,7 +208,7 @@ describe('inactivity suspension (yourphr#809)', () => {
     const { grant: g, setupCode } = await grant(t0);
     const keys = await tokens().claimDeviceGrant(setupCode, t0);
     await tokens().suspendInactiveDevices(t0 + 15 * DAY);
-    await expect(tokens().resumeDeviceGrant(jim, g.id, { credentials: { password: 'wrong' }, request: req }, t0 + 15 * DAY)).rejects.toMatchObject({ status: 401 });
+    await expect(tokens().resumeDeviceGrant(jim, g.id, { credentials: { password: 'wrong' }, request: req }, t0 + 15 * DAY)).rejects.toMatchObject({ status: 403 });
     const resumed = await tokens().resumeDeviceGrant(jim, g.id, { credentials: { password: PASSWORD }, request: req }, t0 + 15 * DAY);
     expect(resumed.status).toBe('active');
     expect(await tokens().suspendInactiveDevices(t0 + 16 * DAY)).toEqual([]); // not straight back to paused
