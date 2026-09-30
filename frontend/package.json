@@ -52,7 +52,7 @@
     "idb": "^8.0.3",
     "jose": "6.2.12",
     "lforms": "43.1.0",
-    "moment": "^2.29.4",
+    "moment": "^2.31.0",
     "ng2-charts": "^10.0.0",
     "ngx-highlightjs": "^14.0.1",
     "ngx-infinite-scroll": "^22.0.0",
