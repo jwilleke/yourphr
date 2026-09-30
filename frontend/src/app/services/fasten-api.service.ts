@@ -566,8 +566,13 @@ export class FastenApiService {
       .pipe(map((response: ResponseWrapper) => response.data))
   }
 
-  changeDeviceGrant(id: string, action: 'extend' | 'resume' | 'revoke', body: {days?: number, password?: string} = {}): Observable<any> {
-    return this._httpClient.post<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/account/devices/${encodeURIComponent(id)}/${action}`, body)
+  extendDeviceGrant(id: string, days: number, password: string): Observable<DeviceGrant> {
+    return this._httpClient.post<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/account/devices/${encodeURIComponent(id)}/extend`, {days, password})
+      .pipe(map((response: ResponseWrapper) => response.data as DeviceGrant))
+  }
+
+  revokeDeviceGrant(id: string): Observable<{revoked: boolean}> {
+    return this._httpClient.post<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/account/devices/${encodeURIComponent(id)}/revoke`, {})
       .pipe(map((response: ResponseWrapper) => response.data))
   }
 
