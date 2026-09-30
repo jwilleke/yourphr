@@ -179,3 +179,48 @@ describe('end-of-term reminders (#807 decision 5)', () => {
     expect(titles()).toContain("Jim's iPhone — Apple Health stopped syncing");
   });
 });
+
+describe('inactivity suspension (yourphr#809)', () => {
+  it('pauses a grant silent for inactive-after-days (14), not before, and tells the patient', async () => {
+    const t0 = Date.now();
+    const { grant: g, setupCode } = await grant(t0);
+    const keys = await tokens().claimDeviceGrant(setupCode, t0);
+    expect(await tokens().suspendInactiveDevices(t0 + 13 * DAY)).toEqual([]);
+    expect(await tokens().suspendInactiveDevices(t0 + 14 * DAY + 1)).toEqual([g.id]);
+    expect((await tokens().listDeviceGrants(jim))[0]?.status).toBe('suspended');
+    expect(await tokens().verify(keys.access_token, t0 + 14 * DAY + 2)).toBeUndefined();
+    // The device is told why, plainly — not a generic refusal.
+    await expect(tokens().refreshDeviceGrant(keys.refresh_token, t0 + 14 * DAY + 2)).rejects.toMatchObject({ status: 403, message: expect.stringMatching(/^paused/) });
+    expect(s.engine.managers.notifications.getUserNotifications('jim').map((n) => n.title)).toContain("Jim's iPhone — Apple Health stopped sending data");
+    expect((await s.engine.managers.audit.list(jim)).map((e) => e.category)).toContain('Device permission paused: no data received');
+  });
+
+  it('counts from the last upload', async () => {
+    const t0 = Date.now();
+    const { grant: g } = await grant(t0);
+    await tokens().recordDeviceUpload(g.id, t0 + 10 * DAY);
+    expect(await tokens().suspendInactiveDevices(t0 + 20 * DAY)).toEqual([]);
+    expect(await tokens().suspendInactiveDevices(t0 + 24 * DAY + 1)).toEqual([g.id]);
+  });
+
+  it('the patient resumes it (re-authenticated), the clock restarts, and the device carries on', async () => {
+    const t0 = Date.now();
+    const { grant: g, setupCode } = await grant(t0);
+    const keys = await tokens().claimDeviceGrant(setupCode, t0);
+    await tokens().suspendInactiveDevices(t0 + 15 * DAY);
+    await expect(tokens().resumeDeviceGrant(jim, g.id, { credentials: { password: 'wrong' }, request: req }, t0 + 15 * DAY)).rejects.toMatchObject({ status: 401 });
+    const resumed = await tokens().resumeDeviceGrant(jim, g.id, { credentials: { password: PASSWORD }, request: req }, t0 + 15 * DAY);
+    expect(resumed.status).toBe('active');
+    expect(await tokens().suspendInactiveDevices(t0 + 16 * DAY)).toEqual([]); // not straight back to paused
+    const next = await tokens().refreshDeviceGrant(keys.refresh_token, t0 + 15 * DAY + 1);
+    expect(await tokens().verify(next.access_token, t0 + 15 * DAY + 2)).toBeDefined();
+  });
+
+  it('a paused grant still counts toward the per-patient cap (decision 6)', async () => {
+    const t0 = Date.now();
+    await grant(t0);
+    await grant(t0);
+    await tokens().suspendInactiveDevices(t0 + 15 * DAY);
+    await expect(grant(t0 + 15 * DAY)).rejects.toMatchObject({ status: 409 });
+  });
+});

@@ -51,6 +51,8 @@
   "yourphr.devices.max-per-user": 5,
   "_comment_devices_notice_days": "#807 decision 5 — reminders before a device permission ends, in days before the end; one notice per value per term, to the patient (the banner until #833 lets each person choose channels). A notice also goes when a term has ended. Never by SMS.",
   "yourphr.devices.notice-days": [7, 1],
+  "_comment_devices_inactive": "yourphr#809 — a device permission with no upload for this many days is PAUSED (not revoked): its keys stop, the patient is told, and can resume or remove it. Counted from the last upload, or from when it was granted or last resumed. Read on every hourly pass.",
+  "yourphr.devices.inactive-after-days": 14,
   "yourphr.auth.password.min-length": 12,
   "yourphr.auth.trusted-proxies": [],
   "_comment_auth_rate_limit": "yourphr#647 — a per-IP FIXED WINDOW on the unauthenticated sign-in routes (/api/auth/signin and /api/auth/demo-signin). Separate from the throttle above, which counts FAILURES per account and per IP: this one counts REQUESTS, because demo sign-in runs a bcrypt verify for an anonymous caller who posts nothing, and a caller who never fails is not slowed by a failure counter. Setting max-requests to 0 or less turns it OFF, deliberately — an automated suite driving real logins from one address is the case that needs that switch. A non-positive window is a typo rather than an instruction, so it falls back to 60 seconds instead of reading as 'disable the backstop'. Counters are per PROCESS, so N replicas allow N times the budget.",

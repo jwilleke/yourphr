@@ -63,6 +63,8 @@ export const CREDENTIAL_EVENT_CATEGORIES = {
   deviceRevoked: 'Device permission revoked',
   deviceEnded: 'Device permission ended',
   deviceCopied: 'Device permission revoked: a copied key was used',
+  deviceSuspended: 'Device permission paused: no data received',
+  deviceResumed: 'Device permission resumed',
 } as const;
 
 /**

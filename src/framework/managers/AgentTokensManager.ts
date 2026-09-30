@@ -564,6 +564,9 @@ export class AgentTokensManager extends BaseManager {
       throw refused;
     }
     if (!hashEquals(grant.refreshHash, hash)) throw refused;
+    if (grant.status === 'suspended') {
+      throw new ApiError(403, `paused: yourPHR received nothing from this device for ${this.inactiveAfterDays()} days — the patient can resume it`);
+    }
     if (!(await this.grantAlive(grant, now))) throw refused;
     await this.provider.spendRefresh(hash, grant.id, new Date(now).toISOString());
     return this.rotate(grant, now);
@@ -673,6 +676,60 @@ export class AgentTokensManager extends BaseManager {
       sent += 1;
     }
     return sent;
+  }
+
+  /** `yourphr.devices.inactive-after-days`, read live so a change applies to the next pass (yourphr#809). */
+  private inactiveAfterDays(): number {
+    return boundedNumber(this.engine.managers.configuration.getInt(`${DEVICES_PREFIX}.inactive-after-days`), 14, `${DEVICES_PREFIX}.inactive-after-days`, 1);
+  }
+
+  /**
+   * The inactivity pass (yourphr#809, Jim 2026-09-30): phones and scales get replaced or sold, and
+   * the old credential should not live on. An active grant that has sent nothing for
+   * `inactive-after-days` is SUSPENDED — not revoked: its keys stop working, the patient is told
+   * and can resume or remove it. "Nothing sent" counts from the last upload, or from when the grant
+   * was made or last resumed if that is later. Returns the grants it paused.
+   */
+  async suspendInactiveDevices(now: number = Date.now()): Promise<string[]> {
+    if (!this.devices.enabled) return [];
+    const days = this.inactiveAfterDays();
+    const paused: string[] = [];
+    for (const grant of await this.provider.listActiveGrants()) {
+      const since = Math.max(...[grant.lastUploadAt, grant.createdAt, grant.statusAt].map((t) => (t ? Date.parse(t) : NaN)).filter((n) => !Number.isNaN(n)));
+      if (!Number.isFinite(since) || now - since < days * 86_400_000) continue;
+      const at = new Date(now).toISOString();
+      await this.provider.updateGrant({ ...grant, status: 'suspended', statusAt: at, statusBy: 'inactivity' });
+      await this.provider.revokeKeysOfGrant(grant.id, at, 'inactivity');
+      await this.recordLifecycle(this.deviceActor(grant), CREDENTIAL_EVENT_CATEGORIES.deviceSuspended, new Date(now));
+      if (this.engine.has('notifications')) {
+        const last = grant.lastUploadAt ? `since ${grant.lastUploadAt.slice(0, 10)}` : 'since it was connected';
+        await this.engine.managers.notifications.createNotification({
+          type: 'system', level: 'warning', targetUsers: [grant.owner],
+          title: `${grant.label} stopped sending data`,
+          message: `yourPHR has received nothing from ${grant.label} ${last}, so its permission is paused. Resume it or remove it in Settings → Connected devices.`,
+        });
+      }
+      paused.push(grant.id);
+    }
+    return paused;
+  }
+
+  /** The patient resumes a paused device, after re-authenticating (the same rule as extend). */
+  async resumeDeviceGrant(
+    ctx: ApiContext, id: string, input: { credentials: Record<string, string>; request: { remoteAddr: string; xff?: string } }, now: number = Date.now()
+  ): Promise<DeviceGrantView> {
+    this.requireDevices();
+    this.requireHuman(ctx);
+    const grant = await this.provider.getGrant(id);
+    if (!grant || grant.owner !== ctx.username) throw new ApiError(404, 'no such device');
+    if (grant.status !== 'suspended') throw new ApiError(409, 'that device is not paused');
+    await this.confirmIsYou(ctx, input.credentials, input.request);
+    // Resuming does not reopen a term that has ended; statusAt restarts the inactivity clock.
+    const resumed: DeviceGrantRecord = { ...grant, status: 'active', statusAt: new Date(now).toISOString(), statusBy: ctx.username };
+    if (!(await this.grantAlive(resumed, now))) throw new ApiError(409, 'that device permission has ended — connect the device again');
+    await this.provider.updateGrant(resumed);
+    await this.recordLifecycle(ctx, CREDENTIAL_EVENT_CATEGORIES.deviceResumed, new Date(now));
+    return this.grantView(resumed, now);
   }
 
   /** A device key just wrote: when, for inactivity suspension (yourphr#809). */

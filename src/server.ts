@@ -747,7 +747,7 @@ export function createYourPhrServer(options: ServerOptions) {
             return;
           }
         }
-        const deviceAction = /^\/api\/secure\/account\/devices\/([^/]+)\/(extend|revoke)$/.exec(url.pathname);
+        const deviceAction = /^\/api\/secure\/account\/devices\/([^/]+)\/(extend|resume|revoke)$/.exec(url.pathname);
         if (engine.has('agentTokens') && deviceAction && req.method === 'POST') {
           if (engine.has('demo')) engine.managers.demo.refuseWrite(ctx, 'changing a connected device');
           const tokens = engine.managers.agentTokens;
@@ -757,6 +757,11 @@ export function createYourPhrServer(options: ServerOptions) {
             send(res, 200, {success: true, data: await tokens.extendDeviceGrant(ctx, id, {
               credentials: credentialsOf(body), request: deviceRequest, ...(body['days'] === undefined ? {} : {days: Number(body['days'])}),
             })});
+            return;
+          }
+          if (deviceAction[2] === 'resume') {
+            const body = (await readJsonBody(req)) ?? {};
+            send(res, 200, {success: true, data: await tokens.resumeDeviceGrant(ctx, id, {credentials: credentialsOf(body), request: deviceRequest})});
             return;
           }
           send(res, 200, {success: true, data: {revoked: await tokens.revokeDeviceGrant(ctx, id)}});

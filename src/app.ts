@@ -564,14 +564,20 @@ export async function assembleApp(dataDir: string, options: { seeds?: CatalogWri
     (a) => { if (a?.notificationId) appLog.warn(`backup alert raised (${a.kind}): ${a.title}`); },
     (err: Error) => appLog.error(`backup alert check failed: ${err.message}`)
   );
-  // Connected devices (yourphr#808): end-of-term reminders, on the same hourly beat.
+  // Connected devices (yourphr#808, #809), on the same hourly beat: end-of-term reminders, and
+  // pausing any silent past yourphr.devices.inactive-after-days.
   const remindDevices = () => engine.managers.agentTokens.remindEndingDevices().then(
     (sent) => { if (sent) appLog.info(`devices: sent ${sent} end-of-term reminder(s)`); },
     (err: Error) => appLog.error(`device reminder check failed: ${err.message}`)
   );
-  const alertTimer = options.workerIntervalMs === undefined ? undefined : setInterval(() => { void checkBackupAlerts(); void remindDevices(); }, 3_600_000);
+  const checkInactiveDevices = () => engine.managers.agentTokens.suspendInactiveDevices().then(
+    (paused) => { if (paused.length) appLog.info(`devices: paused ${paused.length} inactive device permission(s)`); },
+    (err: Error) => appLog.error(`device inactivity check failed: ${err.message}`)
+  );
+  const hourly = () => { void checkBackupAlerts(); void remindDevices(); void checkInactiveDevices(); };
+  const alertTimer = options.workerIntervalMs === undefined ? undefined : setInterval(hourly, 3_600_000);
   alertTimer?.unref?.();
-  if (alertTimer) { void checkBackupAlerts(); void remindDevices(); }
+  if (alertTimer) hourly();
 
   const server = createYourPhrServer({
     engine,
