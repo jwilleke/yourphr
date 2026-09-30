@@ -51,6 +51,7 @@ export async function guardedFetch(target: string, options: GuardedFetchOptions 
 
   const chain: string[] = [];
   let current = target;
+  let headers: Record<string, string> = { ...options.headers };
 
   for (let hop = 0; hop <= maxRedirects; hop++) {
     const checked = validateUrl(current, allowInternal);
@@ -84,7 +85,7 @@ export async function guardedFetch(target: string, options: GuardedFetchOptions 
                   'content-type': requestContentType,
                   'content-length': String(Buffer.byteLength(requestBody)),
                 }),
-            ...options.headers,
+            ...headers,
           },
           timeout: timeoutMs,
         },
@@ -108,7 +109,9 @@ export async function guardedFetch(target: string, options: GuardedFetchOptions 
     if (response.statusCode && response.statusCode >= 300 && response.statusCode < 400 && location) {
       response.resume(); // drain, so the socket is released
       // Resolved against the current URL, because a relative Location is legal and common.
-      current = new URL(location, url).href;
+      const next = new URL(location, url);
+      headers = headersForRedirect(url, next, headers);
+      current = next.href;
       continue;
     }
 
@@ -123,6 +126,28 @@ export async function guardedFetch(target: string, options: GuardedFetchOptions 
   }
 
   throw new Error(`too many redirects (${maxRedirects}) starting at ${target}`);
+}
+
+/** Headers that carry the caller's credentials — never sent on to an origin the caller did not name. */
+const CREDENTIAL_HEADERS = new Set(['authorization', 'proxy-authorization', 'cookie']);
+
+/**
+ * The headers for the next hop of a redirect (yourphr#811).
+ *
+ *   - https → http is refused outright: the credential, and the response, would cross the wire in
+ *     the clear, and nothing a provider serves needs it.
+ *   - A different origin gets the request WITHOUT the credential headers — what the Fetch standard
+ *     does for a browser. The sync's Bearer token is for the provider that issued it; a redirect to a
+ *     CDN, a presigned storage URL, or anywhere else must not receive it. (A presigned URL refuses a
+ *     stray Authorization header anyway, so stripping is also what makes those redirects work.)
+ *   - The same origin keeps them.
+ */
+export function headersForRedirect(from: URL, to: URL, headers: Record<string, string>): Record<string, string> {
+  if (from.protocol === 'https:' && to.protocol !== 'https:') {
+    throw new Error(`refusing to follow a redirect from ${from.href} to ${to.protocol}// — it would leave HTTPS`);
+  }
+  if (from.origin === to.origin) return headers;
+  return Object.fromEntries(Object.entries(headers).filter(([name]) => !CREDENTIAL_HEADERS.has(name.toLowerCase())));
 }
 
 /**
