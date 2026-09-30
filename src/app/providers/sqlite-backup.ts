@@ -44,10 +44,22 @@ export const BACKUP_SUFFIX = SUFFIX;
  */
 export const BACKUP_SUFFIXES = [SUFFIX, '-yourphr-spike-backup.db'] as const;
 const isOurs = (name: string): boolean => BACKUP_SUFFIXES.some((s) => name.endsWith(s));
-/** Tables that live in records.db; everything else in a backup belongs to the app database. */
+/**
+ * Which database a backed-up table returns to. A backup holds every database's tables in one file,
+ * so each name belongs to exactly one: records.db's are listed, phd-samples.db's carry the `phd_`
+ * prefix, and everything else belongs to the app database.
+ */
 /** records.db's migration ledger (yourphr#784) — its own name, so a restore can return it to records.db. */
 export const RECORDS_LEDGER_TABLE = 'records_schema_migrations';
 export const RECORDS_TABLES = new Set(['resources', 'resource_history', 'search_index', 'search_text', RECORDS_LEDGER_TABLE]);
+/**
+ * phd-samples.db (yourphr#805, #314): raw connected-device samples, PHD = Personal Health Device.
+ * Every table in it — its migration ledger included (`phd_schema_migrations`) — is named with this
+ * prefix, which is the whole contract: it is how a restore sends them back to that file and
+ * nowhere else. A table without it would be restored into the app database.
+ */
+export const PHD_TABLE_PREFIX = 'phd_';
+export const isPhdTable = (table: string): boolean => table.startsWith(PHD_TABLE_PREFIX);
 /**
  * Managers' own backup payloads (yourphr#631) — today the configuration's overrides, ngdpbase's
  * ConfigurationManager.backup(). One row per manager, JSON, inside the same encrypted file. It
@@ -59,6 +71,7 @@ export interface BackupPayload { manager: string; takenAt: string; payload: unkn
 /** The staged halves a restore writes next to the live files; applied at the next start. */
 export const STAGED_RECORDS = 'records.db.staged';
 export const STAGED_APP = 'spike.db.staged';
+export const STAGED_PHD_SAMPLES = 'phd-samples.db.staged';
 
 /**
  * Copies every table, index, trigger and view from the main database into the attached schema,
@@ -126,6 +139,11 @@ export interface BackupResult {
 export interface DatabaseFile {
   file: string;
   key?: string;
+  /**
+   * Copied only when the file exists at backup time (yourphr#805): phd-samples.db is created when
+   * device samples are turned on, so an instance without it backs up exactly as before.
+   */
+  optional?: boolean;
 }
 
 export interface BackupOptions {
@@ -152,7 +170,7 @@ export function backupFilesSync(sources: DatabaseFile[], options: BackupOptions)
   if (backupKey === '') {
     throw new Error('a backup key is required — backups are always encrypted (see backup.encryption.key)');
   }
-  const [first, ...rest] = sources;
+  const [first, ...rest] = sources.filter((s) => !s.optional || existsSync(s.file));
   if (!first) throw new Error('a backup needs at least one database to copy');
   mkdirSync(options.destination, { recursive: true });
   // Second-precision names collide when two backups are taken back to back (a backup, then the
@@ -305,10 +323,27 @@ export function stageRestore(
  * Stage a whole-instance restore (yourphr#602, #615): both halves of a backup are exported under
  * the live key into <dataDir>/*.staged; the next start swaps them in. Live files are never touched.
  */
-export function stageInstanceRestore(backupFile: string, backupKey: string, dataDir: string, targetKey: string): { tables: number } {
+export function stageInstanceRestore(backupFile: string, backupKey: string, dataDir: string, targetKey: string): { tables: number; phdSamples: boolean } {
   const records = stageRestore(backupFile, backupKey, join(dataDir, STAGED_RECORDS), targetKey, (t) => RECORDS_TABLES.has(t));
-  stageRestore(backupFile, backupKey, join(dataDir, STAGED_APP), targetKey, (t) => !RECORDS_TABLES.has(t) && t !== BACKUP_PAYLOAD_TABLE);
-  return { tables: records.tables };
+  stageRestore(backupFile, backupKey, join(dataDir, STAGED_APP), targetKey, (t) => !RECORDS_TABLES.has(t) && !isPhdTable(t) && t !== BACKUP_PAYLOAD_TABLE);
+  // phd-samples.db is staged only when the backup carries it. A backup taken before device samples
+  // existed has none of its tables, and staging an EMPTY file would wipe every sample on restart;
+  // the live file is left as it is instead.
+  const phdSamples = backupHasTable(backupFile, backupKey, isPhdTable);
+  if (phdSamples) stageRestore(backupFile, backupKey, join(dataDir, STAGED_PHD_SAMPLES), targetKey, isPhdTable);
+  return { tables: records.tables, phdSamples };
+}
+
+function backupHasTable(backupFile: string, backupKey: string, match: (table: string) => boolean): boolean {
+  const db = new Database(backupFile, { readonly: true, fileMustExist: true });
+  try {
+    db.pragma("cipher='sqlcipher'");
+    db.pragma(`key=${quoteKey(backupKey)}`);
+    const names = db.prepare("SELECT name FROM sqlite_master WHERE type = 'table'").all() as { name: string }[];
+    return names.some((n) => match(n.name));
+  } finally {
+    db.close();
+  }
 }
 
 /**

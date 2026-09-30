@@ -1,4 +1,4 @@
-import { mkdtempSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -6,7 +6,7 @@ import type { Resource } from '@medplum/fhirtypes';
 import { HISTORY_PER_PERSON_MIGRATION, SqliteRecordsProvider } from '../SqliteRecordsProvider.js';
 import { SqliteFhirRepository } from '../../../SqliteFhirRepository.js';
 import Database from 'better-sqlite3-multiple-ciphers';
-import { backupDatabase, stageInstanceRestore, STAGED_APP, STAGED_RECORDS, RECORDS_LEDGER_TABLE } from '../sqlite-backup.js';
+import { backupDatabase, stageInstanceRestore, STAGED_APP, STAGED_PHD_SAMPLES, STAGED_RECORDS, RECORDS_LEDGER_TABLE } from '../sqlite-backup.js';
 import { runMigrations } from '../../../framework/providers/sqlite-migrations.js';
 
 const LOINC = 'http://loinc.org';
@@ -353,5 +353,57 @@ describe('a backup runs off the request thread (yourphr#787)', () => {
 
   it('reports a failure instead of hanging', async () => {
     await expect(provider.backup({ destination: join(dir, 'backups'), key: '   ' })).rejects.toThrow(/backup key is required/);
+  });
+});
+
+describe('phd-samples.db, the third database, travels in backups (yourphr#805)', () => {
+  const open = (file: string): InstanceType<typeof Database> => {
+    const db = new Database(file);
+    db.pragma("cipher='sqlcipher'");
+    db.pragma("key='unit-key'");
+    return db;
+  };
+  const names = (db: InstanceType<typeof Database>): string[] => (db.prepare("SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name").all() as { name: string }[]).map((r) => r.name);
+
+  it('backs up and restores all three, each table returned to its own file', async () => {
+    await provider.close();
+    const app = open(join(dir, 'spike.db'));
+    app.exec("CREATE TABLE users (name TEXT); INSERT INTO users VALUES ('alice');");
+    app.close();
+    const phd = open(join(dir, 'phd-samples.db'));
+    phd.exec("CREATE TABLE phd_samples (metric TEXT, value REAL, at TEXT); INSERT INTO phd_samples VALUES ('heart-rate', 61, '2026-09-30T07:15:00-04:00'); CREATE TABLE phd_schema_migrations (id TEXT);");
+    phd.close();
+
+    const repo = new SqliteFhirRepository({ file: join(dir, 'records.db'), key: 'unit-key', userId: 'alice' });
+    const taken = backupDatabase(repo, {
+      destination: join(dir, 'backups'), backupKey: 'backup-key',
+      alsoExport: [{ file: join(dir, 'spike.db'), key: 'unit-key' }, { file: join(dir, 'phd-samples.db'), key: 'unit-key', optional: true }],
+    });
+    repo.db.close();
+
+    expect(stageInstanceRestore(taken.file, 'backup-key', dir, 'unit-key').phdSamples).toBe(true);
+    const stagedPhd = open(join(dir, STAGED_PHD_SAMPLES));
+    const stagedApp = open(join(dir, STAGED_APP));
+    expect(names(stagedPhd)).toEqual(['phd_samples', 'phd_schema_migrations']);
+    expect(stagedPhd.prepare('SELECT value FROM phd_samples').get()).toEqual({ value: 61 });
+    expect(names(stagedApp)).toEqual(['users']); // no phd_ table leaks into the app database
+    stagedPhd.close(); stagedApp.close();
+    provider = new SqliteRecordsProvider(join(dir, 'records.db'), 'unit-key');
+  });
+
+  it('an instance without phd-samples.db backs up as before, and restoring that backup leaves a live phd-samples.db alone', async () => {
+    await provider.close();
+    const repo = new SqliteFhirRepository({ file: join(dir, 'records.db'), key: 'unit-key', userId: 'alice' });
+    const taken = backupDatabase(repo, {
+      destination: join(dir, 'backups'), backupKey: 'backup-key',
+      alsoExport: [{ file: join(dir, 'absent-phd-samples.db'), key: 'unit-key', optional: true }],
+    });
+    repo.db.close();
+    expect(existsSync(join(dir, 'absent-phd-samples.db'))).toBe(false); // the backup did not create it
+
+    expect(stageInstanceRestore(taken.file, 'backup-key', dir, 'unit-key').phdSamples).toBe(false);
+    // Staging an empty file here would wipe every sample at the next start.
+    expect(existsSync(join(dir, STAGED_PHD_SAMPLES))).toBe(false);
+    provider = new SqliteRecordsProvider(join(dir, 'records.db'), 'unit-key');
   });
 });

@@ -3,6 +3,8 @@
   "_comment_storage": "yourphr#630 — YOURPHR_FAST_STORAGE and YOURPHR_SLOW_STORAGE are plain environment variables, not configuration keys: they are what LOCATE this file, so they cannot be set inside it. Both default to ./data, so a single-volume instance sets nothing. Fast holds small, hot, lock-dependent stores (the databases, config, .env); slow holds bulk and archives and is fine on a NAS. Every path below composes from one of them, so what goes where is decided HERE and not in code. SQLite must stay on the fast root — its locking is unsafe over NFS/SMB (yourphr#628).",
   "yourphr.database.location": "${YOURPHR_FAST_STORAGE}/spike.db",
   "yourphr.records.location": "${YOURPHR_FAST_STORAGE}/records.db",
+  "_comment_phd_samples_location": "yourphr#805 — raw connected-device samples (PHD = Personal Health Device, #314), a third encrypted database under the same key as records.db. Created only when device samples are turned on; backed up when it exists, and restored only from a backup that carries it (an older backup leaves it as it is). Its tables are named phd_*, which is how a restore returns them to this file. On the fast root, like the other databases (yourphr#628).",
+  "yourphr.phd-samples.location": "${YOURPHR_FAST_STORAGE}/phd-samples.db",
   "yourphr.database.encryption.key": "",
   "yourphr.web.listen.port": 8080,
   "yourphr.web.listen.host": "0.0.0.0",
