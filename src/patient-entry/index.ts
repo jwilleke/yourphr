@@ -45,8 +45,11 @@ import {
 export {
   NEEDS_REVIEW,
   PATIENT_ENTRY_SOURCE,
+  PGHD,
+  PGHD_TAG,
   PatientEntryError,
   RECORD_ORIGIN,
+  withPghdTag,
   type BuiltRecord,
   type PatientEntryContext,
   type PatientEntryRequest,

@@ -46,8 +46,35 @@ describe('device-written records (yourphr#806)', () => {
       const where = await s.records.provenance(ctx, 'Observation', 'hr-2026-09-30');
       expect(where?.sourceId).toBe(sourceId);
       expect(where?.sourceDisplay).toBe("Jim's iPhone — Apple Health");
-      // No manual source was created or used along the way.
-      expect((await s.sources.list(ctx)).filter((x) => x.platformType === MANUAL_PLATFORM_TYPE)).toHaveLength(0);
+      // The reading is not filed under the manual source; that source holds only the person record.
+      const manual = `source-${(await s.sources.manualSource(ctx)).id}`;
+      expect(where?.sourceId).not.toBe(manual);
+      expect(MANUAL_PLATFORM_TYPE).toBe('manual');
+    });
+  });
+
+  it('carries the PGHD shape: the tag, performer = the patient, device = a Device that is the patient\'s own (yourphr#806)', async () => {
+    await withStores(async (s, ctxOf) => {
+      const ctx = ctxOf('jim');
+      const sourceId = `source-${(await s.sources.addDeviceSource(ctx, "Jim's watch")).id}`;
+      await s.records.saveDeviceRecord(ctx, sourceId, daily('hr-shape', 61) as never);
+      const stored = (await s.records.list(ctx, 'Observation')).find((r) => r['source_resource_id'] === 'hr-shape')!['resource_raw'] as {
+        meta?: { tag?: { system: string; code: string }[] }; performer?: { reference: string }[]; device?: { reference: string };
+      };
+      const self = await s.records.selfPatient(ctx);
+      expect(stored.meta?.tag).toContainEqual(expect.objectContaining({ system: 'https://yourphr.org/fhir/CodeSystem/record-origin', code: 'pghd' }));
+      expect(stored.performer).toEqual([{ reference: self.reference }]);
+      const device = (await s.records.list(ctx, 'Device')).find((r) => `Device/${String(r['source_resource_id'])}` === stored.device?.reference)!['resource_raw'] as {
+        patient?: { reference: string }; deviceName?: { name: string; type: string }[];
+      };
+      expect(device.patient).toEqual({ reference: self.reference });
+      expect(device.deviceName).toEqual([{ name: "Jim's watch", type: 'user-friendly-name' }]);
+
+      // An app that names the hardware and the performer keeps what it said.
+      await s.records.saveDeviceRecord(ctx, sourceId, { ...daily('hr-named', 62), device: { display: 'Apple Watch Series 9' }, performer: [{ display: 'Jim' }] } as never);
+      const named = (await s.records.list(ctx, 'Observation')).find((r) => r['source_resource_id'] === 'hr-named')!['resource_raw'] as { device?: unknown; performer?: unknown };
+      expect(named.device).toEqual({ display: 'Apple Watch Series 9' });
+      expect(named.performer).toEqual([{ display: 'Jim' }]);
     });
   });
 

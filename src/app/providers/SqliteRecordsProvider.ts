@@ -68,6 +68,35 @@ export const HISTORY_PER_PERSON_MIGRATION: Migration = {
   },
 };
 
+/**
+ * records.db ledger entry (yourphr#806): the PGHD code replaces `patient-reported`.
+ *
+ * Records the patient entered carried `record-origin#patient-reported`; the decision (Jim,
+ * 2026-09-30) is ONE code, `pghd`, for everything the patient or their devices create. Rewritten in
+ * place on the current version of each record — history rows keep what was written then. A frozen
+ * snapshot: the system, codes and display are spelled here, not imported, so a later rename of the
+ * constants cannot change what this migration did.
+ */
+export const PGHD_TAG_MIGRATION: Migration = {
+  id: '20260930170000',
+  description: "record-origin#patient-reported becomes record-origin#pghd on every current record (yourphr#806)",
+  up: (db) => {
+    const SYSTEM = 'https://yourphr.org/fhir/CodeSystem/record-origin';
+    const rows = db.prepare("SELECT rowid, content FROM resources WHERE content LIKE '%patient-reported%'").all() as { rowid: number; content: string }[];
+    const write = db.prepare('UPDATE resources SET content = ? WHERE rowid = ?');
+    for (const row of rows) {
+      const resource = JSON.parse(row.content) as { meta?: { tag?: { system?: string; code?: string; display?: string }[] } };
+      const tags = resource.meta?.tag;
+      if (!tags?.some((t) => t.system === SYSTEM && t.code === 'patient-reported')) continue;
+      const seen = new Set<string>();
+      resource.meta!.tag = tags
+        .map((t) => (t.system === SYSTEM && t.code === 'patient-reported' ? { system: SYSTEM, code: 'pghd', display: 'Patient-generated health data (PGHD)' } : t))
+        .filter((t) => { const k = `${t.system}|${t.code}`; if (seen.has(k)) return false; seen.add(k); return true; });
+      write.run(JSON.stringify(resource), row.rowid);
+    }
+  },
+};
+
 export class SqliteRecordsProvider extends BaseRecordsProvider {
   private readonly handles = new Map<string, SqliteFhirRepository>();
 

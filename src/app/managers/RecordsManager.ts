@@ -12,7 +12,7 @@
  */
 import type { Bundle, Resource } from '@medplum/fhirtypes';
 import { randomUUID } from 'node:crypto';
-import { NEEDS_REVIEW, RECORD_ORIGIN } from '../../patient-entry/index.js';
+import { NEEDS_REVIEW, PGHD_TAG, RECORD_ORIGIN, withPghdTag } from '../../patient-entry/index.js';
 import { IDENTITY_ASSERTION, demographicsOf, evidenceFor, identifierConflicts, labelFor, type IdentityAnswer, type SourceIdentity } from './identity.js';
 import type { SearchRequest, WithId } from '@medplum/core';
 import { BaseManager, type BackupData } from '../../framework/BaseManager.js';
@@ -394,7 +394,7 @@ export class RecordsManager extends BaseManager {
         resourceType: 'Patient',
         id,
         ...(identifier.length ? { identifier } : {}),
-        meta: { tag: [{ system: RECORD_ORIGIN, code: 'patient-reported', display: 'Patient-reported (YourPHR)' }] },
+        meta: { tag: [{ ...PGHD_TAG }] },
       } as Resource);
     }
     return { reference: `Patient/${id}`, id };
@@ -511,7 +511,7 @@ export class RecordsManager extends BaseManager {
         coding: [{ system: IDENTITY_ASSERTION, code: answer, display: answer === 'self' ? 'The account holder says this is their own record' : 'The account holder says this record is about someone else' }],
       },
       agent: [{ who: { reference: (await this.selfPatient(ctx)).reference } }],
-      meta: { tag: [{ system: RECORD_ORIGIN, code: 'patient-reported', display: 'Patient-reported (YourPHR)' }] },
+      meta: { tag: [{ ...PGHD_TAG }] },
     } as Resource);
 
     // What the person record knows follows from the answer, so it is rebuilt here rather than at
@@ -562,7 +562,7 @@ export class RecordsManager extends BaseManager {
       // manufacturer's model name — which is what this is, and all it is.
       deviceName: [{ name: stated, type: 'user-friendly-name' }],
       patient: { reference: (await this.selfPatient(ctx)).reference },
-      meta: { tag: [{ system: RECORD_ORIGIN, code: 'patient-reported', display: 'Patient-reported (YourPHR)' }] },
+      meta: { tag: [{ ...PGHD_TAG }] },
     } as Resource);
     return { reference: `Device/${id}`, id };
   }
@@ -750,7 +750,8 @@ export class RecordsManager extends BaseManager {
     const sources = this.engine.managers.sources;
     const held = await this.provider.read(this.who(ctx), type, id);
     const target = held && held.sourceId !== '' && (await sources.isManual(ctx, held.sourceId)) ? held.sourceId : `source-${(await sources.manualSource(ctx)).id}`;
-    const outcome = await this.writer(ctx, target).upsert(resource);
+    // What the patient writes is PGHD, and says so wherever the record travels (yourphr#806).
+    const outcome = await this.writer(ctx, target).upsert(withPghdTag(resource as never) as Resource);
     return { id, outcome };
   }
 
@@ -771,8 +772,36 @@ export class RecordsManager extends BaseManager {
     if (typeof type !== 'string' || type === '') throw new ApiError(400, 'the resource needs a resourceType');
     const id = (resource as { id?: unknown }).id;
     if (typeof id !== 'string' || id.trim() === '') throw new ApiError(400, 'the resource needs an id');
-    const outcome = await this.writer(ctx, sourceId).upsert(resource);
+    const outcome = await this.writer(ctx, sourceId).upsert(await this.asDeviceReading(ctx, sourceId, resource));
     return { id, outcome };
+  }
+
+  /**
+   * The PGHD shape every device-written record carries (yourphr#806, Jim 2026-09-30), applied here
+   * rather than trusted from the caller: the PGHD tag always; and on an Observation, `performer` →
+   * the patient and `device` → the device, when the sender did not already say. The device is a
+   * `Device` in the device's own source with `patient` set — R4's way of saying "this person's own
+   * device". An app that names the hardware keeps its own `device`; otherwise it is the app's.
+   */
+  private async asDeviceReading(ctx: ApiContext, sourceId: string, resource: Resource): Promise<Resource> {
+    const tagged = withPghdTag(resource as never) as Resource & { performer?: unknown[]; device?: unknown };
+    if (tagged.resourceType !== 'Observation') return tagged;
+    const self = await this.selfPatient(ctx);
+    const deviceId = `yourphr-${sourceId}`;
+    if (!(await this.provider.read(this.who(ctx), 'Device', deviceId))) {
+      await this.writer(ctx, sourceId).upsert(withPghdTag({
+        resourceType: 'Device',
+        id: deviceId,
+        status: 'active',
+        deviceName: [{ name: await this.engine.managers.sources.displayOf(sourceId), type: 'user-friendly-name' }],
+        patient: { reference: self.reference },
+      } as never) as Resource);
+    }
+    return {
+      ...tagged,
+      ...(tagged.performer?.length ? {} : { performer: [{ reference: self.reference }] }),
+      ...(tagged.device ? {} : { device: { reference: `Device/${deviceId}` } }),
+    } as Resource;
   }
 
   /**

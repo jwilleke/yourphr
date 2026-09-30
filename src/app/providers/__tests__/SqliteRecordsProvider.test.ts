@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { Resource } from '@medplum/fhirtypes';
-import { HISTORY_PER_PERSON_MIGRATION, SqliteRecordsProvider } from '../SqliteRecordsProvider.js';
+import { HISTORY_PER_PERSON_MIGRATION, PGHD_TAG_MIGRATION, SqliteRecordsProvider } from '../SqliteRecordsProvider.js';
 import { SqliteFhirRepository } from '../../../SqliteFhirRepository.js';
 import Database from 'better-sqlite3-multiple-ciphers';
 import { backupDatabase, stageInstanceRestore, STAGED_APP, STAGED_PHD_SAMPLES, STAGED_RECORDS, RECORDS_LEDGER_TABLE } from '../sqlite-backup.js';
@@ -405,5 +405,26 @@ describe('phd-samples.db, the third database, travels in backups (yourphr#805)',
     // Staging an empty file here would wipe every sample at the next start.
     expect(existsSync(join(dir, STAGED_PHD_SAMPLES))).toBe(false);
     provider = new SqliteRecordsProvider(join(dir, 'records.db'), 'unit-key');
+  });
+});
+
+describe('PGHD_TAG_MIGRATION rewrites patient-reported to pghd on current records (yourphr#806)', () => {
+  it('replaces the code and display, keeps every other tag, touches nothing else, and is idempotent', () => {
+    const db = new Database(join(dir, 'pghd.db'));
+    const O = 'https://yourphr.org/fhir/CodeSystem/record-origin';
+    db.exec('CREATE TABLE resources (resource_type TEXT, id TEXT, user_id TEXT, content TEXT)');
+    const put = db.prepare('INSERT INTO resources VALUES (?, ?, ?, ?)');
+    put.run('Observation', 'typed', 'jim', JSON.stringify({ resourceType: 'Observation', id: 'typed', meta: { tag: [{ system: O, code: 'patient-reported', display: 'Patient-reported (YourPHR)' }, { system: O, code: 'needs-review', display: 'Needs review' }] } }));
+    put.run('Observation', 'epic', 'jim', JSON.stringify({ resourceType: 'Observation', id: 'epic', note: [{ text: 'patient-reported pain' }] }));
+    runMigrations(db, [PGHD_TAG_MIGRATION], RECORDS_LEDGER_TABLE);
+    const read = (id: string) => JSON.parse((db.prepare('SELECT content FROM resources WHERE id = ?').get(id) as { content: string }).content);
+    expect(read('typed').meta.tag).toEqual([
+      { system: O, code: 'pghd', display: 'Patient-generated health data (PGHD)' },
+      { system: O, code: 'needs-review', display: 'Needs review' },
+    ]);
+    expect(read('epic')).toEqual({ resourceType: 'Observation', id: 'epic', note: [{ text: 'patient-reported pain' }] }); // the words, not a tag
+    PGHD_TAG_MIGRATION.up(db);
+    expect(read('typed').meta.tag).toHaveLength(2);
+    db.close();
   });
 });

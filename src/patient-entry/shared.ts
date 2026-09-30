@@ -65,6 +65,22 @@ export const PATIENT_ENTRY_SOURCE = 'yourphr://patient-ui';
 export const RECORD_ORIGIN = 'https://yourphr.org/fhir/CodeSystem/record-origin';
 
 /**
+ * Patient-generated health data (yourphr#806, Jim 2026-09-30): the patient, or a personal device
+ * acting for them, is the source — not a clinician. ONE code for both: whether a device was involved
+ * is said by `Observation.device`, not by a second tag. Replaced `patient-reported`, which the
+ * records ledger's PGHD migration rewrites on records stored before.
+ */
+export const PGHD = 'pghd';
+export const PGHD_TAG = { system: RECORD_ORIGIN, code: PGHD, display: 'Patient-generated health data (PGHD)' } as const;
+
+/** The resource with the PGHD tag added, unless it already carries it. Never removes a tag. */
+export function withPghdTag<T extends { meta?: { tag?: { system?: string; code?: string; display?: string }[] } }>(resource: T): T {
+  const tags = resource.meta?.tag ?? [];
+  if (tags.some((t) => t.system === RECORD_ORIGIN && t.code === PGHD)) return resource;
+  return { ...resource, meta: { ...(resource.meta ?? {}), tag: [...tags, { ...PGHD_TAG }] } };
+}
+
+/**
  * A record kept because the person stated it, and held back from the chart until a human confirms
  * it (yourphr#696). The PGHD rule: what they said is a fact and is never discarded, but an
  * incomplete or uncoded row must not count as a chart fact — so it carries this tag, and the read
@@ -92,7 +108,7 @@ export function stamp(resource: Resource, review: string[]): void {
   r.id = randomUUID();
   r.meta = {
     source: PATIENT_ENTRY_SOURCE,
-    tag: [{ system: RECORD_ORIGIN, code: 'patient-reported', display: 'Patient-reported (YourPHR)' }],
+    tag: [{ ...PGHD_TAG }],
   };
   if (review.length) {
     r.meta.tag = [...(r.meta.tag ?? []), { system: RECORD_ORIGIN, code: NEEDS_REVIEW, display: 'Needs review' }];

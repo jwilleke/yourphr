@@ -20,11 +20,11 @@ describe('a vital the patient measured', () => {
     expect(observation.id).toMatch(/^[0-9a-f-]{36}$/);
   });
 
-  it('says it is patient-reported, so it can never be mistaken for what a hospital asserted', () => {
+  it('says it is patient-generated (PGHD), so it can never be mistaken for what a hospital asserted (yourphr#806)', () => {
     const { observation } = buildPatientVital({ vital: 'heart_rate', value: 64 }, NOW);
     expect(observation.meta).toMatchObject({
       source: PATIENT_ENTRY_SOURCE,
-      tag: [{ system: 'https://yourphr.org/fhir/CodeSystem/record-origin', code: 'patient-reported' }],
+      tag: [{ system: 'https://yourphr.org/fhir/CodeSystem/record-origin', code: 'pghd' }],
     });
   });
 
