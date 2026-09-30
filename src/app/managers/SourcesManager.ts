@@ -25,6 +25,13 @@ import type { BaseSourcesProvider, ConnectedSource, DynamicClient, NewSource } f
  * it and the two are told apart by what they carry — see manualSource and uploadSourceFor.
  */
 export const MANUAL_PLATFORM_TYPE = 'manual';
+/**
+ * A connected device (yourphr#806, #314): a mobile device app or a scale the patient granted, one
+ * source per grant, named in the patient's words. Its records are credited to IT — never to the
+ * patient's `manual` source, which would make a watch's heart rate read as hand-typed. It holds no
+ * provider tokens, so the sync pass never touches it (isDisconnected), and nothing fetches from it.
+ */
+export const DEVICE_PLATFORM_TYPE = 'device';
 /** The display of the ONE source holding what the patient wrote themselves (yourphr#683). */
 export const MANUAL_SOURCE_DISPLAY = 'Added by you';
 import type { BaseSourceClientProvider } from '../providers/BaseSourceClientProvider.js';
@@ -290,6 +297,36 @@ export class SourcesManager extends BaseManager {
       platformType: MANUAL_PLATFORM_TYPE,
       environment: 'production',
     });
+  }
+
+  /**
+   * A source for one connected device (yourphr#806), created when the patient grants it. The label
+   * is what the patient called it ("Jim's iPhone — Apple Health"): it is what "where this came
+   * from" and the sources list show, so it is required and kept short.
+   */
+  async addDeviceSource(ctx: ApiContext, label: string): Promise<ConnectedSource> {
+    ctx.requireAuthenticated();
+    const display = label.trim();
+    if (display === '' || display.length > 80) throw new ApiError(400, 'a connected device needs a name of 1 to 80 characters');
+    return this.add(ctx, {
+      userId: ctx.username,
+      display,
+      fhirBaseUrl: '',
+      tokenUrl: '',
+      clientId: '',
+      patient: '',
+      resourceTypes: [],
+      accessToken: '',
+      refreshToken: '',
+      expiresAt: 0,
+      platformType: DEVICE_PLATFORM_TYPE,
+      environment: 'production',
+    });
+  }
+
+  /** Whether the caller's source with this public id is a connected device's (yourphr#806). */
+  async isDevice(ctx: ApiContext, publicId: string): Promise<boolean> {
+    return (await this.get(ctx, publicId))?.platformType === DEVICE_PLATFORM_TYPE;
   }
 
   /** Whether the caller's source with this public id is one nobody syncs — theirs to write into. */

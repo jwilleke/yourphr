@@ -755,6 +755,27 @@ export class RecordsManager extends BaseManager {
   }
 
   /**
+   * Save a record a CONNECTED DEVICE sent (yourphr#806, #314) — into that device's own source,
+   * never the patient's `manual` one, so its provenance says which device it came from.
+   *
+   * `sourceId` must be one of the caller's device sources; anything else is refused, including
+   * their manual source and a synced provider's. Upsert by the resource's own id, like
+   * savePatientRecord: a re-sent daily summary replaces that day's. A record another source holds
+   * under the same id is refused by the store's collision rule, never overwritten.
+   */
+  async saveDeviceRecord(ctx: ApiContext, sourceId: string, resource: Resource): Promise<{ id: string; outcome: 'created' | 'updated' | 'unchanged' }> {
+    ctx.requireAuthenticated();
+    if (!(await this.engine.managers.sources.isDevice(ctx, sourceId))) throw new ApiError(403, 'records from a connected device go only into that device\'s own source');
+    if (!resource || typeof resource !== 'object') throw new ApiError(400, 'a resource is required');
+    const type = (resource as { resourceType?: unknown }).resourceType;
+    if (typeof type !== 'string' || type === '') throw new ApiError(400, 'the resource needs a resourceType');
+    const id = (resource as { id?: unknown }).id;
+    if (typeof id !== 'string' || id.trim() === '') throw new ApiError(400, 'the resource needs an id');
+    const outcome = await this.writer(ctx, sourceId).upsert(resource);
+    return { id, outcome };
+  }
+
+  /**
    * The records that REFER to one resource — what the practitioner-history page calls "history"
    * (yourphr#683): the encounters that name this practitioner.
    *
