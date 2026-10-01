@@ -110,7 +110,7 @@
     "piscina": "5.2.0",
     "undici": "6.28.0",
     "postcss": "8.5.23",
-    "fast-uri": "3.1.6",
+    "fast-uri": "3.1.8",
     "socket.io-parser": "4.2.7",
     "@babel/runtime": "^7.26.10",
     "crypto-js": "^4.2.0",
