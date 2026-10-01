@@ -19,6 +19,9 @@ import { ApiError, type ApiContext } from '../ApiContext.js';
 import { envNameFor, PUBLIC_KEYS_KEY, type ConfigValue } from '../../config/index.js';
 import { loadLegalDocument, parseLegalKind, type LegalDocument } from '../../legal/index.js';
 
+/** ngdpbase's maintenance switch, under this repo's prefix (yourphr#714). */
+export const MAINTENANCE_ENABLED_KEY = 'yourphr.features.maintenance.enabled';
+
 declare module '../Engine.js' {
   interface ManagerRegistry {
     settings: SettingsManager;
@@ -122,6 +125,10 @@ export class SettingsManager extends BaseManager {
       // hides the whole section when it is off, rather than offering a mint the server refuses.
       // It is already in the `yourphr.public` allow-list; it was simply never published.
       'agent_token.enabled': config.getBool('yourphr.auth.agent-token.enabled'),
+      // Maintenance mode (yourphr#714): the sign-in page says so before anyone has a session, and
+      // the app shows the message instead of a wall of failed requests.
+      'maintenance.enabled': config.getBool(MAINTENANCE_ENABLED_KEY),
+      'maintenance.message': config.getString('yourphr.features.maintenance.message'),
     };
   }
 
@@ -197,6 +204,7 @@ export class SettingsManager extends BaseManager {
       throw new ApiError(409, `${key} is set by the environment variable ${envNameFor(key)}, which takes precedence over this screen — change it in your deployment configuration instead`);
     }
     let coerced: ConfigValue;
+    const before = key === MAINTENANCE_ENABLED_KEY ? config.getBool(key) : undefined;
     try {
       coerced = coerceToShippedType(value, this.configuration.shippedValue(key)!);
     } catch (err) {
@@ -208,6 +216,28 @@ export class SettingsManager extends BaseManager {
       throw new ApiError(400, (err as Error).message);
     }
     this.log(`${ctx.actor} set configuration ${key}`);
+    if (before !== undefined && config.getBool(key) !== before) this.announceMaintenance(ctx, config.getBool(key));
+  }
+
+  /**
+   * The message to answer with when maintenance mode holds this caller back (yourphr#714), else
+   * undefined. ngdpbase's rule: an admin-system caller passes when allow-admins is on, everyone else
+   * waits. An agent or device key is built at the member role (ApiContext.agent), so it never passes.
+   */
+  maintenanceHolds(ctx: ApiContext): string | undefined {
+    const config = this.configuration;
+    if (!config.getBool(MAINTENANCE_ENABLED_KEY)) return undefined;
+    if (config.getBool('yourphr.features.maintenance.allow-admins') && ctx.can('admin-system')) return undefined;
+    return config.getString('yourphr.features.maintenance.message');
+  }
+
+  /** Turning maintenance on or off tells everyone, as ngdpbase does; a failed notice never undoes the switch. */
+  private announceMaintenance(ctx: ApiContext, enabled: boolean): void {
+    this.log(`${ctx.actor} turned maintenance mode ${enabled ? 'on' : 'off'}`);
+    if (!this.engine.has('notifications')) return;
+    this.engine.managers.notifications.createMaintenanceNotification(enabled, ctx.actor).catch((err: unknown) => {
+      this.log(`maintenance notice not sent: ${(err as Error).message}`);
+    });
   }
 
   /** Removes an override; false when there was none. ApiError 400 for an unknown key. */

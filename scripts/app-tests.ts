@@ -1040,8 +1040,45 @@ async function main(): Promise<void> {
     `${noRecords.status} ${noRecordsBody.error} / ${locked.status} ${lockedBody.error}`);
   converter.close();
 
+  // --- maintenance mode (yourphr#714) ---
+  {
+    const putConfig = (token: string, key: string, value: unknown) =>
+      fetch(`${base}/api/secure/admin/config`, { method: 'PUT', headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` }, body: JSON.stringify({ key, value }) });
+    await fetch(`${base}/api/secure/admin/users`, { method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${adminToken}` }, body: JSON.stringify({ username: 'maud', password: 'a-long-enough-password' }) });
+    const maudToken = ((await (await signIn('maud', 'a-long-enough-password')).json()) as { data: string }).data;
+    const on = await putConfig(adminToken, 'yourphr.features.maintenance.enabled', true);
+    const held = await fetch(`${base}/api/secure/account/me`, authed(maudToken));
+    const heldBody = (await held.json()) as { error?: string; maintenance?: boolean };
+    const pub = ((await (await fetch(`${base}/api/instance/public`)).json()) as { data: Record<string, unknown> }).data;
+    check('maintenance on: a member gets 503 with the message and Retry-After; the public instance says so; sign-in and health stay up',
+      on.status === 200 && held.status === 503 && heldBody.maintenance === true && String(heldBody.error).includes('maintenance') &&
+        held.headers.get('retry-after') === '300' && pub['maintenance.enabled'] === true &&
+        (await fetch(`${base}/api/health`)).status === 200 && (await signIn('admin', adminPassword)).status === 200,
+      `${on.status} ${held.status} ${JSON.stringify(heldBody)}`);
+    const adminThrough = await fetch(`${base}/api/secure/admin/config`, authed(adminToken));
+    check('an operator holding admin-system still reaches the admin screens, and everyone is told who turned it on',
+      adminThrough.status === 200 && app.engine.managers.notifications.getAllNotifications().some((n) => n.type === 'maintenance' && n.message.includes('admin')),
+      `${adminThrough.status}`);
+
+    // Survives a restart: the switch is persisted configuration, not process memory.
+    await app.close();
+    const again = await assembleApp(dir, { version: '9.9.9-harness', env: { YOURPHR_DATABASE_ENCRYPTION_KEY: 'at-rest-key', YOURPHR_BACKUP_ENCRYPTION_KEY: 'travelling-copy-key', SPIKE_TEST_ALLOW_INTERNAL: '1' } });
+    const againBase = await new Promise<string>((resolve) => {
+      again.server.listen(0, '127.0.0.1', () => resolve(`http://127.0.0.1:${(again.server.address() as { port: number }).port}`));
+    });
+    const signInAgain = async (u: string, p: string) => ((await (await fetch(`${againBase}/api/auth/signin`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ username: u, password: p }) })).json()) as { data: string }).data;
+    const maudAgain = await signInAgain('maud', 'a-long-enough-password');
+    const adminAgain = await signInAgain('admin', adminPassword);
+    const stillHeld = await fetch(`${againBase}/api/secure/account/me`, authed(maudAgain));
+    const off = await fetch(`${againBase}/api/secure/admin/config`, { method: 'PUT', headers: { 'content-type': 'application/json', authorization: `Bearer ${adminAgain}` }, body: JSON.stringify({ key: 'yourphr.features.maintenance.enabled', value: false }) });
+    const released = await fetch(`${againBase}/api/secure/account/me`, authed(maudAgain));
+    check('it survives a restart, and the operator turns it off from the admin screen, which lets members back in',
+      stillHeld.status === 503 && off.status === 200 && released.status === 200,
+      `${stillHeld.status} ${off.status} ${released.status}`);
+    await again.close();
+  }
+
   fake.close();
-  await app.close();
   rmSync(dir, { recursive: true, force: true });
 
   // --- a staged restore is applied on the next start (yourphr#602) ---

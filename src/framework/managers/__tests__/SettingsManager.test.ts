@@ -6,7 +6,7 @@ import { Engine } from '../../Engine.js';
 import { ApiContext, ApiError } from '../../ApiContext.js';
 import { ConfigurationManager } from '../../ConfigurationManager.js';
 import { FilterManager } from '../FilterManager.js';
-import { SettingsManager, coerceToShippedType } from '../SettingsManager.js';
+import { MAINTENANCE_ENABLED_KEY, SettingsManager, coerceToShippedType } from '../SettingsManager.js';
 import { PolicyManager } from '../PolicyManager.js';
 import { FakeConfigProvider } from '../../providers/__tests__/FakeConfigProvider.js';
 
@@ -34,7 +34,7 @@ describe('SettingsManager — what the instance says about itself, with the call
     expect(engine.registered).toEqual(['configuration', 'policy', 'filters', 'settings']);
     const pub = settings.publicInstance(nobody);
     // Wire format, read by the Angular app — deliberately NOT the yourphr.* config key names (yourphr#627).
-    expect(Object.keys(pub).sort()).toEqual(['agent_token.enabled', 'demo.admin.enabled', 'demo.enabled', 'operator.contact_url', 'operator.name', 'password.min_length', 'signup.enabled']);
+    expect(Object.keys(pub).sort()).toEqual(['agent_token.enabled', 'demo.admin.enabled', 'demo.enabled', 'maintenance.enabled', 'maintenance.message', 'operator.contact_url', 'operator.name', 'password.min_length', 'signup.enabled']);
     // Off unless an operator turns it on, which is the shipped default. The Settings screen hides
     // the whole section when it is false rather than offering a mint the server refuses (#719).
     expect(pub['agent_token.enabled']).toBe(false);
@@ -47,6 +47,32 @@ describe('SettingsManager — what the instance says about itself, with the call
     expect(pub['demo.enabled']).toBe(false);
     expect(pub['demo.admin.enabled']).toBe(false); // and never true on an instance that is not a demo
     expect(pub).not.toHaveProperty('demo.username');
+  });
+
+  it('maintenance mode holds members and agents back, lets admin-system through, and is announced once per change (yourphr#714)', async () => {
+    const { engine, settings, admin, member, log } = await boot();
+    const agent = ApiContext.agent('ops', { id: 't1', name: 'Claude Desktop', scopes: ['Medications'] }, engine);
+    const tour = ApiContext.from({ username: 'demoadmin', role: 'demo-admin' }, engine);
+    expect(settings.maintenanceHolds(member)).toBeUndefined(); // off by default
+    expect(settings.publicInstance(ApiContext.anonymous(engine))['maintenance.enabled']).toBe(false);
+
+    settings.configSet(admin, MAINTENANCE_ENABLED_KEY, true);
+    expect(settings.maintenanceHolds(member)).toMatch(/maintenance/);
+    expect(settings.maintenanceHolds(admin)).toBeUndefined(); // allow-admins is on by default
+    expect(settings.maintenanceHolds(agent)).toMatch(/maintenance/); // an admin's own token is not an admin
+    expect(settings.maintenanceHolds(tour)).toMatch(/maintenance/); // admin-read is not admin-system
+    expect(settings.publicInstance(ApiContext.anonymous(engine))['maintenance.enabled']).toBe(true);
+    expect(log).toContain('ops turned maintenance mode on');
+
+    settings.configSet(admin, MAINTENANCE_ENABLED_KEY, true); // no change, no second announcement
+    expect(log.filter((l) => l.includes('turned maintenance mode'))).toHaveLength(1);
+
+    settings.configSet(admin, 'yourphr.features.maintenance.allow-admins', false);
+    expect(settings.maintenanceHolds(admin)).toMatch(/maintenance/);
+
+    settings.configSet(admin, MAINTENANCE_ENABLED_KEY, false);
+    expect(settings.maintenanceHolds(member)).toBeUndefined();
+    expect(log).toContain('ops turned maintenance mode off');
   });
 
   it('the signed-in view adds the operator contact; anonymous is refused', async () => {

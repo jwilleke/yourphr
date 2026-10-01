@@ -1381,6 +1381,8 @@ export interface InstanceInfo {
   // Whether this instance offers agent tokens at all (#695, #719). The Settings screen hides the
   // whole section when it is off; the server refuses regardless.
   agent_token_enabled: boolean;
+  // The operator's maintenance message (#714); empty when the instance does not publish one.
+  maintenance_message: string;
 }
 
 // mapInstanceInfo translates backend config keys to short names. Both instance endpoints return
@@ -1416,5 +1418,8 @@ function mapInstanceInfo(response: ResponseWrapper): InstanceInfo {
     // Strictly true only, like the demo flags: an instance that does not publish the key offers no
     // agent tokens, which is also the shipped default.
     agent_token_enabled: data['agent_token.enabled'] === true,
+    // Maintenance mode (#714): what the maintenance page says after a reload, when the 503 that
+    // carried the message is gone.
+    maintenance_message: str('maintenance.message'),
   };
 }

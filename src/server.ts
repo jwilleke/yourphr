@@ -603,6 +603,19 @@ export function createYourPhrServer(options: ServerOptions) {
         if (engine.has('demo')) engine.managers.demo.refuseUnlessRead(ctx, req.method ?? 'GET', url.pathname);
       }
 
+      // Maintenance mode (yourphr#714): every signed-in request waits while an operator works on
+      // the records, except an admin-system caller when allow-admins is on (ngdpbase's rule). Only
+      // /api/secure/* is held — sign-in, health and the public instance stay up, so the page loads
+      // and the operator can sign in to turn it off. 503 + Retry-After, the status a client retries.
+      if (auth && engine.has('settings') && url.pathname.startsWith('/api/secure/')) {
+        const held = engine.managers.settings.maintenanceHolds(ctx);
+        if (held !== undefined) {
+          res.setHeader('Retry-After', '300');
+          send(res, 503, {success: false, error: held, maintenance: true});
+          return;
+        }
+      }
+
       // The agent-token gate (yourphr#695) — DEFAULT DENY, and the reason the first cut is
       // read-only without needing a flag to enforce it.
       //

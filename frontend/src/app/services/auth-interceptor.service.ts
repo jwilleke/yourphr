@@ -72,6 +72,13 @@ export class AuthInterceptorService implements HttpInterceptor {
       return of(err.message);
     }
 
+    // Maintenance mode (#714): the operator is working on the records and every signed-in request
+    // answers 503 until they finish. One page saying so beats a dashboard of failed cards. The
+    // error is still rethrown below, so a caller's own handler runs as it would for any failure.
+    if (err.status === 503 && err.error?.maintenance === true && !(this.router.url ?? '').startsWith('/maintenance')) {
+      this.router.navigateByUrl('/maintenance', {state: {message: err.error?.error || ''}})
+    }
+
     // Nothing handles the demo refusal today, and a silent no-op is its own kind of confusing — so
     // say it here. Keyed on the machine-readable code rather than the sentence, which is free to
     // change. Other 403s are left to their caller, which avoids double-reporting.

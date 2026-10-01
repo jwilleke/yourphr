@@ -154,6 +154,31 @@ describe('AuthInterceptorService', () => {
     });
   });
 
+  // #714: maintenance mode answers every signed-in request with 503 and the operator's message.
+  it('sends a person to the maintenance page on a maintenance 503, without signing them out', (done) => {
+    http.get(apiUrl).subscribe({
+      next: () => done.fail('should error'),
+      error: (err) => {
+        expect(err.status).toBe(503);
+        expect(router.navigateByUrl).toHaveBeenCalledWith('/maintenance', {state: {message: 'Back soon'}});
+        expect(authService.Logout).not.toHaveBeenCalled();
+        done();
+      },
+    });
+
+    httpMock.expectOne(apiUrl).flush({success: false, error: 'Back soon', maintenance: true},
+      {status: 503, statusText: 'Service Unavailable'});
+  });
+
+  // A 503 from a proxy or a restarting pod is not maintenance; it stays with the caller.
+  it('leaves any other 503 to the caller', (done) => {
+    http.get(apiUrl).subscribe({next: () => done.fail('should error'), error: () => done()});
+
+    httpMock.expectOne(apiUrl).flush('upstream unavailable', {status: 503, statusText: 'Service Unavailable'});
+
+    expect(router.navigateByUrl).not.toHaveBeenCalled();
+  });
+
   // Other 403s belong to their caller — toasting here as well would report them twice.
   it('leaves a non-demo 403 to the caller', (done) => {
     http.get(apiUrl).subscribe({

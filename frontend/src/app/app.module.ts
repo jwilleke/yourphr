@@ -18,6 +18,7 @@ import { ResourceDetailComponent } from './pages/resource-detail/resource-detail
 import { AuthSignupComponent } from './pages/auth-signup/auth-signup.component';
 import { AuthSigninComponent } from './pages/auth-signin/auth-signin.component';
 import { DemoEntryComponent } from './pages/demo-entry/demo-entry.component';
+import { MaintenanceComponent } from './pages/maintenance/maintenance.component';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { IsAuthenticatedAuthGuard } from './auth-guards/is-authenticated-auth-guard';
 import {Router} from '@angular/router';
@@ -61,6 +62,7 @@ import { GetEncryptionKeyWizardComponent } from './pages/get-encryption-key-wiza
         AuthSignupComponent,
         AuthSigninComponent,
         DemoEntryComponent,
+        MaintenanceComponent,
         SourceDetailComponent,
         PatientProfileComponent,
         AccountProfileComponent,

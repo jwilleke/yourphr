@@ -8,6 +8,7 @@ import { IsAuthenticatedAuthGuard } from './auth-guards/is-authenticated-auth-gu
 import { EncryptionStatusGuard } from './auth-guards/encryption-status.guard';
 import { AuthSigninComponent } from './pages/auth-signin/auth-signin.component';
 import { DemoEntryComponent } from './pages/demo-entry/demo-entry.component';
+import { MaintenanceComponent } from './pages/maintenance/maintenance.component';
 import { AuthSignupWizardComponent } from './pages/auth-signup-wizard/auth-signup-wizard.component';
 import { AuthSignupComponent } from './pages/auth-signup/auth-signup.component';
 import { BackgroundJobsComponent } from './pages/background-jobs/background-jobs.component';
@@ -56,6 +57,9 @@ const routes: Routes = [
   // sign-in page.
   { path: 'demo', component: DemoEntryComponent, data: { asAdmin: false } },
   { path: 'demo-admin', component: DemoEntryComponent, data: { asAdmin: true } },
+
+  // Maintenance mode (#714): no guard — the server's 503 is what brings anyone here.
+  { path: 'maintenance', component: MaintenanceComponent },
 
   { path: 'auth/signin', component: AuthSigninComponent, canActivate: [ EncryptionStatusGuard ] },
   { path: 'auth/signin/callback/:idp_type', component: AuthSigninComponent },
