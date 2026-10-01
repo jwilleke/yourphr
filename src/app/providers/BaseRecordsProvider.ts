@@ -90,6 +90,21 @@ export abstract class BaseRecordsProvider {
    * then give the space back. Run with the server stopped — it is synchronous and takes the file.
    */
   abstract compact(options?: { dryRun?: boolean; vacuum?: boolean }): Promise<CompactReport>;
+  /** Which derivation built the search index, and whether that is older than this build's (yourphr#713). */
+  abstract searchIndex(): SearchIndexStatus;
+  /**
+   * Rebuild the search index from stored content (yourphr#713): every account, or one. Each account
+   * is one transaction, so an interrupted rebuild leaves that account's old index whole. The store is
+   * marked current only when every account has been rebuilt.
+   */
+  abstract rebuildSearchIndex(options?: { userId?: string; onProgress?: (accountsDone: number, accounts: number) => void }): Promise<{ accounts: number; records: number }>;
+}
+
+/** The search index's derivation version against this build's (yourphr#713). */
+export interface SearchIndexStatus {
+  builtWith: number;
+  current: number;
+  stale: boolean;
 }
 
 /** What `compact` found and did. Counts are rows; sizes are bytes of the main database file. */

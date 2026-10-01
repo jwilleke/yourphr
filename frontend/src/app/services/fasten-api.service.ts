@@ -11,7 +11,7 @@ import {AppNotification} from '../models/fasten/app-notification';
 import {ClassifiedCondition} from '../models/fasten/classified-condition';
 import {ClassifiedAllergy} from '../models/fasten/classified-allergy';
 import {ClassifiedImmunization} from '../models/fasten/classified-immunization';
-import {DatabaseInfo, BackupResult, BackupSettings, DirListing, BackupDestinationTest} from '../models/fasten/database-info';
+import {DatabaseInfo, BackupResult, BackupSettings, DirListing, BackupDestinationTest, SearchIndexInfo} from '../models/fasten/database-info';
 import {AccountUser} from '../models/fasten/account-user';
 import {AccessEvent} from '../models/fasten/access-event';
 import {ResourceListItem} from '../models/fasten/resource-list-item';
@@ -354,6 +354,18 @@ export class FastenApiService {
           return response.data as DatabaseInfo
         })
       );
+  }
+
+  // The search index (#713): its version, and the rebuild — started here, run by the server in the
+  // background under maintenance mode, polled while it runs.
+  getSearchIndex(): Observable<SearchIndexInfo> {
+    return this._httpClient.get<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/admin/database/search-index`)
+      .pipe(map((response: ResponseWrapper) => response.data as SearchIndexInfo));
+  }
+
+  rebuildSearchIndex(): Observable<SearchIndexInfo['rebuild']> {
+    return this._httpClient.post<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/admin/database/search-index`, {})
+      .pipe(map((response: ResponseWrapper) => response.data as SearchIndexInfo['rebuild']));
   }
 
   // backupDatabase writes a server-side backup into the destination folder (default: the last-used

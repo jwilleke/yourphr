@@ -70,3 +70,21 @@ export interface BackupDestinationTest {
   writable: boolean
   error?: string        // the real OS error when writable is false: permission denied, no such directory, ...
 }
+
+// SearchIndexInfo is GET /secure/admin/database/search-index (#713): which derivation built the
+// search index, against this build's, and the rebuild running now or last finished. Counts only.
+export interface SearchIndexInfo {
+  builtWith: number
+  current: number
+  stale: boolean      // records stored before an upgrade are not findable by everything they say
+  rebuild: {
+    state: 'idle' | 'running' | 'done' | 'failed'
+    by?: string
+    startedAt?: string
+    finishedAt?: string
+    accountsDone: number
+    accounts: number
+    records?: number
+    error?: string
+  }
+}

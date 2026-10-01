@@ -1040,6 +1040,43 @@ async function main(): Promise<void> {
     `${noRecords.status} ${noRecordsBody.error} / ${locked.status} ${lockedBody.error}`);
   converter.close();
 
+  // --- the search index rebuild (yourphr#713) — with a tooth ---
+  // The store is put back the way an older build left it: the text index empty of what it says and
+  // the version at 0. A test that seeded fresh records would pass broken and fixed code alike, since
+  // fresh records were never the problem. If the rebuild is skipped, the search below stays empty.
+  {
+    const carolSys = ApiContext.system('harness', 'carol', app.engine);
+    const findByName = async () => (await app.engine.managers.records.searchText(carolSys, 'ashworth')).length;
+    const foundBefore = await findByName();
+    const raw = new Database(app.config.getString('yourphr.records.location'));
+    raw.pragma("cipher='sqlcipher'");
+    raw.pragma(`key='${app.config.getString('yourphr.database.encryption.key')}'`);
+    raw.exec('DELETE FROM search_text');
+    raw.pragma('user_version = 0');
+    raw.close();
+    const indexStatus = async () => ((await (await fetch(`${base}/api/secure/admin/database/search-index`, authed(adminToken))).json()) as { data: { stale: boolean; builtWith: number; current: number; rebuild: { state: string; by?: string; records?: number } } }).data;
+    const stale = await indexStatus();
+    check('an index built by an older derivation is reported stale, and a record stored before the upgrade is not findable by name',
+      foundBefore >= 1 && stale.stale && stale.builtWith === 0 && (await findByName()) === 0, `${foundBefore} ${JSON.stringify(stale)}`);
+
+    const startRebuild = (token: string) => fetch(`${base}/api/secure/admin/database/search-index`, { method: 'POST', ...authed(token) });
+    await fetch(`${base}/api/secure/admin/users`, { method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${adminToken}` }, body: JSON.stringify({ username: 'rhea', password: 'a-long-enough-password' }) });
+    const memberTries = await startRebuild(((await (await signIn('rhea', 'a-long-enough-password')).json()) as { data: string }).data);
+    const started = await startRebuild(adminToken);
+    let after = await indexStatus();
+    for (let i = 0; i < 100 && after.rebuild.state === 'running'; i++) {
+      await new Promise((r) => setTimeout(r, 50));
+      after = await indexStatus();
+    }
+    const notices = app.engine.managers.notifications.getAllNotifications(true).filter((n) => n.type === 'maintenance');
+    check('the admin rebuilds it from the Database card: every account, the version current, and the record findable by name again; a member cannot start one',
+      memberTries.status === 403 && started.status === 202 && after.rebuild.state === 'done' && after.rebuild.by === 'admin' && !after.stale && (await findByName()) >= 1,
+      `${memberTries.status} ${started.status} ${JSON.stringify(after)}`);
+    check('the rebuild ran under maintenance mode and turned it back off afterwards (option A on yourphr#713)',
+      notices.some((n) => n.title.includes('Enabled')) && notices.some((n) => n.title.includes('Disabled')) && !app.config.getBool('yourphr.features.maintenance.enabled'),
+      notices.map((n) => n.title).join(', '));
+  }
+
   // --- maintenance mode (yourphr#714) ---
   {
     const putConfig = (token: string, key: string, value: unknown) =>

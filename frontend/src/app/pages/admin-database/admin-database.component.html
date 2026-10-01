@@ -45,6 +45,31 @@
         </div></div>
         <div class="dl-row"><div class="k">Users</div><div class="v">{{ info.users }}</div></div>
         <div class="dl-row"><div class="k">Connected sources</div><div class="v">{{ info.sources }}</div></div>
+        <!-- #713: an upgrade that changes how records are indexed leaves older records unfindable by
+        name until the index is rebuilt. The server detects it; the operator chooses when. -->
+        @if (searchIndex) {
+          <div class="dl-row"><div class="k">Search index</div><div class="v">
+            @if (searchIndex.rebuild.state === 'running') {
+              <span class="badge text-bg-info">Rebuilding</span>
+              <small class="tx-gray-500 d-block mg-t-2">Account {{ searchIndex.rebuild.accountsDone }} of {{ searchIndex.rebuild.accounts || '…' }}. Members see a maintenance page until it finishes.</small>
+            } @else {
+              <span class="badge" [ngClass]="searchIndex.stale ? 'text-bg-warning' : 'text-bg-success'">{{ searchIndex.stale ? 'Needs rebuilding' : 'Current' }}</span>
+              @if (searchIndex.stale) {
+                <small class="tx-gray-500 d-block mg-t-2">Built by an older version, so records stored before the upgrade may not be found by what they say.</small>
+              }
+              @if (searchIndex.rebuild.state === 'done') {
+                <small class="tx-gray-500 d-block mg-t-2">Rebuilt {{ searchIndex.rebuild.records }} records by {{ searchIndex.rebuild.by }}, {{ searchIndex.rebuild.finishedAt | date:'medium' }}.</small>
+              }
+              @if (searchIndex.rebuild.state === 'failed') {
+                <small class="tx-danger d-block mg-t-2">The last rebuild failed: {{ searchIndex.rebuild.error }}</small>
+              }
+              <button type="button" class="btn btn-sm mg-t-5 d-block" [ngClass]="searchIndex.stale ? 'btn-primary' : 'btn-outline-secondary'" (click)="rebuildSearchIndex()">Rebuild search index</button>
+              @if (rebuildError) {
+                <small class="tx-danger d-block mg-t-2">{{ rebuildError }}</small>
+              }
+            }
+          </div></div>
+        }
       </div>
     </div>
   </div>

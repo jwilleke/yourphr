@@ -8,7 +8,7 @@ import type { BackupData } from '../../../framework/BaseManager.js';
 import type { Bundle, Resource } from '@medplum/fhirtypes';
 import type { SearchRequest, WithId } from '@medplum/core';
 import { textFor } from '../record-text.js';
-import { BaseRecordsProvider, type CompactReport, type IndexCondition, type RecordsWriter, type StoredRecord } from '../BaseRecordsProvider.js';
+import { BaseRecordsProvider, type CompactReport, type IndexCondition, type RecordsWriter, type SearchIndexStatus, type StoredRecord } from '../BaseRecordsProvider.js';
 import { sameContent } from '../../../SqliteFhirRepository.js';
 
 interface Row extends StoredRecord { userId: string; versions: number; firstSeen: string }
@@ -136,6 +136,11 @@ export class FakeRecordsProvider extends BaseRecordsProvider {
     return n;
   }
   async release(userId: string): Promise<void> { this.released.push(userId); }
+  // The fake derives nothing at write time, so its index is always current.
+  searchIndex(): SearchIndexStatus { return { builtWith: 1, current: 1, stale: false }; }
+  async rebuildSearchIndex(): Promise<{ accounts: number; records: number }> {
+    return { accounts: new Set([...this.rows.values()].map((r) => r.userId)).size, records: this.rows.size };
+  }
   async integrityOk(): Promise<boolean> { return true; }
   storage(): { location: string; sizeBytes: number } { return { location: ':memory:', sizeBytes: 0 }; }
   /** What the last backup carried for other managers (yourphr#631), and what readPayloads hands back. */

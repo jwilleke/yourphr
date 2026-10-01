@@ -108,6 +108,17 @@ function canonical(value: unknown): string {
   return JSON.stringify(value);
 }
 
+/**
+ * Which derivation built the search index (yourphr#713), kept in the records file's
+ * `PRAGMA user_version`. BUMP THIS with any change to `textFor()` or to search-parameter
+ * extraction: a store built by an older number is reported stale at boot and on the admin's
+ * Database card, and the operator rebuilds it from there or with `yourphr reindex`. A change that
+ * does not bump it is correct for new writes and silently wrong for everything already stored.
+ *
+ *   1 — record names reach the text index (yourphr#710).
+ */
+export const SEARCH_INDEX_VERSION = 1;
+
 export class SqliteFhirRepository extends FhirRepository {
   readonly db: InstanceType<typeof Database>;
   readonly stats: IndexStats = { collisions: 0, indexRows: 0, failedExpressions: {} };
@@ -137,7 +148,7 @@ export class SqliteFhirRepository extends FhirRepository {
   }
 
   /**
-   * Three tables, for every resource type there will ever be.
+   * Four tables, for every resource type there will ever be.
    *
    * `content` plays exactly the role `resource_raw` plays in the Go schema: the canonical resource,
    * stored whole and never reinterpreted. Everything else is derived and can be rebuilt from it,
@@ -261,17 +272,53 @@ export class SqliteFhirRepository extends FhirRepository {
     }
   }
 
-  /** Rebuild every index row from `content`. Possible only because content is stored whole. */
+  /**
+   * Rebuild every index row from `content`. Possible only because content is stored whole.
+   * One transaction: an interrupted rebuild rolls back to the old index, never a half-built one.
+   */
   reindexAll(): void {
     const owner = this.userId ?? '';
-    const rows = this.db
-      .prepare('SELECT content FROM resources WHERE deleted = 0 AND user_id = ?')
-      .all(owner) as {content: string}[];
-    this.db.prepare('DELETE FROM search_index WHERE user_id = ?').run(owner);
-    this.db.prepare('DELETE FROM search_text WHERE user_id = ?').run(owner);
-    for (const row of rows) {
-      this.indexResource(JSON.parse(row.content) as WithId<Resource>);
+    this.db.transaction(() => {
+      const rows = this.db
+        .prepare('SELECT content FROM resources WHERE deleted = 0 AND user_id = ?')
+        .all(owner) as {content: string}[];
+      this.db.prepare('DELETE FROM search_index WHERE user_id = ?').run(owner);
+      this.db.prepare('DELETE FROM search_text WHERE user_id = ?').run(owner);
+      for (const row of rows) {
+        this.indexResource(JSON.parse(row.content) as WithId<Resource>);
+      }
+    })();
+  }
+
+  /**
+   * reindexAll for a live server (yourphr#713): the same rebuild in one transaction, read in
+   * pages by rowid and yielding to the event loop between pages. better-sqlite3 is synchronous,
+   * and a 20k-record account takes ~48s — done in one go it would starve the health probe and get
+   * the pod killed mid-rebuild. Returns the number of records reindexed.
+   */
+  async reindexAllYielding(pageSize = 250): Promise<number> {
+    const owner = this.userId ?? '';
+    const page = this.db.prepare('SELECT rowid, content FROM resources WHERE deleted = 0 AND user_id = ? AND rowid > ? ORDER BY rowid LIMIT ?');
+    let done = 0;
+    this.db.exec('BEGIN IMMEDIATE');
+    try {
+      this.db.prepare('DELETE FROM search_index WHERE user_id = ?').run(owner);
+      this.db.prepare('DELETE FROM search_text WHERE user_id = ?').run(owner);
+      let after = 0;
+      for (;;) {
+        const rows = page.all(owner, after, pageSize) as {rowid: number; content: string}[];
+        if (rows.length === 0) break;
+        for (const row of rows) this.indexResource(JSON.parse(row.content) as WithId<Resource>);
+        done += rows.length;
+        after = rows[rows.length - 1]!.rowid;
+        await new Promise((resolve) => setImmediate(resolve));
+      }
+      this.db.exec('COMMIT');
+    } catch (err) {
+      try { this.db.exec('ROLLBACK'); } catch { /* already rolled back by SQLite */ }
+      throw err;
     }
+    return done;
   }
 
   // ---------------------------------------------------------------------------------------------

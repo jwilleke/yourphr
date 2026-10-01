@@ -35,7 +35,7 @@ import { CatalogManager, type CatalogWrite } from './app/managers/CatalogManager
 import { SqliteCatalogProvider } from './app/providers/SqliteCatalogProvider.js';
 import { Engine } from './framework/Engine.js';
 import { ConfigurationManager } from './framework/ConfigurationManager.js';
-import { SettingsManager, coerceToShippedType } from './framework/managers/SettingsManager.js';
+import { MAINTENANCE_ENABLED_KEY, SettingsManager, coerceToShippedType } from './framework/managers/SettingsManager.js';
 import { PolicyManager } from './framework/managers/PolicyManager.js';
 export { coerceToShippedType };
 import { ApiContext } from './framework/ApiContext.js';
@@ -511,6 +511,11 @@ export async function openStores(dataDir: string, env: Record<string, string | u
   const { records, sources, jobs, catalog, audit, backups } = engine.managers;
   // The Records manager names a source for the records that carry its id — asked of the Sources door.
   records.sourceDisplay = (sourceId) => sources.displayOf(sourceId);
+  records.log = (line) => appLog.info(line);
+  // yourphr#713: detected at boot, never rebuilt at boot — a rebuild takes ~48s per 20k records and
+  // would hold the health probe hostage. The admin's Database card offers the rebuild.
+  const index = records.searchIndexStatus();
+  if (index.stale) appLog.warn(`search index: built by derivation ${index.builtWith}, this build uses ${index.current} — records stored before the upgrade are not findable by everything they say. Rebuild it from Admin -> Database, or run \`yourphr reindex\` with the server stopped`);
 
   return {
     config, db, dbKey, users, sessions, catalog, sources, jobs, events, audit, backups, engine, records, recordsProvider,
@@ -558,7 +563,9 @@ export async function assembleApp(dataDir: string, options: { seeds?: CatalogWri
 
   // The worker: the Sources manager's pass, on the configured interval.
   const timer = options.workerIntervalMs
-    ? setInterval(() => { void sources.pass(); }, options.workerIntervalMs)
+    // Not while in maintenance mode (yourphr#714): the operator is working on the records, and a
+    // sync pass writing into a store mid-rebuild is exactly what maintenance is there to prevent.
+    ? setInterval(() => { if (!config.getBool(MAINTENANCE_ENABLED_KEY)) void sources.pass(); }, options.workerIntervalMs)
     : undefined;
   timer?.unref?.();
 

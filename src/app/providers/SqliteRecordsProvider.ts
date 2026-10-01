@@ -8,13 +8,13 @@
 import type Database from 'better-sqlite3-multiple-ciphers';
 import type { Bundle, Resource } from '@medplum/fhirtypes';
 import type { SearchRequest, WithId } from '@medplum/core';
-import { SqliteFhirRepository, sameContent } from '../../SqliteFhirRepository.js';
+import { SEARCH_INDEX_VERSION, SqliteFhirRepository, sameContent } from '../../SqliteFhirRepository.js';
 import { dirname } from 'node:path';
 import { existsSync, statSync } from 'node:fs';
 import { backupFiles, readBackupPayloads, stageInstanceRestore, RECORDS_LEDGER_TABLE, type BackupPayload, type BackupResult, type DatabaseFile } from './sqlite-backup.js';
 import { ftsQuery } from './record-text.js';
 import { runMigrations, type Migration, type MigrationReport } from '../../framework/providers/sqlite-migrations.js';
-import { BaseRecordsProvider, type CompactReport, type IndexCondition, type RecordsWriter, type StoredRecord } from './BaseRecordsProvider.js';
+import { BaseRecordsProvider, type CompactReport, type IndexCondition, type RecordsWriter, type SearchIndexStatus, type StoredRecord } from './BaseRecordsProvider.js';
 
 const REFERENCE_SHAPE = /^[A-Z][A-Za-z]+\/[A-Za-z0-9.-]{1,64}$/;
 const PARAM_NAME = /^[a-z][a-z0-9-]*$/i;
@@ -97,6 +97,12 @@ export const PGHD_TAG_MIGRATION: Migration = {
   },
 };
 
+/** The search index's derivation version, kept in the file's PRAGMA user_version (yourphr#713). */
+function indexVersion(db: InstanceType<typeof Database>): number {
+  const row = (db.pragma('user_version') as { user_version: number }[])[0];
+  return row?.user_version ?? 0;
+}
+
 export class SqliteRecordsProvider extends BaseRecordsProvider {
   private readonly handles = new Map<string, SqliteFhirRepository>();
 
@@ -135,6 +141,11 @@ export class SqliteRecordsProvider extends BaseRecordsProvider {
     const boot = this.handle('__boot__');
     try {
       if (this.ledger.length > 0) this.migrations = runMigrations(boot.db, this.ledger, RECORDS_LEDGER_TABLE);
+      // A store with no records has nothing indexed by an older derivation: it is current from
+      // birth (yourphr#713). One that holds records and no version predates the version — stale.
+      if (indexVersion(boot.db) === 0 && boot.db.prepare('SELECT 1 FROM resources LIMIT 1').get() === undefined) {
+        boot.db.pragma(`user_version = ${SEARCH_INDEX_VERSION}`);
+      }
     } finally {
       boot.db.close();
       this.handles.delete('__boot__');
@@ -449,6 +460,33 @@ export class SqliteRecordsProvider extends BaseRecordsProvider {
       integrity,
       dryRun,
     };
+  }
+
+  searchIndex(): SearchIndexStatus {
+    const builtWith = indexVersion(this.anyDb());
+    return { builtWith, current: SEARCH_INDEX_VERSION, stale: builtWith < SEARCH_INDEX_VERSION };
+  }
+
+  async rebuildSearchIndex(options: { userId?: string; onProgress?: (accountsDone: number, accounts: number) => void } = {}): Promise<{ accounts: number; records: number }> {
+    // Every account that holds a row, from the file itself — including one whose account is gone.
+    const owners = options.userId !== undefined
+      ? [options.userId]
+      : (this.anyDb().prepare('SELECT DISTINCT user_id FROM resources').all() as { user_id: string }[]).map((r) => r.user_id);
+    let records = 0;
+    options.onProgress?.(0, owners.length);
+    for (const [i, owner] of owners.entries()) {
+      // Its own connection, so the rebuild's open transaction is never shared with a request's handle.
+      const repo = new SqliteFhirRepository({ file: this.file, userId: owner, key: this.key });
+      try {
+        records += await repo.reindexAllYielding();
+      } finally {
+        repo.db.close();
+      }
+      options.onProgress?.(i + 1, owners.length);
+    }
+    // Current only when everyone was rebuilt; one account alone leaves the others as they were.
+    if (options.userId === undefined) this.anyDb().pragma(`user_version = ${SEARCH_INDEX_VERSION}`);
+    return { accounts: owners.length, records };
   }
 
   async integrityOk(): Promise<boolean> {

@@ -1354,6 +1354,16 @@ export function createYourPhrServer(options: ServerOptions) {
           }});
           return;
         }
+        // The search index (yourphr#713): which derivation built it, and the rebuild — started here,
+        // run in the background under maintenance mode, polled by the Database card.
+        if (url.pathname === '/api/secure/admin/database/search-index' && req.method === 'GET') {
+          send(res, 200, {success: true, data: engine.managers.records.searchIndex(ctx)});
+          return;
+        }
+        if (url.pathname === '/api/secure/admin/database/search-index' && req.method === 'POST') {
+          send(res, 202, {success: true, data: engine.managers.records.startSearchIndexRebuild(ctx)});
+          return;
+        }
         const backupFailed = (err: unknown): void => send(res, (err as ApiError).status ?? 400, {success: false, error: (err as Error).message});
         if (backups && url.pathname === '/api/secure/admin/database/backup' && req.method === 'POST') {
           try {

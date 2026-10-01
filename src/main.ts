@@ -34,6 +34,7 @@ commands:
   migrate           import a Go (v1/v2) instance into this one, and verify it record for record
   reset-password    set a fresh password on an account when nobody can sign in
   compact           remove identical history copies and reclaim the space (server stopped)
+  reindex           rebuild the search index from stored records (server stopped)
   version           print the version this build reports
   help              print this
 
@@ -62,6 +63,10 @@ async function run(command: string, argv: string[]): Promise<number | 'listening
     case 'compact': {
       const { compact } = await import('./cli/compact.js');
       return await compact(argv);
+    }
+    case 'reindex': {
+      const { reindex } = await import('./cli/reindex.js');
+      return await reindex(argv);
     }
     case 'version':
     case '--version':

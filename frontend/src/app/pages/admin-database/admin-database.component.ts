@@ -1,8 +1,8 @@
-import {Component, OnInit, ChangeDetectionStrategy} from '@angular/core';
+import {Component, OnDestroy, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {FormsModule} from '@angular/forms';
 import {FastenApiService} from '../../services/fasten-api.service';
-import {DatabaseInfo, BackupSettings, DirListing, BackupDestinationTest} from '../../models/fasten/database-info';
+import {DatabaseInfo, BackupSettings, DirListing, BackupDestinationTest, SearchIndexInfo} from '../../models/fasten/database-info';
 import {AdminBackLinkComponent} from '../../components/admin-back-link/admin-back-link.component';
 import {LoadingSpinnerComponent} from '../../components/loading-spinner/loading-spinner.component';
 
@@ -17,7 +17,7 @@ import {LoadingSpinnerComponent} from '../../components/loading-spinner/loading-
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./admin-database.component.scss'],
 })
-export class AdminDatabaseComponent implements OnInit {
+export class AdminDatabaseComponent implements OnInit, OnDestroy {
   loading = true;
   errored = false;
   info: DatabaseInfo | null = null;
@@ -44,10 +44,42 @@ export class AdminDatabaseComponent implements OnInit {
   restoring = '';   // backup filename currently being restored
   restoreMsg = '';
 
+  // Search index (#713)
+  searchIndex: SearchIndexInfo | null = null;
+  rebuildError = '';
+  private poll: ReturnType<typeof setTimeout> | undefined;
+
   constructor(private fastenApi: FastenApiService) {}
 
   ngOnInit(): void {
     this.load(true);
+    this.loadSearchIndex();
+  }
+
+  ngOnDestroy(): void {
+    if (this.poll) clearTimeout(this.poll);
+  }
+
+  // While a rebuild runs, ask again every two seconds; stop once it has finished.
+  private loadSearchIndex(): void {
+    this.fastenApi.getSearchIndex().subscribe({
+      next: (idx) => {
+        this.searchIndex = idx;
+        if (idx.rebuild.state === 'running') this.poll = setTimeout(() => this.loadSearchIndex(), 2000);
+      },
+      error: () => { this.searchIndex = null; },
+    });
+  }
+
+  // The server puts the instance into maintenance mode for the rebuild and takes it out afterwards
+  // (unless it was already on), so members see a maintenance page rather than half a search index.
+  rebuildSearchIndex(): void {
+    if (!confirm('Rebuild the search index? Members will see a maintenance page until it finishes — about a minute per 20,000 records.')) return;
+    this.rebuildError = '';
+    this.fastenApi.rebuildSearchIndex().subscribe({
+      next: () => this.loadSearchIndex(),
+      error: (e) => { this.rebuildError = e?.error?.error || 'Could not start the rebuild — check the server logs.'; },
+    });
   }
 
   private load(initial: boolean): void {

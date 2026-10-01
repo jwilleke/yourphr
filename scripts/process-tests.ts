@@ -93,7 +93,7 @@ async function main(): Promise<void> {
     strayFlag.status === 2 && strayFlag.stderr.includes('--port'), `status ${strayFlag.status}`);
   const help = runOnce(good, ['help']);
   check('help exits 0 and names every command the image accepts',
-    help.status === 0 && ['start', 'migrate', 'reset-password', 'compact', 'version'].every((c) => help.stdout.includes(c)), `status ${help.status}`);
+    help.status === 0 && ['start', 'migrate', 'reset-password', 'compact', 'reindex', 'version'].every((c) => help.stdout.includes(c)), `status ${help.status}`);
   const pkgVersion = (JSON.parse(readFileSync(join(process.cwd(), 'package.json'), 'utf8')) as { version: string }).version;
   const versionOut = runOnce(good, ['version']);
   check('version prints package.json\'s version and exits 0',
@@ -104,6 +104,10 @@ async function main(): Promise<void> {
   const compactNowhere = runOnce(good, ['compact', '--data', join(dir, 'nowhere')]);
   check('compact refuses a data directory that does not exist (yourphr#781)',
     compactNowhere.status === 2 && compactNowhere.stderr.includes('does not exist'), `status ${compactNowhere.status}`);
+  const reindexTypo = runOnce(good, ['reindex', '--users', 'x']);
+  const reindexNoUser = runOnce(good, ['reindex', '--user']);
+  check('reindex refuses a flag it does not know, and --user without a name (yourphr#713)',
+    reindexTypo.status === 2 && reindexTypo.stderr.includes('--users') && reindexNoUser.status === 2, `status ${reindexTypo.status} ${reindexNoUser.status}`);
   const compactTypo = runOnce(good, ['compact', '--dryrun']);
   check('compact refuses a flag it does not know rather than compacting for real',
     compactTypo.status === 2 && compactTypo.stderr.includes('--dryrun'), `status ${compactTypo.status}`);
@@ -160,6 +164,10 @@ async function main(): Promise<void> {
   const dry = runOnce({}, ['compact', '--data', dataDir, '--dry-run']);
   check('compact --dry-run reports and changes nothing, integrity ok',
     dry.status === 0 && dry.stdout.includes('dry run') && dry.stdout.includes('integrity:          ok'), `status ${dry.status} ${dry.stderr.slice(0, 200)}`);
+  const reindexed = runOnce({}, ['reindex', '--data', dataDir]);
+  check('reindex runs on a stopped instance and leaves the index current (yourphr#713)',
+    reindexed.status === 0 && /records reindexed: +\d+/.test(reindexed.stdout) && reindexed.stdout.includes('index version:') && !reindexed.stdout.includes('still stale'),
+    `status ${reindexed.status} ${reindexed.stderr.slice(0, 200)}`);
   const compacted = runOnce({}, ['compact', '--data', dataDir]);
   check('compact runs on a stopped instance and reports integrity ok',
     compacted.status === 0 && compacted.stdout.includes('integrity:          ok'), `status ${compacted.status} ${compacted.stderr.slice(0, 200)}`);

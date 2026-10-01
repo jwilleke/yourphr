@@ -19,7 +19,8 @@ import { BaseManager, type BackupData } from '../../framework/BaseManager.js';
 import type { Engine } from '../../framework/Engine.js';
 import { ApiError, type ApiContext } from '../../framework/ApiContext.js';
 import type { BaseFavoritesProvider, Favorite } from '../providers/BaseFavoritesProvider.js';
-import type { BaseRecordsProvider, CompactReport, RecordsWriter, StoredRecord } from '../providers/BaseRecordsProvider.js';
+import type { BaseRecordsProvider, CompactReport, RecordsWriter, SearchIndexStatus, StoredRecord } from '../providers/BaseRecordsProvider.js';
+import { MAINTENANCE_ENABLED_KEY } from '../../framework/managers/SettingsManager.js';
 import { reconcileConditions, type ClassifiedCondition, type InputResource } from '../../conditions/index.js';
 import { classifyAllergies, type ClassifiedAllergy } from '../../allergies/index.js';
 import { classifyImmunizations, type ClassifiedImmunization } from '../../immunizations/index.js';
@@ -56,12 +57,27 @@ export interface RecentItem {
 
 const PARAM_NAME = /^[a-z][a-z0-9-]*$/i;
 
+/** The admin-started search index rebuild (yourphr#713), as the Database card shows it. Lives in memory: a restart mid-rebuild leaves the index stale, which the card then says. */
+export interface SearchIndexRebuild {
+  state: 'idle' | 'running' | 'done' | 'failed';
+  by?: string;
+  startedAt?: string;
+  finishedAt?: string;
+  accountsDone: number;
+  accounts: number;
+  records?: number;
+  error?: string;
+}
+
 export class RecordsManager extends BaseManager {
   readonly name = 'records' as const;
   /** Reads no configuration today; declared empty rather than pretending (the engine validates what is declared). */
   override readonly dependsOn = [] as const;
   /** Maps a source id to its display name; '' when unknown — never invent. Set by the app until Sources is a manager. */
   sourceDisplay: (sourceId: string) => Promise<string> | string = () => '';
+  /** The server log; set by the app. */
+  log: (line: string) => void = () => undefined;
+  private rebuild: SearchIndexRebuild = { state: 'idle', accountsDone: 0, accounts: 0 };
 
   constructor(engine: Engine, private readonly provider: BaseRecordsProvider, private readonly favoritesProvider?: BaseFavoritesProvider) {
     super(engine);
@@ -842,6 +858,65 @@ export class RecordsManager extends BaseManager {
    */
   async compact(options: { dryRun?: boolean; vacuum?: boolean } = {}): Promise<CompactReport> {
     return this.provider.compact(options);
+  }
+
+  /**
+   * Is the search index built by this build's derivation (yourphr#713)? For the boot log and the
+   * `reindex` command — no request context, like `compact`. Admins ask through searchIndex(ctx).
+   */
+  searchIndexStatus(): SearchIndexStatus {
+    return this.provider.searchIndex();
+  }
+
+  /** The admin's view: the index's version and the rebuild in progress or last finished. */
+  searchIndex(ctx: ApiContext): SearchIndexStatus & { rebuild: SearchIndexRebuild } {
+    ctx.require('admin-read');
+    return { ...this.provider.searchIndex(), rebuild: { ...this.rebuild } };
+  }
+
+  /**
+   * Rebuild every account's search index from stored content (yourphr#713), in the background.
+   * Wrapped in maintenance mode (Jim's decision on #713, option A): turned on for the rebuild so no
+   * member reads a half-built index, and back off afterwards — unless it was already on, in which
+   * case the operator turned it on and it stays on. 409 while one is running.
+   */
+  startSearchIndexRebuild(ctx: ApiContext): SearchIndexRebuild {
+    ctx.require('admin-system');
+    if (this.rebuild.state === 'running') throw new ApiError(409, 'a search index rebuild is already running');
+    if (!this.engine.has('settings')) throw new ApiError(500, 'maintenance mode is not available on this instance (no settings manager)');
+    this.rebuild = { state: 'running', by: ctx.actor, startedAt: new Date().toISOString(), accountsDone: 0, accounts: 0 };
+    void this.runSearchIndexRebuild(ctx);
+    return { ...this.rebuild };
+  }
+
+  private async runSearchIndexRebuild(ctx: ApiContext): Promise<void> {
+    const settings = this.engine.managers.settings;
+    const wasOn = this.engine.managers.configuration.getBool(MAINTENANCE_ENABLED_KEY);
+    this.log(`${ctx.actor} started a search index rebuild`);
+    try {
+      if (!wasOn) settings.configSet(ctx, MAINTENANCE_ENABLED_KEY, true);
+      const done = await this.provider.rebuildSearchIndex({
+        onProgress: (accountsDone, accounts) => { this.rebuild = { ...this.rebuild, accountsDone, accounts }; },
+      });
+      this.rebuild = { ...this.rebuild, state: 'done', finishedAt: new Date().toISOString(), records: done.records };
+      this.log(`search index rebuilt: ${done.records} record(s) across ${done.accounts} account(s)`);
+    } catch (err) {
+      this.rebuild = { ...this.rebuild, state: 'failed', finishedAt: new Date().toISOString(), error: (err as Error).message };
+      this.log(`search index rebuild failed: ${(err as Error).message}`);
+    } finally {
+      if (!wasOn) {
+        try {
+          settings.configSet(ctx, MAINTENANCE_ENABLED_KEY, false);
+        } catch (err) {
+          this.log(`maintenance mode could not be turned back off after the rebuild: ${(err as Error).message}`);
+        }
+      }
+    }
+  }
+
+  /** The `reindex` command's door (yourphr#713): no request context, like `compact` — the authority is running a process against the data directory. */
+  async rebuildSearchIndexOffline(options: { userId?: string; onProgress?: (accountsDone: number, accounts: number) => void } = {}): Promise<{ accounts: number; records: number }> {
+    return this.provider.rebuildSearchIndex(options);
   }
 
   /** The admin's Database card: where the PHI store lives and its size. */

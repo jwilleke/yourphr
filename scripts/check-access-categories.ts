@@ -50,6 +50,7 @@ const EXEMPT: Record<string, string> = {
   '/api/secure/jobs': 'sync job history — outcomes and counts, not records',
   '/api/secure/admin/database': 'admin: database size, integrity and backups',
   '/api/secure/admin/database/browse': 'admin: server folders for a backup destination',
+  '/api/secure/admin/database/search-index': 'admin: the search index version and rebuild progress — counts, no records',
   '/api/secure/admin/config': 'admin: configuration snapshot',
   '/api/secure/admin/config/reveal/x': 'admin: one configuration value',
   '/api/secure/admin/logs': 'admin: server log lines, which never carry record content',
