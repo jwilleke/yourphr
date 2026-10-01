@@ -17,7 +17,7 @@ import { IDENTITY_ASSERTION, demographicsOf, evidenceFor, identifierConflicts, l
 import type { SearchRequest, WithId } from '@medplum/core';
 import { BaseManager, type BackupData } from '../../framework/BaseManager.js';
 import type { Engine } from '../../framework/Engine.js';
-import { ApiError, type ApiContext } from '../../framework/ApiContext.js';
+import { ApiContext, ApiError } from '../../framework/ApiContext.js';
 import type { BaseFavoritesProvider, Favorite } from '../providers/BaseFavoritesProvider.js';
 import type { BaseRecordsProvider, CompactReport, RecordsWriter, SearchIndexStatus, StoredRecord } from '../providers/BaseRecordsProvider.js';
 import { MAINTENANCE_ENABLED_KEY } from '../../framework/managers/SettingsManager.js';
@@ -81,6 +81,8 @@ export interface IntegrityStatus {
 /** Job ids on the background job manager (yourphr#856). */
 export const SEARCH_INDEX_REBUILD_JOB = 'records.search-index.rebuild';
 export const INTEGRITY_CHECK_JOB = 'records.integrity-check';
+/** The admin-home notice standing while the search index is out of date (yourphr#854). */
+export const STALE_INDEX_NOTICE = 'records.search-index.stale';
 
 export class RecordsManager extends BaseManager {
   readonly name = 'records' as const;
@@ -102,8 +104,8 @@ export class RecordsManager extends BaseManager {
     // contract harnesses that build an engine without it simply cannot start either.
     if (this.engine.has('backgroundJobs')) {
       const jobs = this.engine.managers.backgroundJobs;
-      jobs.registerJob({ id: SEARCH_INDEX_REBUILD_JOB, displayName: 'Search index rebuild', where: 'Admin -> Database', run: (progress, ctx) => this.rebuildUnderMaintenance(progress, ctx) });
-      jobs.registerJob({ id: INTEGRITY_CHECK_JOB, displayName: 'Database integrity check', where: 'Admin -> Database', run: () => this.runIntegrityCheck() });
+      jobs.registerJob({ id: SEARCH_INDEX_REBUILD_JOB, displayName: 'Search index rebuild', where: 'Admin -> Database', link: '/admin/database', run: (progress, ctx) => this.rebuildUnderMaintenance(progress, ctx) });
+      jobs.registerJob({ id: INTEGRITY_CHECK_JOB, displayName: 'Database integrity check', where: 'Admin -> Database', link: '/admin/database', run: () => this.runIntegrityCheck() });
     }
     await this.favoritesProvider?.initialize();
     await super.initialize(config);
@@ -888,6 +890,26 @@ export class RecordsManager extends BaseManager {
     return this.provider.searchIndex();
   }
 
+  /**
+   * At boot (yourphr#854): an out-of-date index is a notice on the admin home with a link to where it
+   * is rebuilt — not only a row two clicks deep. Keyed, so restarts replace it rather than stack
+   * copies; a current index resolves any left standing.
+   */
+  async noticeIfSearchIndexStale(): Promise<void> {
+    if (!this.engine.has('notifications') || !this.engine.has('users')) return;
+    const notifications = this.engine.managers.notifications;
+    if (!this.provider.searchIndex().stale) {
+      await notifications.resolve(STALE_INDEX_NOTICE);
+      return;
+    }
+    const admins = await this.engine.managers.users.holders(ApiContext.system('search index notice: who holds admin', 'records', this.engine), 'admin');
+    await notifications.createNotification({
+      key: STALE_INDEX_NOTICE, type: 'system', level: 'warning', targetUsers: admins, link: '/admin/database',
+      title: 'Search index out of date — rebuild needed',
+      message: 'This version finds records by more of what they say. Records stored before the upgrade are not found that way until the index is rebuilt. Rebuilding takes about a minute per 20,000 records, and members see a maintenance page meanwhile.',
+    });
+  }
+
   /** The admin's view: the index's version and the rebuild in progress or last finished. */
   searchIndex(ctx: ApiContext): SearchIndexStatus & { rebuild: SearchIndexRebuild } {
     ctx.require('admin-read');
@@ -927,6 +949,7 @@ export class RecordsManager extends BaseManager {
       const done = await this.provider.rebuildSearchIndex({
         onProgress: (accountsDone, accounts) => progress(`account ${Math.min(accountsDone + 1, accounts)} of ${accounts}`),
       });
+      if (this.engine.has('notifications')) await this.engine.managers.notifications.resolve(STALE_INDEX_NOTICE);
       return { success: true, summary: `Rebuilt ${done.records.toLocaleString('en-US')} records across ${done.accounts} account(s).` };
     } catch (err) {
       return { success: false, error: (err as Error).message };

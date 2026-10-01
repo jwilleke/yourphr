@@ -321,6 +321,7 @@ export class BackupManager extends BaseManager {
     const admins = await this.engine.managers.users.holders(system, 'admin');
     const notificationId = await this.engine.managers.notifications.createNotification({
       type: 'system', level: alert.level, title: alert.title, message: alert.message, targetUsers: admins, expiresAt: new Date(now.getTime() + NOTICE_TTL_MS),
+      link: '/admin/database', // where backups are fixed (yourphr#854)
     });
     this.state = { ...this.state, alertedAt: now.toISOString(), alertKind: alert.kind };
     this.saveHealth();

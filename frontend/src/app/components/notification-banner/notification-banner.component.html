@@ -4,6 +4,7 @@
       <div class="alert alert-dismissible mg-b-10" [class]="alertClass(n)" [attr.role]="n.level === 'error' ? 'alert' : 'status'">
         <i class="fas me-2" [class]="icon(n)"></i><strong>{{ n.title }}</strong>
         @if (n.message) { <span>&nbsp;{{ n.message }}</span> }
+        @if (linkFor(n); as link) { <a class="alert-link ms-2" [routerLink]="link">Go there <i class="fas fa-arrow-right"></i></a> }
         <button type="button" class="btn-close" aria-label="Dismiss" (click)="dismiss(n)"></button>
       </div>
     }

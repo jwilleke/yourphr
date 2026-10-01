@@ -1,0 +1,33 @@
+<div class="card mg-b-20" data-testid="admin-notifications">
+  <div class="card-header d-flex align-items-center">
+    <h5 class="card-title mg-b-0"><i class="fas fa-bell"></i>&nbsp; Notifications</h5>
+    <span class="badge ms-2" [ngClass]="notifications.length ? 'text-bg-primary' : 'text-bg-secondary'">{{ notifications.length }}</span>
+    @if (notifications.length > 1) {
+      <button type="button" class="btn btn-outline-secondary btn-sm ms-auto" (click)="dismissAll()">Dismiss all</button>
+    }
+  </div>
+  <div class="card-body">
+    @if (loading) {
+      <p class="mg-b-0">Loading notifications…</p>
+    } @else if (errored) {
+      <p class="mg-b-0 tx-danger">Could not load notifications. <button type="button" class="btn btn-link p-0 align-baseline" (click)="load()">Try again</button></p>
+    } @else if (!notifications.length) {
+      <p class="mg-b-0">Nothing needs your attention.</p>
+    } @else {
+      @for (n of notifications; track n.id) {
+        <div class="alert mg-b-10 d-flex align-items-start" [ngClass]="alertClass(n)" [attr.role]="n.level === 'error' ? 'alert' : 'status'">
+          <i class="fas fa-lg me-3 mg-t-5" [ngClass]="icon(n)"></i>
+          <div class="flex-grow-1">
+            <div class="tx-16"><strong>{{ n.title }}</strong></div>
+            @if (n.message) { <div class="mg-t-5">{{ n.message }}</div> }
+            <div class="mg-t-5 tx-gray-700">{{ n.created_at | date:'medium' }}</div>
+            @if (n.link) {
+              <a class="btn btn-az-primary btn-sm mg-t-10" [routerLink]="n.link">Go to {{ place(n.link) }} <i class="fas fa-arrow-right ms-1"></i></a>
+            }
+          </div>
+          <button type="button" class="btn-close ms-3" aria-label="Dismiss" (click)="dismiss(n)"></button>
+        </div>
+      }
+    }
+  </div>
+</div>

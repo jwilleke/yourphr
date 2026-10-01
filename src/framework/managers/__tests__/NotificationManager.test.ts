@@ -117,11 +117,51 @@ describe('NotificationManager — ngdpbase\'s, under yourphr.', () => {
 
   it('the maintenance notice is for everyone; the "disabled" one expires after a day', async () => {
     await notes.createMaintenanceNotification(true, 'root');
-    await notes.createMaintenanceNotification(false, 'root');
-    const [on, off] = notes.getAllNotifications();
+    const [on] = notes.getAllNotifications();
     expect(on).toMatchObject({ type: 'maintenance', level: 'warning', targetUsers: [], expiresAt: null });
+    await notes.createMaintenanceNotification(false, 'root'); // replaces "on" (yourphr#854)
+    const [off] = notes.getAllNotifications();
     expect(off!.level).toBe('success');
     expect(off!.expiresAt!.getTime() - Date.now()).toBeGreaterThan(23 * 3600_000);
+  });
+});
+
+describe('NotificationManager — links and standing conditions (yourphr#854)', () => {
+  it('keeps an in-app link, and drops one that would lead off the instance', async () => {
+    await notes.createNotification({ title: 'in', link: '/admin/database' });
+    await notes.createNotification({ title: 'out', link: 'https://evil.example/' });
+    await notes.createNotification({ title: 'scheme', link: 'javascript:alert(1)' });
+    await notes.createNotification({ title: 'protocol-relative', link: '//evil.example' });
+    const byTitle = Object.fromEntries(notes.getAllNotifications().map((n) => [n.title, n.link]));
+    expect(byTitle).toEqual({ in: '/admin/database', out: undefined, scheme: undefined, 'protocol-relative': undefined });
+  });
+
+  it('raising a keyed condition again replaces it rather than stacking copies; resolving removes it', async () => {
+    await notes.createNotification({ key: 'k', title: 'first' });
+    await notes.createNotification({ key: 'k', title: 'second' });
+    await notes.createNotification({ title: 'unkeyed' });
+    expect(notes.getAllNotifications().map((n) => n.title).sort()).toEqual(['second', 'unkeyed']);
+    expect(await notes.resolve('k')).toBe(true);
+    expect(await notes.resolve('k')).toBe(false);
+    expect(notes.getAllNotifications().map((n) => n.title)).toEqual(['unkeyed']);
+  });
+
+  it('turning maintenance off replaces the "on" notice, and both link to where it is switched', async () => {
+    await notes.createMaintenanceNotification(true, 'ops');
+    await notes.createMaintenanceNotification(false, 'ops');
+    const all = notes.getAllNotifications();
+    expect(all).toHaveLength(1);
+    expect(all[0]).toMatchObject({ title: 'Maintenance Mode Disabled', link: '/admin/config' });
+  });
+
+  it('dismiss-all hides what the caller sees, from the caller only', async () => {
+    await people();
+    await notes.createNotification({ title: 'everyone' });
+    await notes.createNotification({ title: 'admins', targetUsers: ['root', 'ops'] });
+    expect(await notes.dismissAll(ApiContext.from({ username: 'root', role: 'admin' }, engine))).toBe(2);
+    expect(notes.getUserNotifications('root')).toHaveLength(0);
+    expect(notes.getUserNotifications('ops').map((n) => n.title).sort()).toEqual(['admins', 'everyone']);
+    expect(notes.getUserNotifications('alice').map((n) => n.title)).toEqual(['everyone']);
   });
 });
 

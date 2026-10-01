@@ -1059,6 +1059,14 @@ async function main(): Promise<void> {
     check('an index built by an older derivation is reported stale, and a record stored before the upgrade is not findable by name',
       foundBefore >= 1 && stale.stale && stale.builtWith === 0 && (await findByName()) === 0, `${foundBefore} ${JSON.stringify(stale)}`);
 
+    // yourphr#854: what boot does with a stale index — a notice on the admin home, linked to the fix.
+    await app.engine.managers.records.noticeIfSearchIndexStale();
+    const adminNotices = async () => ((await (await fetch(`${base}/api/secure/notifications`, authed(adminToken))).json()) as { data: { title: string; link?: string }[] }).data;
+    const staleNotice = (await adminNotices()).find((n) => n.title.startsWith('Search index out of date'));
+    await app.engine.managers.records.noticeIfSearchIndexStale(); // a restart must not stack a second copy
+    check('a stale index is a notice on the admin home with a link to where it is rebuilt, raised once however often the server starts (yourphr#854)',
+      staleNotice?.link === '/admin/database' && (await adminNotices()).filter((n) => n.title.startsWith('Search index out of date')).length === 1,
+      JSON.stringify(await adminNotices()));
     const startRebuild = (token: string) => fetch(`${base}/api/secure/admin/database/search-index`, { method: 'POST', ...authed(token) });
     await fetch(`${base}/api/secure/admin/users`, { method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${adminToken}` }, body: JSON.stringify({ username: 'rhea', password: 'a-long-enough-password' }) });
     const memberTries = await startRebuild(((await (await signIn('rhea', 'a-long-enough-password')).json()) as { data: string }).data);
@@ -1072,8 +1080,14 @@ async function main(): Promise<void> {
     check('the admin rebuilds it from the Database card: every account, the version current, and the record findable by name again; a member cannot start one',
       memberTries.status === 403 && started.status === 202 && after.rebuild.state === 'done' && after.rebuild.by === 'admin' && !after.stale && (await findByName()) >= 1,
       `${memberTries.status} ${started.status} ${JSON.stringify(after)}`);
+    const afterNotices = await adminNotices();
+    check('a finished rebuild clears the stale notice and says so, linked to the Database card (yourphr#854)',
+      !afterNotices.some((n) => n.title.startsWith('Search index out of date')) && afterNotices.some((n) => n.title === 'Search index rebuild finished' && n.link === '/admin/database'),
+      JSON.stringify(afterNotices));
     check('the rebuild ran under maintenance mode and turned it back off afterwards (option A on yourphr#713)',
-      notices.some((n) => n.title.includes('Enabled')) && notices.some((n) => n.title.includes('Disabled')) && !app.config.getBool('yourphr.features.maintenance.enabled'),
+      // "Disabled" is announced only on a change from on to off, and replaces the "Enabled" notice
+      // (yourphr#854) — so its presence is the proof it was on during the rebuild.
+      notices.some((n) => n.title.includes('Disabled')) && !app.config.getBool('yourphr.features.maintenance.enabled'),
       notices.map((n) => n.title).join(', '));
   }
 

@@ -672,7 +672,13 @@ export function createYourPhrServer(options: ServerOptions) {
       if (auth && engine.has('notifications') && url.pathname === '/api/secure/notifications' && req.method === 'GET') {
         send(res, 200, {success: true, data: engine.managers.notifications.getUserNotifications(ctx.username).map((n) => ({
           id: n.id, type: n.type, title: n.title, message: n.message, level: n.level, created_at: n.createdAt.toISOString(), expires_at: n.expiresAt ? n.expiresAt.toISOString() : null,
+          ...(n.link ? {link: n.link} : {}),
         }))});
+        return;
+      }
+      // yourphr#854: the admin panel's "Dismiss all" — the caller's own view, nobody else's.
+      if (auth && engine.has('notifications') && url.pathname === '/api/secure/notifications/dismiss-all' && req.method === 'POST') {
+        send(res, 200, {success: true, data: {dismissed: await engine.managers.notifications.dismissAll(ctx)}});
         return;
       }
       const dismissMatch = url.pathname.match(/^\/api\/secure\/notifications\/([^/]+)\/dismiss$/);

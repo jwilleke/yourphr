@@ -37,6 +37,10 @@ export interface Notification {
   createdAt: Date;
   expiresAt: Date | null;
   dismissedBy: string[];
+  /** Where it is dealt with, as an in-app path ('/admin/database') — yourphr#854; ngdpbase's has none. */
+  link?: string;
+  /** A condition's stable name ('records.search-index.stale'): raising it again replaces the one standing, so a restart does not stack copies. yourphr#854. */
+  key?: string;
 }
 
 /** ngdpbase's NotificationInput. */
@@ -47,6 +51,13 @@ export interface NotificationInput {
   level?: Notification['level'];
   targetUsers?: string[];
   expiresAt?: Date | null;
+  link?: string;
+  key?: string;
+}
+
+/** An in-app path only: a notice is shown to people, and a link in one must never lead off the instance. */
+function safeLink(link: string | undefined): string | undefined {
+  return link !== undefined && /^\/[a-z0-9/_-]*$/i.test(link) ? link : undefined;
 }
 
 export interface NotificationStats {
@@ -132,7 +143,11 @@ export class NotificationManager extends BaseManager {
 
   /** ngdpbase's createNotification: stored, saved, escalated by email when its level says so. */
   async createNotification(notification: NotificationInput): Promise<string> {
+    if (notification.key !== undefined) {
+      for (const [existing, n] of this.notifications.entries()) if (n.key === notification.key) this.notifications.delete(existing);
+    }
     const id = `notification_${++this.notificationId}`;
+    const link = safeLink(notification.link);
     const full: Notification = {
       id,
       type: notification.type || 'system',
@@ -143,6 +158,8 @@ export class NotificationManager extends BaseManager {
       createdAt: new Date(),
       expiresAt: notification.expiresAt || null,
       dismissedBy: [],
+      ...(link !== undefined ? { link } : {}),
+      ...(notification.key !== undefined ? { key: notification.key } : {}),
     };
     this.notifications.set(id, full);
     this.log(`notifications: created ${id} (${full.type}, ${full.level}): ${full.title}`);
@@ -179,6 +196,30 @@ export class NotificationManager extends BaseManager {
     return true;
   }
 
+  /** Hides every notification the caller can see, from the caller only (yourphr#854's "Dismiss all"). */
+  async dismissAll(ctx: ApiContext): Promise<number> {
+    const mine = this.getUserNotifications(ctx.username);
+    for (const n of mine) n.dismissedBy.push(ctx.username);
+    if (mine.length > 0) {
+      this.log(`notifications: ${mine.length} dismissed by ${ctx.username}`);
+      await this.saveNotifications();
+    }
+    return mine.length;
+  }
+
+  /** The condition is over: remove its notice for everyone (yourphr#854). False when none was standing. */
+  async resolve(key: string): Promise<boolean> {
+    let removed = false;
+    for (const [id, n] of this.notifications.entries()) {
+      if (n.key === key) { this.notifications.delete(id); removed = true; }
+    }
+    if (removed) {
+      this.log(`notifications: '${key}' resolved`);
+      await this.saveNotifications();
+    }
+    return removed;
+  }
+
   /** ngdpbase's maintenance notice, for everyone; the "disabled" one expires after a day. */
   async createMaintenanceNotification(enabled: boolean, adminUsername: string, _config: MaintenanceConfig = {}): Promise<string> {
     return this.createNotification({
@@ -190,6 +231,9 @@ export class NotificationManager extends BaseManager {
       level: enabled ? 'warning' : 'success',
       targetUsers: [],
       expiresAt: enabled ? null : new Date(Date.now() + 24 * 60 * 60 * 1000),
+      // Where it is turned off; a member's banner shows no link they cannot use (yourphr#854).
+      link: '/admin/config',
+      key: 'maintenance',
     });
   }
 

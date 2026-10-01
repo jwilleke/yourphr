@@ -2,6 +2,7 @@ import {ComponentFixture, TestBed, waitForAsync} from '@angular/core/testing';
 import {Router, NavigationEnd} from '@angular/router';
 import {of, Subject, throwError} from 'rxjs';
 import {NotificationBannerComponent} from './notification-banner.component';
+import {AuthService} from '../../services/auth.service';
 import {FastenApiService} from '../../services/fasten-api.service';
 import {AppNotification} from '../../models/fasten/app-notification';
 
@@ -23,7 +24,7 @@ describe('NotificationBannerComponent', () => {
     events = new Subject();
     TestBed.configureTestingModule({
       imports: [NotificationBannerComponent],
-      providers: [{provide: FastenApiService, useValue: api}, {provide: Router, useValue: {events}}],
+      providers: [{provide: FastenApiService, useValue: api}, {provide: Router, useValue: {events}}, {provide: AuthService, useValue: {IsAdmin: () => Promise.resolve(false)}}],
     }).compileComponents();
   }));
 

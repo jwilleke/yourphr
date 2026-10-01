@@ -428,6 +428,12 @@ export class FastenApiService {
       );
   }
 
+  // dismissAllNotifications hides everything the signed-in person sees, from them only (#854).
+  dismissAllNotifications(): Observable<number> {
+    return this._httpClient.post<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/notifications/dismiss-all`, {})
+      .pipe(map((response: ResponseWrapper) => (response.data?.dismissed ?? 0) as number));
+  }
+
   // getMailStatus reads what outbound mail would do right now, and what stops it (#536). Admin-only.
   getMailStatus(): Observable<MailStatus> {
     return this._httpClient.get<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/admin/mail`)

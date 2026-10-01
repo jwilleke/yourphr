@@ -66,6 +66,9 @@ function setup(
         getDatabaseInfo: () => opts.dbFail
           ? throwError(() => new Error('boom'))
           : of({backup_health: health}),
+        getNotifications: () => of([]),
+        dismissNotification: () => of(true),
+        dismissAllNotifications: () => of(0),
         getAdminMetrics: () => of({
           scrape_enabled: false,
           scrape_path: '/metrics',

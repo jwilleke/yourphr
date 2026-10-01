@@ -47,6 +47,8 @@ export interface JobDefinition {
   displayName: string;
   /** Where an admin deals with it — named in the notice ("See Admin -> Database"). */
   where?: string;
+  /** The same place as an in-app path, the notice's link on the admin home (yourphr#854). */
+  link?: string;
   /** The work. `ctx` is whoever asked; a job that acts does so as them. */
   run: (reportProgress: ReportProgress, ctx: ApiContext) => Promise<JobResult>;
 }
@@ -162,9 +164,11 @@ export class BackgroundJobManager extends BaseManager {
       const system = ApiContext.system('background jobs: who holds admin', 'backgroundJobs', this.engine);
       const admins = await this.engine.managers.users.holders(system, 'admin');
       const where = def.where ? ` See ${def.where}.` : '';
+      // Keyed by job, so a run that succeeds replaces the notice of one that failed (yourphr#854).
+      const common = { type: 'system' as const, targetUsers: admins, key: `job.${def.id}`, ...(def.link ? { link: def.link } : {}) };
       await this.engine.managers.notifications.createNotification(result.success
-        ? { type: 'system', level: 'success', title: `${def.displayName} finished`, message: `${result.summary ?? 'It finished without a problem.'}${where}`, targetUsers: admins }
-        : { type: 'system', level: 'error', title: `${def.displayName} failed`, message: `${result.error ?? 'It failed without saying why.'}${where}`, targetUsers: admins });
+        ? { ...common, level: 'success', title: `${def.displayName} finished`, message: `${result.summary ?? 'It finished without a problem.'}${where}` }
+        : { ...common, level: 'error', title: `${def.displayName} failed`, message: `${result.error ?? 'It failed without saying why.'}${where}` });
     } catch (err) {
       this.log(`background jobs: notice for '${def.id}' not sent: ${(err as Error).message}`);
     }

@@ -518,6 +518,7 @@ export async function openStores(dataDir: string, env: Record<string, string | u
   // yourphr#713: detected at boot, never rebuilt at boot — a rebuild takes ~48s per 20k records and
   // would hold the health probe hostage. The admin's Database card offers the rebuild.
   const index = records.searchIndexStatus();
+  await records.noticeIfSearchIndexStale();
   if (index.stale) appLog.warn(`search index: built by derivation ${index.builtWith}, this build uses ${index.current} — records stored before the upgrade are not findable by everything they say. Rebuild it from Admin -> Database, or run \`yourphr reindex\` with the server stopped`);
 
   return {

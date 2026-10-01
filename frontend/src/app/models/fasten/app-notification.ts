@@ -8,4 +8,6 @@ export interface AppNotification {
   level: 'info' | 'warning' | 'error' | 'success';
   created_at: string;
   expires_at: string | null;
+  // Where it is dealt with, as an in-app path ('/admin/database') — #854. Absent when there is nowhere to go.
+  link?: string;
 }
