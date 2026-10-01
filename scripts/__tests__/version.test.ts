@@ -156,4 +156,12 @@ describe('extractChangelogNotes()', () => {
   test('dots are literal, so 3.7.2 never matches 3x7x2', () => {
     expect(extractChangelogNotes('## [3x7x2](l) (d)\n\n- wrong\n', '3.7.2')).toBe('');
   });
+
+  test('treats every character of the version literally — no regex is built from it (yourphr#826)', () => {
+    const log = '## [3.7.2+build.1](l) (d)\n\n- with metadata\n\n## [3.7.2](l) (d)\n\n- plain\n';
+    expect(extractChangelogNotes(log, '3.7.2+build.1')).toBe('- with metadata');
+    expect(extractChangelogNotes(log, '3.7.2')).toBe('- plain');
+    expect(extractChangelogNotes('## [13.7.2](l)\n\n- other\n', '3.7.2')).toBe(''); // a heading starts a line
+    expect(extractChangelogNotes('## [(a](l)\n\n- odd\n', '(a')).toBe('- odd'); // would throw as a regex
+  });
 });

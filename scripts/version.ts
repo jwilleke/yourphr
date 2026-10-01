@@ -149,9 +149,17 @@ export function applyReleaseToChangelog(changelog: string, heading: string, newV
 
 /** The body of one version's CHANGELOG entry: from its heading to the next `## [`. */
 export function extractChangelogNotes(changelog: string, version: string): string {
-  const escaped = version.replace(/\./g, '\\.');
-  const match = changelog.match(new RegExp(`## \\[${escaped}\\][^\\n]*\\n([\\s\\S]*?)(?=\\n## \\[|$)`));
-  return match?.[1]?.trim() ?? '';
+  // Plain string search, not a regex built from the version (yourphr#826, CodeQL js/regex-injection):
+  // escaping only '.' let any other metacharacter — '+' in build metadata, '(' or '[' — change the
+  // pattern. The heading must start a line, so `## [3.7.2]` never matches inside `## [13.7.2]`.
+  const heading = `## [${version}]`;
+  let at = changelog.startsWith(heading) ? 0 : changelog.indexOf(`\n${heading}`);
+  if (at < 0) return '';
+  if (at > 0) at += 1; // past the newline
+  const lineEnd = changelog.indexOf('\n', at);
+  if (lineEnd < 0) return '';
+  const next = changelog.indexOf('\n## [', lineEnd);
+  return changelog.slice(lineEnd + 1, next < 0 ? changelog.length : next).trim();
 }
 
 function today(): string {
