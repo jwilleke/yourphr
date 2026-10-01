@@ -9,10 +9,8 @@
   "yourphr.web.listen.port": 8080,
   "yourphr.web.listen.host": "0.0.0.0",
   "yourphr.web.secure-cookies": false,
-  "_comment_web_security_headers": "yourphr#813 — security response headers, ported from the Go stack (#105, #124). csp.connect-src lists the ORIGINS (https://host[:port], nothing else — anything else is dropped) the browser may call besides this instance; the default is exactly what the shipped frontend calls today: the lforms service (#800). NLM's clinical-tables is no longer here — its lookups run on the server since #774 — so the browser is refused it even if old code tried. hsts.enabled sends Strict-Transport-Security for a year: turn it on only when every request reaches this instance over HTTPS, because a browser that saw it will refuse plain HTTP to this host until it expires.",
-  "yourphr.web.csp.connect-src": [
-    "https://lforms-service.nlm.nih.gov"
-  ],
+  "_comment_web_security_headers": "yourphr#813 — security response headers, ported from the Go stack (#105, #124). csp.connect-src lists the ORIGINS (https://host[:port], nothing else — anything else is dropped) the browser may call besides this instance; the default is EMPTY: since #774 (lookups on the server) and #800 (lforms removed) the shipped frontend calls no other host, so the browser may connect only to this instance. hsts.enabled sends Strict-Transport-Security for a year: turn it on only when every request reaches this instance over HTTPS, because a browser that saw it will refuse plain HTTP to this host until it expires.",
+  "yourphr.web.csp.connect-src": [],
   "yourphr.web.hsts.enabled": false,
   "yourphr.web.static-dir": "",
   "_comment_environment_name": "What this instance calls itself in the UI's version string — Go's web.environment_name. Published on /api/version as environment_name, and the ONLY source the footer has: the Angular bundle carries no name of its own, because one image serves every instance, so a name compiled in can only be a guess — and on yourphr#673 that guess told a production instance it was a sandbox. Set it either way: YOURPHR_WEB_ENVIRONMENT_NAME in <FAST_STORAGE>/.env, which is how a bare-metal operator running several daemons tells which one answered, or Admin -> Configuration when no variable is set. Deliberately NOT in yourphr.config.env-keys: declared ownership would make the variable the only source and the screen read-only forever, and this key wants both doors. 'demo' on demo.yourphr.org, which is how a visitor tells the two apart; 'yourPHR' is what an instance that has not renamed itself shows.",

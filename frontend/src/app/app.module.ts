@@ -1,5 +1,5 @@
 import { BrowserModule } from '@angular/platform-browser';
-import { NgModule, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { NgModule } from '@angular/core';
 import { DragDropModule } from '@angular/cdk/drag-drop';
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
@@ -77,8 +77,7 @@ import { GetEncryptionKeyWizardComponent } from './pages/get-encryption-key-wiza
         GetEncryptionKeyWizardComponent,
     ],
     exports: [],
-    bootstrap: [AppComponent],
-    schemas: [CUSTOM_ELEMENTS_SCHEMA] //required for lhncbc/lforms (webcomponent)
+    bootstrap: [AppComponent]
     , imports: [FormsModule,
         ReactiveFormsModule,
         BrowserModule,

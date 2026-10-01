@@ -16,7 +16,6 @@
   <meta name="theme-color" content="#ffffff">
 
   <title>YourPHR</title>
-  <link href="./assets/lforms/styles.css" rel="stylesheet">
   <script src="./assets/js/asmcrypto-2.3.2.all.es5.min.js"></script>
   <script>
     var baseHref = "/"
@@ -34,20 +33,9 @@
 
     document.write(`<base href="${baseHref}"/>`);  </script>
 
-  <!-- required for lhncbc/lforms -->
-  <script src="./assets/js/webcomponents/webcomponents-loader.js"></script>
 
-  <script>
-    if (!window.customElements) {
-      document.write('<!--');
-    }
-  </script>
-  <!-- ! DO NOT REMOVE THIS COMMENT, WE NEED ITS CLOSING MARKER -->
 </head>
 <body>
   <app-root></app-root>
-  <script src="./assets/js/lforms/assets/lib/zone.min.js"></script>
-  <script src="./assets/js/lforms/lhc-forms.js"></script>
-  <script src="./assets/js/lforms/fhir/lformsFHIRAll.min.js"></script>
 </body>
 </html>
