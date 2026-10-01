@@ -39,16 +39,16 @@
           with when it was taken. Normal text size: this is the one row that says whether the data is sound. -->
           <div class="dl-row"><div class="k">Integrity check</div><div class="v">
           @if (info.integrity_ok === true) {
-            <span class="badge text-bg-success">Passed</span>
+            <span class="badge fs-6 text-bg-success">Passed</span>
             <div class="mg-t-2">Checked {{ info.integrity_checked_at | date:'medium' }}. Runs again daily.</div>
           } @else if (info.integrity_ok === false) {
-            <span class="badge text-bg-danger">FAILED</span>
+            <span class="badge fs-6 text-bg-danger">FAILED</span>
             <div class="mg-t-2 tx-danger">{{ info.integrity_detail }} — checked {{ info.integrity_checked_at | date:'medium' }}. Keep this database and restore from a backup taken before this date.</div>
           } @else if (info.integrity_running) {
-            <span class="badge text-bg-info">Checking now</span>
+            <span class="badge fs-6 text-bg-info">Checking now</span>
             <div class="mg-t-2">This runs in the background; the instance keeps working.</div>
           } @else {
-            <span class="badge text-bg-secondary">Not checked yet</span>
+            <span class="badge fs-6 text-bg-secondary">Not checked yet</span>
             <div class="mg-t-2">The first check runs shortly after the server starts, then once a day.</div>
           }
         </div></div>
@@ -57,25 +57,28 @@
         <!-- #713: an upgrade that changes how records are indexed leaves older records unfindable by
         name until the index is rebuilt. The server detects it; the operator chooses when. -->
         @if (searchIndex) {
-          <div class="dl-row"><div class="k">Search index</div><div class="v">
+          <!-- #855: the label says where things stand, at body size — no small grey text. -->
+          <div class="dl-row" data-testid="search-index-row"><div class="k">Search index</div><div class="v">
             @if (searchIndex.rebuild.state === 'running') {
-              <span class="badge text-bg-info">Rebuilding{{ searchIndex.rebuild.progress ? ' (' + searchIndex.rebuild.progress + ')' : '' }}</span>
-              <small class="tx-gray-500 d-block mg-t-2">Members see a maintenance page until it finishes.</small>
+              <span class="badge fs-6 text-bg-info">Rebuilding{{ searchIndex.rebuild.progress ? ' (' + searchIndex.rebuild.progress + ')' : '' }}</span>
+              <div class="mg-t-5">Members see a maintenance page until it finishes.</div>
+            } @else if (searchIndex.stale) {
+              <span class="badge fs-6 text-bg-warning">Search index out of date — rebuild needed</span>
+              <div class="mg-t-5">This version finds records by more of what they say. Records stored before the upgrade are not found that way until the index is rebuilt.</div>
             } @else {
-              <span class="badge" [ngClass]="searchIndex.stale ? 'text-bg-warning' : 'text-bg-success'">{{ searchIndex.stale ? 'Needs rebuilding' : 'Current' }}</span>
-              @if (searchIndex.stale) {
-                <small class="tx-gray-500 d-block mg-t-2">Built by an older version, so records stored before the upgrade may not be found by what they say.</small>
-              }
+              <span class="badge fs-6 text-bg-success">Up to date</span>
               @if (searchIndex.rebuild.state === 'done') {
-                <small class="tx-gray-500 d-block mg-t-2">{{ searchIndex.rebuild.summary }} By {{ searchIndex.rebuild.by }}, {{ searchIndex.rebuild.finishedAt | date:'medium' }}.</small>
+                <div class="mg-t-5">Last rebuilt {{ searchIndex.rebuild.finishedAt | date:'medium' }} by {{ searchIndex.rebuild.by }}. {{ searchIndex.rebuild.summary }}</div>
               }
-              @if (searchIndex.rebuild.state === 'failed') {
-                <small class="tx-danger d-block mg-t-2">The last rebuild failed: {{ searchIndex.rebuild.error }}</small>
-              }
-              <button type="button" class="btn btn-sm mg-t-5 d-block" [ngClass]="searchIndex.stale ? 'btn-primary' : 'btn-outline-secondary'" (click)="rebuildSearchIndex()">Rebuild search index</button>
-              @if (rebuildError) {
-                <small class="tx-danger d-block mg-t-2">{{ rebuildError }}</small>
-              }
+            }
+            @if (searchIndex.rebuild.state === 'failed') {
+              <div class="mg-t-5 tx-danger">The last rebuild failed: {{ searchIndex.rebuild.error }}</div>
+            }
+            @if (searchIndex.rebuild.state !== 'running') {
+              <button type="button" class="btn mg-t-10 d-block" [ngClass]="searchIndex.stale ? 'btn-primary' : 'btn-outline-secondary'" (click)="rebuildSearchIndex()">Rebuild search index</button>
+            }
+            @if (rebuildError) {
+              <div class="mg-t-5 tx-danger">{{ rebuildError }}</div>
             }
           </div></div>
         }

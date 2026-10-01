@@ -47,7 +47,7 @@ describe('AdminDatabaseComponent', () => {
   it('shows a stale search index and offers the rebuild', () => {
     expect(component.searchIndex?.stale).toBeTrue();
     const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
-    expect(text).toContain('Needs rebuilding');
+    expect(text).toContain('Search index out of date — rebuild needed');
     expect(text).toContain('Rebuild search index');
   });
 
@@ -66,5 +66,32 @@ describe('AdminDatabaseComponent', () => {
     expect(text).toContain('Passed');
     expect(text).toContain('Runs again daily');
     expect(text).not.toContain('Not checked');
+  });
+
+  // #855: each state says where things stand, at body size.
+  function rowFor(idx: any): HTMLElement {
+    mockApi.getSearchIndex.and.returnValue(of(idx));
+    (component as any).loadSearchIndex();
+    fixture.detectChanges();
+    return (fixture.nativeElement as HTMLElement).querySelector('[data-testid="search-index-row"]') as HTMLElement;
+  }
+
+  it('running: "Rebuilding (account 1 of 2)" and no button', () => {
+    const row = rowFor({builtWith: 0, current: 1, stale: true, rebuild: {state: 'running', progress: 'account 1 of 2'}});
+    expect(row.textContent).toContain('Rebuilding (account 1 of 2)');
+    expect(row.querySelector('button')).toBeNull();
+    component.ngOnDestroy();
+  });
+
+  it('up to date: says so, with when and by whom when it rebuilt since the start', () => {
+    const row = rowFor({builtWith: 1, current: 1, stale: false, rebuild: {state: 'done', by: 'jwilleke', finishedAt: '2026-10-01T12:58:04Z', summary: 'Rebuilt 25,114 records across 2 account(s).'}});
+    expect(row.textContent).toContain('Up to date');
+    expect(row.textContent).toContain('by jwilleke');
+    expect(row.textContent).toContain('Rebuilt 25,114 records');
+  });
+
+  it('no small grey text in the row', () => {
+    const row = rowFor({builtWith: 0, current: 1, stale: true, rebuild: {state: 'idle'}});
+    expect(row.querySelectorAll('small').length).toBe(0);
   });
 });
