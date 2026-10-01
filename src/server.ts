@@ -1344,7 +1344,12 @@ export function createYourPhrServer(options: ServerOptions) {
             // for minutes on every admin page load, long enough to fail the liveness probe and get the
             // pod killed (2026-09-26). The app database is still checked at boot (DatabaseManager). A
             // records check needs to run off the request path; until then the card says so, not 'OK'.
-            integrity_ok: null,
+            // ...so it runs on a worker thread at start and daily (yourphr#856), and this reports the
+            // last result: null until the first check since the start has finished.
+            ...(() => {
+              const integrity = engine.managers.records.integrityStatus(ctx);
+              return {integrity_ok: integrity.ok, integrity_detail: integrity.detail, integrity_checked_at: integrity.checkedAt ?? null, integrity_running: integrity.running};
+            })(),
             backup_destination: backups?.destination() ?? '',
             backups: backups ? (await backups.list(ctx)).map((b) => ({name: b.name, size_bytes: b.sizeBytes, modified: b.modified})) : [],
             schedule: backups?.schedule(),

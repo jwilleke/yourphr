@@ -1077,6 +1077,21 @@ async function main(): Promise<void> {
       notices.map((n) => n.title).join(', '));
   }
 
+  // --- the records integrity check, off the request thread (yourphr#856) ---
+  {
+    const card = async () => ((await (await fetch(`${base}/api/secure/admin/database`, authed(adminToken))).json()) as { data: { integrity_ok: boolean | null; integrity_checked_at: string | null; integrity_running: boolean } }).data;
+    const before = await card();
+    app.engine.managers.records.startIntegrityCheck(ApiContext.system('scheduler', 'scheduler', app.engine));
+    let after = await card();
+    for (let i = 0; i < 100 && after.integrity_ok === null; i++) {
+      await new Promise((r) => setTimeout(r, 50));
+      after = await card();
+    }
+    check('the Database card shows a real integrity result and when it was taken, once the background check has run — not a permanent "Not checked"',
+      before.integrity_ok === null && after.integrity_ok === true && after.integrity_checked_at !== null && after.integrity_running === false,
+      `${JSON.stringify(before)} -> ${JSON.stringify(after)}`);
+  }
+
   // --- maintenance mode (yourphr#714) ---
   {
     const putConfig = (token: string, key: string, value: unknown) =>

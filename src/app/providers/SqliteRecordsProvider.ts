@@ -13,6 +13,7 @@ import { dirname } from 'node:path';
 import { existsSync, statSync } from 'node:fs';
 import { backupFiles, readBackupPayloads, stageInstanceRestore, RECORDS_LEDGER_TABLE, type BackupPayload, type BackupResult, type DatabaseFile } from './sqlite-backup.js';
 import { ftsQuery } from './record-text.js';
+import { quickCheck } from './sqlite-integrity.js';
 import { runMigrations, type Migration, type MigrationReport } from '../../framework/providers/sqlite-migrations.js';
 import { BaseRecordsProvider, type CompactReport, type IndexCondition, type RecordsWriter, type SearchIndexStatus, type StoredRecord } from './BaseRecordsProvider.js';
 
@@ -487,6 +488,10 @@ export class SqliteRecordsProvider extends BaseRecordsProvider {
     // Current only when everyone was rebuilt; one account alone leaves the others as they were.
     if (options.userId === undefined) this.anyDb().pragma(`user_version = ${SEARCH_INDEX_VERSION}`);
     return { accounts: owners.length, records };
+  }
+
+  checkIntegrity(): Promise<{ ok: boolean; detail: string }> {
+    return quickCheck(this.file, this.key);
   }
 
   async integrityOk(): Promise<boolean> {

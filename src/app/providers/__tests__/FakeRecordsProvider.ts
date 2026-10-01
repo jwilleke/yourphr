@@ -142,6 +142,7 @@ export class FakeRecordsProvider extends BaseRecordsProvider {
     return { accounts: new Set([...this.rows.values()].map((r) => r.userId)).size, records: this.rows.size };
   }
   async integrityOk(): Promise<boolean> { return true; }
+  async checkIntegrity(): Promise<{ ok: boolean; detail: string }> { return { ok: true, detail: 'ok' }; }
   storage(): { location: string; sizeBytes: number } { return { location: ':memory:', sizeBytes: 0 }; }
   /** What the last backup carried for other managers (yourphr#631), and what readPayloads hands back. */
   payloads: Record<string, BackupData> = {};

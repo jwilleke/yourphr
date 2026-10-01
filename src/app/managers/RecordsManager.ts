@@ -57,17 +57,30 @@ export interface RecentItem {
 
 const PARAM_NAME = /^[a-z][a-z0-9-]*$/i;
 
-/** The admin-started search index rebuild (yourphr#713), as the Database card shows it. Lives in memory: a restart mid-rebuild leaves the index stale, which the card then says. */
+/** How the last search index rebuild went (yourphr#713), as the Database card shows it. In memory: after a restart it is 'idle' and the version on the file says whether one is needed. */
 export interface SearchIndexRebuild {
   state: 'idle' | 'running' | 'done' | 'failed';
   by?: string;
   startedAt?: string;
   finishedAt?: string;
-  accountsDone: number;
-  accounts: number;
-  records?: number;
+  /** While running: "account 1 of 2". */
+  progress?: string;
+  summary?: string;
   error?: string;
 }
+
+/** The last whole-file integrity check of the records store (yourphr#856). */
+export interface IntegrityStatus {
+  /** null until a check has finished since the server started. */
+  ok: boolean | null;
+  detail: string;
+  checkedAt?: string;
+  running: boolean;
+}
+
+/** Job ids on the background job manager (yourphr#856). */
+export const SEARCH_INDEX_REBUILD_JOB = 'records.search-index.rebuild';
+export const INTEGRITY_CHECK_JOB = 'records.integrity-check';
 
 export class RecordsManager extends BaseManager {
   readonly name = 'records' as const;
@@ -77,7 +90,7 @@ export class RecordsManager extends BaseManager {
   sourceDisplay: (sourceId: string) => Promise<string> | string = () => '';
   /** The server log; set by the app. */
   log: (line: string) => void = () => undefined;
-  private rebuild: SearchIndexRebuild = { state: 'idle', accountsDone: 0, accounts: 0 };
+  private integrity: { ok: boolean; detail: string; checkedAt: string } | undefined;
 
   constructor(engine: Engine, private readonly provider: BaseRecordsProvider, private readonly favoritesProvider?: BaseFavoritesProvider) {
     super(engine);
@@ -85,6 +98,13 @@ export class RecordsManager extends BaseManager {
 
   override async initialize(config: Record<string, unknown> = {}): Promise<void> {
     await this.provider.initialize();
+    // Long work runs as background jobs (yourphr#856) where the instance has the manager; the
+    // contract harnesses that build an engine without it simply cannot start either.
+    if (this.engine.has('backgroundJobs')) {
+      const jobs = this.engine.managers.backgroundJobs;
+      jobs.registerJob({ id: SEARCH_INDEX_REBUILD_JOB, displayName: 'Search index rebuild', where: 'Admin -> Database', run: (progress, ctx) => this.rebuildUnderMaintenance(progress, ctx) });
+      jobs.registerJob({ id: INTEGRITY_CHECK_JOB, displayName: 'Database integrity check', where: 'Admin -> Database', run: () => this.runIntegrityCheck() });
+    }
     await this.favoritesProvider?.initialize();
     await super.initialize(config);
   }
@@ -871,38 +891,45 @@ export class RecordsManager extends BaseManager {
   /** The admin's view: the index's version and the rebuild in progress or last finished. */
   searchIndex(ctx: ApiContext): SearchIndexStatus & { rebuild: SearchIndexRebuild } {
     ctx.require('admin-read');
-    return { ...this.provider.searchIndex(), rebuild: { ...this.rebuild } };
+    const run = this.engine.has('backgroundJobs') ? this.engine.managers.backgroundJobs.latestRun(SEARCH_INDEX_REBUILD_JOB) : undefined;
+    const rebuild: SearchIndexRebuild = !run ? { state: 'idle' } : {
+      state: run.status === 'completed' ? 'done' : run.status === 'failed' ? 'failed' : 'running',
+      by: run.requestedBy,
+      startedAt: run.startedAt.toISOString(),
+      ...(run.completedAt ? { finishedAt: run.completedAt.toISOString() } : {}),
+      ...(run.progress ? { progress: run.progress } : {}),
+      ...(run.result?.summary ? { summary: run.result.summary } : {}),
+      ...(run.result?.error ? { error: run.result.error } : {}),
+    };
+    return { ...this.provider.searchIndex(), rebuild };
   }
 
   /**
-   * Rebuild every account's search index from stored content (yourphr#713), in the background.
+   * Rebuild every account's search index from stored content (yourphr#713), as a background job.
    * Wrapped in maintenance mode (Jim's decision on #713, option A): turned on for the rebuild so no
    * member reads a half-built index, and back off afterwards — unless it was already on, in which
    * case the operator turned it on and it stays on. 409 while one is running.
    */
   startSearchIndexRebuild(ctx: ApiContext): SearchIndexRebuild {
     ctx.require('admin-system');
-    if (this.rebuild.state === 'running') throw new ApiError(409, 'a search index rebuild is already running');
+    if (!this.engine.has('backgroundJobs')) throw new ApiError(500, 'background jobs are not available on this instance');
     if (!this.engine.has('settings')) throw new ApiError(500, 'maintenance mode is not available on this instance (no settings manager)');
-    this.rebuild = { state: 'running', by: ctx.actor, startedAt: new Date().toISOString(), accountsDone: 0, accounts: 0 };
-    void this.runSearchIndexRebuild(ctx);
-    return { ...this.rebuild };
+    if (this.searchIndex(ctx).rebuild.state === 'running') throw new ApiError(409, 'a search index rebuild is already running');
+    this.engine.managers.backgroundJobs.enqueue(SEARCH_INDEX_REBUILD_JOB, ctx);
+    return this.searchIndex(ctx).rebuild;
   }
 
-  private async runSearchIndexRebuild(ctx: ApiContext): Promise<void> {
+  private async rebuildUnderMaintenance(progress: (message: string) => void, ctx: ApiContext): Promise<{ success: boolean; summary?: string; error?: string }> {
     const settings = this.engine.managers.settings;
     const wasOn = this.engine.managers.configuration.getBool(MAINTENANCE_ENABLED_KEY);
-    this.log(`${ctx.actor} started a search index rebuild`);
     try {
       if (!wasOn) settings.configSet(ctx, MAINTENANCE_ENABLED_KEY, true);
       const done = await this.provider.rebuildSearchIndex({
-        onProgress: (accountsDone, accounts) => { this.rebuild = { ...this.rebuild, accountsDone, accounts }; },
+        onProgress: (accountsDone, accounts) => progress(`account ${Math.min(accountsDone + 1, accounts)} of ${accounts}`),
       });
-      this.rebuild = { ...this.rebuild, state: 'done', finishedAt: new Date().toISOString(), records: done.records };
-      this.log(`search index rebuilt: ${done.records} record(s) across ${done.accounts} account(s)`);
+      return { success: true, summary: `Rebuilt ${done.records.toLocaleString('en-US')} records across ${done.accounts} account(s).` };
     } catch (err) {
-      this.rebuild = { ...this.rebuild, state: 'failed', finishedAt: new Date().toISOString(), error: (err as Error).message };
-      this.log(`search index rebuild failed: ${(err as Error).message}`);
+      return { success: false, error: (err as Error).message };
     } finally {
       if (!wasOn) {
         try {
@@ -912,6 +939,37 @@ export class RecordsManager extends BaseManager {
         }
       }
     }
+  }
+
+  /** The admin's view of the last integrity check (yourphr#856). */
+  integrityStatus(ctx: ApiContext): IntegrityStatus {
+    ctx.require('admin-read');
+    const run = this.engine.has('backgroundJobs') ? this.engine.managers.backgroundJobs.latestRun(INTEGRITY_CHECK_JOB) : undefined;
+    const running = run?.status === 'running' || run?.status === 'pending';
+    return this.integrity ? { ...this.integrity, running } : { ok: null, detail: '', running };
+  }
+
+  /**
+   * Start an integrity check of the records store (yourphr#856): the scheduler's call (at boot,
+   * then daily) and an admin's. Returns at once; one runs at a time.
+   */
+  startIntegrityCheck(ctx: ApiContext): void {
+    if (ctx.system === '') ctx.require('admin-system');
+    if (!this.engine.has('backgroundJobs')) return;
+    this.engine.managers.backgroundJobs.enqueue(INTEGRITY_CHECK_JOB, ctx);
+  }
+
+  /** When the last check finished, or undefined — what the scheduler reads to decide whether one is due. */
+  lastIntegrityCheckAt(): Date | undefined {
+    return this.integrity ? new Date(this.integrity.checkedAt) : undefined;
+  }
+
+  private async runIntegrityCheck(): Promise<{ success: boolean; summary?: string; error?: string }> {
+    const result = await this.provider.checkIntegrity();
+    this.integrity = { ...result, checkedAt: new Date().toISOString() };
+    return result.ok
+      ? { success: true, summary: 'The records database passed its integrity check.' }
+      : { success: false, error: `The records database FAILED its integrity check: ${result.detail}. Restore from a backup taken before this date, and keep this one.` };
   }
 
   /** The `reindex` command's door (yourphr#713): no request context, like `compact` — the authority is running a process against the data directory. */

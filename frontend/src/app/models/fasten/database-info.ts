@@ -26,9 +26,12 @@ export interface DatabaseInfo {
   size_bytes: number;
   users: number;
   sources: number;
-  // null = not checked on this request. The check reads the whole records file, so it is not run on
-  // page load; see the note in src/server.ts.
+  // The last whole-file check of the records store (#856). It runs on a worker thread at start and
+  // once a day, never on page load; null until the first one since the start has finished.
   integrity_ok: boolean | null;
+  integrity_detail?: string;            // 'ok', or SQLite's complaints
+  integrity_checked_at?: string | null; // when the last check finished
+  integrity_running?: boolean;
   backup_destination: string;     // resolved folder backups are written to
   backups: BackupFile[];          // backups present there, newest first
   schedule: BackupSettings;       // settable auto-backup settings
@@ -82,9 +85,8 @@ export interface SearchIndexInfo {
     by?: string
     startedAt?: string
     finishedAt?: string
-    accountsDone: number
-    accounts: number
-    records?: number
+    progress?: string   // while running: "account 1 of 2"
+    summary?: string    // when done: "Rebuilt 25,114 records across 2 account(s)."
     error?: string
   }
 }

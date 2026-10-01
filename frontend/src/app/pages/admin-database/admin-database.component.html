@@ -35,12 +35,21 @@
             }
           </div></div>
           <div class="dl-row"><div class="k">Size on disk</div><div class="v">{{ humanSize(info.size_bytes) }}</div></div>
+          <!-- #856: a real result from the background check (worker thread, at start and daily),
+          with when it was taken. Normal text size: this is the one row that says whether the data is sound. -->
           <div class="dl-row"><div class="k">Integrity check</div><div class="v">
-          @if (info.integrity_ok === null) {
-            <span class="badge text-bg-secondary">Not checked</span>
-            <small class="tx-gray-500 d-block mg-t-2">A full check reads every page of the database and would pause this instance, so it is not run when this page loads.</small>
+          @if (info.integrity_ok === true) {
+            <span class="badge text-bg-success">Passed</span>
+            <div class="mg-t-2">Checked {{ info.integrity_checked_at | date:'medium' }}. Runs again daily.</div>
+          } @else if (info.integrity_ok === false) {
+            <span class="badge text-bg-danger">FAILED</span>
+            <div class="mg-t-2 tx-danger">{{ info.integrity_detail }} — checked {{ info.integrity_checked_at | date:'medium' }}. Keep this database and restore from a backup taken before this date.</div>
+          } @else if (info.integrity_running) {
+            <span class="badge text-bg-info">Checking now</span>
+            <div class="mg-t-2">This runs in the background; the instance keeps working.</div>
           } @else {
-            <span class="badge" [ngClass]="info.integrity_ok ? 'text-bg-success' : 'text-bg-danger'">{{ info.integrity_ok ? 'OK' : 'FAILED' }}</span>
+            <span class="badge text-bg-secondary">Not checked yet</span>
+            <div class="mg-t-2">The first check runs shortly after the server starts, then once a day.</div>
           }
         </div></div>
         <div class="dl-row"><div class="k">Users</div><div class="v">{{ info.users }}</div></div>
@@ -50,15 +59,15 @@
         @if (searchIndex) {
           <div class="dl-row"><div class="k">Search index</div><div class="v">
             @if (searchIndex.rebuild.state === 'running') {
-              <span class="badge text-bg-info">Rebuilding</span>
-              <small class="tx-gray-500 d-block mg-t-2">Account {{ searchIndex.rebuild.accountsDone }} of {{ searchIndex.rebuild.accounts || '…' }}. Members see a maintenance page until it finishes.</small>
+              <span class="badge text-bg-info">Rebuilding{{ searchIndex.rebuild.progress ? ' (' + searchIndex.rebuild.progress + ')' : '' }}</span>
+              <small class="tx-gray-500 d-block mg-t-2">Members see a maintenance page until it finishes.</small>
             } @else {
               <span class="badge" [ngClass]="searchIndex.stale ? 'text-bg-warning' : 'text-bg-success'">{{ searchIndex.stale ? 'Needs rebuilding' : 'Current' }}</span>
               @if (searchIndex.stale) {
                 <small class="tx-gray-500 d-block mg-t-2">Built by an older version, so records stored before the upgrade may not be found by what they say.</small>
               }
               @if (searchIndex.rebuild.state === 'done') {
-                <small class="tx-gray-500 d-block mg-t-2">Rebuilt {{ searchIndex.rebuild.records }} records by {{ searchIndex.rebuild.by }}, {{ searchIndex.rebuild.finishedAt | date:'medium' }}.</small>
+                <small class="tx-gray-500 d-block mg-t-2">{{ searchIndex.rebuild.summary }} By {{ searchIndex.rebuild.by }}, {{ searchIndex.rebuild.finishedAt | date:'medium' }}.</small>
               }
               @if (searchIndex.rebuild.state === 'failed') {
                 <small class="tx-danger d-block mg-t-2">The last rebuild failed: {{ searchIndex.rebuild.error }}</small>

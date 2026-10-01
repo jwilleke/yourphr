@@ -7,6 +7,7 @@ import { ConfigurationManager } from '../../../framework/ConfigurationManager.js
 import { PolicyManager } from '../../../framework/managers/PolicyManager.js';
 import { MAINTENANCE_ENABLED_KEY, SettingsManager } from '../../../framework/managers/SettingsManager.js';
 import { FakeConfigProvider } from '../../../framework/providers/__tests__/FakeConfigProvider.js';
+import { BackgroundJobManager } from '../../../framework/managers/BackgroundJobManager.js';
 
 /** A provider whose rebuild waits until released, so the test can look while it runs. */
 class SlowRebuild extends FakeRecordsProvider {
@@ -36,6 +37,7 @@ beforeEach(async () => {
   engine.register('configuration', new ConfigurationManager(engine, new FakeConfigProvider(), { env: {} }))
     .register('policy', new PolicyManager(engine))
     .register('settings', new SettingsManager(engine, {}))
+    .register('backgroundJobs', new BackgroundJobManager(engine))
     .register('records', records);
   await engine.initialize();
   admin = ApiContext.from({ username: 'ops', role: 'admin' }, engine);
@@ -44,7 +46,7 @@ beforeEach(async () => {
 
 const status = (fn: () => unknown): number => { try { fn(); } catch (err) { return (err as ApiError).status; } return 0; };
 
-describe('the search index rebuild (yourphr#713) — wrapped in maintenance mode', () => {
+describe('the search index rebuild (yourphr#713) — a background job (yourphr#856) wrapped in maintenance mode', () => {
   it('is the admin-system caller\'s alone; a member may not even look', () => {
     expect(status(() => records.startSearchIndexRebuild(member))).toBe(403);
     expect(status(() => records.searchIndex(member))).toBe(403);
@@ -59,7 +61,7 @@ describe('the search index rebuild (yourphr#713) — wrapped in maintenance mode
     provider.finish();
     await settle();
     const after = records.searchIndex(admin).rebuild;
-    expect(after).toMatchObject({ state: 'done', by: 'ops', records: 17 });
+    expect(after).toMatchObject({ state: 'done', by: 'ops', summary: 'Rebuilt 17 records across 2 account(s).' });
     expect(engine.managers.configuration.getBool(MAINTENANCE_ENABLED_KEY)).toBe(false);
   });
 
@@ -81,5 +83,23 @@ describe('the search index rebuild (yourphr#713) — wrapped in maintenance mode
     await settle();
     expect(records.searchIndex(admin).rebuild).toMatchObject({ state: 'failed', error: 'disk full' });
     expect(engine.managers.configuration.getBool(MAINTENANCE_ENABLED_KEY)).toBe(false);
+  });
+});
+
+describe('the integrity check (yourphr#856) — a background job', () => {
+  it('reports nothing until a check has run, then the result and when', async () => {
+    expect(records.integrityStatus(admin)).toEqual({ ok: null, detail: '', running: false });
+    records.startIntegrityCheck(admin);
+    await settle();
+    const after = records.integrityStatus(admin);
+    expect(after).toMatchObject({ ok: true, detail: 'ok', running: false });
+    expect(after.checkedAt).toBeDefined();
+    expect(records.lastIntegrityCheckAt()).toBeInstanceOf(Date);
+  });
+
+  it('a member may neither start one nor read the result; the scheduler may start one', () => {
+    expect(status(() => records.startIntegrityCheck(member))).toBe(403);
+    expect(status(() => records.integrityStatus(member))).toBe(403);
+    expect(status(() => records.startIntegrityCheck(ApiContext.system('scheduler', 'scheduler', engine)))).toBe(0);
   });
 });

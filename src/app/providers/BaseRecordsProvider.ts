@@ -90,6 +90,11 @@ export abstract class BaseRecordsProvider {
    * then give the space back. Run with the server stopped — it is synchronous and takes the file.
    */
   abstract compact(options?: { dryRun?: boolean; vacuum?: boolean }): Promise<CompactReport>;
+  /**
+   * The whole-file integrity check (yourphr#856), off the request thread: it reads every page, and
+   * on the server's own thread it would stop every request until it finished.
+   */
+  abstract checkIntegrity(): Promise<{ ok: boolean; detail: string }>;
   /** Which derivation built the search index, and whether that is older than this build's (yourphr#713). */
   abstract searchIndex(): SearchIndexStatus;
   /**

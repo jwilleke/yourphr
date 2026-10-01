@@ -36,6 +36,7 @@ import { SqliteCatalogProvider } from './app/providers/SqliteCatalogProvider.js'
 import { Engine } from './framework/Engine.js';
 import { ConfigurationManager } from './framework/ConfigurationManager.js';
 import { MAINTENANCE_ENABLED_KEY, SettingsManager, coerceToShippedType } from './framework/managers/SettingsManager.js';
+import { BackgroundJobManager } from './framework/managers/BackgroundJobManager.js';
 import { PolicyManager } from './framework/managers/PolicyManager.js';
 export { coerceToShippedType };
 import { ApiContext } from './framework/ApiContext.js';
@@ -458,6 +459,8 @@ export async function openStores(dataDir: string, env: Record<string, string | u
   engine.register('settings', new SettingsManager(engine, { log: (line) => appLog.info(line), dataDir })); // yourphr#618, #619
   engine.register('email', new EmailManager(engine, (line) => appLog.info(line))); // yourphr#536: outbound mail, off until an admin turns it on
   engine.register('notifications', new NotificationManager(engine, (line) => appLog.info(line))); // yourphr#793: banners, and email escalation through the mail manager
+  // yourphr#856: ngdpbase's job runner — the search index rebuild and the integrity check run on it.
+  engine.register('backgroundJobs', new BackgroundJobManager(engine, (line) => appLog.info(line)));
   engine.register('database', database);
   // Audit (yourphr#614) is REQUIRED: a provider this stack does not have, or one that is not healthy, refuses the boot.
   engine.register('audit', new AuditManager(engine, auditProviderFor(config.getString('yourphr.audit.provider'), db)));
@@ -600,7 +603,14 @@ export async function assembleApp(dataDir: string, options: { seeds?: CatalogWri
     (paused) => { if (paused.length) appLog.info(`devices: paused ${paused.length} inactive device permission(s)`); },
     (err: Error) => appLog.error(`device inactivity check failed: ${err.message}`)
   );
-  const hourly = () => { void checkBackupAlerts(); void remindDevices(); void checkInactiveDevices(); };
+  // The records file's integrity check (yourphr#856): at start, then once a day, on a worker thread
+  // so it never stalls a request. A failure notifies the admins; a pass is shown on Admin -> Database.
+  const checkIntegrityIfDue = () => {
+    const last = records.lastIntegrityCheckAt();
+    if (last && Date.now() - last.getTime() < 24 * 3_600_000) return;
+    records.startIntegrityCheck(scheduler);
+  };
+  const hourly = () => { void checkBackupAlerts(); void remindDevices(); void checkInactiveDevices(); checkIntegrityIfDue(); };
   const alertTimer = options.workerIntervalMs === undefined ? undefined : setInterval(hourly, 3_600_000);
   alertTimer?.unref?.();
   if (alertTimer) hourly();
