@@ -10,6 +10,8 @@ import type { Engine } from '../Engine.js';
 import { ApiError, type ApiContext } from '../ApiContext.js';
 import type { AccessEvent, BaseAuditProvider } from '../providers/BaseAuditProvider.js';
 
+import { ACCOUNT_EVENT_CATEGORIES } from '../../account/index.js';
+import { boundedNumber } from '../ConfigurationManager.js';
 declare module '../Engine.js' {
   interface ManagerRegistry {
     audit: AuditManager;
@@ -48,6 +50,25 @@ export class AuditManager extends BaseManager {
   async list(ctx: ApiContext): Promise<AccessEvent[]> {
     ctx.requireAuthenticated();
     return this.provider.list(ctx.username);
+  }
+
+  /**
+   * The person trims their own log (yourphr#507, Jim 2026-09-30). Only entries older than the
+   * protected window (`yourphr.audit.trim-protected-days`, 90 by default) can go, so recent activity
+   * — the part an intruder would want to hide — always stays. No re-authentication, by decision.
+   * The trim itself is recorded, as an entry no later trim removes. Never through a delegated
+   * credential: an agent or a device cannot edit the log of what it did.
+   */
+  async trim(ctx: ApiContext, now = new Date()): Promise<{ removed: number; before: string }> {
+    ctx.requireAuthenticated();
+    if (ctx.viaToken) throw new ApiError(403, 'only you can trim your access log — sign in to do this');
+    const days = this.engine.has('configuration')
+      ? boundedNumber(this.engine.managers.configuration.getInt('yourphr.audit.trim-protected-days'), 90, 'yourphr.audit.trim-protected-days', 1)
+      : 90;
+    const before = new Date(now.getTime() - days * 86_400_000).toISOString().slice(0, 10);
+    const removed = await this.provider.trim(ctx.username, before, ACCOUNT_EVENT_CATEGORIES.logTrimmed);
+    await this.record(ctx, ACCOUNT_EVENT_CATEGORIES.logTrimmed, now);
+    return { removed, before };
   }
 
   /** Buckets recorded elsewhere, for the account the migration principal acts for; an existing bucket is kept. */

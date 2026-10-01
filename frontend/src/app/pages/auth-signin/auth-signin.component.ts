@@ -109,7 +109,8 @@ export class AuthSigninComponent implements OnInit {
           // actively misleading: the credential may be perfectly good, and the user retries — which
           // extends the window they are locked out for. It also cost a real debugging session when
           // the E2E suite hit the cap and the failure read as a login regression (#481).
-          this.errorMsg = "too many sign-in attempts — wait a minute and try again"
+          // The wording Jim chose (yourphr#507): the same for any username, so it reveals nothing.
+          this.errorMsg = "Too many attempts. Wait a few minutes and try again."
         } else if(err?.name){
           this.errorMsg = "username or password is incorrect"
         } else{

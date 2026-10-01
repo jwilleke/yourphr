@@ -68,6 +68,17 @@ export const CREDENTIAL_EVENT_CATEGORIES = {
 } as const;
 
 /**
+ * Account events in the person's own access log (yourphr#507, Jim 2026-09-30): their sign-ins, the
+ * moment repeated failures paused sign-ins to their account, and their own trimming of the log.
+ * Like credential events, deliberately NOT access categories, so no credential can be scoped to one.
+ */
+export const ACCOUNT_EVENT_CATEGORIES = {
+  signedIn: 'Signed in',
+  signInsPaused: 'Sign-ins paused after repeated failed attempts',
+  logTrimmed: 'Access log trimmed',
+} as const;
+
+/**
  * What a connected device may be granted (yourphr#807): its one WRITE, and the one read that
  * write needs. Deliberately NOT in ACCESS_CATEGORIES, so an ordinary agent token can never be
  * minted with them, and a device grant can never carry a read of the record. The same rule holds

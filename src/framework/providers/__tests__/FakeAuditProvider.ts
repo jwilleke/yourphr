@@ -28,4 +28,9 @@ export class FakeAuditProvider extends BaseAuditProvider {
       .map(({ owner: _o, ...e }) => e);
   }
   async removeForOwner(owner: string): Promise<void> { for (const [k, r] of this.rows) if (r.owner === owner) this.rows.delete(k); }
+  async trim(owner: string, beforeDay: string, keepCategory: string): Promise<number> {
+    let n = 0;
+    for (const [k, r] of this.rows) if (r.owner === owner && r.day < beforeDay && r.category !== keepCategory) { this.rows.delete(k); n++; }
+    return n;
+  }
 }

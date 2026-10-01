@@ -18,7 +18,7 @@ import { ConfigurationManager } from '../src/framework/ConfigurationManager.js';
 import { FileConfigProvider } from '../src/framework/providers/FileConfigProvider.js';
 import { PolicyManager } from '../src/framework/managers/PolicyManager.js';
 import { UsersManager } from '../src/framework/managers/UsersManager.js';
-import { SessionsManager, GENERIC_SIGNIN_ERROR, decodeToken, issueToken, clientIp, Throttle } from '../src/framework/managers/SessionsManager.js';
+import { SessionsManager, GENERIC_SIGNIN_ERROR, THROTTLED_SIGNIN_ERROR, decodeToken, issueToken, clientIp, Throttle } from '../src/framework/managers/SessionsManager.js';
 import { SqliteUsersProvider } from '../src/framework/providers/SqliteUsersProvider.js';
 import { PasswordAuthProvider, hashPassword, verifyPassword, isLegacyBcrypt } from '../src/framework/providers/PasswordAuthProvider.js';
 import { BaseAuthProvider, type AuthResult } from '../src/framework/providers/BaseAuthProvider.js';
@@ -124,7 +124,9 @@ async function main(): Promise<void> {
     await t.users.createUser(t.sys, 'bob', PASSWORD);
     for (let i = 0; i < 3; i++) await t.sessions.signIn('alice', { password: 'wrong-but-long-enough' }, { remoteAddr: '203.0.113.5' }, 100 + i);
     const locked = await t.sessions.signIn('alice', { password: PASSWORD }, { remoteAddr: '203.0.113.9' }, 110);
-    check('three failures lock the ACCOUNT — even the right password from another address is refused', !locked.ok && locked.error === GENERIC_SIGNIN_ERROR);
+    // yourphr#507 (Jim, 2026-09-30): a locked account answers "Too many attempts…" — the same for
+    // any username, real or not, so it still reveals nothing — instead of the generic wrong-password text.
+    check('three failures lock the ACCOUNT — even the right password from another address is refused, with the throttled answer', !locked.ok && locked.error === THROTTLED_SIGNIN_ERROR);
     const bobFromSameIp = await t.sessions.signIn('bob', { password: PASSWORD }, { remoteAddr: '203.0.113.5' }, 111);
     check('the IP that failed three times is locked too: bob cannot sign in from it', !bobFromSameIp.ok);
     const bobElsewhere = await t.sessions.signIn('bob', { password: PASSWORD }, { remoteAddr: '203.0.113.77' }, 112);

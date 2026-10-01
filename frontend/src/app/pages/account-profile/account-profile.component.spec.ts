@@ -19,7 +19,7 @@ describe('AccountProfileComponent', () => {
     api = jasmine.createSpyObj('FastenApiService', [
       'getCurrentUser', 'deleteAccount', 'getSummary', 'getResources', 'changePassword',
       'getLegalConsent', 'grantLegalConsent', 'revokeLegalConsent', 'signOutEverywhere',
-      'getAccessLog',
+      'getAccessLog', 'trimAccessLog',
     ]);
     api.signOutEverywhere.and.returnValue(of(true));
     api.getAccessLog.and.returnValue(of([]));
@@ -152,5 +152,21 @@ describe('AccountProfileComponent', () => {
     component.changePassword();
     expect(component.pwError).toBe('current password is incorrect');
     expect(component.pwSuccess).toBeFalse();
+  });
+
+  // yourphr#507: the person trims their own log; it asks first, then says what it did.
+  it('trims older access-log entries only after the person confirms, and says how many went', () => {
+    api.trimAccessLog.and.returnValue(of({removed: 3, before: '2026-07-03'}));
+    component.trimAccessLog();
+    expect(api.trimAccessLog).toHaveBeenCalled();
+    expect(component.trimResult).toBe('Removed 3 entries from before 2026-07-03.');
+    expect(component.confirmingTrim).toBeFalse();
+    expect(api.getAccessLog).toHaveBeenCalled(); // the table reloads
+  });
+
+  it('says so when there was nothing old enough to trim', () => {
+    api.trimAccessLog.and.returnValue(of({removed: 0, before: '2026-07-03'}));
+    component.trimAccessLog();
+    expect(component.trimResult).toBe('Nothing older than 2026-07-03 to remove.');
   });
 });

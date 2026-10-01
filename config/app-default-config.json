@@ -73,6 +73,8 @@
   "yourphr.demo.admin.username": "demoadmin",
   "yourphr.demo.admin.password": "",
   "yourphr.audit.provider": "sqlite",
+  "_comment_audit_trim": "yourphr#507 — a person may trim their own access log (Profile → Access log), but only entries older than this many days; recent activity always stays. The trim itself is recorded and never trimmed.",
+  "yourphr.audit.trim-protected-days": 90,
   "yourphr.sources.client.provider": "smart",
   "yourphr.glossary.provider": "medlineplus",
   "_comment_lookups_npi": "yourphr#774 — looking up a clinician in the US NPI registry when a patient adds a practitioner. \"null\" (the default): nothing leaves this instance and the name field is plain text. \"nlm\": this SERVER asks NLM's Clinical Table Search through the guarded HTTP client — the person's browser and IP never reach NLM, but what they type as the name does, which is the lookup.",

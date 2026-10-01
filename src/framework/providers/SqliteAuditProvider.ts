@@ -50,4 +50,8 @@ export class SqliteAuditProvider extends BaseAuditProvider {
   async removeForOwner(owner: string): Promise<void> {
     this.db.prepare('DELETE FROM access_events WHERE user_id = ?').run(owner);
   }
+
+  async trim(owner: string, beforeDay: string, keepCategory: string): Promise<number> {
+    return this.db.prepare('DELETE FROM access_events WHERE user_id = ? AND day < ? AND category != ?').run(owner, beforeDay, keepCategory).changes;
+  }
 }

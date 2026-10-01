@@ -448,6 +448,7 @@ export async function openStores(dataDir: string, env: Record<string, string | u
     throttle: { maxFailures: config.getInt('yourphr.auth.throttle.max-failures'), windowSeconds: config.getInt('yourphr.auth.throttle.window-seconds') },
     trustedProxies: config.getStringList('yourphr.auth.trusted-proxies'),
     factors: config.getStringList('yourphr.auth.factors'),
+    log: (line) => appLog.warn(line),
   });
   // 6. The engine: managers in validated dependency order (yourphr#608). Configuration first,
   // then Records over the PHI-storage provider. The other stores join as their own children land.

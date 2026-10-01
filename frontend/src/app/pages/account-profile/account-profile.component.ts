@@ -30,6 +30,10 @@ export class AccountProfileComponent implements OnInit {
   accessLog: AccessEvent[] = [];
   accessLogLoading = false;
   accessLogError = '';
+  /** Trimming (yourphr#507): asked once before it happens, then what it did. */
+  confirmingTrim = false;
+  trimming = false;
+  trimResult = '';
 
   // Legal consent (#427)
   legalConsent: LegalConsentStatus | null = null;
@@ -73,6 +77,25 @@ export class AccountProfileComponent implements OnInit {
       error: () => {
         this.accessLogError = 'Could not load the access log.';
         this.accessLogLoading = false;
+      },
+    });
+  }
+
+  trimAccessLog(): void {
+    this.trimming = true;
+    this.fastenApi.trimAccessLog().subscribe({
+      next: (r) => {
+        this.trimming = false;
+        this.confirmingTrim = false;
+        this.trimResult = r.removed === 0
+          ? `Nothing older than ${r.before} to remove.`
+          : `Removed ${r.removed} ${r.removed === 1 ? 'entry' : 'entries'} from before ${r.before}.`;
+        this.loadAccessLog();
+      },
+      error: () => {
+        this.trimming = false;
+        this.confirmingTrim = false;
+        this.trimResult = 'Could not trim the access log.';
       },
     });
   }

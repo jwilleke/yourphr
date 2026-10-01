@@ -25,4 +25,10 @@ export abstract class BaseAuditProvider {
   /** The complete log of one owner, newest day first — unfiltered, unedited. */
   abstract list(owner: string): Promise<AccessEvent[]>;
   abstract removeForOwner(owner: string): Promise<void>;
+  /**
+   * The owner trims their own log (yourphr#507): every bucket dated before `beforeDay` (YYYY-MM-DD)
+   * goes, EXCEPT those of `keepCategory` — the record of trims, which a trim never removes.
+   * Returns how many buckets went.
+   */
+  abstract trim(owner: string, beforeDay: string, keepCategory: string): Promise<number>;
 }

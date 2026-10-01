@@ -171,6 +171,13 @@ export class FastenApiService {
       .pipe(map((response: ResponseWrapper) => (response.data || []) as AccessEvent[]));
   }
 
+  // The person trims their own access log (yourphr#507): entries older than the instance's protected
+  // window go; recent ones always stay, and the trim itself is recorded.
+  trimAccessLog(): Observable<{ removed: number, before: string }> {
+    return this._httpClient.post<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/account/access-log/trim`, {})
+      .pipe(map((response: ResponseWrapper) => response.data));
+  }
+
   // Ends every session for the current user, this browser included (#508). The server bumps the
   // user's token generation, which invalidates every JWT already issued — the only way to evict a
   // stolen session, since session tokens are otherwise stateless.

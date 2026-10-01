@@ -319,6 +319,22 @@
                       </table>
                     </div>
                   }
+                  <!-- Trimming (yourphr#507): only older entries; recent activity always stays, and the trim is recorded. -->
+                  <div class="mg-t-15" data-testid="access-log-trim">
+                    @if (trimResult) {
+                      <p class="tx-13 mg-b-10">{{ trimResult }}</p>
+                    }
+                    @if (!confirmingTrim) {
+                      <button type="button" class="btn btn-sm btn-outline-secondary" (click)="confirmingTrim = true; trimResult = ''">Remove older entries</button>
+                    } @else {
+                      <p class="tx-13 mg-b-10">
+                        This removes entries older than the window this instance protects (90 days unless your administrator changed it).
+                        Recent entries always stay, and the removal itself is recorded here.
+                      </p>
+                      <button type="button" class="btn btn-sm btn-danger me-2" [disabled]="trimming" (click)="trimAccessLog()">{{ trimming ? 'Removing…' : 'Remove them' }}</button>
+                      <button type="button" class="btn btn-sm btn-link" [disabled]="trimming" (click)="confirmingTrim = false">Cancel</button>
+                    }
+                  </div>
                 </div>
               </div>
             </div>

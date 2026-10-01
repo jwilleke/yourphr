@@ -16,7 +16,8 @@
 import { createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
 import { BaseManager, type BackupData } from '../BaseManager.js';
 import type { Engine } from '../Engine.js';
-import { ApiError, type ApiContext, type Principal } from '../ApiContext.js';
+import { ApiContext, ApiError, type Principal } from '../ApiContext.js';
+import { ACCOUNT_EVENT_CATEGORIES } from '../../account/index.js';
 import type { BaseAuthProvider } from '../providers/BaseAuthProvider.js';
 import { boundedNumber } from '../ConfigurationManager.js';
 
@@ -28,6 +29,12 @@ declare module '../Engine.js' {
 
 /** The one message for every sign-in failure (yourphr#104). */
 export const GENERIC_SIGNIN_ERROR = 'invalid username or password';
+/**
+ * The answer once the throttle trips (yourphr#507/#840, Jim 2026-09-30). The SAME for every username
+ * that trips it, real or not — the throttle counts per typed name either way — so it says nothing
+ * about which accounts exist, while telling the real person not to keep retrying a good password.
+ */
+export const THROTTLED_SIGNIN_ERROR = 'Too many attempts. Wait a few minutes and try again.';
 
 export interface SessionClaims { u: string; g: number; iat: number; exp: number; cap: number }
 export interface SessionPolicy { slidingSeconds: number; absoluteSeconds: number }
@@ -92,6 +99,8 @@ export interface SessionsOptions {
   trustedProxies?: string[];
   /** The all-of factor list (`yourphr.auth.factors`); each names a registered provider. Default ['password']. */
   factors?: string[];
+  /** Operator log lines (an account event that could not be recorded). */
+  log?: (line: string) => void;
 }
 
 export class SessionsManager extends BaseManager {
@@ -103,6 +112,8 @@ export class SessionsManager extends BaseManager {
   private readonly trustedProxies: string[];
   private readonly factors: string[];
   private readonly providers = new Map<string, BaseAuthProvider>();
+  private readonly throttlePolicy: ThrottlePolicy;
+  private readonly log: (line: string) => void;
 
   constructor(engine: Engine, providers: BaseAuthProvider[], options: SessionsOptions = {}) {
     super(engine);
@@ -130,10 +141,12 @@ export class SessionsManager extends BaseManager {
       slidingSeconds: atLeastOne(session?.slidingSeconds, DefaultSessionPolicy.slidingSeconds, 'yourphr.auth.session.sliding-seconds'),
       absoluteSeconds: atLeastOne(session?.absoluteSeconds, DefaultSessionPolicy.absoluteSeconds, 'yourphr.auth.session.absolute-seconds'),
     };
-    this.throttle = new Throttle({
+    this.throttlePolicy = {
       maxFailures: atLeastOne(throttle?.maxFailures, DefaultThrottlePolicy.maxFailures, 'yourphr.auth.throttle.max-failures'),
       windowSeconds: atLeastOne(throttle?.windowSeconds, DefaultThrottlePolicy.windowSeconds, 'yourphr.auth.throttle.window-seconds'),
-    });
+    };
+    this.throttle = new Throttle(this.throttlePolicy);
+    this.log = options.log ?? (() => undefined);
     this.trustedProxies = options.trustedProxies ?? [];
     this.factors = options.factors?.length ? options.factors : ['password'];
   }
@@ -155,35 +168,54 @@ export class SessionsManager extends BaseManager {
     credentials: Record<string, string>,
     request: { remoteAddr: string; xff?: string },
     nowSeconds = Math.floor(Date.now() / 1000)
-  ): Promise<{ ok: true; token: string } | { ok: false; error: string }> {
+  ): Promise<{ ok: true; token: string } | { ok: false; error: string; throttled?: { retryAfterSeconds: number } }> {
     const ip = clientIp(request.remoteAddr, request.xff, this.trustedProxies);
     const accountKey = `acct:${username}`;
     const ipKey = `ip:${ip}`;
     if (this.throttle.isLimited(accountKey, nowSeconds) || this.throttle.isLimited(ipKey, nowSeconds)) {
-      return { ok: false, error: GENERIC_SIGNIN_ERROR }; // "you are throttled" on a chosen username is enumeration by another door
+      return { ok: false, error: THROTTLED_SIGNIN_ERROR, throttled: { retryAfterSeconds: this.throttlePolicy.windowSeconds } };
     }
     const users = this.engine.managers.users;
     const stored = await users.record(username);
+    const fail = async (): Promise<{ ok: false; error: string }> => {
+      const wasPaused = this.throttle.isLimited(accountKey, nowSeconds);
+      this.throttle.recordFailure(accountKey, nowSeconds);
+      this.throttle.recordFailure(ipKey, nowSeconds);
+      // The significant event reaches the account's owner (yourphr#507): the failure that pauses
+      // sign-ins, once, into THEIR access log. Never for an account that does not exist — there is
+      // nobody to tell, and the system audit log (#840) is where those attempts belong.
+      if (stored && !wasPaused && this.throttle.isLimited(accountKey, nowSeconds)) {
+        await this.recordAccountEvent(username, ACCOUNT_EVENT_CATEGORIES.signInsPaused, nowSeconds);
+      }
+      return { ok: false, error: GENERIC_SIGNIN_ERROR };
+    };
     let generation: number | undefined;
     for (const factor of this.factors) {
       const provider = this.providers.get(factor)!;
       const result = await provider.authenticate(username, credentials[factor] ?? '', stored, nowSeconds);
-      if (!result.ok) {
-        this.throttle.recordFailure(accountKey, nowSeconds);
-        this.throttle.recordFailure(ipKey, nowSeconds);
-        return { ok: false, error: GENERIC_SIGNIN_ERROR };
-      }
+      if (!result.ok) return fail();
       if (result.rehash) await users.rehash(username, result.rehash);
       generation = result.tokenGeneration;
     }
-    if (!stored || generation === undefined) {
-      this.throttle.recordFailure(accountKey, nowSeconds);
-      this.throttle.recordFailure(ipKey, nowSeconds);
-      return { ok: false, error: GENERIC_SIGNIN_ERROR };
-    }
+    if (!stored || generation === undefined) return fail();
     this.throttle.clear(accountKey);
     users.onSignedIn(username);
+    await this.recordAccountEvent(username, ACCOUNT_EVENT_CATEGORIES.signedIn, nowSeconds);
     return { ok: true, token: this.mint(username, generation, nowSeconds) };
+  }
+
+  /**
+   * An account event in the person's own access log (yourphr#507). Best effort, unlike a read of the
+   * record: a sign-in that cannot be logged still signs in — refusing it would lock the operator out
+   * of the very instance whose log needs fixing. A failure is logged for the operator.
+   */
+  private async recordAccountEvent(username: string, category: string, nowSeconds: number): Promise<void> {
+    if (!this.engine.has('audit')) return;
+    try {
+      await this.engine.managers.audit.record(ApiContext.system(username, username, this.engine), category, new Date(nowSeconds * 1000));
+    } catch (err) {
+      this.log(`sessions: could not record "${category}" for an account: ${(err as Error).message}`);
+    }
   }
 
   /**

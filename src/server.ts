@@ -506,6 +506,13 @@ export function createYourPhrServer(options: ServerOptions) {
           xff: typeof req.headers['x-forwarded-for'] === 'string' ? req.headers['x-forwarded-for'] : undefined,
         });
         if (!result.ok) {
+          // The throttle answers 429 with Retry-After (yourphr#507): the same for any username, so it
+          // reveals nothing, and the app tells the person to wait rather than retry a good password.
+          if (result.throttled) {
+            res.setHeader('Retry-After', String(result.throttled.retryAfterSeconds));
+            send(res, 429, {success: false, error: result.error});
+            return;
+          }
           send(res, 401, {success: false, error: result.error});
           return;
         }
@@ -668,6 +675,12 @@ export function createYourPhrServer(options: ServerOptions) {
       // (yourphr#619), and the shape both render into is Go's, because the page reads it.
       if (auth && url.pathname.startsWith('/api/secure/account/')) {
         const users = engine.managers.users;
+        // The person trims their own log (yourphr#507): entries older than the protected window.
+        if (engine.has('audit') && url.pathname === '/api/secure/account/access-log/trim' && req.method === 'POST') {
+          if (engine.has('demo')) engine.managers.demo.refuseWrite(ctx, 'trimming the access log');
+          send(res, 200, {success: true, data: await engine.managers.audit.trim(ctx)});
+          return;
+        }
         if (engine.has('audit') && url.pathname === '/api/secure/account/access-log' && req.method === 'GET') {
           send(res, 200, {success: true, data: await engine.managers.audit.list(ctx)});
           return;
