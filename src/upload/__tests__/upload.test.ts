@@ -114,4 +114,19 @@ describe('isCdaDocument (yourphr#786)', () => {
     expect(isCdaDocument(buf('<SubmitObjectsRequest/>'))).toBe(false);
     expect(isCdaDocument(buf('{"resourceType":"Bundle"}'))).toBe(false);
   });
+
+  it('answers in linear time on a crafted prolog that made the old regex backtrack exponentially (yourphr#825)', () => {
+    // CodeQL js/redos: "<?" then many "?><?". The old pattern took ~4x longer per two repetitions
+    // (28 ms at 22); 64 KB allows thousands. The scan must answer at once, and correctly.
+    const attack = '<?' + '?><?'.repeat(16_000);
+    const started = Date.now();
+    expect(isCdaDocument(buf(attack))).toBe(false);
+    expect(isCdaDocument(buf(attack + '?><ClinicalDocument/>'))).toBe(true);
+    expect(Date.now() - started).toBeLessThan(500);
+  });
+
+  it('still skips whitespace, several processing instructions, comments and a DOCTYPE before the root', () => {
+    expect(isCdaDocument(buf('  <?xml version="1.0"?>\n<?xml-stylesheet href="cda.xsl"?>\n<!DOCTYPE x>\n<!-- a --><!-- b -->\n<ClinicalDocument/>'))).toBe(true);
+    expect(isCdaDocument(buf('<?xml version="1.0"?><!-- never closed <ClinicalDocument/>'))).toBe(false);
+  });
 });

@@ -45,7 +45,22 @@ export function looksLikeCda(bytes: Buffer): boolean {
 export function isCdaDocument(bytes: Buffer): boolean {
   const text = bytes.subarray(0, 64 * 1024).toString('utf8').replace(/^\uFEFF/, '');
   // The XML declaration, comments, processing instructions and a DOCTYPE may come before the root.
-  const m = /^(?:\s|<\?[\s\S]*?\?>|<!--[\s\S]*?-->|<!DOCTYPE[^>]*>)*<(?:[A-Za-z_][\w.-]*:)?([A-Za-z_][\w.-]*)/.exec(text);
+  // Skipped by a single forward scan (yourphr#825): the regex this replaces backtracked
+  // exponentially on a crafted prolog ("<?" then many "?><?"), so one uploaded file could pin the
+  // server. Each step below moves forward, so the whole check is linear in the 64 KB it reads.
+  let at = 0;
+  for (;;) {
+    while (at < text.length && /\s/.test(text[at]!)) at++;
+    const skip = (open: string, close: string): boolean => {
+      if (!text.startsWith(open, at)) return false;
+      const end = text.indexOf(close, at + open.length);
+      at = end < 0 ? text.length : end + close.length;
+      return true;
+    };
+    if (skip('<?', '?>') || skip('<!--', '-->') || skip('<!DOCTYPE', '>')) continue;
+    break;
+  }
+  const m = /^<(?:[A-Za-z_][\w.-]*:)?([A-Za-z_][\w.-]*)/.exec(text.slice(at, at + 256));
   return m?.[1] === 'ClinicalDocument';
 }
 
