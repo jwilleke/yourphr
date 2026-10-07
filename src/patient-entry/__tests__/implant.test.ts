@@ -75,6 +75,23 @@ describe('patient-entered implants', () => {
     }, NOW, context)).toThrow('cannot be before');
   });
 
+  it.each(['2024-02-30', 'not a date', '2024-06-10T09:00:00Z', 123, null])('rejects invalid manufacture and expiration dates: %s', date => {
+    for (const field of ['implant_manufacture_date', 'implant_expiration_date']) {
+      expect(() => buildPatientRecord({...request, [field]: date}, NOW, context)).toThrow('Enter a valid implant');
+    }
+  });
+
+  it('preserves valid leap-day dates and omits empty manufacture and expiration dates', () => {
+    expect(buildPatientRecord({
+      ...request, implant_manufacture_date: '2024-02-29', implant_expiration_date: '2028-02-29',
+    }, NOW, context).resource).toMatchObject({manufactureDate: '2024-02-29', expirationDate: '2028-02-29'});
+    const {resource} = buildPatientRecord({
+      ...request, implant_manufacture_date: '', implant_expiration_date: '',
+    }, NOW, context);
+    expect(resource).not.toHaveProperty('manufactureDate');
+    expect(resource).not.toHaveProperty('expirationDate');
+  });
+
   it('requires a name, patient and supported status', () => {
     expect(() => buildPatientRecord({kind: 'implant'}, NOW, context)).toThrow('Name the implant');
     expect(() => buildPatientRecord(request, NOW)).toThrow('patient record is required');

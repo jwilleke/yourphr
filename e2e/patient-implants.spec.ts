@@ -63,6 +63,8 @@ test('implant lifecycle dates are optional and invalid chronology is rejected by
   expect(device).not.toHaveProperty('contained');
   for (const dates of [
     {implant_insertion_date: '2024-02-30'},
+    {implant_manufacture_date: '2024-02-30'},
+    {implant_expiration_date: 'not a date'},
     {implant_insertion_date: '2024-06-10', implant_removal_date: '2020-04-20'},
   ]) {
     const refused = await page.request.post(`${BASE}/api/secure/resource/patient-entry`, {data: {...request, ...dates}});

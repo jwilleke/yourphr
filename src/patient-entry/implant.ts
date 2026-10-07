@@ -31,10 +31,10 @@ export function buildPatientImplant(req: PatientEntryRequest, _now = new Date(),
   const lotNumber = (req.implant_lot_number ?? '').trim();
   if (lotNumber) device.lotNumber = lotNumber;
 
-  const manufactureDate = (req.implant_manufacture_date ?? '').trim();
+  const manufactureDate = validDate(req.implant_manufacture_date, 'implant manufacture');
   if (manufactureDate) device.manufactureDate = manufactureDate;
 
-  const expirationDate = (req.implant_expiration_date ?? '').trim();
+  const expirationDate = validDate(req.implant_expiration_date, 'implant expiration');
   if (expirationDate) device.expirationDate = expirationDate;
 
   stamp(device, []);
