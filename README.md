@@ -52,6 +52,7 @@ It's pretty basic right now, but it's designed with a easily extensible core aro
 - Self-hosted
 - Designed for families, not Clinics (unlike OpenEMR and other popular EMR systems)
 - Supports the Medical industry's (semi-standard) FHIR protocol
+- Manual implant entry is for devices inside the body, placed by a clinician. It creates a patient-linked PGHD FHIR R4 `Device` with the US Core implantable-device profile. Optional identifiers and manufacture/expiration dates are preserved as stated. Placement and removal dates become contained PGHD `Procedure` records whose `focalDevice.manipulated` references the containing Device (`#`); they save, export and delete together, and their dates appear on the Device card. Unknown dates remain absent. Implants are excluded from the measuring-device picker; external equipment belongs to the measurement path. Profile tagging expresses the intended mapping, not a claim of complete profile or terminology validation.
 - (Future) Multi-user support for household/family use
 - Condition specific user Dashboards & tracking for diagnostic tests
 - (Future) Vaccination & condition specific recommendations using NIH/WHO clinical care guidelines (HEDIS/CQL)

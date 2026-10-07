@@ -3,9 +3,9 @@
     <div>
       <h4 class="mg-b-5"><i class="fas fa-heart-pulse"></i>&nbsp; Add a record</h4>
       <p class="tx-gray-500 mg-b-0">
-        Measurements you take at home, an allergy, or a medication you take (patient-generated data). Each is stored
+        Measurements you take at home, an allergy, a medication you take, or an implant (patient-generated data). Each is stored
         as the kind of FHIR record it is &mdash; a vital as an Observation, an allergy as an AllergyIntolerance, a
-        medication as a MedicationStatement &mdash; marked <strong>patient-reported</strong>, and shown with your
+        medication as a MedicationStatement, an implant as a Device &mdash; marked <strong>patient-reported</strong>, and shown with your
         other records.
       </p>
     </div>
@@ -45,6 +45,7 @@
             <option value="vital">A measurement</option>
             <option value="allergy">An allergy</option>
             <option value="medication">A medication</option>
+            <option value="implant">An implant</option>
           </select>
         </div>
 
@@ -63,6 +64,54 @@
               <option value="active">Yes, I take it now</option>
               <option value="stopped">No, I stopped</option>
             </select>
+          </div>
+        }
+
+        @if (kind === 'implant') {
+          <div class="col-12 mg-b-15">
+            An implant is inside your body, put there by a clinician, such as a stent, pacemaker, or artificial joint.
+            For external equipment such as hearing aids, Dexcom/Libre CGMs, or CPAP machines, choose
+            <strong>A measurement</strong> and name it under <strong>Measured with</strong>.
+          </div>
+          <div class="col-md-3 mg-b-15">
+            <label class="form-label" for="implant-insertion-date">When was it put in? <span class="tx-gray-500 tx-11">(optional)</span></label>
+            <input id="implant-insertion-date" type="date" class="form-control" [(ngModel)]="implantInsertionDate" name="implantInsertionDate" />
+          </div>
+          <div class="col-md-3 mg-b-15">
+            <label class="form-label" for="implant-removal-date">When was it removed? <span class="tx-gray-500 tx-11">(if removed, optional)</span></label>
+            <input id="implant-removal-date" type="date" class="form-control" [(ngModel)]="implantRemovalDate" name="implantRemovalDate" [min]="implantInsertionDate" />
+          </div>
+          <div class="col-md-3 mg-b-15">
+            <label class="form-label" for="implant-status">Status</label>
+            <select id="implant-status" class="form-control" [(ngModel)]="implantStatus" name="implantStatus">
+              <option value="unknown">Unknown / not stated</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+          </div>
+          <div class="col-md-3 mg-b-15">
+            <label class="form-label" for="implant-udi">UDI device identifier <span class="tx-gray-500 tx-11">(optional)</span></label>
+            <input id="implant-udi" type="text" class="form-control" [(ngModel)]="implantDeviceIdentifier" name="implantDeviceIdentifier" />
+          </div>
+          <div class="col-md-3 mg-b-15">
+            <label class="form-label" for="implant-distinct-id">Distinct identifier <span class="tx-gray-500 tx-11">(optional)</span></label>
+            <input id="implant-distinct-id" type="text" class="form-control" [(ngModel)]="implantDistinctIdentifier" name="implantDistinctIdentifier" />
+          </div>
+          <div class="col-md-3 mg-b-15">
+            <label class="form-label" for="implant-serial">Serial number <span class="tx-gray-500 tx-11">(optional)</span></label>
+            <input id="implant-serial" type="text" class="form-control" [(ngModel)]="implantSerialNumber" name="implantSerialNumber" />
+          </div>
+          <div class="col-md-3 mg-b-15">
+            <label class="form-label" for="implant-lot">Lot number <span class="tx-gray-500 tx-11">(optional)</span></label>
+            <input id="implant-lot" type="text" class="form-control" [(ngModel)]="implantLotNumber" name="implantLotNumber" />
+          </div>
+          <div class="col-md-3 mg-b-15">
+            <label class="form-label" for="implant-manufacture-date">Manufacture date <span class="tx-gray-500 tx-11">(optional)</span></label>
+            <input id="implant-manufacture-date" type="date" class="form-control" [(ngModel)]="implantManufactureDate" name="implantManufactureDate" />
+          </div>
+          <div class="col-md-3 mg-b-15">
+            <label class="form-label" for="implant-expiration-date">Expiration date <span class="tx-gray-500 tx-11">(optional)</span></label>
+            <input id="implant-expiration-date" type="date" class="form-control" [(ngModel)]="implantExpirationDate" name="implantExpirationDate" />
           </div>
         }
 
@@ -124,10 +173,12 @@
           </div>
         }
 
+        @if (kind !== 'implant') {
         <div class="col-md-3 mg-b-15">
           <label class="form-label" for="vital-date">Date</label>
           <input id="vital-date" type="date" class="form-control" [(ngModel)]="effectiveDate" name="effectiveDate" />
         </div>
+        }
 
         <div class="col-12 mg-t-10">
           <button type="submit" class="btn btn-az-primary" [disabled]="saving">
@@ -136,11 +187,14 @@
           <a routerLink="/medical-history" class="btn btn-outline-secondary mg-l-10">Cancel</a>
           <p class="tx-12 tx-gray-500 mg-t-15 mg-b-0">
             @if (isVital) { <span>Default units: {{ defaultUnitHint }}. </span> }
-            @if (!isVital) {
+            @if (kind === 'allergy' || kind === 'medication') {
               <span>
                 Stored in your words. Nothing is matched to a coded substance or medicine yet, so it waits for you to
                 confirm it before it joins your records.
               </span>
+            }
+            @if (kind === 'implant') {
+              <span>Stored as a US Core Implantable Device. Identifiers and placement/removal dates are saved only when you provide them.</span>
             }
             This does not send data to your providers — only this YourPHR instance.
           </p>

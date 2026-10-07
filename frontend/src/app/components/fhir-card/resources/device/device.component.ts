@@ -76,6 +76,11 @@ export class DeviceComponent implements OnInit, FhirCardComponentInterface {
         data: this.displayModel?.get_expiry,
         enabled: this.displayModel?.has_expiry,
       },
+      ...(this.displayModel?.procedures ?? []).map(procedure => ({
+        label: procedure.name,
+        data: procedure.date,
+        enabled: true,
+      })),
     ]
   }
 

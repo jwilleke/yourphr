@@ -8,6 +8,7 @@ import { FakeFavoritesProvider } from '../../providers/__tests__/FakeFavoritesPr
 import { ConfigurationManager } from '../../../framework/ConfigurationManager.js';
 import { PolicyManager } from '../../../framework/managers/PolicyManager.js';
 import { FakeConfigProvider } from '../../../framework/providers/__tests__/FakeConfigProvider.js';
+import { US_CORE_IMPLANTABLE_DEVICE } from '../../../patient-entry/shared.js';
 
 const LOINC = 'http://loinc.org';
 const SNOMED = 'http://snomed.info/sct';
@@ -184,6 +185,25 @@ describe('RecordsManager — the one door, scoped to whoever is asking', () => {
     expect(await records.deviceReference(alice, '', '')).toBe(''); // naming none is an answer
     // A device that is not theirs is a client mistake, not a fact to record.
     await expect(records.deviceReference(bob, cuff.id, '')).rejects.toMatchObject({ status: 400 });
+  });
+
+  it('excludes implants from measuring devices even when named, including versioned profiles', async () => {
+    const cuff = await records.deviceFor(alice, 'Omron cuff');
+    for (const [id, profile] of [
+      ['implant', US_CORE_IMPLANTABLE_DEVICE],
+      ['versioned-implant', `${US_CORE_IMPLANTABLE_DEVICE}|9.0.0`],
+    ] as const) {
+      provider.seed('alice', 'source-7', {
+        resourceType: 'Device', id,
+        deviceName: [{name: 'Omron cuff', type: 'user-friendly-name'}],
+        meta: {profile: [profile]},
+      } as Resource);
+      await expect(records.deviceReference(alice, id, '')).rejects.toMatchObject({status: 400});
+    }
+    expect(await records.ownDevices(alice)).toEqual([{id: cuff.id, name: 'Omron cuff'}]);
+    expect((await records.deviceFor(alice, 'Omron cuff')).id).toBe(cuff.id);
+    expect(await records.ownDevices(bob)).toEqual([]);
+    expect(await records.list(alice, 'Device')).toHaveLength(3);
   });
 
   // yourphr#761: sameness is asserted by the person, prefilled from the evidence, never inferred.

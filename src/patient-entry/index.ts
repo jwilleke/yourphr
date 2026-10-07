@@ -28,6 +28,7 @@
  */
 import type { Observation, Resource } from '@medplum/fhirtypes';
 import { buildPatientAllergy } from './allergy.js';
+import { buildPatientImplant } from './implant.js';
 import { buildPatientMedication } from './medication.js';
 import {
   type BuiltRecord,
@@ -133,6 +134,8 @@ export interface BuiltEntry {
 const KINDS = new Map<string, (req: PatientEntryRequest, now: Date, context: PatientEntryContext) => BuiltRecord>([
   ['allergy', buildPatientAllergy],
   ['allergies', buildPatientAllergy],
+  ['implant', buildPatientImplant],
+  ['implants', buildPatientImplant],
   ['medication', buildPatientMedication],
   ['medications', buildPatientMedication],
 ]);

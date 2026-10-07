@@ -41,6 +41,71 @@ describe('PatientEntryComponent', () => {
     expect(component.successMsg).toContain('Body weight');
   });
 
+  it('submits an implant with only its stated identifiers and lifecycle dates, then clears the draft', () => {
+    component.kind = 'implant';
+    component.name = 'Synthetic coronary stent';
+    component.implantStatus = 'inactive';
+    component.implantDeviceIdentifier = '00844588003288';
+    component.implantSerialNumber = 'SYNTHETIC-456';
+    component.implantInsertionDate = '2020-04-20';
+    component.implantRemovalDate = '2024-06-10';
+    component.submit();
+    const payload = api.createPatientEntry.calls.mostRecent().args[0];
+    expect(payload).toEqual({
+      kind: 'implant', name: 'Synthetic coronary stent', effective_date_time: undefined,
+      implant_status: 'inactive', implant_device_identifier: '00844588003288',
+      implant_serial_number: 'SYNTHETIC-456', implant_distinct_identifier: undefined,
+      implant_lot_number: undefined, implant_manufacture_date: undefined, implant_expiration_date: undefined,
+      implant_insertion_date: '2020-04-20', implant_removal_date: '2024-06-10',
+    });
+    expect(component.name).toBe('');
+    expect(component.implantInsertionDate).toBe('');
+    expect(component.implantRemovalDate).toBe('');
+    expect(component.implantSerialNumber).toBe('');
+  });
+
+  it('asks only about implants and leaves optional dates unspecified', () => {
+    component.kind = 'implant';
+    fixture.detectChanges();
+    expect(component.nameLabel).toBe('What implant is it?');
+    expect(fixture.nativeElement.textContent).toContain('inside your body');
+    expect(fixture.nativeElement.textContent).toContain('Measured with');
+    expect(fixture.nativeElement.querySelector('#implant-insertion-date')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('#implant-removal-date')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('#vital-date')).toBeNull();
+    component.name = 'Synthetic stent';
+    component.submit();
+    const payload = api.createPatientEntry.calls.mostRecent().args[0];
+    expect(payload.implant_insertion_date).toBeUndefined();
+    expect(payload.implant_removal_date).toBeUndefined();
+  });
+
+  it('refuses removal before placement and keeps the draft', () => {
+    component.kind = 'implant';
+    component.name = 'Synthetic stent';
+    component.implantInsertionDate = '2024-06-10';
+    component.implantRemovalDate = '2020-04-20';
+    component.submit();
+    expect(api.createPatientEntry).not.toHaveBeenCalled();
+    expect(component.error).toContain('cannot be before');
+    expect(component.name).toBe('Synthetic stent');
+    expect(component.saving).toBeFalse();
+  });
+
+  it('requires an implant name and retains implant fields after a failed save', () => {
+    component.kind = 'implant';
+    component.submit();
+    expect(api.createPatientEntry).not.toHaveBeenCalled();
+    expect(component.error).toBe('Name the implant.');
+    api.createPatientEntry.and.returnValue(throwError(() => new Error('Unavailable')));
+    component.name = 'Synthetic stent';
+    component.implantSerialNumber = 'SYNTHETIC-456';
+    component.submit();
+    expect(component.name).toBe('Synthetic stent');
+    expect(component.implantSerialNumber).toBe('SYNTHETIC-456');
+    expect(component.saving).toBeFalse();
+  });
+
   // yourphr#696: half a reading is a fact. The form no longer refuses it — the server keeps what
   // was measured and asks the person to confirm it. Only an empty reading is refused.
   it('sends half a blood pressure rather than refusing it, and says what is waiting', () => {

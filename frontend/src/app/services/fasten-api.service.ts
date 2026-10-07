@@ -858,6 +858,15 @@ export class FastenApiService {
     device?: string
     device_name?: string
     effective_date_time?: string
+    implant_status?: string
+    implant_device_identifier?: string
+    implant_distinct_identifier?: string
+    implant_serial_number?: string
+    implant_lot_number?: string
+    implant_manufacture_date?: string
+    implant_expiration_date?: string
+    implant_insertion_date?: string
+    implant_removal_date?: string
   }): Observable<{resource_type: string, source_resource_id: string, source_id: string, sort_title: string, needs_review?: string[]}> {
     return this._httpClient.post<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/resource/patient-entry`, {
       kind: payload.kind || 'vital',

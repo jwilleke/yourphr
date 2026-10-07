@@ -13,6 +13,7 @@
 import type { Bundle, Resource } from '@medplum/fhirtypes';
 import { randomUUID } from 'node:crypto';
 import { NEEDS_REVIEW, PGHD_TAG, RECORD_ORIGIN, withPghdTag } from '../../patient-entry/index.js';
+import { US_CORE_IMPLANTABLE_DEVICE } from '../../patient-entry/shared.js';
 import { IDENTITY_ASSERTION, demographicsOf, evidenceFor, identifierConflicts, labelFor, type IdentityAnswer, type SourceIdentity } from './identity.js';
 import type { SearchRequest, WithId } from '@medplum/core';
 import { BaseManager, type BackupData } from '../../framework/BaseManager.js';
@@ -567,6 +568,7 @@ export class RecordsManager extends BaseManager {
   async ownDevices(ctx: ApiContext): Promise<{ id: string; name: string }[]> {
     const manual = `source-${(await this.engine.managers.sources.manualSource(ctx)).id}`;
     return this.chartOnly(await this.provider.list(this.who(ctx), { resourceType: 'Device', sourceId: manual }))
+      .filter((held) => !held.resource.meta?.profile?.some((profile) => profile.split('|')[0] === US_CORE_IMPLANTABLE_DEVICE))
       .map((held) => ({
         id: held.id,
         name: ((held.resource as { deviceName?: { name?: string }[] }).deviceName ?? []).map((n) => n.name ?? '').find((n) => n !== '') ?? '',

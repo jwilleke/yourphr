@@ -4,6 +4,7 @@ import {CodableConceptModel, hasValue} from '../datatypes/codable-concept-model'
 import {ReferenceModel} from '../datatypes/reference-model';
 import {FastenDisplayModel} from '../fasten/fasten-display-model';
 import {FastenOptions} from '../fasten/fasten-options';
+import type {Device, Procedure} from 'fhir/r4';
 
 export class DeviceModel extends FastenDisplayModel {
   code: CodableConceptModel | undefined
@@ -24,6 +25,7 @@ export class DeviceModel extends FastenDisplayModel {
   lot_number: string | undefined
   serial_number: string | undefined
   manufacture_date: string | undefined
+  procedures: {name: string; date: string}[] = []
 
   constructor(fhirResource: any, fhirVersion?: fhirVersions, fastenOptions?: FastenOptions) {
     super(fastenOptions)
@@ -68,7 +70,15 @@ export class DeviceModel extends FastenDisplayModel {
     this.has_safety = hasValue(this.safety);
   };
 
-  r4DTO(fhirResource:any){
+  r4DTO(fhirResource: Device){
+    this.procedures = (fhirResource.contained ?? [])
+      .filter((resource): resource is Procedure => resource.resourceType === 'Procedure')
+      .filter(procedure => procedure.focalDevice?.some(device => device.manipulated.reference === '#')
+        && procedure.status === 'completed' && !!procedure.performedDateTime)
+      .map(procedure => ({
+        name: procedure.code?.text || procedure.code?.coding?.[0]?.display || 'Procedure',
+        date: procedure.performedDateTime!,
+      }));
     // R4 udiCarrier is 0..* (array). Some fixtures/handlers pass a single object — accept both.
     // Prefer first carrier's deviceIdentifier (US Core Implantable Device MS).
     this.get_udi =

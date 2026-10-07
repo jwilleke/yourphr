@@ -15,7 +15,7 @@ import type { Resource } from '@medplum/fhirtypes';
  * client posts it; `name` is the same field under a name that makes sense for an allergy.
  */
 export interface PatientEntryRequest {
-  /** `vital`, `allergy` or `medication`. Anything else is kept and flagged rather than refused. */
+  /** `vital`, `allergy`, `medication` or `implant`. Anything else is kept and flagged rather than refused. */
   kind?: string;
   vital?: string;
   name?: string;
@@ -25,6 +25,15 @@ export interface PatientEntryRequest {
   unit?: string;
   /** Medication only: whether they are taking it. Absent means they did not say. */
   status?: string;
+  implant_status?: string;
+  implant_device_identifier?: string;
+  implant_distinct_identifier?: string;
+  implant_serial_number?: string;
+  implant_lot_number?: string;
+  implant_manufacture_date?: string;
+  implant_expiration_date?: string;
+  implant_insertion_date?: string;
+  implant_removal_date?: string;
   /** A device of theirs, by id, that this reading came from (yourphr#764). */
   device?: string;
   /** A device by the name they call it. The server reuses one of that name or makes it. */
@@ -57,6 +66,17 @@ export interface BuiltRecord {
 
 export const LOINC = 'http://loinc.org';
 export const UCUM = 'http://unitsofmeasure.org';
+export const US_CORE_IMPLANTABLE_DEVICE = 'http://hl7.org/fhir/us/core/StructureDefinition/us-core-implantable-device';
+
+export function validDate(value: unknown, field: string): string | undefined {
+  if (value === undefined || value === '') return undefined;
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)
+    || !Number.isFinite(Date.parse(value))
+    || new Date(value).toISOString().slice(0, 10) !== value) {
+    throw new PatientEntryError(`Enter a valid ${field} date (YYYY-MM-DD).`);
+  }
+  return value;
+}
 
 /** meta.source for a record this instance's own UI wrote, as Go marked it. */
 export const PATIENT_ENTRY_SOURCE = 'yourphr://patient-ui';

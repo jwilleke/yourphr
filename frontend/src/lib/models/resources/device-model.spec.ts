@@ -11,6 +11,27 @@ describe('DeviceModel', () => {
   });
 
   describe('with r4', () => {
+    it('reads completed contained procedures linked to this Device, not unrelated procedures', () => {
+      const procedure = {
+        resourceType: 'Procedure', status: 'completed',
+        focalDevice: [{manipulated: {reference: '#'}}],
+        code: {text: 'Implant placement'}, performedDateTime: '2020-04-20',
+      };
+      const model = new DeviceModel({
+        resourceType: 'Device',
+        contained: [
+          procedure,
+          {...procedure, code: {text: 'Implant removal'}, performedDateTime: '2024-06-10'},
+          {...procedure, status: 'not-done'},
+          {...procedure, focalDevice: [{manipulated: {reference: 'Device/other'}}]},
+          {...procedure, performedDateTime: undefined},
+        ],
+      });
+      expect(model.procedures).toEqual([
+        {name: 'Implant placement', date: '2020-04-20'},
+        {name: 'Implant removal', date: '2024-06-10'},
+      ]);
+    });
 
     it('should parse example1.json', () => {
       const expected = new DeviceModel({})

@@ -10,7 +10,7 @@ import {extractErrorFromResponse} from '../../../lib/utils/error_extract';
  *
  * The kinds offered here are exactly the kinds the server can store in a record type of their own:
  * a home vital as an Observation, an allergy as an AllergyIntolerance, a medication as a
- * MedicationStatement. Offering a kind the server would have to reshape would be offering to
+ * MedicationStatement, an implant as a Device. Offering a kind the server would have to reshape would be offering to
  * misfile it.
  */
 @Component({
@@ -21,7 +21,7 @@ import {extractErrorFromResponse} from '../../../lib/utils/error_extract';
   templateUrl: './patient-entry.component.html',
 })
 export class PatientEntryComponent implements OnInit {
-  kind: 'vital' | 'allergy' | 'medication' = 'vital';
+  kind: 'vital' | 'allergy' | 'medication' | 'implant' = 'vital';
   /**
    * What measured it (#764). '' means they named no device, which is the honest answer and not a
    * default; '__new' reveals the box for one they have not named here before.
@@ -33,6 +33,15 @@ export class PatientEntryComponent implements OnInit {
   name = '';
   /** Medication only. Empty means they did not say, and the record says so rather than guessing. */
   medicationStatus: '' | 'active' | 'stopped' = '';
+  implantStatus: 'active' | 'inactive' | 'unknown' = 'unknown';
+  implantDeviceIdentifier = '';
+  implantDistinctIdentifier = '';
+  implantSerialNumber = '';
+  implantLotNumber = '';
+  implantManufactureDate = '';
+  implantExpirationDate = '';
+  implantInsertionDate = '';
+  implantRemovalDate = '';
   vital: 'body_weight' | 'heart_rate' | 'body_temperature' | 'oxygen_saturation' | 'blood_pressure' = 'body_weight';
   value: number | null = null;
   systolic: number | null = null;
@@ -72,6 +81,7 @@ export class PatientEntryComponent implements OnInit {
   }
 
   get nameLabel(): string {
+    if (this.kind === 'implant') return 'What implant is it?';
     return this.kind === 'allergy' ? 'What are you allergic to?' : 'Which medication?';
   }
 
@@ -92,7 +102,7 @@ export class PatientEntryComponent implements OnInit {
     this.needsReview = [];
     this.saving = true;
 
-    const payload: any = {
+    const payload: Parameters<FastenApiService['createPatientEntry']>[0] = {
       kind: this.kind,
       effective_date_time: this.effectiveDate || undefined,
     };
@@ -102,10 +112,28 @@ export class PatientEntryComponent implements OnInit {
       // about it is guessed: what they typed is what is stored (#763).
       if (!this.name.trim()) {
         this.saving = false;
-        this.error = this.kind === 'allergy' ? 'Name what you are allergic to.' : 'Name the medication.';
+        this.error = this.kind === 'implant' ? 'Name the implant.'
+          : this.kind === 'allergy' ? 'Name what you are allergic to.' : 'Name the medication.';
         return;
       }
       payload.name = this.name.trim();
+      if (this.kind === 'implant') {
+        payload.implant_status = this.implantStatus;
+        payload.implant_device_identifier = this.implantDeviceIdentifier.trim() || undefined;
+        payload.implant_distinct_identifier = this.implantDistinctIdentifier.trim() || undefined;
+        payload.implant_serial_number = this.implantSerialNumber.trim() || undefined;
+        payload.implant_lot_number = this.implantLotNumber.trim() || undefined;
+        payload.implant_manufacture_date = this.implantManufactureDate || undefined;
+        payload.implant_expiration_date = this.implantExpirationDate || undefined;
+        payload.implant_insertion_date = this.implantInsertionDate || undefined;
+        payload.implant_removal_date = this.implantRemovalDate || undefined;
+        payload.effective_date_time = undefined;
+        if (this.implantInsertionDate && this.implantRemovalDate && this.implantRemovalDate < this.implantInsertionDate) {
+          this.error = 'The removal date cannot be before the implant was put in.';
+          this.saving = false;
+          return;
+        }
+      }
       if (this.kind === 'medication' && this.medicationStatus) {
         payload.status = this.medicationStatus;
       }
@@ -146,7 +174,7 @@ export class PatientEntryComponent implements OnInit {
     this.send(payload);
   }
 
-  private send(payload: any): void {
+  private send(payload: Parameters<FastenApiService['createPatientEntry']>[0]): void {
     this.api.createPatientEntry(payload).subscribe({
       next: (data) => {
         this.saving = false;
@@ -163,6 +191,17 @@ export class PatientEntryComponent implements OnInit {
         this.systolic = null;
         this.diastolic = null;
         this.name = '';
+        if (payload.kind === 'implant') {
+          this.implantStatus = 'unknown';
+          this.implantDeviceIdentifier = '';
+          this.implantDistinctIdentifier = '';
+          this.implantSerialNumber = '';
+          this.implantLotNumber = '';
+          this.implantManufactureDate = '';
+          this.implantExpirationDate = '';
+          this.implantInsertionDate = '';
+          this.implantRemovalDate = '';
+        }
         // A device named here is one they can pick next time, so the list is refreshed rather than
         // left a request behind.
         if (payload.device_name) {
