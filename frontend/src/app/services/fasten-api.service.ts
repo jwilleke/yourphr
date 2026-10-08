@@ -834,7 +834,7 @@ export class FastenApiService {
 
   getResourceBySourceId(sourceId: string, resourceId: string): Observable<ResourceFhir> {
 
-    return this._httpClient.get<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/resource/fhir/${sourceId}/${resourceId}`)
+    return this._httpClient.get<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/resource/fhir/${encodeURIComponent(sourceId)}/${encodeURIComponent(resourceId)}`)
       .pipe(
         map((response: ResponseWrapper) => {
           return response.data as ResourceFhir

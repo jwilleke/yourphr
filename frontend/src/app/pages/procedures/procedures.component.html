@@ -37,7 +37,7 @@
               <td><strong>{{ name(p) }}</strong></td>
               <td>{{ categoryLabel(p) }}</td>
               <td>@if (date(p); as d) {
-                <span>{{ d | date }}</span>
+                <span>{{ displayDate(d) }}</span>
               } @else {
                 <span class="tx-gray-400">—</span>
               }</td>

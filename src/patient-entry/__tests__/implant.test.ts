@@ -7,6 +7,41 @@ const context = {subject: 'Patient/self-1'};
 const request = {kind: 'implant', name: 'Synthetic coronary stent'};
 
 describe('patient-entered implants', () => {
+  it.each(['2024', '2024-02', '2024-02-29'])('preserves %s precision for every implant date', date => {
+    const {resource} = buildPatientRecord({
+      ...request, implant_insertion_date: date, implant_removal_date: date,
+      implant_manufacture_date: date, implant_expiration_date: date,
+    }, NOW, context);
+    expect(resource).toMatchObject({
+      manufactureDate: date, expirationDate: date,
+      contained: [{performedDateTime: date}, {performedDateTime: date}],
+    });
+  });
+
+  it.each(['0000', '2024-00', '2024-13', '2024-1', '2023-02-29', '1900-02-29', '2024-04-31', ' 2024'])('rejects malformed or impossible partial dates: %s', date => {
+    for (const field of ['implant_insertion_date', 'implant_removal_date', 'implant_manufacture_date', 'implant_expiration_date']) {
+      expect(() => buildPatientRecord({...request, [field]: date}, NOW, context)).toThrow('Enter a valid implant');
+    }
+  });
+
+  it.each([
+    ['2024', '2024-01-01'], ['2024-06', '2024'], ['2024-06-30', '2024-06'],
+  ])('does not infer chronology for overlapping %s and %s', (placement, removal) => {
+    expect(() => buildPatientRecord({
+      ...request, implant_insertion_date: placement, implant_removal_date: removal,
+      implant_manufacture_date: placement, implant_expiration_date: removal,
+    }, NOW, context)).not.toThrow();
+  });
+
+  it.each([['2024', '2023'], ['2024-06', '2024-05'], ['2024-03-01', '2024-02']])('rejects provably reversed %s and %s', (placement, removal) => {
+    expect(() => buildPatientRecord({
+      ...request, implant_insertion_date: placement, implant_removal_date: removal,
+    }, NOW, context)).toThrow('cannot be before');
+    expect(() => buildPatientRecord({
+      ...request, implant_manufacture_date: placement, implant_expiration_date: removal,
+    }, NOW, context)).toThrow('cannot be before');
+  });
+
   it('creates a patient-linked PGHD Device with the stated identifiers, not invented codes', () => {
     const {resource, sortTitle, review} = buildPatientRecord({
       ...request, implant_status: 'active', implant_device_identifier: '00844588003288',

@@ -1171,7 +1171,7 @@ export function createYourPhrServer(options: ServerOptions) {
       }
       const provMatch = url.pathname.match(/^\/api\/secure\/resource\/provenance\/([^/]+)\/([^/]+)$/);
       if (provMatch && req.method === 'GET') {
-        const p = await engine.managers.records.provenance(ctx, provMatch[1]!, provMatch[2]!);
+        const p = await engine.managers.records.provenance(ctx, decodeURIComponent(provMatch[1]!), decodeURIComponent(provMatch[2]!));
         if (!p) {
           send(res, 404, {success: false, error: 'not found'});
           return;
@@ -1686,7 +1686,7 @@ export function createYourPhrServer(options: ServerOptions) {
       // GET /api/secure/resource/fhir/:sourceId/:resourceId — the detail page
       const detail = url.pathname.match(/^\/api\/secure\/resource\/fhir\/([^/]+)\/([^/]+)$/);
       if (detail && req.method === 'GET') {
-        send(res, 200, {success: true, data: attributed(await engine.managers.records.detail(ctx, detail[2]!))});
+        send(res, 200, {success: true, data: attributed(await engine.managers.records.detail(ctx, decodeURIComponent(detail[2]!)))});
         return;
       }
       // DELETE on the same path (yourphr#771). The first segment here is the resource TYPE, not a

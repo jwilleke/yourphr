@@ -3,7 +3,7 @@
     <div>
       <h6 class="card-title">{{displayModel?.display}}</h6>
       @if (displayModel?.performed_datetime || displayModel?.performed_period_start) {
-        <p class="card-text tx-gray-400"><strong>Date performed</strong> {{(displayModel?.performed_datetime || displayModel?.performed_period_start) | date}}</p>
+        <p class="card-text tx-gray-400"><strong>Date performed</strong> {{displayDate(displayModel?.performed_datetime || displayModel?.performed_period_start)}}</p>
       }
     </div>
     <fhir-ui-badge class="float-end" [status]="$safeNavigationMigration(displayModel?.status)">{{displayModel?.status}}</fhir-ui-badge>
@@ -33,4 +33,3 @@
   </div>
 }
 </div>
-
