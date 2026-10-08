@@ -1,6 +1,7 @@
 import type { Device, Procedure } from '@medplum/fhirtypes';
 import type { BuiltRecord, PatientEntryContext, PatientEntryRequest } from './shared.js';
-import { PatientEntryError, PGHD_TAG, US_CORE_IMPLANTABLE_DEVICE, stamp, statedName, validDate } from './shared.js';
+import { PatientEntryError, PGHD_TAG, US_CORE_IMPLANTABLE_DEVICE, stamp, statedName } from './shared.js';
+import { implantDate, definitelyBefore } from './implant-dates.js';
 
 const DEVICE_STATUSES = new Set(['active', 'inactive', 'unknown']);
 
@@ -31,10 +32,10 @@ export function buildPatientImplant(req: PatientEntryRequest, _now = new Date(),
   const lotNumber = (req.implant_lot_number ?? '').trim();
   if (lotNumber) device.lotNumber = lotNumber;
 
-  const manufactureDate = validDate(req.implant_manufacture_date, 'implant manufacture');
+  const manufactureDate = implantDate(req.implant_manufacture_date, 'implant manufacture');
   if (manufactureDate) device.manufactureDate = manufactureDate;
 
-  const expirationDate = validDate(req.implant_expiration_date, 'implant expiration');
+  const expirationDate = implantDate(req.implant_expiration_date, 'implant expiration');
   if (expirationDate) device.expirationDate = expirationDate;
 
   stamp(device, []);
@@ -42,10 +43,13 @@ export function buildPatientImplant(req: PatientEntryRequest, _now = new Date(),
     ...device.meta,
     profile: [...(device.meta?.profile ?? []), US_CORE_IMPLANTABLE_DEVICE],
   };
-  const insertion = validDate(req.implant_insertion_date, 'implant placement');
-  const removal = validDate(req.implant_removal_date, 'implant removal');
-  if (insertion && removal && removal < insertion) {
+  const insertion = implantDate(req.implant_insertion_date, 'implant placement');
+  const removal = implantDate(req.implant_removal_date, 'implant removal');
+  if (insertion && removal && definitelyBefore(removal, insertion)) {
     throw new PatientEntryError('The removal date cannot be before the implant was put in.');
+  }
+  if (manufactureDate && expirationDate && definitelyBefore(expirationDate, manufactureDate)) {
+    throw new PatientEntryError('The expiration date cannot be before manufacture.');
   }
   // Containment saves, exports and deletes the implant and its history together. "#" references
   // the containing Device, not a separate record that could be left behind.

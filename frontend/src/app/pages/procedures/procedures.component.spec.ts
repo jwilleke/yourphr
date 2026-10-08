@@ -41,6 +41,21 @@ describe('ProceduresComponent', () => {
     expect(component.loading).toBeFalse();
   });
 
+  it('renders partial performed dates without a fabricated day and keeps contained-row identities distinct', () => {
+    component.procedures = [
+      proc({id: 'implant#placement', code: {text: 'Implant placement'}, performedDateTime: '2024-06'}),
+      proc({id: 'implant#removal', code: {text: 'Implant removal'}, performedDateTime: '2024'}),
+    ];
+    component.sortBy('date');
+    fixture.changeDetectorRef.markForCheck();
+    fixture.detectChanges();
+    const dates = Array.from(fixture.nativeElement.querySelectorAll('.procedure-row td:nth-child(4)')) as HTMLElement[];
+    expect(dates.map(d => d.textContent?.trim()).sort()).toEqual(['2024', '2024-06']);
+    expect(component.rowKey(component.procedures[0])).not.toBe(component.rowKey(component.procedures[1]));
+    expect(fixture.nativeElement.textContent).not.toContain('Jun 1');
+    expect(fixture.nativeElement.textContent).not.toContain('Jan 1');
+  });
+
   it('builds models from the served Procedure resources', () => {
     api.getResources.and.returnValue(of([
       {source_resource_type: 'Procedure', source_id: 's', source_resource_id: 'p1', resource_raw: {resourceType: 'Procedure', code: {text: 'Appendectomy'}}},

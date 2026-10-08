@@ -29,6 +29,8 @@ import { reconcile as reconcileMedications, type MedInput, type ReconciledMedica
 import { buildIps, type IpsDocument } from '../../ips/index.js';
 import type { RecordProvenance } from '../../provenance/index.js';
 import { dateFor, toResourceFhir } from '../../server.js';
+import { implantProcedures } from './implant-procedures.js';
+import { matchesText, textFor } from '../providers/record-text.js';
 
 declare module '../../framework/Engine.js' {
   interface ManagerRegistry {
@@ -244,18 +246,36 @@ export class RecordsManager extends BaseManager {
     const userId = this.who(ctx);
     const bundle = await this.provider.search(userId, { resourceType: resourceType as never, count: options.limit ?? 100000, total: 'accurate' });
     const sourceOf = await this.provider.sourceOf(userId, resourceType);
-    return (bundle.entry ?? [])
+    const rows = (bundle.entry ?? [])
       .map((e) => e.resource as Resource)
       .filter((r) => !RecordsManager.needsReview(r))
       .filter((r) => !options.sourceId || sourceOf.get(r.id ?? '') === options.sourceId)
       .map((r) => toResourceFhir(r, sourceOf.get(r.id ?? '') ?? ''));
+    if (resourceType === 'Procedure') {
+      for (const parent of this.chartOnly(await this.provider.list(userId, { resourceType: 'Device', ...(options.sourceId ? { sourceId: options.sourceId } : {}) }))) {
+        for (const p of implantProcedures(parent)) {
+          if (!RecordsManager.needsReview(p.resource)) rows.push({ ...toResourceFhir(p.resource, p.sourceId), source_resource_id: p.id });
+        }
+      }
+    }
+    return rows.slice(0, options.limit ?? 100000);
   }
 
   /** GET /resource/fhir/:source/:id — addressed by id without its type, as YourPHR does. */
   async detail(ctx: ApiContext, id: string): Promise<Record<string, unknown>> {
-    const stored = await this.provider.readById(this.who(ctx), id);
+    let stored = await this.provider.readById(this.who(ctx), id);
+    const relativeReference = id.match(/^([A-Z][A-Za-z]+)\/([^/]+)$/);
+    if (!stored && relativeReference) {
+      stored = await this.provider.read(this.who(ctx), relativeReference[1]!, relativeReference[2]!);
+    }
+    if (!stored && id.includes('#')) {
+      const parent = await this.provider.readById(this.who(ctx), id.split('#')[0]!);
+      if (parent && !RecordsManager.needsReview(parent.resource)) {
+        stored = implantProcedures(parent).find(p => p.id === id && !RecordsManager.needsReview(p.resource));
+      }
+    }
     if (!stored) throw new ApiError(404, 'not found');
-    return toResourceFhir(stored.resource, stored.sourceId);
+    return { ...toResourceFhir(stored.resource, stored.sourceId), source_resource_id: stored.id };
   }
 
   async search<T extends Resource>(ctx: ApiContext, request: SearchRequest<T>): Promise<Bundle<WithId<T>>> {
@@ -270,6 +290,14 @@ export class RecordsManager extends BaseManager {
     const inQuarantine = new Map<string, number>();
     for (const row of await this.provider.list(userId, sourceId ? { sourceId } : {})) {
       if (RecordsManager.needsReview(row.resource)) inQuarantine.set(row.resourceType, (inQuarantine.get(row.resourceType) ?? 0) + 1);
+      else {
+        const n = implantProcedures(row).filter(p => !RecordsManager.needsReview(p.resource)).length;
+        if (n) {
+          const procedures = counted.find(c => c.resourceType === 'Procedure');
+          if (procedures) procedures.count += n;
+          else counted.push({ resourceType: 'Procedure', count: n });
+        }
+      }
     }
     return counted
       .map((c) => ({ resource_type: c.resourceType, count: c.count - (inQuarantine.get(c.resourceType) ?? 0) }))
@@ -277,7 +305,9 @@ export class RecordsManager extends BaseManager {
   }
 
   async typesHeld(ctx: ApiContext): Promise<string[]> {
-    return this.provider.typesHeld(this.who(ctx));
+    const types = await this.provider.typesHeld(this.who(ctx));
+    if (!types.includes('Procedure') && (await this.list(ctx, 'Procedure')).length) types.push('Procedure');
+    return types.sort();
   }
 
   /** The dashboard's recent activity: newest records across every type, Go's list-item shape. */
@@ -316,9 +346,14 @@ export class RecordsManager extends BaseManager {
 
   async provenance(ctx: ApiContext, resourceType: string, id: string): Promise<RecordProvenance | undefined> {
     const userId = this.who(ctx);
-    const stored = await this.provider.read(userId, resourceType, id);
+    let stored = await this.provider.read(userId, resourceType, id);
+    if (!stored && resourceType === 'Procedure' && id.includes('#')) {
+      const parent = await this.provider.readById(userId, id.split('#')[0]!);
+      if (parent && !RecordsManager.needsReview(parent.resource)
+        && implantProcedures(parent).some(p => p.id === id && !RecordsManager.needsReview(p.resource))) stored = parent;
+    }
     if (!stored) return undefined;
-    const history = await this.provider.history(userId, resourceType, id);
+    const history = await this.provider.history(userId, stored.resourceType, stored.id);
     const display = stored.sourceId === '' ? 'This instance (manual entry or upload)' : (await this.sourceDisplay(stored.sourceId)) || stored.sourceId;
     return {
       resourceType, id, sourceId: stored.sourceId, sourceDisplay: display,
@@ -657,17 +692,28 @@ export class RecordsManager extends BaseManager {
     if (query.length < 2) return [];
     const limit = Math.min(Math.max(page.limit ?? 20, 1), 100);
     const offset = Math.max(page.page ?? 0, 0) * limit;
-    const hits = await this.provider.textSearch(userId, query, { limit, offset });
+    // Expand before paging: a Device hit can expose two independently addressable procedures.
     const items: (RecentItem & { snippet: string })[] = [];
-    for (const hit of hits) {
-      const stored = await this.provider.read(userId, hit.resourceType, hit.id);
-      if (!stored) continue;
-      if (RecordsManager.needsReview(stored.resource)) continue; // kept, but not yet a chart fact
-      const shaped = toResourceFhir(stored.resource, stored.sourceId);
-      const date = String(shaped['sort_date'] ?? '').slice(0, 10);
-      items.push({ source_id: stored.sourceId, source_resource_type: stored.resourceType, source_resource_id: stored.id, title: String(shaped['sort_title'] ?? '') || stored.resourceType, ...(date ? { date } : {}), snippet: hit.snippet });
+    let hitOffset = 0;
+    const batchSize = 100;
+    while (items.length < offset + limit) {
+      const hits = await this.provider.textSearch(userId, query, { limit: batchSize, offset: hitOffset });
+      for (const hit of hits) {
+        const stored = await this.provider.read(userId, hit.resourceType, hit.id);
+        if (!stored) continue;
+        if (RecordsManager.needsReview(stored.resource)) continue; // kept, but not yet a chart fact
+        const projections = implantProcedures(stored).filter(p =>
+          !RecordsManager.needsReview(p.resource) && matchesText(textFor(p.resource), query));
+        for (const row of [stored, ...projections]) {
+          const shaped = toResourceFhir(row.resource, row.sourceId);
+          const date = String(shaped['sort_date'] ?? '').slice(0, 10);
+          items.push({ source_id: row.sourceId, source_resource_type: row.resourceType, source_resource_id: row.id, title: String(shaped['sort_title'] ?? '') || row.resourceType, ...(date ? { date } : {}), snippet: row === stored ? hit.snippet : textFor(row.resource) });
+        }
+      }
+      if (hits.length < batchSize) break;
+      hitOffset += hits.length;
     }
-    return items;
+    return items.slice(offset, offset + limit);
   }
 
   // --- the resource graph (yourphr#605): Go's MedicalHistory graph, scoped to what the page reads ---

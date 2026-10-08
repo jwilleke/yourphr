@@ -66,6 +66,80 @@ const seedSourcePatients = (): void => {
 };
 
 describe('RecordsManager — the one door, scoped to whoever is asking', () => {
+  const implant = (id = 'synthetic-implant'): Resource => ({
+    resourceType: 'Device', id, type: {text: 'Synthetic stent'},
+    patient: {reference: 'Patient/self'}, meta: {profile: [US_CORE_IMPLANTABLE_DEVICE]},
+    contained: [
+      {resourceType: 'Procedure', id: 'placement', status: 'completed', code: {text: 'Implant placement'},
+        performedDateTime: '2020', subject: {reference: 'Patient/self'}, focalDevice: [{manipulated: {reference: '#'}}]},
+      {resourceType: 'Procedure', id: 'removal', status: 'completed', code: {text: 'Implant removal'},
+        performedDateTime: '2024-06', subject: {reference: 'Patient/self'}, focalDevice: [{manipulated: {reference: '#'}}]},
+    ],
+  });
+
+  it('projects implant Procedures with distinct parent-scoped identities, attribution, dates and correct links without rewriting imported records', async () => {
+    const original = implant();
+    provider.seed('alice', 'source-2', original);
+    provider.seed('alice', 'source-3', implant('another-implant'));
+    provider.seed('alice', 'source-2', {resourceType: 'Procedure', id: 'ordinary', status: 'completed', subject: {reference: 'Patient/self'}, code: {text: 'Colonoscopy'}});
+    const rows = await records.list(alice, 'Procedure', {sourceId: 'source-2'});
+    expect(rows.map(r => r['source_resource_id'])).toEqual(['ordinary', 'synthetic-implant#placement', 'synthetic-implant#removal']);
+    expect(rows[1]).toMatchObject({source_id: 'source-2', sort_title: 'Implant placement', sort_date: '2020'});
+    expect(await records.detail(alice, 'synthetic-implant#removal')).toMatchObject({
+      source_resource_id: 'synthetic-implant#removal', source_resource_type: 'Procedure',
+      resource_raw: {id: 'removal', performedDateTime: '2024-06', focalDevice: [{manipulated: {reference: 'Device/synthetic-implant', display: 'Synthetic stent'}}]},
+    });
+    expect((await records.detail(alice, 'synthetic-implant'))['resource_raw']).toEqual(original);
+    expect((await records.detail(alice, 'Device/synthetic-implant'))['resource_raw']).toEqual(original);
+    const exported = await records.exportSource(alice, 'source-2');
+    expect(exported.entry.filter(e => (e.resource as Resource).resourceType === 'Device')).toEqual([{resource: original}]);
+    expect(exported.entry.filter(e => (e.resource as Resource).resourceType === 'Procedure')).toHaveLength(1);
+    expect(await records.provenance(alice, 'Procedure', 'synthetic-implant#placement')).toMatchObject({sourceId: 'source-2'});
+    expect(await records.countsByType(alice, 'source-2')).toContainEqual({resource_type: 'Procedure', count: 3});
+    expect(await records.typesHeld(alice)).toContain('Procedure');
+    const hits = await records.searchText(alice, 'implant rem');
+    expect(hits.filter(h => h.source_resource_type === 'Procedure').map(h => h.source_resource_id)).toEqual([
+      'synthetic-implant#removal', 'another-implant#removal',
+    ]);
+    const paged = (await Promise.all(hits.map((_, page) => records.searchText(alice, 'implant rem', {limit: 1, page})))).flat();
+    expect(paged).toEqual(hits);
+    expect(await records.list(bob, 'Procedure')).toEqual([]);
+    expect(await records.searchText(bob, 'implant')).toEqual([]);
+    await expect(records.detail(bob, 'synthetic-implant#placement')).rejects.toMatchObject({status: 404});
+  });
+
+  it('also exposes explicitly linked contained Procedures from imported Devices without US Core profiles', async () => {
+    const imported = implant();
+    delete imported.meta;
+    provider.seed('alice', 'source-2', imported);
+    expect(await records.list(alice, 'Procedure')).toHaveLength(2);
+    expect((await records.searchText(alice, 'placement')).some(h => h.source_resource_id === 'synthetic-implant#placement')).toBe(true);
+    expect((await records.detail(alice, 'synthetic-implant'))['resource_raw']).toEqual(imported);
+  });
+
+  it('holds projections out of review, rejects separate deletion, and updates/removes them atomically with the parent', async () => {
+    provider.seed('alice', 'source-7', implant());
+    await expect(records.deleteOwnRecord(alice, 'Procedure', 'synthetic-implant#placement')).rejects.toMatchObject({status: 404});
+    expect(await records.list(alice, 'Procedure')).toHaveLength(2);
+    const waiting = implant();
+    waiting.meta!.tag = [{system: 'https://yourphr.org/fhir/CodeSystem/record-origin', code: 'needs-review'}];
+    await records.writer(alice, 'source-7').upsert(waiting as never);
+    expect(await records.list(alice, 'Procedure')).toEqual([]);
+    expect(await records.searchText(alice, 'implant')).toEqual([]);
+    expect(await records.countsByType(alice, 'source-7')).toEqual([]);
+    await expect(records.detail(alice, 'synthetic-implant#placement')).rejects.toMatchObject({status: 404});
+    expect(await records.awaitingReview(alice)).toHaveLength(1);
+    const updated = implant();
+    (updated as {contained?: unknown[]}).contained = [];
+    await records.writer(alice, 'source-7').upsert(updated as never);
+    expect(await records.list(alice, 'Procedure')).toEqual([]);
+    await records.writer(alice, 'source-7').upsert(implant() as never);
+    await records.deleteOwnRecord(alice, 'Device', 'synthetic-implant');
+    expect(await records.list(alice, 'Procedure')).toEqual([]);
+    expect(await records.searchText(alice, 'implant')).toEqual([]);
+    await expect(records.detail(alice, 'synthetic-implant#placement')).rejects.toMatchObject({status: 404});
+  });
+
   it('initialises its provider with the engine and closes it on shutdown', async () => {
     expect(provider.initialized).toBe(true);
     await engine.shutdown();

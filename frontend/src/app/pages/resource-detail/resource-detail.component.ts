@@ -1,4 +1,5 @@
-import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy, DestroyRef, inject } from '@angular/core';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {FastenApiService} from '../../services/fasten-api.service';
 import {ActivatedRoute, Router} from '@angular/router';
 import {ResourceFhir} from '../../models/fasten/resource_fhir';
@@ -7,7 +8,7 @@ import {ResourceType} from '../../../lib/models/constants';
 import {FastenDisplayModel} from '../../../lib/models/fasten/fasten-display-model';
 import {Clipboard} from '@angular/cdk/clipboard';
 import {forkJoin, of} from 'rxjs';
-import {catchError} from 'rxjs/operators';
+import {catchError, switchMap} from 'rxjs/operators';
 
 /**
  * Last breadcrumb label from fields present on the resource only (#448).
@@ -66,7 +67,9 @@ export function resourceDetailCrumbTitle(resource: ResourceFhir, displayModel: F
     standalone: false
 })
 export class ResourceDetailComponent implements OnInit {
+  private readonly destroyRef = inject(DestroyRef)
   loading = false
+  loadError = ''
 
   sourceId = ""
   /** First crumb: connected source display, else Patient subject.display, else short source id. */
@@ -80,20 +83,31 @@ export class ResourceDetailComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.loading = true
-    const sourceId = this.route.snapshot.paramMap.get('source_id') || ''
-    const resourceId = this.route.snapshot.paramMap.get('resource_id') || ''
-    // Optional type segment when navigated via /explore/:source_id/resource/:resource_type/:resource_id
-    const routeType = this.route.snapshot.paramMap.get('resource_type') || ''
-
-    this.sourceId = sourceId
-
-    forkJoin({
-      resource: this.fastenApi.getResourceBySourceId(sourceId, resourceId),
-      source: this.fastenApi.getSource(sourceId).pipe(catchError(() => of(null))),
-    }).subscribe({
-      next: ({ resource, source }) => {
+    this.route.paramMap.pipe(
+      switchMap(params => {
+        this.loading = true
+        this.loadError = ''
+        this.resource = null
+        this.displayModel = null
+        this.resourceTitle = ''
+        this.resourceType = ''
+        this.sourceOrPatientLabel = ''
+        this.sourceId = params.get('source_id') || ''
+        return forkJoin({
+          resource: this.fastenApi.getResourceBySourceId(this.sourceId, params.get('resource_id') || ''),
+          source: this.fastenApi.getSource(this.sourceId).pipe(catchError(() => of(null))),
+          routeType: of(params.get('resource_type') || ''),
+        }).pipe(catchError(() => {
+          this.loadError = 'Could not load this record. It may have been removed or you may no longer have access. Try opening it again.'
+          return of(null)
+        }))
+      }),
+      takeUntilDestroyed(this.destroyRef),
+    ).subscribe({
+      next: result => {
         this.loading = false
+        if (!result) return
+        const {resource, source, routeType} = result
         this.resource = resource
         this.resourceType = resource?.source_resource_type || routeType || ''
 
@@ -113,10 +127,11 @@ export class ResourceDetailComponent implements OnInit {
         this.sourceOrPatientLabel =
           (source?.display && String(source.display).trim()) ||
           (patientLabel && String(patientLabel).trim()) ||
-          (sourceId ? sourceId.slice(0, 8) : 'source')
+          (this.sourceId ? this.sourceId.slice(0, 8) : 'source')
       },
       error: () => {
         this.loading = false
+        this.loadError = 'Could not load this record. Try opening it again.'
       },
     })
   }
