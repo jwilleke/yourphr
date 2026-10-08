@@ -1,5 +1,18 @@
 # Changelog
 
+## [3.16.4](https://github.com/jwilleke/yourphr/compare/v3.16.3...v3.16.4) (2026-10-08)
+
+__The databases are closed cleanly, written safely, and restored safely.__
+
+### Bug Fixes
+
+- __Stopping the server closes the databases first__ ([#865](https://github.com/jwilleke/yourphr/issues/865)): on every stop and every update, the server used to exit before its databases were closed, leaving unfinished write-ahead files behind. It now waits for them to close, for up to 20 seconds.
+- __The accounts database no longer stalls during a backup__ ([#867](https://github.com/jwilleke/yourphr/issues/867)): it now uses the same write-ahead mode as the records database, so a backup no longer holds up sign-ins, jobs or the activity log while it runs, and every saved change is on disk before it is confirmed. Existing installs switch over at their next start.
+- __Restoring a backup is safe__ ([#866](https://github.com/jwilleke/yourphr/issues/866)):
+  - leftover write-ahead files from before the restore are moved aside with the old database, instead of being replayed onto the restored one;
+  - each database is restored where it actually lives;
+  - records and accounts are restored together or not at all.
+
 ## [3.16.3](https://github.com/jwilleke/yourphr/compare/v3.16.2...v3.16.3) (2026-10-08)
 
 __Recovering an account on a running instance no longer disturbs it.__
