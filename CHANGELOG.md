@@ -1,5 +1,17 @@
 # Changelog
 
+## [3.16.3](https://github.com/jwilleke/yourphr/compare/v3.16.2...v3.16.3) (2026-10-08)
+
+__Recovering an account on a running instance no longer disturbs it.__
+
+### Bug Fixes
+
+- __`reset-password` changes one password and nothing else__ ([#887](https://github.com/jwilleke/yourphr/issues/887)): run against a live server, the command also applied any pending restore and, on a public demo, the demo reset, replacing database files the server still had open. The server was left working on deleted files until a restart. Command-line tools (`reset-password`, `migrate`, `compact`, `reindex`) now never replace files; only the server does, when it starts. A running server sees a reset password at once, so the "restart straight after" step in the v3.16.2 notes is no longer needed from this release on.
+
+### Internal
+
+- Frontend dependency updates: Playwright 1.63, ng2-charts 11 (Angular 22), gridstack 14, @types/jasmine 7 ([#879](https://github.com/jwilleke/yourphr/pull/879), [#878](https://github.com/jwilleke/yourphr/pull/878), [#880](https://github.com/jwilleke/yourphr/pull/880), [#877](https://github.com/jwilleke/yourphr/pull/877)).
+
 ## [3.16.2](https://github.com/jwilleke/yourphr/compare/v3.16.1...v3.16.2) (2026-10-08)
 
 __The operator of a public demo is no longer locked out after every reset.__
