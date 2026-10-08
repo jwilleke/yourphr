@@ -34,6 +34,7 @@ This page covers running and configuring an instance. The rest of the deployment
 | [`../medicare-bluebutton.md`](../medicare-bluebutton.md) | A full worked SMART-on-FHIR connect example with exact settings. |
 | [`../cms-bluebutton-production-access.md`](../cms-bluebutton-production-access.md) | CMS production access: form, Zoom demo script, PP/ToS gates (#433). |
 | [`../FHIR/fhir-converter-local.md`](../FHIR/fhir-converter-local.md) | The optional C-CDA/CCD converter sidecar. |
+| [`../guides/demo-mode.md`](../guides/demo-mode.md) | Running a public demo (demo.yourphr.org): the shared account, the read-only admin tour, the baked-in baseline and the reset, and what a developer must do when adding a feature. |
 | [`../agent-access-policy.md`](../agent-access-policy.md) | Letting a patient point their own AI client at their own records ([#657](https://github.com/jwilleke/yourphr/issues/657)): the default posture, what is logged and under whose name, what the product refuses, and how to connect a client. Off unless `yourphr.auth.agent-token.enabled` is set. |
 | [`../recovery/`](../recovery/) | Backup, restore, and the __restore drill__ — what a backup contains, and how to prove your instance can come back. |
 
@@ -280,12 +281,12 @@ Any config key can be set as an env var: prefix __`YOURPHR_`__, uppercase the ke
 | `password.deny_common` | `true` | Reject the handful of passwords tried first in every credential-stuffing run, from a short embedded list. No network call — a self-hosted PHR must work offline, and checking a password against a third-party API tells them somebody just set one here. |
 | `password.deny_username` | `true` | Reject a password containing the account name. |
 | `username.min_length` | `3` | Minimum username length. One value that the sign-in form, the sign-up form and the server all read — before this they disagreed, and the sign-in page rejected usernames the server had happily created. |
-| `demo.enabled` | `false` | __Public demo instances only.__ Puts a one-click "Explore the demo" button on the sign-in page that enters a *shared* account with no credential entry ([#495](https://github.com/jwilleke/yourphr/issues/495)). Served by `/api/instance/public`, so the sign-in page can read it with no login. Never enable on an instance holding real records. |
-| `demo.username` | `demo` | Which account the demo button signs in as. Ignored unless `demo.enabled`. |
-| `demo.password` | `""` | __Not set by hand.__ Generated per instance at startup, set on the demo account, and rotated whenever the two drift apart ([#515](https://github.com/jwilleke/yourphr/issues/515)) — so nobody knows it, nobody types it, and no release image carries a working demo credential. Verified __server-side__ by `POST /api/auth/demo-signin`, masked in Admin → Configuration, and never served to a browser. Empty means "not provisioned yet", and the endpoint refuses rather than treating it as "no password needed". |
-| `demo.admin.enabled` | `false` | Offer the __read-only__ admin tour beside the patient demo ([#516](https://github.com/jwilleke/yourphr/issues/516)), so a reviewer can see Configuration, Users, Database and Logs without an operator handing out a real credential. Requires `demo.enabled` as well. Read-only is enforced by the API, default-deny — the account can look at anything except configured secrets and the server's directories, and change nothing. |
-| `demo.admin.username` | `demoadmin` | Which account the admin tour signs in as. Provisioned automatically with a generated password (`demo.admin.password`) the same way `demo.password` is. Does __not__ count as an admin for `bootstrap.admin.enabled`, so an operator admin is still provisioned. |
-| `demo.reset_on_restart` | `false` | Reinstall the demo database baked into the image on __every__ start ([#518](https://github.com/jwilleke/yourphr/issues/518)), so resetting a public demo is a restart. Requires `demo.enabled` and `bootstrap.seed.restore` as well, refuses on an encrypted database, and before overwriting anything it checks that every account in the existing database is the demo, the demo admin, or the bootstrap admin — anything else and it refuses and starts normally. Also drops the cache and the generated JWT signing key, so pre-reset sessions end cleanly. The instance's custom config file is kept. |
+| `yourphr.demo.enabled` | `false` | __Public demo instances only.__ A one-click "Explore the demo" button signs every visitor into one *shared* account. Never enable on an instance holding real records. Everything about demo mode, including the keys below, is in [`docs/guides/demo-mode.md`](../guides/demo-mode.md). |
+| `yourphr.demo.username` | `demo` | The shared account. |
+| `yourphr.demo.password` | `""` | __Not set by hand.__ Generated at startup and checked server-side; never sent to a browser. |
+| `yourphr.demo.admin.enabled` | `false` | The __read-only__ admin tour. Requires `yourphr.demo.enabled` as well. |
+| `yourphr.demo.admin.username` | `demoadmin` | The tour's account, created automatically; its password (`yourphr.demo.admin.password`) is generated the same way. |
+| `yourphr.demo.reset-on-restart` | `false` | Restore the baked-in baseline (`yourphr.demo.baseline.dir`) at every start. Refused on an encrypted database, and refused unless every account belongs to the demo. |
 
 ### Passkeys
 

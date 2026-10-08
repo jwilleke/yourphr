@@ -2,7 +2,7 @@
 
 A working checklist for the cut-over decided in [strategy-typescript-transition.md](planning/strategy-typescript-transition.md) and tracked on the Phase-5 ladder ([#583](https://github.com/jwilleke/yourphr/issues/583) – [#588](https://github.com/jwilleke/yourphr/issues/588), decision [#543](https://github.com/jwilleke/yourphr/issues/543)). It is for our own use: what moves by tool, what moves by hand, what does not move at all, and the order things happen in. Tick items as they land; the runbook proper is [#588](https://github.com/jwilleke/yourphr/issues/588) and will be cut from this page once the rollback has been rehearsed.
 
-> __The order both instances move in__ is [`planning/getting-off-go.md`](planning/getting-off-go.md): `yourphr` first because downtime is acceptable there, `demo-yourphr` second because demo mode does not exist in the TypeScript stack yet.
+> __The order both instances move in__ is [`planning/getting-off-go.md`](planning/getting-off-go.md): `yourphr` first because downtime is acceptable there, `demo-yourphr` second because demo mode did not exist in the TypeScript stack yet. (It does now: [`guides/demo-mode.md`](guides/demo-mode.md).)
 >
 > __Two documents carry this out.__ [`deployment/cutover-runbook.md`](deployment/cutover-runbook.md) is *this* instance — kubectl, PVCs, the Ingress line — and now records the 2026-08-24 rehearsal: 20,068 records migrated and verified in 87 seconds, 53/53 id lists agreeing. [`deployment/upgrading-v2-to-v3.md`](deployment/upgrading-v2-to-v3.md) is everyone else, on Docker or bare metal, and is the one that decides whether v3 can ship to anybody but us.
 
