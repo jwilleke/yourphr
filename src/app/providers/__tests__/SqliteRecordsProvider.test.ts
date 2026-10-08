@@ -8,6 +8,7 @@ import { SqliteFhirRepository } from '../../../SqliteFhirRepository.js';
 import Database from 'better-sqlite3-multiple-ciphers';
 import { backupDatabase, stageInstanceRestore, STAGED_APP, STAGED_PHD_SAMPLES, STAGED_RECORDS, RECORDS_LEDGER_TABLE } from '../sqlite-backup.js';
 import { runMigrations } from '../../../framework/providers/sqlite-migrations.js';
+import { SqliteDatabaseProvider } from '../../../framework/providers/SqliteDatabaseProvider.js';
 
 const LOINC = 'http://loinc.org';
 const obs = (id: string, code: string, date: string, system = LOINC): Resource =>
@@ -306,10 +307,9 @@ describe('backup and restore keep the two ledgers apart (yourphr#784)', () => {
 
 describe('a backup runs off the request thread (yourphr#787)', () => {
   const openApp = (): InstanceType<typeof Database> => {
-    const app = new Database(join(dir, 'spike.db'));
-    app.pragma("cipher='sqlcipher'");
-    app.pragma("key='unit-key'");
-    app.pragma('journal_mode = WAL');
+    // Opened by the real provider, not set to WAL by hand: that hid yourphr#867, where the app
+    // database was never in WAL at all.
+    const app = new SqliteDatabaseProvider(join(dir, 'spike.db'), 'unit-key', []).handle;
     app.exec("CREATE TABLE IF NOT EXISTS users (id TEXT PRIMARY KEY); INSERT OR IGNORE INTO users VALUES ('alice')");
     return app;
   };

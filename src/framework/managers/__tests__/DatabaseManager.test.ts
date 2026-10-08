@@ -60,6 +60,13 @@ describe('DatabaseManager — the engine owns the app database', () => {
     expect(() => new SqliteDatabaseProvider(join(dir, 'app.db'), 'another-key', [M1, M2])).toThrow();
   });
 
+  it('opens in WAL with synchronous FULL, as ngdpbase does, so a backup never blocks a write (yourphr#867)', async () => {
+    const { provider, engine } = await boot([]);
+    expect((provider.handle.pragma('journal_mode') as { journal_mode: string }[])[0]?.journal_mode).toBe('wal');
+    expect((provider.handle.pragma('synchronous') as { synchronous: number }[])[0]?.synchronous).toBe(2); // FULL
+    await engine.shutdown();
+  });
+
   it('is registered first so its shutdown runs last, and closes once', async () => {
     const { engine, provider } = await boot([M1]);
     expect(engine.registered).toEqual(['configuration', 'policy', 'database']);

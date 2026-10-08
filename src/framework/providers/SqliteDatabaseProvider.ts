@@ -19,6 +19,13 @@ export class SqliteDatabaseProvider extends BaseDatabaseProvider<InstanceType<ty
       this.db.pragma(`key='${key.replace(/'/g, "''")}'`);
     }
     try {
+      // ngdpbase's settings (yourphr#867): WAL, so a backup's long read never blocks a write to the
+      // accounts, jobs or audit, and the backup and restore code's assumption holds; synchronous FULL,
+      // so a committed transaction is on the device before the call returns. journal_mode persists in
+      // the file, so an existing instance switches at its next start. The first read: a wrong key
+      // fails here, inside the try, and the handle is closed.
+      this.db.pragma('journal_mode = WAL');
+      this.db.pragma('synchronous = FULL');
       this.migrations = runMigrations(this.db, ledger);
     } catch (err) {
       this.db.close();
