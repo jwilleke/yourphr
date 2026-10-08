@@ -6,7 +6,7 @@ Open work in [jwilleke/yourphr](https://github.com/jwilleke/yourphr), ranked. Ge
 
 - [#819](https://github.com/jwilleke/yourphr/issues/819) — [security] webpack-dev-middleware — 1 open advisory in the frontend lockfile (high)
 - [#507](https://github.com/jwilleke/yourphr/issues/507) — [FEATURE] Authentication policy survey: password reset, MFA, re-auth, audit — decide what to build
-- [#873](https://github.com/jwilleke/yourphr/pull/873) — Add patient-entered implants and linked lifecycle history *(PR · ready, CI awaiting fork-workflow approval)* — refs [#868](https://github.com/jwilleke/yourphr/issues/868)
+- [#882](https://github.com/jwilleke/yourphr/pull/882) — Show implant lifecycle procedures and support partial dates *(PR · ready, CI red: E2E — review posted, awaiting Phil)* — refs [#868](https://github.com/jwilleke/yourphr/issues/868)
 - [#870](https://github.com/jwilleke/yourphr/issues/870) — [BUG] Every provider connect on prod fails — yourPHR was never pointed at the SMART relay
 - [#863](https://github.com/jwilleke/yourphr/issues/863) — [BUG] Epic paused production for app 56252 at all 519 organizations — it selects APIs outside USCDI v3 automatic distribution
 - [#657](https://github.com/jwilleke/yourphr/issues/657) — [FEATURE] Chat over records as an MCP server — the patient's own AI client connects, YourPHR transmits nothing
@@ -100,6 +100,7 @@ Open work in [jwilleke/yourphr](https://github.com/jwilleke/yourphr), ranked. Ge
 
 ## 🔵 In review
 
+- [#876](https://github.com/jwilleke/yourphr/issues/876) — [FEATURE] Passkeys — enrol, sign in, rename, remove, ported from ngdpbase
 - [#823](https://github.com/jwilleke/yourphr/issues/823) — [security] ip-address — 4 open advisories in the frontend lockfile (medium)
 - [#822](https://github.com/jwilleke/yourphr/issues/822) — [security] engine.io — 1 open advisory in the frontend lockfile (high)
 - [#821](https://github.com/jwilleke/yourphr/issues/821) — [security] undici — 3 open advisories in the frontend lockfile (high)
@@ -121,6 +122,12 @@ Open work in [jwilleke/yourphr](https://github.com/jwilleke/yourphr), ranked. Ge
 
 ## ❓ Needs triage
 
+- [#880](https://github.com/jwilleke/yourphr/pull/880) — chore(deps): bump gridstack from 8.1.1 to 14.0.0 in /frontend *(PR · ready)* — no linked issue
+- [#879](https://github.com/jwilleke/yourphr/pull/879) — chore(deps): bump @playwright/test from 1.61.0 to 1.63.0 in /frontend *(PR · ready)* — no linked issue
+- [#878](https://github.com/jwilleke/yourphr/pull/878) — chore(deps): bump ng2-charts from 10.0.0 to 11.0.0 in /frontend *(PR · ready)* — no linked issue
+- [#877](https://github.com/jwilleke/yourphr/pull/877) — chore(deps): bump @types/jasmine from 6.0.0 to 7.0.0 in /frontend *(PR · ready)* — no linked issue
+- [#875](https://github.com/jwilleke/yourphr/pull/875) — chore(deps): bump the npm_and_yarn group across 1 directory with 4 updates *(PR · ready)* — no linked issue
+- [#874](https://github.com/jwilleke/yourphr/pull/874) — chore(deps-dev): bump source-map-js from 1.2.1 to 1.2.2 in the npm_and_yarn group across 1 directory *(PR · ready)* — no linked issue
 - [#867](https://github.com/jwilleke/yourphr/issues/867) — [BUG] The app database (spike.db) is not in WAL mode; SqliteDatabaseProvider never sets journal_mode
 - [#866](https://github.com/jwilleke/yourphr/issues/866) — [BUG] Applying a staged restore leaves the old -wal and -shm beside the restored database
 - [#865](https://github.com/jwilleke/yourphr/issues/865) — [BUG] Shutdown exits before the databases close: app.close() is not awaited on SIGTERM
