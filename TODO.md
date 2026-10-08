@@ -102,22 +102,6 @@ Open work in [jwilleke/yourphr](https://github.com/jwilleke/yourphr), ranked. Ge
 
 ## 🔵 In review
 
-- [#876](https://github.com/jwilleke/yourphr/issues/876) — [FEATURE] Passkeys — enrol, sign in, rename, remove, ported from ngdpbase
-- [#887](https://github.com/jwilleke/yourphr/issues/887) — [BUG] reset-password on a running demo runs the demo reset underneath the live server — server left on deleted DB files
-- [#886](https://github.com/jwilleke/yourphr/issues/886) — [BUG] Demo reset locks the operator out: the real admin is replaced by the baseline's admin, whose password nobody has
-- [#883](https://github.com/jwilleke/yourphr/issues/883) — [BUG] Passkey settings take effect only after a restart nobody knows about, and Account Profile says nothing while passkeys are off
-- [#823](https://github.com/jwilleke/yourphr/issues/823) — [security] ip-address — 4 open advisories in the frontend lockfile (medium)
-- [#822](https://github.com/jwilleke/yourphr/issues/822) — [security] engine.io — 1 open advisory in the frontend lockfile (high)
-- [#821](https://github.com/jwilleke/yourphr/issues/821) — [security] undici — 3 open advisories in the frontend lockfile (high)
-- [#816](https://github.com/jwilleke/yourphr/issues/816) — [BUG] 500s return the raw error message and log nothing
-- [#815](https://github.com/jwilleke/yourphr/issues/815) — [BUG] Session signing key is regenerated at every start: restarts sign everyone out, no second replica
-- [#872](https://github.com/jwilleke/yourphr/issues/872) — [BUG] Confidential SMART sources stop syncing after the first token expires — refresh is sent without the client secret
-- [#869](https://github.com/jwilleke/yourphr/issues/869) — [BUG] The maintenance banner shows while maintenance is off — it is a stored message, not the live state
-- [#856](https://github.com/jwilleke/yourphr/issues/856) — [BUG] Admin → Database: the Integrity row always says "Not checked" — run the check in the background or remove the row
-- [#855](https://github.com/jwilleke/yourphr/issues/855) — [BUG] Admin → Database: search index status labels are unclear, and the help text is too small
-- [#854](https://github.com/jwilleke/yourphr/issues/854) — [FEATURE] Admin home: a Notifications panel, like ngdpbase's, with a link to where each one is fixed
-- [#714](https://github.com/jwilleke/yourphr/issues/714) — [FEATURE] Maintenance mode — no way to say the instance is briefly not itself
-- [#713](https://github.com/jwilleke/yourphr/issues/713) — [BUG] A fix to the search index reaches no record already stored — reindexAll() has no caller outside a test
 
 ## ⏸ Deferred
 
