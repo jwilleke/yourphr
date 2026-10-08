@@ -1,5 +1,19 @@
 # Changelog
 
+## [3.16.0](https://github.com/jwilleke/yourphr/compare/v3.15.1...v3.16.0) (2026-10-08)
+
+__Sign in with a passkey, and record the implants you carry.__ You can now sign in with your fingerprint, face or device PIN instead of a password, and add an implant such as a stent or a pacemaker to your own record, with when it was put in and taken out.
+
+### Features
+
+- __Passkeys__ ([#876](https://github.com/jwilleke/yourphr/issues/876)): add a passkey under Account Profile → Sign-in methods, then sign in with it alone, with no username or password to type. Each passkey can be renamed or removed. Adding one asks for your password, or a passkey you already have, so nobody at an unattended screen can add their own. An account with no password cannot remove its last passkey. Every passkey sign-in, and every add, rename and removal, appears in your access log. An administrator turns passkeys on by setting the instance's address in Admin → Configuration (`yourphr.application.base-url`); until then they stay off.
+- __Implants you carry__ ([#868](https://github.com/jwilleke/yourphr/issues/868)): record an implanted device yourself (its name, identifiers, status, and when it was made and expires), with its placement and removal kept alongside it. It shows as a Device card, and it cannot be picked by mistake as the device a home reading was measured with. Thanks to [@phobrla](https://github.com/phobrla) for this first contribution ([#873](https://github.com/jwilleke/yourphr/pull/873)).
+
+### Internal
+
+- Passkeys are stored in the app database, each one signed with a key the instance creates on first start (`YOURPHR_CREDENTIALS_KEY` in its `.env`). Back that key up with the database: a database restored without it keeps its passkeys switched off, and people sign in with their password and add them again.
+- Dependency updates for the frontend build tools (shell-quote, proxy-addr, compression, source-map-js), clearing two critical and three high security advisories.
+
 ## [3.15.1](https://github.com/jwilleke/yourphr/compare/v3.15.0...v3.15.1) (2026-10-07)
 
 __Connections stay connected, restarts keep you signed in, and the false maintenance notice is gone.__
