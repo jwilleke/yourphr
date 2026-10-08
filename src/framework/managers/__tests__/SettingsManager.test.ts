@@ -34,7 +34,7 @@ describe('SettingsManager — what the instance says about itself, with the call
     expect(engine.registered).toEqual(['configuration', 'policy', 'filters', 'settings']);
     const pub = settings.publicInstance(nobody);
     // Wire format, read by the Angular app — deliberately NOT the yourphr.* config key names (yourphr#627).
-    expect(Object.keys(pub).sort()).toEqual(['agent_token.enabled', 'demo.admin.enabled', 'demo.enabled', 'maintenance.enabled', 'maintenance.message', 'operator.contact_url', 'operator.name', 'password.min_length', 'signup.enabled']);
+    expect(Object.keys(pub).sort()).toEqual(['agent_token.enabled', 'demo.admin.enabled', 'demo.enabled', 'maintenance.enabled', 'maintenance.message', 'operator.contact_url', 'operator.name', 'passkey.host', 'password.min_length', 'signup.enabled']);
     // Off unless an operator turns it on, which is the shipped default. The Settings screen hides
     // the whole section when it is false rather than offering a mint the server refuses (#719).
     expect(pub['agent_token.enabled']).toBe(false);

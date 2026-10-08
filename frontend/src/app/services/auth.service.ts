@@ -1,4 +1,5 @@
 import { HttpClient } from '@angular/common/http';
+import {PasskeyService} from './passkey.service';
 import { Inject, Injectable } from '@angular/core';
 import * as Oauth from '@panva/oauth4webapi';
 import { BehaviorSubject, Observable, throwError } from 'rxjs';
@@ -141,6 +142,19 @@ export class AuthService {
     const fastenApiEndpointBase = GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)
     const resp = await this._httpClient.post<ResponseWrapper>(`${fastenApiEndpointBase}/auth/demo-signin`, {}).toPromise()
 
+    this.setAuthToken(resp.data)
+  }
+
+  /**
+   * PasskeySignin signs in with a passkey alone (yourphr#876, ngdpbase#448): the server issues a
+   * challenge behind an opaque handle, any passkey for this site answers it, and the server mints
+   * the same session a password sign-in does. No username is asked.
+   */
+  public async PasskeySignin(passkeys: PasskeyService): Promise<any> {
+    const base = GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)
+    const start = await this._httpClient.post<ResponseWrapper>(`${base}/auth/passkey/options`, {}).toPromise()
+    const response = await passkeys.assert(start.data.options)
+    const resp = await this._httpClient.post<ResponseWrapper>(`${base}/auth/passkey/verify`, {handle: start.data.handle, response}).toPromise()
     this.setAuthToken(resp.data)
   }
 

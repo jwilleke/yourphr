@@ -525,6 +525,34 @@ export function createYourPhrServer(options: ServerOptions) {
         return;
       }
 
+      // Passkey sign-in (yourphr#876), ngdpbase's two steps: options (a challenge, held server-side
+      // behind an opaque handle), then verify. Public, rate limited like the password sign-in.
+      if (auth && url.pathname === '/api/auth/passkey/options' && req.method === 'POST') {
+        if (!withinRateLimit()) return;
+        send(res, 200, {success: true, data: await engine.managers.sessions.passkeySignInOptions()});
+        return;
+      }
+      if (auth && url.pathname === '/api/auth/passkey/verify' && req.method === 'POST') {
+        if (!withinRateLimit()) return;
+        const body = await readJsonBody(req);
+        const result = await engine.managers.sessions.signInWithPasskey(body?.['handle'], body?.['response'], {
+          remoteAddr: req.socket.remoteAddress ?? '',
+          xff: typeof req.headers['x-forwarded-for'] === 'string' ? req.headers['x-forwarded-for'] : undefined,
+        });
+        if (!result.ok) {
+          if (result.throttled) {
+            res.setHeader('Retry-After', String(result.throttled.retryAfterSeconds));
+            send(res, 429, {success: false, error: result.error});
+            return;
+          }
+          send(res, 401, {success: false, error: result.error});
+          return;
+        }
+        res.setHeader('Set-Cookie', sessionCookie(result.token, auth.cookieMaxAgeSeconds ?? 12 * 60 * 60, auth.secureCookies ?? false));
+        send(res, 200, {success: true, data: result.token});
+        return;
+      }
+
       // POST /api/auth/demo-signin (yourphr#643) — the public demo's one-click entrance. The caller
       // posts NOTHING: the manager verifies the configured credential against the stored hash and
       // mints the session, so a visitor never holds a password. 403 on an instance that did not opt
@@ -703,6 +731,48 @@ export function createYourPhrServer(options: ServerOptions) {
         }
         if (engine.has('audit') && url.pathname === '/api/secure/account/access-log' && req.method === 'GET') {
           send(res, 200, {success: true, data: await engine.managers.audit.list(ctx)});
+          return;
+        }
+        // --- sign-in methods: passkeys (yourphr#876) ---
+        // The Sessions manager is the door; it refuses a delegated credential and anyone else's row.
+        const sessions = engine.managers.sessions;
+        const clientOf = () => ({ remoteAddr: req.socket.remoteAddress ?? '', xff: typeof req.headers['x-forwarded-for'] === 'string' ? req.headers['x-forwarded-for'] : undefined });
+        if (url.pathname === '/api/secure/account/sign-in-methods' && req.method === 'GET') {
+          send(res, 200, {success: true, data: await sessions.credentialsOf(ctx)});
+          return;
+        }
+        if (url.pathname === '/api/secure/account/passkeys/confirm-options' && req.method === 'POST') {
+          send(res, 200, {success: true, data: await sessions.passkeyConfirmOptions(ctx)});
+          return;
+        }
+        if (url.pathname === '/api/secure/account/passkeys/register-options' && req.method === 'POST') {
+          if (engine.has('demo')) engine.managers.demo.refuseWrite(ctx, 'adding a passkey');
+          const body = await readJsonBody(req);
+          const passkey = body?.['passkey'] as {handle?: unknown; response?: unknown} | undefined;
+          const proof = passkey && typeof passkey.handle === 'string'
+            ? {passkey: {handle: passkey.handle, response: passkey.response}}
+            : {password: typeof body?.['password'] === 'string' ? (body['password'] as string) : ''};
+          send(res, 200, {success: true, data: await sessions.passkeyRegistrationOptions(ctx, proof, clientOf())});
+          return;
+        }
+        if (url.pathname === '/api/secure/account/passkeys' && req.method === 'POST') {
+          if (engine.has('demo')) engine.managers.demo.refuseWrite(ctx, 'adding a passkey');
+          const body = await readJsonBody(req);
+          send(res, 200, {success: true, data: await sessions.passkeyRegister(ctx, body?.['handle'], body?.['response'], body?.['label'])});
+          return;
+        }
+        const passkeyMatch = url.pathname.match(/^\/api\/secure\/account\/passkeys\/([^/]+)$/);
+        if (passkeyMatch && req.method === 'PUT') {
+          if (engine.has('demo')) engine.managers.demo.refuseWrite(ctx, 'renaming a passkey');
+          const body = await readJsonBody(req);
+          await sessions.renameCredential(ctx, decodeURIComponent(passkeyMatch[1]!), body?.['label']);
+          send(res, 200, {success: true});
+          return;
+        }
+        if (passkeyMatch && req.method === 'DELETE') {
+          if (engine.has('demo')) engine.managers.demo.refuseWrite(ctx, 'removing a passkey');
+          await sessions.removeCredential(ctx, decodeURIComponent(passkeyMatch[1]!));
+          send(res, 200, {success: true});
           return;
         }
         // --- agent tokens (yourphr#695) ---

@@ -17,6 +17,12 @@
   "yourphr.web.environment-name": "yourPHR",
   "yourphr.sync.interval-seconds": 900,
   "_comment_relay": "yourphr#700 — the SMART OAuth store-and-poll relay (relay/README.md). public-url is what providers redirect the patient's browser to; <public-url>/callback is the redirect_uri registered with each FHIR vendor. url is where THIS instance polls /pending (defaults to public-url; may be private or cluster-internal — an operator-set relay is polled through a capability bound to that one origin, not the SSRF-guarded client, yourphr#749). secret gates /pending and is env-owned (YOURPHR_RELAY_SECRET) — set the same value on the app and the relay. With no URL set, the project dev/demo relay is used and the admin card says so.",
+  "_comment_application_base_url": "yourphr#876 — this instance's address, as people reach it (https://phr.example.org). ngdpbase's ngdpbase.application.base-url under yourphr.*. Passkeys are tied to its host and stay OFF until it is set to an https address (or localhost): a passkey works only on that hostname, so a site answering on more than one name should redirect the others to it. Changing it orphans every enrolled passkey.",
+  "yourphr.application.base-url": "",
+  "_comment_auth_passkey": "yourphr#876 — passkeys (WebAuthn), ported from ngdpbase: a passkey alone signs a person in (phishing-resistant, AAL2). On only when yourphr.application.base-url is an explicit https (or localhost) address and the credentials store is open.",
+  "yourphr.auth.passkey.enabled": true,
+  "_comment_auth_credentials_key": "yourphr#876 — signs every row of the credentials store (passkeys). Environment-owned (YOURPHR_CREDENTIALS_KEY), generated once into <data>/.env on first start, as ngdpbase does NGDPBASE_CREDENTIALS_KEY. Back it up with the encryption keys: lose it and every passkey row fails its check (kept, never used) until it is restored.",
+  "yourphr.auth.credentials.key": "",
   "_comment_auth_session_secret": "yourphr#815 — signs session tokens. Environment-owned (YOURPHR_SESSION_SECRET): generated once into <data>/.env on first start when nothing supplies it, as ngdpbase does for NGDPBASE_SESSION_SECRET, so a restart no longer signs everyone out. Set it yourself only to manage it; rotating it signs everyone out. The empty value here is never used.",
   "yourphr.auth.session.secret": "",
   "yourphr.relay.public-url": "",
@@ -207,7 +213,8 @@
     "yourphr.database.encryption.key": "YOURPHR_DATABASE_ENCRYPTION_KEY",
     "yourphr.backup.encryption.key": "YOURPHR_BACKUP_ENCRYPTION_KEY",
     "yourphr.relay.secret": "YOURPHR_RELAY_SECRET",
-    "yourphr.auth.session.secret": "YOURPHR_SESSION_SECRET"
+    "yourphr.auth.session.secret": "YOURPHR_SESSION_SECRET",
+    "yourphr.auth.credentials.key": "YOURPHR_CREDENTIALS_KEY"
   },
   "yourphr.config.secret-keys": [
     "yourphr.database.encryption.key",
@@ -216,6 +223,7 @@
     "yourphr.demo.admin.password",
     "yourphr.relay.secret",
     "yourphr.mail.provider.smtp.pass",
-    "yourphr.auth.session.secret"
+    "yourphr.auth.session.secret",
+    "yourphr.auth.credentials.key"
   ]
 }

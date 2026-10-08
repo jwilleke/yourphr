@@ -1,0 +1,66 @@
+@if (methods && (methods.passkeyHost || passkeyRows.length)) {
+  <div class="card mg-b-20" data-testid="sign-in-methods">
+    <div class="card-header">
+      <h6 class="card-title mg-b-0"><i class="fas fa-key"></i>&nbsp; Sign-in methods</h6>
+    </div>
+    <div class="card-body">
+      <table class="table table-sm mg-b-15">
+        <thead>
+          <tr><th>Method</th><th>Added</th><th>Last used</th><th></th></tr>
+        </thead>
+        <tbody>
+          @if (methods.hasPassword) {
+            <tr><td>Password</td><td></td><td></td><td></td></tr>
+          }
+          @for (c of passkeyRows; track c.id) {
+            <tr>
+              <td>
+                @if (editing[c.id] !== undefined) {
+                  <input class="form-control form-control-sm d-inline-block w-auto" maxlength="60" [(ngModel)]="editing[c.id]" [attr.aria-label]="'New name for ' + c.label">
+                  <button type="button" class="btn btn-sm btn-primary ms-1" (click)="saveRename(c.id)">Save</button>
+                } @else {
+                  <i class="fas fa-key me-1"></i>{{ c.label }}
+                }
+              </td>
+              <td>{{ c.createdAt | date:'mediumDate' }}</td>
+              <td>{{ c.lastUsedAt ? (c.lastUsedAt | date:'medium') : 'Never' }}</td>
+              <td class="text-end">
+                <button type="button" class="btn btn-sm btn-outline-secondary" (click)="startRename(c.id, c.label)">Rename</button>
+                <button type="button" class="btn btn-sm btn-outline-danger ms-1" (click)="remove(c.id, c.label)">Remove</button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+
+      @if (methods.passkeyHost && supported && !onHost) {
+        <p class="mg-b-0" data-testid="passkey-elsewhere">Passkeys work only on {{ methods.passkeyHost }}. Open yourPHR there to add one.</p>
+      }
+      @if (methods.passkeyHost && supported && onHost) {
+        <h6 class="mg-b-5">Add a passkey</h6>
+        <p class="mg-b-10">A passkey lets you sign in with your fingerprint, face or device PIN, with no password to type. It works only on {{ methods.passkeyHost }}.</p>
+        <div class="row g-2 align-items-end">
+          <div class="col-md-4">
+            <label class="form-label" for="passkey-label">Name</label>
+            <input id="passkey-label" class="form-control" maxlength="60" [(ngModel)]="newLabel" placeholder="Chrome on Mac">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label" for="passkey-password">Confirm with your password</label>
+            <input id="passkey-password" type="password" class="form-control" [(ngModel)]="password" autocomplete="current-password">
+          </div>
+          <div class="col-md-4">
+            <button type="button" data-testid="passkey-add" class="btn btn-az-primary w-100" [disabled]="busy || !password" (click)="addWithPassword()">{{ busy ? 'Adding…' : 'Add a passkey' }}</button>
+          </div>
+        </div>
+        @if (passkeyRows.length) {
+          <button type="button" class="btn btn-link p-0 mg-t-10" [disabled]="busy" (click)="addWithPasskey()">Or confirm with a passkey you already have</button>
+        }
+      }
+      @if (methods.passkeyHost && !supported) {
+        <p class="mg-b-0">This browser cannot create passkeys.</p>
+      }
+      @if (error) { <div class="alert alert-danger mg-t-10 mg-b-0" role="alert">{{ error }}</div> }
+      @if (done) { <div class="alert alert-success mg-t-10 mg-b-0" role="status">{{ done }}</div> }
+    </div>
+  </div>
+}

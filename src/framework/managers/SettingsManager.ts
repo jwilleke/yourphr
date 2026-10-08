@@ -127,6 +127,11 @@ export class SettingsManager extends BaseManager {
       'agent_token.enabled': config.getBool('yourphr.auth.agent-token.enabled'),
       // Maintenance mode (yourphr#714): the sign-in page says so before anyone has a session, and
       // the app shows the message instead of a wall of failed requests.
+      // Passkeys (yourphr#876): the host passkeys are tied to, or null where they are off (setting off,
+      // no store, no https base URL). The sign-in page offers "Sign in with a passkey" only when the
+      // browser is ON that host — anywhere else (an IP, a LAN name) the browser would refuse it. The
+      // host is the instance's own public address, so publishing it tells a caller nothing new.
+      'passkey.host': this.engine.has('sessions') ? this.engine.managers.sessions.passkeyHost() : null,
       'maintenance.enabled': config.getBool(MAINTENANCE_ENABLED_KEY),
       'maintenance.message': config.getString('yourphr.features.maintenance.message'),
     };

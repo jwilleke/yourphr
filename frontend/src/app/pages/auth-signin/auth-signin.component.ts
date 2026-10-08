@@ -1,4 +1,5 @@
 import {Component, OnInit, ChangeDetectionStrategy} from '@angular/core';
+import {PasskeyService} from '../../services/passkey.service';
 import {User} from '../../models/fasten/user';
 import {ActivatedRoute, Router} from '@angular/router';
 import {ToastService} from '../../services/toast.service';
@@ -30,6 +31,8 @@ export class AuthSigninComponent implements OnInit {
   // the config, but useless without it — the backend requires both.
   demoAdminEnabled = false
   demoLoading = false
+  // #876: "Sign in with a passkey", when the instance offers it and this browser can use it.
+  passkeyEnabled = false
 
   // Whether to offer "Create an Account" (#498). Starts true: signup has always been open, so an
   // instance that never published the key must keep behaving as it did. The backend is the real
@@ -43,6 +46,7 @@ export class AuthSigninComponent implements OnInit {
     private route: ActivatedRoute,
     private location: Location,
     private toastService: ToastService,
+    private passkeys: PasskeyService,
   ) { }
 
   ngOnInit(): void {
@@ -54,6 +58,7 @@ export class AuthSigninComponent implements OnInit {
         this.demoEnabled = info?.demo_enabled === true
         this.demoAdminEnabled = this.demoEnabled && info?.demo_admin_enabled === true
         this.signupEnabled = info?.signup_enabled !== false
+        this.passkeyEnabled = this.passkeys.usableOn(info?.passkey_host)
       },
       error: () => {
         this.demoEnabled = false
@@ -120,6 +125,21 @@ export class AuthSigninComponent implements OnInit {
         toastNotification.type = ToastType.Error
         toastNotification.message = this.errorMsg
         this.toastService.show(toastNotification)
+      })
+  }
+
+  // passkeySignin signs in with a passkey alone (#876): no username or password typed.
+  passkeySignin(){
+    this.loading = true
+    this.errorMsg = ""
+    this.authService.PasskeySignin(this.passkeys)
+      .then(() => {
+        this.loading = false
+        this.router.navigateByUrl('/dashboard')
+      })
+      .catch((err) => {
+        this.loading = false
+        this.errorMsg = this.passkeys.describeError(err, 'That passkey could not sign you in.')
       })
   }
 

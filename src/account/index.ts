@@ -76,6 +76,11 @@ export const ACCOUNT_EVENT_CATEGORIES = {
   signedIn: 'Signed in',
   signInsPaused: 'Sign-ins paused after repeated failed attempts',
   logTrimmed: 'Access log trimmed',
+  // Passkeys (yourphr#876): a sign-in by a passkey, and changes to the person's passkeys.
+  passkeySignIn: 'Signed in with a passkey',
+  passkeyAdded: 'Passkey added',
+  passkeyRenamed: 'Passkey renamed',
+  passkeyRemoved: 'Passkey removed',
 } as const;
 
 /**

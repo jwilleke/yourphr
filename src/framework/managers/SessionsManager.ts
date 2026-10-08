@@ -13,12 +13,14 @@
  * Tokens are HMAC-signed claims under a per-process key; the counter is in the database, which
  * is what makes revocation real.
  */
-import { createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
+import { createHmac, randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
 import { BaseManager, type BackupData } from '../BaseManager.js';
 import type { Engine } from '../Engine.js';
 import { ApiContext, ApiError, type Principal } from '../ApiContext.js';
 import { ACCOUNT_EVENT_CATEGORIES } from '../../account/index.js';
 import type { BaseAuthProvider } from '../providers/BaseAuthProvider.js';
+import type { BaseCredentialsProvider, CredentialRecord, RejectedCredential } from '../providers/BaseCredentialsProvider.js';
+import { PasskeyAuthProvider, relyingPartyFrom } from '../providers/PasskeyAuthProvider.js';
 import { boundedNumber } from '../ConfigurationManager.js';
 
 declare module '../Engine.js' {
@@ -101,7 +103,31 @@ export interface SessionsOptions {
   factors?: string[];
   /** Operator log lines (an account event that could not be recorded). */
   log?: (line: string) => void;
+  /** The credentials store (yourphr#876) — passkeys and, later, other factors. Absent: no passkeys. */
+  credentials?: BaseCredentialsProvider;
+  /** Passkey settings (yourphr#876): on only with an explicit https (or localhost) base URL. */
+  passkey?: { enabled: boolean; baseUrl: string; rpName: string };
 }
+
+/** A credential as its owner sees it — never the secret. ngdpbase's CredentialView. */
+export type CredentialView = Omit<CredentialRecord, 'secret'>;
+
+/** What proves "it is you" before a passkey is added (yourphr#876, decision 2): the password, or an existing passkey. */
+export interface IdentityProof { password?: string; passkey?: { handle: string; response: unknown } }
+
+/** ngdpbase's name rules for a credential: whitespace collapsed, trimmed, at most 60, never empty. */
+export const CREDENTIAL_LABEL_MAX = 60;
+export function credentialLabel(label: unknown): string {
+  const tidy = (typeof label === 'string' ? label : '').replace(/\s+/g, ' ').trim().slice(0, CREDENTIAL_LABEL_MAX).trim();
+  if (tidy === '') throw new ApiError(400, 'Give it a name, so you can tell your passkeys apart.');
+  return tidy;
+}
+
+/** A challenge is used once, within 5 minutes, for the one purpose it was issued for (ngdpbase's rule). */
+const CHALLENGE_TTL_SECONDS = 5 * 60;
+type ChallengePurpose = 'authenticate' | 'register' | 'confirm';
+interface PendingChallenge { value: string; purpose: ChallengePurpose; username?: string; expires: number }
+export const PASSKEY_SIGNIN_ERROR = 'That passkey could not sign you in.';
 
 export class SessionsManager extends BaseManager {
   readonly name = 'sessions' as const;
@@ -114,6 +140,15 @@ export class SessionsManager extends BaseManager {
   private readonly providers = new Map<string, BaseAuthProvider>();
   private readonly throttlePolicy: ThrottlePolicy;
   private readonly log: (line: string) => void;
+  private readonly credentials: BaseCredentialsProvider | null;
+  private readonly passkeySettings: SessionsOptions['passkey'];
+  private passkeys: PasskeyAuthProvider | null = null;
+  /**
+   * Challenges between "options" and "verify" (yourphr#876). ngdpbase keeps one in the Express
+   * session; yourPHR's sessions are stateless tokens, so they live here, keyed by an opaque handle
+   * the browser carries back. In memory: a restart drops pending ones, which costs a retry.
+   */
+  private readonly challenges = new Map<string, PendingChallenge>();
 
   constructor(engine: Engine, providers: BaseAuthProvider[], options: SessionsOptions = {}) {
     super(engine);
@@ -149,12 +184,214 @@ export class SessionsManager extends BaseManager {
     this.log = options.log ?? (() => undefined);
     this.trustedProxies = options.trustedProxies ?? [];
     this.factors = options.factors?.length ? options.factors : ['password'];
+    this.credentials = options.credentials ?? null;
+    this.passkeySettings = options.passkey;
   }
 
   override async initialize(config: Record<string, unknown> = {}): Promise<void> {
     // A factor nobody provides cannot be satisfied — refuse to boot rather than sign nobody in at runtime.
     for (const f of this.factors) if (!this.providers.has(f)) throw new Error(`sessions: auth.factors names "${f}" but no such auth provider is registered (have: ${[...this.providers.keys()].join(', ') || 'none'})`);
+    if (this.credentials) await this.credentials.initialize((rejected) => this.raiseRejectedCredentials(rejected));
+    this.registerPasskeys();
     await super.initialize(config);
+  }
+
+  /** ngdpbase's registerPasskeys: on only with the store, the setting, and an explicit secure base URL. */
+  private registerPasskeys(): void {
+    const settings = this.passkeySettings;
+    if (!settings?.enabled) return;
+    if (!this.credentials) { this.log('passkeys: off — the credentials store is not open (YOURPHR_CREDENTIALS_KEY)'); return; }
+    if (settings.baseUrl.trim() === '') { this.log('passkeys: off — set yourphr.application.base-url (https) to turn them on'); return; }
+    const rp = relyingPartyFrom(settings.baseUrl, settings.rpName);
+    if (!rp) { this.log(`passkeys: off — yourphr.application.base-url (${settings.baseUrl}) is not https or localhost`); return; }
+    const store = this.credentials;
+    this.passkeys = new PasskeyAuthProvider(rp, {
+      find: (id) => store.findBySubject('passkey', id),
+      used: (id, at, secret) => store.touch(id, at, secret),
+    }, this.log);
+    this.log(`passkeys: on, tied to ${rp.rpID}`);
+  }
+
+  /**
+   * A row the store could not trust (ngdpbase's raiseRejectedCredentials): kept, never used, and
+   * every admin is told, because a row nobody signed is either damage or someone adding a way in.
+   */
+  private raiseRejectedCredentials(rejected: RejectedCredential[]): void {
+    const summary = rejected.map((r) => `${r.reason}${r.row.username ? ` (${r.row.username})` : ''}`).join(', ');
+    this.log(`credentials store: ${rejected.length} row(s) set aside — ${summary}`);
+    if (!this.engine.has('notifications') || !this.engine.has('users')) return;
+    const engine = this.engine;
+    void (async () => {
+      try {
+        const admins = await engine.managers.users.holders(ApiContext.system('credentials store: who holds admin', 'sessions', engine), 'admin');
+        await engine.managers.notifications.createNotification({
+          type: 'system', level: 'error', targetUsers: admins, key: 'credentials.rejected',
+          title: 'Sign-in credentials failed their check',
+          message: `${rejected.length} stored sign-in credential(s) were not signed by this instance and are not being used. Either the database was changed outside yourPHR, or YOURPHR_CREDENTIALS_KEY changed.`,
+        });
+      } catch (err) {
+        this.log(`credentials store: alert not sent: ${(err as Error).message}`);
+      }
+    })();
+  }
+
+  // --- passkeys (yourphr#876) ------------------------------------------------------------------
+
+  /** The host passkeys are tied to, or null while they are off. */
+  passkeyHost(): string | null {
+    return this.passkeys ? this.passkeys.relyingParty().rpID : null;
+  }
+
+  private keepChallenge(value: string, purpose: ChallengePurpose, nowSeconds: number, username?: string): string {
+    for (const [h, c] of this.challenges) if (c.expires <= nowSeconds) this.challenges.delete(h);
+    const handle = randomUUID();
+    this.challenges.set(handle, { value, purpose, expires: nowSeconds + CHALLENGE_TTL_SECONDS, ...(username !== undefined ? { username } : {}) });
+    return handle;
+  }
+
+  /** Always spends the handle; answers the challenge only for the right purpose, person and time. */
+  private takeChallenge(handle: unknown, purpose: ChallengePurpose, nowSeconds: number, username?: string): string | null {
+    if (typeof handle !== 'string') return null;
+    const c = this.challenges.get(handle);
+    this.challenges.delete(handle);
+    if (!c || c.purpose !== purpose || c.expires <= nowSeconds || c.username !== username) return null;
+    return c.value;
+  }
+
+  private requirePasskeys(): PasskeyAuthProvider {
+    if (!this.passkeys) throw new ApiError(404, 'passkeys are not available on this instance');
+    return this.passkeys;
+  }
+
+  private requireOwnAccount(ctx: ApiContext): void {
+    ctx.requireAuthenticated();
+    // A delegated credential manages no sign-in methods — the outer lock is the agent gate.
+    if (ctx.viaToken) throw new ApiError(403, 'an agent token cannot manage sign-in methods');
+  }
+
+  /** Options for a passkey sign-in: no username asked; any passkey for this host may answer. */
+  async passkeySignInOptions(nowSeconds = Math.floor(Date.now() / 1000)): Promise<{ handle: string; options: unknown }> {
+    const options = await this.requirePasskeys().authenticationOptions();
+    return { handle: this.keepChallenge(options.challenge, 'authenticate', nowSeconds), options };
+  }
+
+  /**
+   * Sign in with a passkey. A passkey alone signs a person in (ngdpbase#448). Throttled per client
+   * IP like a password sign-in — ngdpbase leaves its passkey path unthrottled; this does not.
+   */
+  async signInWithPasskey(
+    handle: unknown,
+    response: unknown,
+    request: { remoteAddr: string; xff?: string },
+    nowSeconds = Math.floor(Date.now() / 1000)
+  ): Promise<{ ok: true; token: string } | { ok: false; error: string; throttled?: { retryAfterSeconds: number } }> {
+    const provider = this.requirePasskeys();
+    const ipKey = `ip:${clientIp(request.remoteAddr, request.xff, this.trustedProxies)}`;
+    if (this.throttle.isLimited(ipKey, nowSeconds)) {
+      return { ok: false, error: THROTTLED_SIGNIN_ERROR, throttled: { retryAfterSeconds: this.throttlePolicy.windowSeconds } };
+    }
+    const challenge = this.takeChallenge(handle, 'authenticate', nowSeconds);
+    const verified = challenge === null ? null : await provider.verify({ response, expectedChallenge: challenge });
+    const stored = verified ? await this.engine.managers.users.record(verified.username) : undefined;
+    if (!verified || !stored) {
+      this.throttle.recordFailure(ipKey, nowSeconds);
+      return { ok: false, error: PASSKEY_SIGNIN_ERROR };
+    }
+    this.throttle.clear(`acct:${stored.username}`);
+    this.engine.managers.users.onSignedIn(stored.username);
+    await this.recordAccountEvent(stored.username, ACCOUNT_EVENT_CATEGORIES.passkeySignIn, nowSeconds);
+    return { ok: true, token: this.mint(stored.username, stored.tokenGeneration, nowSeconds) };
+  }
+
+  /** Options for confirming "it is you" with a passkey the signed-in person already has (decision 2). */
+  async passkeyConfirmOptions(ctx: ApiContext, nowSeconds = Math.floor(Date.now() / 1000)): Promise<{ handle: string; options: unknown }> {
+    this.requireOwnAccount(ctx);
+    const options = await this.requirePasskeys().authenticationOptions();
+    return { handle: this.keepChallenge(options.challenge, 'confirm', nowSeconds, ctx.username), options };
+  }
+
+  /** The password, or one of the person's own passkeys, proved just now. */
+  private async confirmIdentity(ctx: ApiContext, proof: IdentityProof, request: { remoteAddr: string; xff?: string }, nowSeconds: number): Promise<boolean> {
+    if (proof.passkey) {
+      const challenge = this.takeChallenge(proof.passkey.handle, 'confirm', nowSeconds, ctx.username);
+      if (challenge === null) return false;
+      const verified = await this.requirePasskeys().verify({ response: proof.passkey.response, expectedChallenge: challenge });
+      return verified?.username === ctx.username;
+    }
+    return this.reauthenticate(ctx, { password: proof.password ?? '' }, request, nowSeconds);
+  }
+
+  /** Options for adding a passkey, after the person confirms it is them. Existing passkeys are excluded. */
+  async passkeyRegistrationOptions(
+    ctx: ApiContext,
+    proof: IdentityProof,
+    request: { remoteAddr: string; xff?: string },
+    nowSeconds = Math.floor(Date.now() / 1000)
+  ): Promise<{ handle: string; options: unknown }> {
+    this.requireOwnAccount(ctx);
+    const provider = this.requirePasskeys();
+    if (!(await this.confirmIdentity(ctx, proof, request, nowSeconds))) {
+      throw new ApiError(403, 'That did not confirm it is you. Enter your password, or use a passkey you already have.');
+    }
+    const existing = (await this.credentials!.list(ctx.username)).filter((c) => c.kind === 'passkey');
+    const options = await provider.registrationOptions(ctx.username, ctx.username, existing);
+    return { handle: this.keepChallenge(options.challenge, 'register', nowSeconds, ctx.username), options };
+  }
+
+  /** Verify and keep a new passkey. The name is checked first, so a bad one does not spend the challenge. */
+  async passkeyRegister(ctx: ApiContext, handle: unknown, response: unknown, label: unknown, nowSeconds = Math.floor(Date.now() / 1000)): Promise<{ id: string }> {
+    this.requireOwnAccount(ctx);
+    const provider = this.requirePasskeys();
+    const name = credentialLabel(label);
+    const challenge = this.takeChallenge(handle, 'register', nowSeconds, ctx.username);
+    if (challenge === null) throw new ApiError(400, 'That took too long, or was already used. Start adding the passkey again.');
+    const verified = await provider.verifyRegistration(response as never, challenge);
+    if (!verified) throw new ApiError(400, 'The passkey could not be added. Try again.');
+    if (this.credentials!.findBySubject('passkey', verified.subject)) throw new ApiError(409, 'That passkey is already added.');
+    const record: CredentialRecord = { id: randomUUID(), username: ctx.username, kind: 'passkey', subject: verified.subject, secret: verified.secret, label: name, createdAt: new Date(nowSeconds * 1000).toISOString() };
+    await this.credentials!.add(record);
+    await this.recordAccountEvent(ctx.username, ACCOUNT_EVENT_CATEGORIES.passkeyAdded, nowSeconds);
+    return { id: record.id };
+  }
+
+  /** The person's own sign-in methods: the password, and each credential without its secret. */
+  async credentialsOf(ctx: ApiContext): Promise<{ hasPassword: boolean; passkeyHost: string | null; credentials: CredentialView[] }> {
+    this.requireOwnAccount(ctx);
+    const stored = await this.engine.managers.users.record(ctx.username);
+    const rows = this.credentials ? await this.credentials.list(ctx.username) : [];
+    return {
+      hasPassword: (stored?.passwordHash ?? '') !== '',
+      passkeyHost: this.passkeyHost(),
+      credentials: rows.map(({ secret: _secret, ...view }) => view),
+    };
+  }
+
+  private async ownCredential(ctx: ApiContext, id: string): Promise<CredentialRecord> {
+    this.requireOwnAccount(ctx);
+    const row = this.credentials ? await this.credentials.get(id) : null;
+    if (!row || row.username !== ctx.username) throw new ApiError(404, 'no such sign-in method');
+    return row;
+  }
+
+  async renameCredential(ctx: ApiContext, id: string, label: unknown, nowSeconds = Math.floor(Date.now() / 1000)): Promise<void> {
+    const row = await this.ownCredential(ctx, id);
+    await this.credentials!.relabel(row.id, credentialLabel(label));
+    await this.recordAccountEvent(ctx.username, ACCOUNT_EVENT_CATEGORIES.passkeyRenamed, nowSeconds);
+  }
+
+  /**
+   * Remove a credential — never the last way in (ngdpbase's rule): with no password and no other
+   * passkey, removing it would lock the person out of their own records.
+   */
+  async removeCredential(ctx: ApiContext, id: string, nowSeconds = Math.floor(Date.now() / 1000)): Promise<void> {
+    const row = await this.ownCredential(ctx, id);
+    const stored = await this.engine.managers.users.record(ctx.username);
+    const otherWaysIn = (await this.credentials!.list(ctx.username)).filter((c) => c.id !== row.id && c.kind === 'passkey').length;
+    if (otherWaysIn === 0 && (stored?.passwordHash ?? '') === '') {
+      throw new ApiError(409, 'This is your only way to sign in. Add another passkey or set a password before removing it.');
+    }
+    await this.credentials!.remove(row.id);
+    await this.recordAccountEvent(ctx.username, ACCOUNT_EVENT_CATEGORIES.passkeyRemoved, nowSeconds);
   }
 
   get factorList(): readonly string[] { return this.factors; }

@@ -220,6 +220,7 @@ Where a value belongs, by what it is:
 - __A secret__ (environment-owned, read-only on the Admin screen): `.env` on bare metal or Docker; on Kubernetes, a Secret injected with `envFrom:`. Example: `YOURPHR_RELAY_SECRET`. The reference deployment injects the relay's own Secret (`yourphr-relay`) into `yourphr-ts`, so app and relay hold one value and can never disagree ([#870](https://github.com/jwilleke/yourphr/issues/870)).
 - __Bootstrap__ (where the data lives, the port): the launcher's environment.
 - __Generated once, then kept:__ `YOURPHR_SESSION_SECRET` signs session tokens. When nothing supplies it, the server generates it on first start into `<data>/.env` (`0600`) and reuses it, as ngdpbase does for `NGDPBASE_SESSION_SECRET` ([#815](https://github.com/jwilleke/yourphr/issues/815)). Set it yourself only to manage it; rotating it signs everyone out.
+- __Generated once, then kept:__ `YOURPHR_CREDENTIALS_KEY` signs every passkey row in the app database ([#876](https://github.com/jwilleke/yourphr/issues/876)). Generated into `<data>/.env` on first start like the session secret. __Back it up with the database:__ a database restored without its key still opens, but every passkey in it fails its signature, is set aside (never used) and raises an admin notice; people then sign in with their password and add their passkeys again.
 
 Rules that follow, for every implementation:
 
@@ -285,6 +286,17 @@ Any config key can be set as an env var: prefix __`YOURPHR_`__, uppercase the ke
 | `demo.admin.enabled` | `false` | Offer the __read-only__ admin tour beside the patient demo ([#516](https://github.com/jwilleke/yourphr/issues/516)), so a reviewer can see Configuration, Users, Database and Logs without an operator handing out a real credential. Requires `demo.enabled` as well. Read-only is enforced by the API, default-deny — the account can look at anything except configured secrets and the server's directories, and change nothing. |
 | `demo.admin.username` | `demoadmin` | Which account the admin tour signs in as. Provisioned automatically with a generated password (`demo.admin.password`) the same way `demo.password` is. Does __not__ count as an admin for `bootstrap.admin.enabled`, so an operator admin is still provisioned. |
 | `demo.reset_on_restart` | `false` | Reinstall the demo database baked into the image on __every__ start ([#518](https://github.com/jwilleke/yourphr/issues/518)), so resetting a public demo is a restart. Requires `demo.enabled` and `bootstrap.seed.restore` as well, refuses on an encrypted database, and before overwriting anything it checks that every account in the existing database is the demo, the demo admin, or the bootstrap admin — anything else and it refuses and starts normally. Also drops the cache and the generated JWT signing key, so pre-reset sessions end cleanly. The instance's custom config file is kept. |
+
+### Passkeys
+
+A person can sign in with a passkey (fingerprint, face or device PIN) instead of a password, and manage theirs under Account Profile → Sign-in methods: add, rename, remove ([#876](https://github.com/jwilleke/yourphr/issues/876)). Ported from ngdpbase.
+
+- __Off until the instance knows its own address.__ Set `yourphr.application.base-url` in Admin → Configuration to the address people use, e.g. `https://phr.example.org`. A passkey is tied to that host and works nowhere else, so the server never takes the host from a request. It must be `https`, or `http://localhost` for development; anything else leaves passkeys off, and the startup log says why.
+- `yourphr.auth.passkey.enabled` (default `true`) turns them off even with a base URL set.
+- __Adding one needs proof it is you:__ the account's password, or a passkey it already has. A session from an agent token can never add, rename or remove one.
+- __The last way in cannot be removed:__ an account with no password cannot remove its only passkey.
+- Every sign-in with a passkey, and every add, rename and removal, is in the person's access log.
+- The rows are signed with `YOURPHR_CREDENTIALS_KEY` (above); keep it with your database backups.
 
 ### What is recorded about sign-ins
 

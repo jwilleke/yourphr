@@ -428,6 +428,39 @@ export class FastenApiService {
       );
   }
 
+  // Sign-in methods (#876): the person's password and passkeys, and passkey enrol / rename / remove.
+  getSignInMethods(): Observable<SignInMethods> {
+    return this._httpClient.get<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/account/sign-in-methods`)
+      .pipe(map((response: ResponseWrapper) => response.data as SignInMethods));
+  }
+
+  // confirmPasskeyOptions starts confirming "it is you" with a passkey the person already has.
+  confirmPasskeyOptions(): Observable<{handle: string; options: any}> {
+    return this._httpClient.post<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/account/passkeys/confirm-options`, {})
+      .pipe(map((response: ResponseWrapper) => response.data));
+  }
+
+  // registerPasskeyOptions: proof is {password} or {passkey: {handle, response}} (decision 2 on #876).
+  registerPasskeyOptions(proof: {password?: string; passkey?: {handle: string; response: any}}): Observable<{handle: string; options: any}> {
+    return this._httpClient.post<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/account/passkeys/register-options`, proof)
+      .pipe(map((response: ResponseWrapper) => response.data));
+  }
+
+  addPasskey(handle: string, response: any, label: string): Observable<{id: string}> {
+    return this._httpClient.post<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/account/passkeys`, {handle, response, label})
+      .pipe(map((r: ResponseWrapper) => r.data));
+  }
+
+  renamePasskey(id: string, label: string): Observable<boolean> {
+    return this._httpClient.put<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/account/passkeys/${encodeURIComponent(id)}`, {label})
+      .pipe(map((r: ResponseWrapper) => r.success));
+  }
+
+  removePasskey(id: string): Observable<boolean> {
+    return this._httpClient.delete<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/account/passkeys/${encodeURIComponent(id)}`)
+      .pipe(map((r: ResponseWrapper) => r.success));
+  }
+
   // dismissAllNotifications hides everything the signed-in person sees, from them only (#854).
   dismissAllNotifications(): Observable<number> {
     return this._httpClient.post<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/notifications/dismiss-all`, {})
@@ -1377,6 +1410,13 @@ export interface AgentTokenPage {
 
 // InstanceInfo is the frontend view of an instance's identity. Every field is optional and empty
 // when the operator has not set it, or when this caller is not entitled to see it.
+/** The person's sign-in methods (#876), as GET /secure/account/sign-in-methods answers. Never a secret. */
+export interface SignInMethods {
+  hasPassword: boolean;
+  passkeyHost: string | null;
+  credentials: {id: string; username: string; kind: string; subject: string; label: string; createdAt: string; lastUsedAt?: string}[];
+}
+
 export interface InstanceInfo {
   name: string;
   contact_email: string;
@@ -1412,6 +1452,9 @@ export interface InstanceInfo {
   maintenance_message: string;
   // Whether maintenance mode is on RIGHT NOW (#869): the live setting, never a stored notice.
   maintenance_enabled: boolean;
+  // The host passkeys are tied to (#876), or null where the instance has them off. Offered only when the
+  // browser is on this host: anywhere else the browser refuses the passkey.
+  passkey_host: string | null;
 }
 
 // mapInstanceInfo translates backend config keys to short names. Both instance endpoints return
@@ -1452,5 +1495,7 @@ function mapInstanceInfo(response: ResponseWrapper): InstanceInfo {
     maintenance_message: str('maintenance.message'),
     // Strictly true only: an absent key is an instance not in maintenance (#869).
     maintenance_enabled: data['maintenance.enabled'] === true,
+    // A string only: no key, or anything else, means no passkey button (#876).
+    passkey_host: typeof data['passkey.host'] === 'string' && data['passkey.host'] !== '' ? data['passkey.host'] : null,
   };
 }

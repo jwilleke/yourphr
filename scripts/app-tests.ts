@@ -85,6 +85,12 @@ async function main(): Promise<void> {
   check('instance/public tells an anonymous caller whether signup is open, and it is closed by default',
     (bootBodies[2]!.data as Record<string, unknown>)['signup.enabled'] === false,
     JSON.stringify((bootBodies[2]!.data as Record<string, unknown>)['signup.enabled']));
+  // yourphr#876: passkeys are tied to the base URL's host; this instance names none, so it offers none —
+  // the sign-in page hides the button on the published flag, and the routes answer 404, not a broken flow.
+  const pkOptions = await fetch(`${base}/api/auth/passkey/options`, { method: 'POST' });
+  check('with no base URL, passkeys are off: published as off, and the sign-in options answer 404 (yourphr#876)',
+    (bootBodies[2]!.data as Record<string, unknown>)['passkey.host'] === null && pkOptions.status === 404,
+    `${JSON.stringify((bootBodies[2]!.data as Record<string, unknown>)['passkey.host'])} ${pkOptions.status}`);
   // yourphr#813: the Go stack's security headers, dropped in the cut-over, are back on every answer.
   const h = boot[0]!.headers;
   check('every response carries nosniff, DENY framing, no-referrer and an enforcing CSP with frame-ancestors none (yourphr#813)',
