@@ -6,7 +6,7 @@
  *   npm run process
  */
 import { spawn, spawnSync, type ChildProcess } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { request } from 'node:http';
@@ -139,10 +139,18 @@ async function main(): Promise<void> {
   }
 
   // --- shutdown ---
+  let shutdownLog = '';
+  child.stdout?.on('data', (d) => { shutdownLog += String(d); });
+  child.stderr?.on('data', (d) => { shutdownLog += String(d); });
   const exited = new Promise<number | null>((resolve) => child.on('exit', (code) => resolve(code)));
   child.kill('SIGTERM');
-  const code = await Promise.race([exited, new Promise<number | null>((r) => setTimeout(() => r(-1), 10_000))]);
+  const code = await Promise.race([exited, new Promise<number | null>((r) => setTimeout(() => r(-1), 30_000))]);
   check('SIGTERM closes cleanly with exit 0', code === 0, `exit ${code}`);
+  // yourphr#865: the exit waits for the close. A clean SQLite close checkpoints and removes the
+  // -wal file; exiting at app.close()'s first await left every database open and its WAL behind.
+  const walLeft = readdirSync(dataDir).filter((f) => f.endsWith('-wal'));
+  check('and only after every database closed: the log says so and no -wal file is left behind (yourphr#865)',
+    shutdownLog.includes('every database closed cleanly') && walLeft.length === 0, `wal left: ${walLeft.join(', ') || 'none'}`);
 
   // --- reset-password, against the instance that just shut down (yourphr#654, #510) ---
   //

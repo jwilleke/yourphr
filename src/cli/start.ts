@@ -26,6 +26,9 @@ import { readVersion } from './version.js';
 import { SESSION_SECRET_ENV, ensureInstanceEnvSecret, nodeInstanceEnvFs } from '../config/instance-env-backfill.js';
 import { CREDENTIALS_KEY_ENV } from '../framework/providers/BaseCredentialsProvider.js';
 
+/** How long a SIGTERM may spend closing the databases before the process exits anyway (yourphr#865). Under Kubernetes' 30s default grace. */
+const SHUTDOWN_GRACE_MS = 20_000;
+
 const EX_CONFIG = 78;
 
 function refuse(message: string): never {
@@ -114,10 +117,31 @@ export async function start(): Promise<void> {
     appLog.info(`yourphr ${version} listening on ${host}:${port}; data in ${dataDir}; ${webDir === '' ? 'API only' : `serving ${webDir}`}; worker ${intervalSeconds > 0 ? `every ${intervalSeconds}s` : 'off'}`);
   });
 
+  // yourphr#865: AWAIT the close, as ngdpbase awaits engine.shutdown() — exiting at app.close()'s
+  // first await left every database open, its WAL un-checkpointed, on every pod stop and rollout.
+  // Bounded, so a close that hangs cannot hold the pod past Kubernetes' grace period (30s by
+  // default); a second signal while closing is ignored rather than starting a second close.
+  let closing = false;
   const shutdown = (signal: string): void => {
+    if (closing) return;
+    closing = true;
     appLog.info(`${signal}: closing`);
-    app.close();
-    process.exit(0);
+    const deadline = setTimeout(() => {
+      appLog.error(`${signal}: the databases did not close within ${SHUTDOWN_GRACE_MS / 1000}s — exiting anyway`);
+      process.exit(1);
+    }, SHUTDOWN_GRACE_MS);
+    app.close().then(
+      () => {
+        clearTimeout(deadline);
+        appLog.info(`${signal}: closed — every database closed cleanly`);
+        process.exit(0);
+      },
+      (err: unknown) => {
+        clearTimeout(deadline);
+        appLog.error(`${signal}: close failed: ${(err as Error).message}`);
+        process.exit(1);
+      },
+    );
   };
   process.on('SIGTERM', () => shutdown('SIGTERM'));
   process.on('SIGINT', () => shutdown('SIGINT'));
