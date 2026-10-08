@@ -291,7 +291,7 @@ Any config key can be set as an env var: prefix __`YOURPHR_`__, uppercase the ke
 
 A person can sign in with a passkey (fingerprint, face or device PIN) instead of a password, and manage theirs under Account Profile → Sign-in methods: add, rename, remove ([#876](https://github.com/jwilleke/yourphr/issues/876)). Ported from ngdpbase.
 
-- __Off until the instance knows its own address.__ Set `yourphr.application.base-url` in Admin → Configuration to the address people use, e.g. `https://phr.example.org`. A passkey is tied to that host and works nowhere else, so the server never takes the host from a request. It must be `https`, or `http://localhost` for development; anything else leaves passkeys off, and the startup log says why.
+- __Off until the instance knows its own address.__ Set `yourphr.application.base-url` in Admin → Configuration to the address people use, e.g. `https://phr.example.org`. A passkey is tied to that host and works nowhere else, so the server never takes the host from a request. It must be `https`, or `http://localhost` for development; anything else leaves passkeys off, and the startup log says why. Both settings take effect when saved, with no restart ([#883](https://github.com/jwilleke/yourphr/issues/883)); the server log records each change of state.
 - `yourphr.auth.passkey.enabled` (default `true`) turns them off even with a base URL set.
 - __Adding one needs proof it is you:__ the account's password, or a passkey it already has. A session from an agent token can never add, rename or remove one.
 - __The last way in cannot be removed:__ an account with no password cannot remove its only passkey.

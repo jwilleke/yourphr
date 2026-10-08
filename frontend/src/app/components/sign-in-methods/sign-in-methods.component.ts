@@ -1,17 +1,19 @@
 import {Component, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {CommonModule} from '@angular/common';
+import {RouterLink} from '@angular/router';
 import {FormsModule} from '@angular/forms';
-import {firstValueFrom} from 'rxjs';
+import {Observable, catchError, firstValueFrom, from, of} from 'rxjs';
 import {FastenApiService, SignInMethods} from '../../services/fasten-api.service';
 import {PasskeyService} from '../../services/passkey.service';
+import {AuthService} from '../../services/auth.service';
 
 // Profile → Sign-in methods (#876), ngdpbase's card: the password and each passkey — rename, remove,
 // added, last used — and adding a passkey after confirming it is you (the password, or a passkey
-// you already have). Shown only where passkeys can work: the instance has them on, and this
-// browser supports them.
+// you already have). Always shown (#883): while passkeys are off it says so, and tells an admin which
+// setting turns them on — a card that hides itself reads as a missing feature.
 @Component({
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   selector: 'app-sign-in-methods',
   templateUrl: './sign-in-methods.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
@@ -25,12 +27,15 @@ export class SignInMethodsComponent implements OnInit {
   error = '';
   done = '';
   editing: Record<string, string> = {};
+  /** Whether to name the setting that turns passkeys on; only an admin can change it. */
+  isAdmin$: Observable<boolean> = of(false);
 
-  constructor(private api: FastenApiService, private passkeys: PasskeyService) {}
+  constructor(private api: FastenApiService, private passkeys: PasskeyService, private auth: AuthService) {}
 
   async ngOnInit(): Promise<void> {
     this.supported = this.passkeys.supported();
     this.load();
+    this.isAdmin$ = from(this.auth.IsAdmin()).pipe(catchError(() => of(false)));
     if (this.supported) this.newLabel = await this.passkeys.suggestedName();
   }
 
@@ -95,7 +100,8 @@ export class SignInMethodsComponent implements OnInit {
     this.error = '';
     try {
       await firstValueFrom(this.api.renamePasskey(id, this.editing[id] ?? ''));
-      const {[id]: _gone, ...rest} = this.editing;
+      const rest = {...this.editing};
+      delete rest[id];
       this.editing = rest;
       this.load();
     } catch (err) {

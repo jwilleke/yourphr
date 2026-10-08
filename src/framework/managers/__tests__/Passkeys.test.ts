@@ -62,15 +62,19 @@ let db: InstanceType<typeof Database>;
 let molly: ApiContext;
 let lines: string[];
 
+/** The settings the running instance reads on every use (yourphr#883); a test changes them live. */
+let settings: { enabled: boolean; baseUrl: string; rpName: string };
+
 async function boot(baseUrl = ORIGIN, opts: { enabled?: boolean; store?: boolean; key?: string } = {}): Promise<void> {
   engine = new Engine();
   db = db ?? new Database(':memory:');
   lines = [];
+  settings = { enabled: opts.enabled ?? true, baseUrl, rpName: 'yourPHR' };
   const users = new UsersManager(engine, new FakeUsersProvider(), new PasswordAuthProvider());
   sessions = new SessionsManager(engine, [new PasswordAuthProvider()], {
     log: (l) => lines.push(l),
     ...(opts.store === false ? {} : { credentials: new SqliteCredentialsProvider(db, opts.key ?? KEY) }),
-    passkey: { enabled: opts.enabled ?? true, baseUrl, rpName: 'yourPHR' },
+    passkey: () => settings,
   });
   engine.register('configuration', new ConfigurationManager(engine, new FakeConfigProvider())).register('policy', new PolicyManager(engine)).register('users', users).register('sessions', sessions);
   await engine.initialize();
@@ -186,6 +190,26 @@ describe('passkeys stay off unless they can work (ngdpbase\'s registration rule)
     }
     expect(relyingPartyFrom('http://localhost:8080', 'x')).toMatchObject({ rpID: 'localhost', origin: 'http://localhost:8080' });
     expect(relyingPartyFrom('not a url', 'x')).toBeNull();
+  });
+});
+
+describe('the settings take effect when saved, with no restart (yourphr#883)', () => {
+  it('setting the base URL on a running instance turns passkeys on; clearing it turns them off; each change is logged once', async () => {
+    db = new Database(':memory:');
+    await boot('');
+    expect(sessions.passkeyHost()).toBeNull();
+    expect(lines.filter((l) => l.includes('set yourphr.application.base-url'))).toHaveLength(1);
+
+    settings = { ...settings, baseUrl: ORIGIN }; // the admin saves Admin → Configuration
+    expect(sessions.passkeyHost()).toBe(new URL(ORIGIN).hostname);
+    const { auth } = await enrol();
+    await expect(signIn(auth)).resolves.toMatchObject({ token: expect.any(String) });
+    sessions.passkeyHost();
+    expect(lines.filter((l) => l.startsWith('passkeys: on'))).toHaveLength(1);
+
+    settings = { ...settings, enabled: false };
+    expect(sessions.passkeyHost()).toBeNull();
+    await expect(sessions.passkeySignInOptions()).rejects.toMatchObject({ status: 404 });
   });
 });
 

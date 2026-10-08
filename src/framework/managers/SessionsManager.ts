@@ -105,9 +105,15 @@ export interface SessionsOptions {
   log?: (line: string) => void;
   /** The credentials store (yourphr#876) — passkeys and, later, other factors. Absent: no passkeys. */
   credentials?: BaseCredentialsProvider;
-  /** Passkey settings (yourphr#876): on only with an explicit https (or localhost) base URL. */
-  passkey?: { enabled: boolean; baseUrl: string; rpName: string };
+  /**
+   * Passkey settings (yourphr#876): on only with an explicit https (or localhost) base URL. A
+   * function is read on every use, so a change saved in Admin → Configuration takes effect at once
+   * — nobody knows to restart for it (yourphr#883).
+   */
+  passkey?: PasskeySettings | (() => PasskeySettings);
 }
+
+export interface PasskeySettings { enabled: boolean; baseUrl: string; rpName: string }
 
 /** A credential as its owner sees it — never the secret. ngdpbase's CredentialView. */
 export type CredentialView = Omit<CredentialRecord, 'secret'>;
@@ -141,8 +147,9 @@ export class SessionsManager extends BaseManager {
   private readonly throttlePolicy: ThrottlePolicy;
   private readonly log: (line: string) => void;
   private readonly credentials: BaseCredentialsProvider | null;
-  private readonly passkeySettings: SessionsOptions['passkey'];
-  private passkeys: PasskeyAuthProvider | null = null;
+  private readonly passkeySettings: () => PasskeySettings | undefined;
+  /** The provider for the settings it was built from; rebuilt when they change. */
+  private passkeyState: { settings: string; provider: PasskeyAuthProvider | null } | null = null;
   /**
    * Challenges between "options" and "verify" (yourphr#876). ngdpbase keeps one in the Express
    * session; yourPHR's sessions are stateless tokens, so they live here, keyed by an opaque handle
@@ -185,31 +192,45 @@ export class SessionsManager extends BaseManager {
     this.trustedProxies = options.trustedProxies ?? [];
     this.factors = options.factors?.length ? options.factors : ['password'];
     this.credentials = options.credentials ?? null;
-    this.passkeySettings = options.passkey;
+    const passkey = options.passkey;
+    this.passkeySettings = typeof passkey === 'function' ? passkey : () => passkey;
   }
 
   override async initialize(config: Record<string, unknown> = {}): Promise<void> {
     // A factor nobody provides cannot be satisfied — refuse to boot rather than sign nobody in at runtime.
     for (const f of this.factors) if (!this.providers.has(f)) throw new Error(`sessions: auth.factors names "${f}" but no such auth provider is registered (have: ${[...this.providers.keys()].join(', ') || 'none'})`);
     if (this.credentials) await this.credentials.initialize((rejected) => this.raiseRejectedCredentials(rejected));
-    this.registerPasskeys();
+    this.currentPasskeys(); // says at start whether passkeys are on, and why not
     await super.initialize(config);
   }
 
-  /** ngdpbase's registerPasskeys: on only with the store, the setting, and an explicit secure base URL. */
-  private registerPasskeys(): void {
-    const settings = this.passkeySettings;
-    if (!settings?.enabled) return;
-    if (!this.credentials) { this.log('passkeys: off — the credentials store is not open (YOURPHR_CREDENTIALS_KEY)'); return; }
-    if (settings.baseUrl.trim() === '') { this.log('passkeys: off — set yourphr.application.base-url (https) to turn them on'); return; }
+  /**
+   * ngdpbase's registerPasskeys, read on every use rather than once at start (yourphr#883): on only
+   * with the store, the setting, and an explicit secure base URL. The provider is rebuilt, and the
+   * new state logged once, only when the settings differ from the ones it was built from.
+   */
+  private currentPasskeys(): PasskeyAuthProvider | null {
+    const settings = this.passkeySettings();
+    const fingerprint = JSON.stringify([settings?.enabled ?? false, settings?.baseUrl ?? '', settings?.rpName ?? '']);
+    if (this.passkeyState?.settings === fingerprint) return this.passkeyState.provider;
+    const provider = this.buildPasskeys(settings);
+    this.passkeyState = { settings: fingerprint, provider };
+    return provider;
+  }
+
+  private buildPasskeys(settings: PasskeySettings | undefined): PasskeyAuthProvider | null {
+    if (!settings?.enabled) { this.log('passkeys: off — yourphr.auth.passkey.enabled is false'); return null; }
+    if (!this.credentials) { this.log('passkeys: off — the credentials store is not open (YOURPHR_CREDENTIALS_KEY)'); return null; }
+    if (settings.baseUrl.trim() === '') { this.log('passkeys: off — set yourphr.application.base-url (https) to turn them on'); return null; }
     const rp = relyingPartyFrom(settings.baseUrl, settings.rpName);
-    if (!rp) { this.log(`passkeys: off — yourphr.application.base-url (${settings.baseUrl}) is not https or localhost`); return; }
+    if (!rp) { this.log(`passkeys: off — yourphr.application.base-url (${settings.baseUrl}) is not https or localhost`); return null; }
     const store = this.credentials;
-    this.passkeys = new PasskeyAuthProvider(rp, {
+    const provider = new PasskeyAuthProvider(rp, {
       find: (id) => store.findBySubject('passkey', id),
       used: (id, at, secret) => store.touch(id, at, secret),
     }, this.log);
     this.log(`passkeys: on, tied to ${rp.rpID}`);
+    return provider;
   }
 
   /**
@@ -239,7 +260,7 @@ export class SessionsManager extends BaseManager {
 
   /** The host passkeys are tied to, or null while they are off. */
   passkeyHost(): string | null {
-    return this.passkeys ? this.passkeys.relyingParty().rpID : null;
+    return this.currentPasskeys()?.relyingParty().rpID ?? null;
   }
 
   private keepChallenge(value: string, purpose: ChallengePurpose, nowSeconds: number, username?: string): string {
@@ -259,8 +280,9 @@ export class SessionsManager extends BaseManager {
   }
 
   private requirePasskeys(): PasskeyAuthProvider {
-    if (!this.passkeys) throw new ApiError(404, 'passkeys are not available on this instance');
-    return this.passkeys;
+    const passkeys = this.currentPasskeys();
+    if (!passkeys) throw new ApiError(404, 'passkeys are not available on this instance');
+    return passkeys;
   }
 
   private requireOwnAccount(ctx: ApiContext): void {

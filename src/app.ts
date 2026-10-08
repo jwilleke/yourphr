@@ -475,7 +475,8 @@ export async function openStores(dataDir: string, env: Record<string, string | u
     // yourphr#876: the credentials store, open only with its signing key (generated into .env by
     // start, as ngdpbase does NGDPBASE_CREDENTIALS_KEY); without it there are no passkeys.
     ...(config.getString('yourphr.auth.credentials.key') !== '' ? { credentials: new SqliteCredentialsProvider(db, config.getString('yourphr.auth.credentials.key')) } : {}),
-    passkey: { enabled: config.getBool('yourphr.auth.passkey.enabled'), baseUrl: config.getString('yourphr.application.base-url'), rpName: config.getString('yourphr.web.environment-name') },
+    // Read on every use (yourphr#883): saving these in Admin → Configuration takes effect without a restart.
+    passkey: () => ({ enabled: config.getBool('yourphr.auth.passkey.enabled'), baseUrl: config.getString('yourphr.application.base-url'), rpName: config.getString('yourphr.web.environment-name') }),
   });
   // 6. The engine: managers in validated dependency order (yourphr#608). Configuration first,
   // then Records over the PHI-storage provider. The other stores join as their own children land.

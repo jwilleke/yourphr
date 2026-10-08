@@ -1,4 +1,4 @@
-@if (methods && (methods.passkeyHost || passkeyRows.length)) {
+@if (methods) {
   <div class="card mg-b-20" data-testid="sign-in-methods">
     <div class="card-header">
       <h6 class="card-title mg-b-0"><i class="fas fa-key"></i>&nbsp; Sign-in methods</h6>
@@ -54,6 +54,12 @@
         </div>
         @if (passkeyRows.length) {
           <button type="button" class="btn btn-link p-0 mg-t-10" [disabled]="busy" (click)="addWithPasskey()">Or confirm with a passkey you already have</button>
+        }
+      }
+      @if (!methods.passkeyHost) {
+        <p class="mg-b-0" data-testid="passkeys-off">Passkeys (signing in with your fingerprint, face or device PIN) are not turned on for this instance.</p>
+        @if (isAdmin$ | async) {
+          <p class="mg-t-5 mg-b-0" data-testid="passkeys-off-admin">To turn them on, set <code>yourphr.application.base-url</code> to this site's https address in <a routerLink="/admin/config">Admin → Configuration</a>. It takes effect when saved.</p>
         }
       }
       @if (methods.passkeyHost && !supported) {

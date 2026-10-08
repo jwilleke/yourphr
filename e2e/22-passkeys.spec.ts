@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { trackPageErrors } from './helpers.js';
+import { adminPassword, trackPageErrors } from './helpers.js';
 import { E2E_PASS, E2E_PORT, E2E_USER } from './constants.js';
 
 // yourphr#876. Passkeys, ported from ngdpbase (its tests/e2e/auth.setup.ts drives the same virtual
@@ -8,10 +8,10 @@ import { E2E_PASS, E2E_PORT, E2E_USER } from './constants.js';
 // localhost (server.ts), so this journey runs there — a passkey is never offered on another host.
 const LOCAL = `http://localhost:${E2E_PORT}`;
 
-async function signInWithPassword(page: Page): Promise<void> {
+async function signInWithPassword(page: Page, username = E2E_USER, password = E2E_PASS): Promise<void> {
   await page.goto(`${LOCAL}/auth/signin`);
-  await page.getByPlaceholder('Enter your username').fill(E2E_USER);
-  await page.getByPlaceholder('Enter your password').fill(E2E_PASS);
+  await page.getByPlaceholder('Enter your username').fill(username);
+  await page.getByPlaceholder('Enter your password').fill(password);
   await page.getByRole('button', { name: 'Sign In', exact: true }).click();
   await expect(page).toHaveURL(/\/dashboard/, { timeout: 30_000 });
 }
@@ -71,6 +71,33 @@ test('a person adds a passkey, signs in with it alone, renames it and removes it
     await expect(card.getByRole('row').filter({ hasText: 'Work laptop' })).toHaveCount(0);
   } finally {
     await cdp.send('WebAuthn.removeVirtualAuthenticator', { authenticatorId }).catch(() => undefined);
+  }
+  expect(errors).toEqual([]);
+});
+
+// yourphr#883: the passkey settings take effect when saved — nobody knows to restart for them — and
+// while passkeys are off, Account Profile says so (and tells an admin which setting turns them on)
+// instead of hiding the card.
+test('an admin turns passkeys off and on in Configuration, and Account Profile follows with no restart', async ({ page }) => {
+  const errors = trackPageErrors(page);
+  await signInWithPassword(page, 'admin', adminPassword());
+  const setBaseUrl = async (value: string) => {
+    const res = await page.request.put(`${LOCAL}/api/secure/admin/config`, { data: { key: 'yourphr.application.base-url', value } });
+    expect(res.status()).toBe(200);
+  };
+  try {
+    await setBaseUrl('');
+    await page.goto(`${LOCAL}/account-profile`);
+    await expect(page.getByTestId('passkeys-off')).toContainText('not turned on', { timeout: 20_000 });
+    await expect(page.getByTestId('passkeys-off-admin')).toContainText('yourphr.application.base-url');
+    await expect(page.getByTestId('passkey-add')).toHaveCount(0);
+
+    await setBaseUrl(`http://localhost:${E2E_PORT}`);
+    await page.reload();
+    await expect(page.getByTestId('passkey-add')).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByTestId('passkeys-off')).toHaveCount(0);
+  } finally {
+    await setBaseUrl(`http://localhost:${E2E_PORT}`);
   }
   expect(errors).toEqual([]);
 });
