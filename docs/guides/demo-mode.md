@@ -204,6 +204,10 @@ Relay settings for the demo, set in Admin → Configuration by the operator:
 - `yourphr.relay.public-url`: `https://demo-relay.yourphr.org`
 - `yourphr.relay.url`: `http://demo-yourphr-relay.demo-yourphr.svc:8080`
 
+### Upgrading a demo that predates #886
+
+A demo that was resetting before v3.16.2 holds the old baseline's `admin`, whose password nobody has, and the reset now keeps it. Recover it once with `reset-password`, after v3.16.2 is running there. The step-by-step is in the [v3.16.2 CHANGELOG entry](../../CHANGELOG.md) and on [#886](https://github.com/jwilleke/yourphr/issues/886#issuecomment-6064713386). A new demo volume needs nothing.
+
 ## Tests
 
 | What | Where | Run |
