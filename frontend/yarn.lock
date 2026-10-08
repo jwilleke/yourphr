@@ -7857,10 +7857,10 @@ neotraverse@^1.0.1:
   resolved "https://registry.yarnpkg.com/neotraverse/-/neotraverse-1.0.1.tgz#7c89b43f6504ef85928c718f578c68621576d194"
   integrity sha512-WmmLty1YWwJl9yZi77v2dVIV6X2kuYV8YYBI/G3LWGKdGHmHUvL1z7FW0iDvEvGAwNEoc5x1tOOOyDnf5jJw/w==
 
-ng2-charts@^10.0.0:
-  version "10.0.0"
-  resolved "https://registry.yarnpkg.com/ng2-charts/-/ng2-charts-10.0.0.tgz#ccdc8b2f3cf7f90558d5590ed828d97e4897b626"
-  integrity sha512-mdL75XJrk/0s0YO2ySPQpAHPja85ECDEGNWFlcElJiy/bYliTNGEpeCtctAqZuozTff/E2CwGjyfPFM1ScP2og==
+ng2-charts@^11.0.0:
+  version "11.0.0"
+  resolved "https://registry.yarnpkg.com/ng2-charts/-/ng2-charts-11.0.0.tgz#f181abbe4e32ee8aa895227bd5498bdc0359f1b2"
+  integrity sha512-KHFPsGSyHtluWuvyIhWQVFNWqeQJ25Jy69XajEiAuAXknc3OM9VY45hu7vwv9p51osg+E5GnPxVdPQ3c08L9KA==
   dependencies:
     es-toolkit "^1.39.7"
     tslib "^2.3.0"

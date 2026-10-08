@@ -51,7 +51,7 @@
     "idb": "^8.0.3",
     "jose": "6.2.12",
     "moment": "^2.31.0",
-    "ng2-charts": "^10.0.0",
+    "ng2-charts": "^11.0.0",
     "ngx-highlightjs": "^14.0.1",
     "ngx-infinite-scroll": "^22.0.0",
     "parse-full-name": "^1.2.7",
