@@ -31,7 +31,7 @@ describe('SettingsComponent', () => {
     name: '', contact_email: '', contact_url: '',
     demo_enabled: false, demo_admin_enabled: false, demo_admin_session: false,
     password_min_length: 8, password_max_length: 69, password_deny_common: true, password_deny_username: true,
-    username_min_length: 3, signup_enabled: true, agent_token_enabled: agentTokens, maintenance_message: '', maintenance_enabled: false,
+    username_min_length: 3, signup_enabled: true, agent_token_enabled: agentTokens, maintenance_message: '', maintenance_enabled: false, passkey_host: null,
   });
 
   beforeEach(waitForAsync(() => {

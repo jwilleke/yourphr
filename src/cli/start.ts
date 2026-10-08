@@ -24,6 +24,7 @@ import { FileConfigProvider } from '../framework/providers/FileConfigProvider.js
 import { appLog } from '../log/index.js';
 import { readVersion } from './version.js';
 import { SESSION_SECRET_ENV, ensureInstanceEnvSecret, nodeInstanceEnvFs } from '../config/instance-env-backfill.js';
+import { CREDENTIALS_KEY_ENV } from '../framework/providers/BaseCredentialsProvider.js';
 
 const EX_CONFIG = 78;
 
@@ -61,6 +62,15 @@ export async function start(): Promise<void> {
     }, env, dataDir, nodeInstanceEnvFs);
     env[SESSION_SECRET_ENV] = secret;
     if (origin.kind === 'generated') appLog.warn(`${SESSION_SECRET_ENV} was not set — generated one into ${origin.path}; sessions now survive restarts`);
+    // yourphr#876: the credentials store's signing key, guaranteed the same way (ngdpbase's
+    // NGDPBASE_CREDENTIALS_KEY). Without it the store stays closed and passkeys stay off.
+    const creds = ensureInstanceEnvSecret({
+      name: CREDENTIALS_KEY_ENV,
+      comment: 'Signs yourPHR passkey rows (yourphr#876). Generated on first start; back it up with the encryption keys.',
+      refusal: (envPath, cause) => new Error(`${CREDENTIALS_KEY_ENV} is unset and could not be written to ${envPath}: ${cause.message}`),
+    }, env, dataDir, nodeInstanceEnvFs);
+    env[CREDENTIALS_KEY_ENV] = creds.secret;
+    if (creds.origin.kind === 'generated') appLog.warn(`${CREDENTIALS_KEY_ENV} was not set — generated one into ${creds.origin.path}; record it with the encryption keys`);
   } catch (err) {
     refuse((err as Error).message);
   }

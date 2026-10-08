@@ -20,7 +20,7 @@ describe('NotificationBannerComponent', () => {
   beforeEach(waitForAsync(() => {
     api = jasmine.createSpyObj('FastenApiService', ['getNotifications', 'dismissNotification', 'getPublicInstanceInfo']);
     api.getNotifications.and.returnValue(of([note(), note({id: 'notification_2', title: 'Heads up', message: '', level: 'info'})]));
-    api.getPublicInstanceInfo.and.returnValue(of({maintenance_enabled: false, maintenance_message: ''} as never));
+    api.getPublicInstanceInfo.and.returnValue(of({maintenance_enabled: false, passkey_host: null, maintenance_message: ''} as never));
     api.dismissNotification.and.returnValue(of(true));
     events = new Subject();
     TestBed.configureTestingModule({

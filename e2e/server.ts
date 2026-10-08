@@ -31,7 +31,9 @@ mkdirSync(join(dir, 'config'), { recursive: true });
 // No converter address (yourphr#785): the shipped default now points at yourphr-cda-converter, and this
 // instance has none, so 07-upload's "a server with no converter says so" journey clears it, as
 // app-tests does, to keep covering the not-configured path the page must explain before an upload.
-writeFileSync(join(dir, 'config', 'app-custom-config.json'), JSON.stringify({ 'yourphr.auth.agent-token.enabled': true, 'yourphr.cda-converter.url': '' }, null, 2));
+// Passkeys (yourphr#876) are tied to the base URL's host, and WebAuthn refuses an IP address, so the
+// instance names itself localhost; journey 22 drives the browser there rather than at 127.0.0.1.
+writeFileSync(join(dir, 'config', 'app-custom-config.json'), JSON.stringify({ 'yourphr.auth.agent-token.enabled': true, 'yourphr.cda-converter.url': '', 'yourphr.application.base-url': `http://localhost:${E2E_PORT}` }, null, 2));
 const fake = startFakeProvider('tok');
 const fakeBase = await listenFake(fake);
 
@@ -42,6 +44,8 @@ const app = await assembleApp(dir, {
     SPIKE_TEST_ALLOW_INTERNAL: '1',
     // Connected devices (yourphr#808): on here so journey 21 can drive the Settings screen and the device API.
     YOURPHR_DEVICES_ENABLED: 'true',
+    // Signs the passkey rows (yourphr#876); a real instance generates its own into .env at start.
+    YOURPHR_CREDENTIALS_KEY: 'e2e-credentials-key',
   },
   webDir,
   version: 'e2e',

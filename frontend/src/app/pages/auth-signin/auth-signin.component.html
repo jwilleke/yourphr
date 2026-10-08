@@ -87,6 +87,13 @@
             }
           </div><!-- mb-3 -->
           <button [disabled]="!userForm.form.valid || loading" type="submit" class="btn btn-az-primary w-100">Sign In</button>
+          <!-- #876: a passkey alone signs a person in — no username or password. Offered only where the
+          instance has passkeys on and this browser can use them. -->
+          @if (passkeyEnabled) {
+            <button (click)="passkeySignin()" [disabled]="loading" type="button" data-testid="passkey-signin" class="btn btn-outline-primary w-100 mt-2">
+              <i class="fas fa-key me-1"></i> Sign in with a passkey
+            </button>
+          }
           @if (errorMsg) {
             <div class="alert alert-danger mt-3" role="alert">
               <strong>Error</strong> {{errorMsg}}

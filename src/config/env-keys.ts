@@ -55,6 +55,7 @@ export const FALLBACK_ENV_KEYS: EnvKeyMap = {
   'yourphr.backup.encryption.key': 'YOURPHR_BACKUP_ENCRYPTION_KEY',
   'yourphr.relay.secret': 'YOURPHR_RELAY_SECRET',
   'yourphr.auth.session.secret': 'YOURPHR_SESSION_SECRET',
+  'yourphr.auth.credentials.key': 'YOURPHR_CREDENTIALS_KEY',
 };
 
 export interface PropertyDescription {

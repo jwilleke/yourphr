@@ -29,6 +29,7 @@ import { DatabaseManager } from './framework/managers/DatabaseManager.js';
 import { SqliteDatabaseProvider } from './framework/providers/SqliteDatabaseProvider.js';
 import { UsersManager, BOOTSTRAP_ADMIN_USERNAME } from './framework/managers/UsersManager.js';
 import { SessionsManager } from './framework/managers/SessionsManager.js';
+import { SqliteCredentialsProvider } from './framework/providers/SqliteCredentialsProvider.js';
 import { SqliteUsersProvider } from './framework/providers/SqliteUsersProvider.js';
 import { PasswordAuthProvider } from './framework/providers/PasswordAuthProvider.js';
 import { CatalogManager, type CatalogWrite } from './app/managers/CatalogManager.js';
@@ -267,6 +268,25 @@ const APP_MIGRATIONS: Migration[] = [
       if (!columns.includes('grant_id')) addColumnWithDefault(db, 'agent_tokens', 'grant_id', 'TEXT', '');
     },
   },
+  {
+    id: '20261008090000',
+    description: 'auth_credentials (yourphr#876) — passkeys and other sign-in credentials, rows signed with YOURPHR_CREDENTIALS_KEY',
+    up: (db) => {
+      // Frozen copy of the shape at this date; SqliteCredentialsProvider keeps the current one.
+      db.exec(`CREATE TABLE IF NOT EXISTS auth_credentials (
+        id TEXT PRIMARY KEY,
+        username TEXT NOT NULL,
+        kind TEXT NOT NULL,
+        subject TEXT NOT NULL,
+        secret TEXT NOT NULL,
+        label TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        last_used_at TEXT,
+        sig TEXT NOT NULL DEFAULT '',
+        UNIQUE (kind, subject)
+      )`);
+    },
+  },
 ];
 
 /**
@@ -452,6 +472,10 @@ export async function openStores(dataDir: string, env: Record<string, string | u
     trustedProxies: config.getStringList('yourphr.auth.trusted-proxies'),
     factors: config.getStringList('yourphr.auth.factors'),
     log: (line) => appLog.warn(line),
+    // yourphr#876: the credentials store, open only with its signing key (generated into .env by
+    // start, as ngdpbase does NGDPBASE_CREDENTIALS_KEY); without it there are no passkeys.
+    ...(config.getString('yourphr.auth.credentials.key') !== '' ? { credentials: new SqliteCredentialsProvider(db, config.getString('yourphr.auth.credentials.key')) } : {}),
+    passkey: { enabled: config.getBool('yourphr.auth.passkey.enabled'), baseUrl: config.getString('yourphr.application.base-url'), rpName: config.getString('yourphr.web.environment-name') },
   });
   // 6. The engine: managers in validated dependency order (yourphr#608). Configuration first,
   // then Records over the PHI-storage provider. The other stores join as their own children land.
