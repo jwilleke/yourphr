@@ -1,5 +1,41 @@
 # Changelog
 
+## [3.16.2](https://github.com/jwilleke/yourphr/compare/v3.16.1...v3.16.2) (2026-10-08)
+
+__The operator of a public demo is no longer locked out after every reset.__
+
+### Bug Fixes
+
+- __A demo reset keeps the operator's admin account__ ([#886](https://github.com/jwilleke/yourphr/issues/886)): resetting a public demo used to replace the operator's `admin` with one whose password nobody had, at every restart. The reset now keeps the operator's account, with its password and passkeys, and still discards everything visitors left behind. A new demo creates its admin and password file at first start, as any install does.
+
+### Action needed: one-time step for an existing demo (demo.yourphr.org)
+
+A demo that has been resetting on an older release already holds the old baseline's `admin`, whose password nobody has. From this release on, the reset keeps whatever `admin` is there, so that unknown password would carry forward forever. Recover it once, __after__ this release is running. If you do it before, the old code's reset discards the recovery at the next restart.
+
+1. Confirm the demo runs this release or later:
+   `kubectl -n demo-yourphr get deploy demo-yourphr-ts -o jsonpath='{.spec.template.spec.containers[0].image}'`
+2. Set a new `admin` password. It is written to a file on the volume, never printed:
+   `kubectl -n demo-yourphr exec deploy/demo-yourphr-ts -- node dist/server/main.js reset-password --user admin`
+3. Read it and keep it in your password manager:
+   `kubectl -n demo-yourphr exec deploy/demo-yourphr-ts -- cat /opt/yourphr/data/.recovery_password`
+4. Sign in at <https://demo.yourphr.org> as `admin`, and change the password in Account Profile.
+5. Remove the file:
+   `kubectl -n demo-yourphr exec deploy/demo-yourphr-ts -- rm /opt/yourphr/data/.recovery_password`
+6. Prove it survives a reset:
+   - `kubectl -n demo-yourphr rollout restart deploy/demo-yourphr-ts`
+   - the log shows `demo reset: kept admin — password, role and N passkey(s) carried across`
+   - sign in again with the same password.
+7. Then, in Admin → Configuration:
+   - `yourphr.relay.public-url` = `https://demo-relay.yourphr.org`
+   - `yourphr.relay.url` = `http://demo-yourphr-relay.demo-yourphr.svc:8080`
+   - optionally `yourphr.application.base-url` = `https://demo.yourphr.org`, so the operator can add a passkey.
+
+A brand-new demo volume needs none of this. Its first start writes `<data>/.admin_bootstrap_password` as on any install, and that account is kept from then on.
+
+### Internal
+
+- A developer guide to demo mode: [`docs/guides/demo-mode.md`](docs/guides/demo-mode.md).
+
 ## [3.16.1](https://github.com/jwilleke/yourphr/compare/v3.16.0...v3.16.1) (2026-10-08)
 
 __Passkey settings work as soon as they are saved, and Account Profile says when passkeys are off.__
