@@ -52,6 +52,8 @@ Open work in [jwilleke/yourphr](https://github.com/jwilleke/yourphr), ranked. Ge
 
 ## 🟡 P2
 
+- [#885](https://github.com/jwilleke/yourphr/issues/885) — [FEATURE] Admin → Configuration says when a saved setting needs a restart
+- [#884](https://github.com/jwilleke/yourphr/issues/884) — [FEATURE] Restart the server from the admin UI, without depending on PM2
 - [#833](https://github.com/jwilleke/yourphr/issues/833) — [FEATURE] Per-person notification channels: each person chooses where notices reach them
 - [#803](https://github.com/jwilleke/yourphr/issues/803) — [FEATURE] "spike" in test/CI variable names, temp prefixes, comments and docs — rename to yourPHR
 - [#802](https://github.com/jwilleke/yourphr/issues/802) — [FEATURE] The live deployment still sets SPIKE_* variables — rename them, then retire the fallback
@@ -101,6 +103,9 @@ Open work in [jwilleke/yourphr](https://github.com/jwilleke/yourphr), ranked. Ge
 ## 🔵 In review
 
 - [#876](https://github.com/jwilleke/yourphr/issues/876) — [FEATURE] Passkeys — enrol, sign in, rename, remove, ported from ngdpbase
+- [#887](https://github.com/jwilleke/yourphr/issues/887) — [BUG] reset-password on a running demo runs the demo reset underneath the live server — server left on deleted DB files
+- [#886](https://github.com/jwilleke/yourphr/issues/886) — [BUG] Demo reset locks the operator out: the real admin is replaced by the baseline's admin, whose password nobody has
+- [#883](https://github.com/jwilleke/yourphr/issues/883) — [BUG] Passkey settings take effect only after a restart nobody knows about, and Account Profile says nothing while passkeys are off
 - [#823](https://github.com/jwilleke/yourphr/issues/823) — [security] ip-address — 4 open advisories in the frontend lockfile (medium)
 - [#822](https://github.com/jwilleke/yourphr/issues/822) — [security] engine.io — 1 open advisory in the frontend lockfile (high)
 - [#821](https://github.com/jwilleke/yourphr/issues/821) — [security] undici — 3 open advisories in the frontend lockfile (high)
@@ -122,12 +127,6 @@ Open work in [jwilleke/yourphr](https://github.com/jwilleke/yourphr), ranked. Ge
 
 ## ❓ Needs triage
 
-- [#880](https://github.com/jwilleke/yourphr/pull/880) — chore(deps): bump gridstack from 8.1.1 to 14.0.0 in /frontend *(PR · ready)* — no linked issue
-- [#879](https://github.com/jwilleke/yourphr/pull/879) — chore(deps): bump @playwright/test from 1.61.0 to 1.63.0 in /frontend *(PR · ready)* — no linked issue
-- [#878](https://github.com/jwilleke/yourphr/pull/878) — chore(deps): bump ng2-charts from 10.0.0 to 11.0.0 in /frontend *(PR · ready)* — no linked issue
-- [#877](https://github.com/jwilleke/yourphr/pull/877) — chore(deps): bump @types/jasmine from 6.0.0 to 7.0.0 in /frontend *(PR · ready)* — no linked issue
-- [#875](https://github.com/jwilleke/yourphr/pull/875) — chore(deps): bump the npm_and_yarn group across 1 directory with 4 updates *(PR · ready)* — no linked issue
-- [#874](https://github.com/jwilleke/yourphr/pull/874) — chore(deps-dev): bump source-map-js from 1.2.1 to 1.2.2 in the npm_and_yarn group across 1 directory *(PR · ready)* — no linked issue
 - [#867](https://github.com/jwilleke/yourphr/issues/867) — [BUG] The app database (spike.db) is not in WAL mode; SqliteDatabaseProvider never sets journal_mode
 - [#866](https://github.com/jwilleke/yourphr/issues/866) — [BUG] Applying a staged restore leaves the old -wal and -shm beside the restored database
 - [#865](https://github.com/jwilleke/yourphr/issues/865) — [BUG] Shutdown exits before the databases close: app.close() is not awaited on SIGTERM
