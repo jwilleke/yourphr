@@ -7,12 +7,12 @@ import {
   HK_TYPE_SYSTEM,
   LOINC,
   OBS_CATEGORY,
-  SNOMED,
   UCUM,
   codeableDisplay,
   lookupByCode,
 } from './catalog.js';
 import type { HealthSampleRow } from '../providers/BaseHealthProvider.js';
+import { isUri } from './time.js';
 
 export interface ObservationComponentValue {
   code: string;
@@ -65,7 +65,7 @@ export function toObservation(row: HealthSampleRow, subject?: string): Observati
           coding: [{
             system: codeSystem,
             code: codeValue,
-            ...(metric?.display ? { display: metric.display } : {}),
+            ...(metric ? { display: metric.allowedValues.length ? codeableDisplay(metric, row.code) : metric.display } : {}),
           }],
         }
       : { text: row.metricType || 'unknown' },
@@ -102,9 +102,10 @@ export function toObservation(row: HealthSampleRow, subject?: string): Observati
   } else if (row.valueNum != null) {
     observation.valueQuantity = quantity(row.valueNum, row.unit);
   } else if (row.valueText) {
+    const system = row.valueSystem;
     observation.valueCodeableConcept = {
       coding: [{
-        system: SNOMED,
+        ...(system ? { system } : {}),
         code: row.valueText,
         display: metric ? codeableDisplay(metric, row.valueText) : row.valueText,
       }],
@@ -116,7 +117,7 @@ export function toObservation(row: HealthSampleRow, subject?: string): Observati
       display: row.deviceName || row.sourceName,
     };
   }
-  if (row.sourceName) {
+  if (row.sourceName && isUri(row.sourceName)) {
     observation.meta = { ...(observation.meta ?? {}), source: row.sourceName };
   }
   if (row.vendorType) {
@@ -148,7 +149,6 @@ export function toBundle(rows: HealthSampleRow[], subject?: string): Bundle<Obse
   return {
     resourceType: 'Bundle',
     type: 'collection',
-    total: entries.length,
     entry: entries,
   };
 }

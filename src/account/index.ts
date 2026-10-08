@@ -129,9 +129,9 @@ export function accessCategoryFor(pathname: string): string | undefined {
     '/api/secure/health/series': 'Health',
     '/api/secure/health/samples': 'Health',
     '/api/secure/health/bundle': 'Health',
-    '/api/secure/health/sync-state': 'Health',
   };
   if (exact[pathname]) return exact[pathname];
+  if (/^\/api\/secure\/health\/observation\/[^/]+$/.test(pathname)) return 'Health';
   if (/^\/api\/secure\/resource\/fhir\/[^/]+\/[^/]+$/.test(pathname)) return 'Records (FHIR)';
   // Both read FHIR resources and were served unlogged until the category check found them
   // (yourphr#798, Jim 2026-09-29: the existing category, so no new agent-token scope): a

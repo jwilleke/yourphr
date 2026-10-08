@@ -1102,18 +1102,29 @@ function qualityNote(entry: CatalogEntry, missing: string[], samples: HealthSamp
   const gaps = namedGaps(missing);
   const device = samples.map((s) => s.device_name || s.source_name).find(Boolean)
     || entry.summaries.map((s) => s.device_name || s.source_name).find(Boolean);
+  const watch = !!device && /watch/i.test(device);
   const notes: Record<string, string> = {
-    heart_rate: '<b>Band shows each day’s low-to-high range; line is the daily average.</b> Averages hide spikes, so the daily high and low are kept rather than smoothed away. Continuous optical sensor.',
-    resting_heart_rate: '<b>Measured overnight by the watch.</b> Consumer-grade, generally tracks a clinical resting HR within a few bpm.',
-    heart_rate_variability_sdnn: '<b>SDNN, sampled irregularly by the watch — not RMSSD.</b> Absolute values aren’t comparable to a clinical ECG-derived HRV; the trend over time is the usable signal, not any single number.',
+    heart_rate: '<b>Band shows each day’s low-to-high range; line is the daily average.</b> Averages hide spikes, so the daily high and low are kept rather than smoothed away.'
+      + (watch ? ' Continuous optical sensor.' : ''),
+    resting_heart_rate: watch
+      ? '<b>Measured overnight by the watch.</b> Consumer-grade, generally tracks a clinical resting HR within a few bpm.'
+      : '<b>A daily resting rate from a consumer device.</b> Generally tracks a clinical resting HR within a few bpm.',
+    heart_rate_variability_sdnn: (watch
+      ? '<b>SDNN, sampled irregularly by the watch — not RMSSD.</b> '
+      : '<b>SDNN, not RMSSD.</b> ')
+      + 'Absolute values aren’t comparable to a clinical ECG-derived HRV; the trend over time is the usable signal, not any single number.',
     step_count: '<b>Activity context, not a clinical measure.</b> Useful as a backdrop for the cardiac trends above rather than on its own.',
     blood_pressure: device
       ? `<b>Recorded as blood pressure samples from ${escapeHtml(device)}.</b> Consumer-grade. Confirm with an in-clinic measurement before acting.`
       : '<b>Spot readings from a consumer device — device model not recorded.</b> Not a validated clinical feed. Confirm with an in-clinic measurement before acting.',
-    oxygen_saturation: '<b>Optical sensor on a consumer device, not a clinical pulse oximeter.</b>',
+    oxygen_saturation: watch
+      ? '<b>Optical sensor on a consumer device, not a clinical pulse oximeter.</b>'
+      : '<b>Pulse oximetry from a consumer device, not a clinical pulse oximeter.</b>',
     body_mass: '<b>Spot checks from a home scale or health app.</b> Not a clinical weigh-in.',
     body_temperature: '<b>Spot checks from a consumer thermometer.</b> Not a clinical measurement.',
-    sleep_stage: '<b>Watch-estimated sleep stages, not a clinical sleep study.</b> Stage labels are device categories mapped to SNOMED.',
+    sleep_stage: watch
+      ? '<b>Watch-estimated sleep stages, not a clinical sleep study.</b>'
+      : '<b>Device-estimated sleep stages, not a clinical sleep study.</b>',
   };
   const base = notes[entry.id] || '<b>Recorded on a consumer device.</b>';
   const gapBit = gaps ? ` No readings ${escapeHtml(gaps)}.` : '';

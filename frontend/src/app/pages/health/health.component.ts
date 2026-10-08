@@ -45,13 +45,11 @@ import {
   parseStoredWeightUnit,
   seriesMode,
   SLEEP_AWAKE,
-  SLEEP_CORE,
   SLEEP_DEEP,
-  SLEEP_IN_BED,
+  SLEEP_LIGHT,
   SLEEP_REM,
   SLEEP_STAGE_LABELS,
   SLEEP_STAGE_ORDER,
-  SLEEP_UNSPECIFIED,
   WEIGHT_UNIT_STORAGE_KEY,
   WEIGHT_UNITS,
   WeightUnit,
@@ -78,17 +76,9 @@ const INDIGO_FILL = 'rgba(102, 16, 242, 0.12)';
 const TEAL = 'rgb(13, 202, 240)';
 const SLEEP_COLORS: Record<string, string> = {
   [SLEEP_AWAKE]: 'rgba(253, 126, 20, 0.85)',
-  [SLEEP_CORE]: 'rgba(13, 110, 253, 0.85)',
+  [SLEEP_LIGHT]: 'rgba(13, 110, 253, 0.85)',
   [SLEEP_DEEP]: 'rgba(102, 16, 242, 0.85)',
   [SLEEP_REM]: 'rgba(111, 66, 193, 0.65)',
-  [SLEEP_UNSPECIFIED]: 'rgba(108, 117, 125, 0.7)',
-  [SLEEP_IN_BED]: 'rgba(173, 181, 189, 0.7)',
-  awake: 'rgba(253, 126, 20, 0.85)',
-  asleepCore: 'rgba(13, 110, 253, 0.85)',
-  asleepDeep: 'rgba(102, 16, 242, 0.85)',
-  asleepREM: 'rgba(111, 66, 193, 0.65)',
-  asleepUnspecified: 'rgba(108, 117, 125, 0.7)',
-  inBed: 'rgba(173, 181, 189, 0.7)',
 };
 
 export interface TableRow {
@@ -411,7 +401,7 @@ export class HealthComponent implements OnInit, OnDestroy {
         ? forkJoin(chartEntries.map((entry) => this.loadSummarySeries(entry, window).pipe(
           map((series) => [entry.id, series] as const),
         )))
-        : of([] as Array<readonly [string, HealthSeries | null]>),
+        : of([] as readonly [string, HealthSeries | null][]),
       samples: this.listAllSummarySamples(selected, window),
     }).subscribe({
       next: ({patient, series, samples}) => {
@@ -620,6 +610,41 @@ export class HealthComponent implements OnInit, OnDestroy {
       return;
     }
     this.chartType = 'line';
+    const daily = series.daily || [];
+    if (daily.length > 0) {
+      const points = toDayPoints(daily, convert);
+      this.hasChartData = points.length > 0;
+      const datasets: ChartConfiguration['data']['datasets'] = [{
+        label: def.label,
+        data: points,
+        borderColor: INDIGO,
+        backgroundColor: INDIGO_FILL,
+        pointRadius: points.length > 80 ? 0 : 2,
+        fill: false,
+        tension: 0.2,
+      }];
+      if (daily.some((bucket) => bucket.min != null && bucket.max != null)) {
+        datasets.push({
+          label: 'Low',
+          data: toDayPoints(daily.map((bucket) => ({date: bucket.date, value: bucket.min ?? bucket.value})), convert),
+          borderColor: 'rgba(13, 110, 253, 0.35)',
+          pointRadius: 0,
+          borderDash: [4, 4],
+          fill: false,
+        });
+        datasets.push({
+          label: 'High',
+          data: toDayPoints(daily.map((bucket) => ({date: bucket.date, value: bucket.max ?? bucket.value})), convert),
+          borderColor: 'rgba(13, 110, 253, 0.35)',
+          pointRadius: 0,
+          borderDash: [4, 4],
+          fill: '-1',
+        });
+      }
+      this.chartData = {datasets};
+      this.chartOptions = this.chartOptionsFor('line', this.seriesUnit);
+      return;
+    }
     const points = toTimePoints(series.points || [], convert);
     this.hasChartData = points.length > 0;
     this.chartData = {

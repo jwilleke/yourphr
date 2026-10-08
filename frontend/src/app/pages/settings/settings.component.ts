@@ -348,29 +348,4 @@ export class SettingsComponent implements OnInit {
     }
     return 'in under a minute';
   }
-
-  /**
-   * The Angular proxy rewrites Host to localhost, so discovery may still miss the
-   * address bar. Prepend the page origin when it is a LAN/public host the phone can dial.
-   */
-  private companionBaseUrls(fromServer: string[] | undefined): string[] {
-    const urls = [...(fromServer ?? [])];
-    const origin = this.pageOriginForCompanion();
-    if (origin && !urls.includes(origin)) urls.unshift(origin);
-    return urls;
-  }
-
-  private pageOriginForCompanion(): string | null {
-    const origin = globalThis.location?.origin;
-    if (!origin) return null;
-    try {
-      const host = new URL(origin).hostname.toLowerCase();
-      if (host === 'localhost' || host === '127.0.0.1' || host === '::1' || host.endsWith('.localhost')) {
-        return null;
-      }
-      return origin;
-    } catch {
-      return null;
-    }
-  }
 }

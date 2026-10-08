@@ -1,11 +1,9 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import Database from 'better-sqlite3-multiple-ciphers';
 import { Engine } from '../../../framework/Engine.js';
 import { ApiContext } from '../../../framework/ApiContext.js';
 import { HealthManager, HEALTH_SAMPLE_MAX_BATCH } from '../../managers/HealthManager.js';
-import { SqliteHealthProvider } from '../SqliteHealthProvider.js';
+import { SqlitePhdSamplesProvider } from '../SqlitePhdSamplesProvider.js';
 
-let db: InstanceType<typeof Database>;
 let engine: Engine;
 let health: HealthManager;
 let jim: ApiContext;
@@ -26,10 +24,11 @@ function quantity(over: Record<string, unknown> = {}): Record<string, unknown> {
   };
 }
 
+const inWindow = { startAfter: '2026-08-01T00:00:00Z', startBefore: '2026-09-01T00:00:00Z' };
+
 async function boot(): Promise<void> {
-  db = new Database(':memory:');
   engine = new Engine();
-  health = new HealthManager(engine, new SqliteHealthProvider(db));
+  health = new HealthManager(engine, new SqlitePhdSamplesProvider(':memory:'));
   engine.register('health', health);
   await engine.initialize();
   jim = ApiContext.from({ username: 'jim', role: 'user' }, engine);
@@ -67,8 +66,9 @@ describe('ingest', () => {
     expect(listed.samples[0]?.vendor_type).toBe('HKQuantityTypeIdentifierSomethingNew');
   });
 
-  it('refuses a missing device_id and a batch over the cap', async () => {
-    await expect(health.ingest(jim, { device: { device_id: '' }, samples: [] })).rejects.toThrow(/device_id is required/);
+  it('accepts a session upload without a device id and refuses a batch over the cap', async () => {
+    const uploaded = await health.ingest(jim, { device: { device_id: '' }, samples: [quantity({ uuid: 'no-device' })] });
+    expect(uploaded.stored).toBe(1);
     const tooMany = Array.from({ length: HEALTH_SAMPLE_MAX_BATCH + 1 }, (_, i) => quantity({ uuid: `u-${i}` }));
     await expect(health.ingest(jim, { device, samples: tooMany })).rejects.toThrow(/maximum is/);
   });
@@ -122,7 +122,7 @@ describe('ingest', () => {
     ]));
     const obs = await health.observation(jim, listed.samples[0]!.id);
     expect(obs.component).toHaveLength(2);
-    const series = await health.series(jim, { codes: ['85354-9'], mode: 'points' });
+    const series = await health.series(jim, { codes: ['85354-9'], mode: 'points', ...inWindow });
     expect(series.components?.['8480-6']?.map((p) => p.v)).toEqual([128]);
     expect(series.components?.['8462-4']?.map((p) => p.v)).toEqual([82]);
   });
@@ -176,7 +176,8 @@ describe('ingest', () => {
     expect(bundleIn.stored).toBe(1);
     const bundle = await health.bundle(jim, { codes: ['8867-4'] });
     expect(bundle.resourceType).toBe('Bundle');
-    expect(bundle.total).toBeGreaterThanOrEqual(2);
+    expect(bundle.entry?.length).toBeGreaterThanOrEqual(2);
+    expect(bundle.total).toBeUndefined();
   });
 });
 
@@ -196,14 +197,14 @@ describe('reads', () => {
     expect(catalog.metrics[0]?.sample_count).toBe(2);
     expect(catalog.last_synced_at).toBeTruthy();
 
-    const series = await health.series(jim, { metricTypes: ['heart_rate'], mode: 'points' });
+    const series = await health.series(jim, { metricTypes: ['heart_rate'], mode: 'points', ...inWindow });
     expect(series.total).toBe(2);
     expect(series.downsampled).toBe(false);
     expect(series.points?.map((p) => p.v)).toEqual([70, 80]);
     expect(series.stats).toMatchObject({ min: 70, max: 80, avg: 75 });
   });
 
-  it('sums steps by UTC day and buckets sleep by night', async () => {
+  it('sums steps by the sample\'s own local day and buckets sleep the same way', async () => {
     await health.ingest(jim, {
       device,
       samples: [
@@ -218,13 +219,12 @@ describe('reads', () => {
         },
       ],
     });
-    const daily = await health.series(jim, { metricTypes: ['step_count'], mode: 'day' });
+    const daily = await health.series(jim, { metricTypes: ['step_count'], mode: 'day', ...inWindow });
     expect(daily.daily).toEqual([{ date: '2026-08-24', value: 150 }]);
 
-    const nights = await health.series(jim, { metricTypes: ['sleep_stage'], mode: 'stages' });
-    // 04:00–06:00 UTC minus 12 hours buckets onto 2026-08-23.
-    expect(nights.nights?.[0]?.date).toBe('2026-08-23');
-    expect(nights.nights?.[0]?.stages['248220008']).toBeCloseTo(2, 5);
+    const nights = await health.series(jim, { metricTypes: ['sleep_stage'], mode: 'stages', ...inWindow });
+    expect(nights.nights?.[0]?.date).toBe('2026-08-24');
+    expect(nights.nights?.[0]?.stages['93831-6']).toBeCloseTo(2, 5);
   });
 
   it('returns per-day min/max/avg for daily-stats without inventing gap days', async () => {
@@ -236,14 +236,14 @@ describe('reads', () => {
         quantity({ uuid: 'c', start: '2026-08-26T09:00:00Z', end: '2026-08-26T09:00:00Z', value: 90 }),
       ],
     });
-    const series = await health.series(jim, { metricTypes: ['heart_rate'], mode: 'daily-stats' });
+    const series = await health.series(jim, { metricTypes: ['heart_rate'], mode: 'daily-stats', ...inWindow });
     expect(series.total).toBe(3);
     expect(series.stats).toMatchObject({ min: 70, max: 90, avg: 80 });
     expect(series.daily).toEqual([
       { date: '2026-08-24', value: 75, min: 70, max: 80, n: 2 },
       { date: '2026-08-26', value: 90, min: 90, max: 90, n: 1 },
     ]);
-    const steps = await health.series(jim, { metricTypes: ['step_count'], mode: 'day' });
+    const steps = await health.series(jim, { metricTypes: ['step_count'], mode: 'day', ...inWindow });
     expect(steps.daily).toEqual([]);
   });
 

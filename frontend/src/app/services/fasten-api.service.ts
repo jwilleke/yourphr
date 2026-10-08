@@ -21,7 +21,6 @@ import {User} from '../models/fasten/user';
 import {ResourceFhir} from '../models/fasten/resource_fhir';
 import {SourceSummary} from '../models/fasten/source-summary';
 import {Summary} from '../models/fasten/summary';
-import {AccessToken, CreateAccessTokenRequest, ServerDiscovery} from '../models/fasten/access-token';
 import {
   HealthMetricsCatalog,
   HealthSamplePage,
@@ -96,27 +95,6 @@ export class FastenApiService {
           return response.data
         })
       );
-  }
-
-  getAccessTokens(): Observable<AccessToken[]> {
-    return this._httpClient.get<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/access/token`)
-      .pipe(map((response: ResponseWrapper) => (response.data || []) as AccessToken[]));
-  }
-
-  createAccessToken(body: CreateAccessTokenRequest): Observable<string> {
-    return this._httpClient.post<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/access/token`, body)
-      .pipe(map((response: ResponseWrapper) => response.data as string));
-  }
-
-  deleteAccessToken(tokenId: string): Observable<boolean> {
-    return this._httpClient.delete<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/access/token`, {
-      body: { token_id: tokenId },
-    }).pipe(map((response: ResponseWrapper) => response.success));
-  }
-
-  getServerDiscovery(): Observable<ServerDiscovery> {
-    return this._httpClient.get<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/sync/discovery`)
-      .pipe(map((response: ResponseWrapper) => response.data as ServerDiscovery));
   }
 
   getHealthMetrics(): Observable<HealthMetricsCatalog> {

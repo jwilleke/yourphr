@@ -8,6 +8,7 @@ function row(over: Partial<HealthSampleRow> = {}): HealthSampleRow {
     userId: 'jim',
     externalUuid: 'aaa-1',
     identifierSystem: 'urn:uuid',
+    adapter: 'healthkit',
     vendorType: 'HKQuantityTypeIdentifierHeartRate',
     metricType: 'heart_rate',
     codeSystem: 'http://loinc.org',
@@ -16,15 +17,21 @@ function row(over: Partial<HealthSampleRow> = {}): HealthSampleRow {
     subject: '',
     startTime: '2026-08-24T12:00:00Z',
     endTime: '2026-08-24T12:00:00Z',
+    tzOffset: 'Z',
+    localDay: '2026-08-24',
     valueNum: 72,
     unit: '/min',
+    originalUnit: 'count/min',
     valueText: '',
+    valueSystem: '',
     components: '',
     correlationUuid: '',
     sourceName: 'Apple Watch',
     sourceBundleId: 'com.apple.health',
     deviceName: 'Apple Watch',
+    sourceId: 'source-1',
     metadata: '',
+    deleted: false,
     ...over,
   };
 }
@@ -40,6 +47,7 @@ describe('toObservation', () => {
     expect(obs.valueQuantity).toMatchObject({ value: 72, system: 'http://unitsofmeasure.org', code: '/min' });
     expect(obs.subject?.reference).toBe('Patient/p1');
     expect(obs.device?.display).toBe('Apple Watch');
+    expect(obs.meta?.source).toBeUndefined();
   });
 
   it('puts blood pressure into components', () => {
@@ -71,24 +79,31 @@ describe('toObservation', () => {
     expect(obs.code).toEqual({ text: 'future_metric' });
   });
 
-  it('encodes sleep as a period and a SNOMED value', () => {
+  it('encodes a sleep stage as a period and keeps the caller\'s code system', () => {
     const obs = toObservation(row({
       id: 'sleep-1',
-      code: '93832-4',
-      category: 'sleep',
+      code: '93831-6',
+      category: 'activity',
       metricType: 'sleep_stage',
       vendorType: 'HKCategoryTypeIdentifierSleepAnalysis',
       startTime: '2026-08-24T04:00:00Z',
       endTime: '2026-08-24T06:00:00Z',
       valueNum: null,
       unit: '',
-      valueText: '248220008',
+      valueText: '93831-6',
+      valueSystem: 'http://loinc.org',
     }));
     expect(obs.effectivePeriod).toEqual({ start: '2026-08-24T04:00:00Z', end: '2026-08-24T06:00:00Z' });
+    expect(obs.category?.[0]?.coding?.[0]?.code).toBe('activity');
     expect(obs.valueCodeableConcept?.coding?.[0]).toMatchObject({
-      system: 'http://snomed.info/sct',
-      code: '248220008',
+      system: 'http://loinc.org',
+      code: '93831-6',
     });
+  });
+
+  it('keeps meta.source only when it is a URI', () => {
+    const kept = toObservation(row({ sourceName: 'https://example.test/health' }));
+    expect(kept.meta?.source).toBe('https://example.test/health');
   });
 });
 
@@ -97,7 +112,8 @@ describe('toBundle', () => {
     const bundle = toBundle([row(), row({ id: 'obs-2', externalUuid: 'aaa-2' })]);
     expect(bundle.resourceType).toBe('Bundle');
     expect(bundle.type).toBe('collection');
-    expect(bundle.total).toBe(2);
+    expect(bundle.total).toBeUndefined();
+    expect(bundle.entry).toHaveLength(2);
     expect(bundle.entry?.[0]?.resource?.id).toBe('obs-1');
   });
 });

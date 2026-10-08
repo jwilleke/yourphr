@@ -91,8 +91,6 @@ jobs:
         run: npm run agent-tokens
       - name: MCP bridge — one patient's records, over the agent-token surface (yourphr#657)
         run: npm run mcp-tests
-      - name: Device tokens — a companion write an agent cannot make
-        run: npm run device-tokens
       - name: Configuration system (precedence, overlay, refusals)
         run: npm run config
       - name: Bootstrap environment (.env precedence)

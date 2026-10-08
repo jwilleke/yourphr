@@ -78,7 +78,7 @@ describe('groupSummaries', () => {
 
 describe('seriesMode', () => {
   it('maps visualizations onto the series endpoint modes', () => {
-    expect(seriesMode('line')).toBe('points');
+    expect(seriesMode('line')).toBe('daily-stats');
     expect(seriesMode('dual-line')).toBe('points');
     expect(seriesMode('bar-daily')).toBe('day');
     expect(seriesMode('sleep-stages')).toBe('stages');
@@ -132,7 +132,7 @@ describe('formatLatest', () => {
   it('renders HealthKit oxygen fractions as a percentage', () => {
     const def = KNOWN_METRICS.find((m) => m.id === 'oxygen_saturation');
     const summaries = [{
-      code: '2708-6',
+      code: '59408-5',
       metric_type: 'oxygen_saturation',
       vendor_type: 'HKQuantityTypeIdentifierOxygenSaturation',
       unit: '%',
@@ -183,15 +183,13 @@ describe('asPercent', () => {
 });
 
 describe('asleepHours', () => {
-  it('sums core, deep, REM, and unspecified, and ignores awake and in-bed', () => {
+  it('sums light, deep, and REM, and ignores awakening', () => {
     expect(asleepHours({
-      '248219008': 4.2,
-      '248220008': 1.5,
-      '248218000': 1.8,
-      '248171000': 0.3,
-      '248218006': 0.4,
-      '133877004': 8.5,
-    })).toBeCloseTo(7.8, 5);
+      '93830-8': 4.2,
+      '93831-6': 1.5,
+      '93829-0': 1.8,
+      '93828-2': 0.4,
+    })).toBeCloseTo(7.5, 5);
     expect(asleepHours({})).toBe(0);
   });
 });

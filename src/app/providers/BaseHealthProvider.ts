@@ -23,23 +23,38 @@ export interface HealthSampleRow {
   userId: string;
   externalUuid: string;
   identifierSystem: string;
+  /** Which intake adapter produced the row: manual, healthkit, health-connect, or fhir. */
+  adapter: string;
   vendorType: string;
   metricType: string;
   codeSystem: string;
   code: string;
   category: string;
   subject: string;
+  /** UTC instant. */
   startTime: string;
   endTime: string;
+  /** The offset the sender wrote, kept beside the UTC instant. */
+  tzOffset: string;
+  /** Calendar day in `tzOffset`. */
+  localDay: string;
   valueNum: number | null;
+  /** Canonical UCUM unit. */
   unit: string;
+  /** The unit the sender wrote, before conversion. */
+  originalUnit: string;
   valueText: string;
+  /** The caller's valueCodeableConcept system, kept on read. */
+  valueSystem: string;
   components: string;
   correlationUuid: string;
   sourceName: string;
   sourceBundleId: string;
   deviceName: string;
+  /** The device source this row is credited to. */
+  sourceId: string;
   metadata: string;
+  deleted: boolean;
 }
 
 export interface HealthSyncStateRow {
@@ -118,13 +133,19 @@ export interface HealthSeries {
 
 export abstract class BaseHealthProvider {
   abstract initialize(): Promise<void>;
+  async close(): Promise<void> { /* a provider that owns a file overrides this */ }
   /** Inserts, skipping (user_id, external_uuid) duplicates. Returns how many rows were actually written. */
   abstract insertSamples(userId: string, rows: HealthSampleRow[]): Promise<number>;
   abstract listSamples(userId: string, query: HealthSampleQuery): Promise<{ samples: HealthSampleRow[]; total: number }>;
   abstract readSample(userId: string, id: string): Promise<HealthSampleRow | undefined>;
   abstract summarizeMetrics(userId: string): Promise<HealthMetricSummary[]>;
   abstract querySeries(userId: string, query: HealthSeriesQuery): Promise<HealthSeries>;
+  abstract upsertSyncStates(rows: HealthSyncStateRow[]): Promise<void>;
   abstract upsertSyncState(row: HealthSyncStateRow): Promise<void>;
+  /** Non-deleted rows that share a correlation id, so blood-pressure halves can pair across batches. */
+  abstract rowsForCorrelation(userId: string, correlationUuid: string): Promise<HealthSampleRow[]>;
+  /** Non-deleted rows for one metric on the given local days. */
+  abstract rowsForLocalDays(userId: string, metricType: string, localDays: string[]): Promise<HealthSampleRow[]>;
   abstract listSyncStates(userId: string, deviceId: string): Promise<HealthSyncStateRow[]>;
   abstract removeForOwner(userId: string): Promise<void>;
 }

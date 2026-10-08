@@ -7,7 +7,7 @@
     .az-header-menu {
       border-right: 1px solid rgba($gray-900, .08);
       box-shadow: 0 0 30px rgba($gray-900, .08);
-      left: 0;
+      transform: translateX(0);
     }
 
     .az-navbar-backdrop {
@@ -162,14 +162,13 @@
   position: fixed;
   top: 0;
   bottom: 0;
-  left: -$az-width-sidebar;
+  left: 0;
   width: $az-width-sidebar;
   background-color: #fff;
-  overflow: hidden;
+  overflow-y: auto;
   z-index: 1000;
-  // Slide with left, not transform. A transformed fixed panel with its own
-  // overflow is painted empty by WKWebView, which is the iOS companion menu.
-  transition: left 0.35s;
+  transform: translateX(-$az-width-sidebar);
+  @include transition(all 0.35s);
 
   @include media-breakpoint-up(lg) {
     display: flex;
@@ -177,12 +176,11 @@
     background-color: transparent;
     border-right: 0;
     position: static;
-    left: auto;
     width: auto;
-    overflow: visible;
-    transition: none;
+    overflow-y: visible;
+    transform: none;
     z-index: auto;
-    .az-header-menu-scroll > .nav {
+    > .nav {
       .nav-item {
         display: flex;
         align-self: stretch;
@@ -193,7 +191,7 @@
     }
   }
 
-  .az-header-menu-scroll > .nav {
+  > .nav {
     flex-direction: column;
     padding: 20px;
 
@@ -327,15 +325,6 @@
         display: block;
       }
     }
-  }
-}
-
-.az-header-menu-scroll {
-  height: 100%;
-  overflow-y: auto;
-
-  @include media-breakpoint-up(lg) {
-    display: contents;
   }
 }
 

@@ -128,11 +128,9 @@ const SEARCH_RECORDS = {
  * Wearable metrics (yourphr sat-apple-health): the phone's own readings, which `search_records`
  * cannot reach and never will.
  *
- * Record search runs over the FHIR resources a provider sent — health_samples is a separate
- * projection written by the companion app, deliberately NOT through the FHIR write path, because
- * every Observation write costs a goja evaluation and a year of five-minute heart rate would cost
- * more than a day of CPU. So a metric is not "a record that search happens to miss": it lives in a
- * different table, reached by a different route, under its own `Health` access category.
+ * Record search runs over the FHIR resources a provider sent. Raw samples live in phd-samples.db.
+ * The daily trend is the Observation the rollup wrote. An individual reading is the only call that
+ * reads the raw rows, and it is a different route under the same Health access category.
  *
  * TWO SHAPES, because the two questions are different sizes. The catalog resource is "what does my
  * phone record, and what was the last reading" — one row per metric, attachable. This tool is "what
@@ -155,7 +153,7 @@ const READ_HEALTH_METRIC = {
       mode: {
         type: 'string',
         enum: ['points', 'day', 'daily-stats', 'stages'],
-        description: 'points = one value per sample (default); day = one total per day (steps); daily-stats = per-day min/max/avg; stages = hours per sleep stage per night.',
+        description: 'daily-stats = the daily trend (default); day = one total per day (steps); stages = hours per sleep stage per night; points = individual readings, the only mode that reads raw samples.',
       },
     },
     required: ['metric_type'],
@@ -353,7 +351,40 @@ interface Series {
  * already computed. The server downsamples and computes min/max/avg; this prints those, the window,
  * and a bounded tail of the values so a specific reading can still be quoted with its timestamp.
  */
+/** Individual readings. This is the only health call that reads the raw samples. */
+async function readHealthSamples(metricType: string, days: number): Promise<Record<string, unknown>> {
+  const startAfter = new Date(Date.now() - days * 86_400_000).toISOString();
+  const params = new URLSearchParams({ metric_type: metricType, start_after: startAfter, limit: '50', sort: 'desc' });
+  let res: Response;
+  try {
+    res = await fetch(`${BASE}/api/secure/health/samples?${params.toString()}`, {
+      headers: { authorization: `Bearer ${TOKEN}`, accept: 'application/json' },
+    });
+  } catch (err) {
+    return toolResult(`Could not reach YourPHR at ${BASE}: ${(err as Error).message}`, true);
+  }
+  if (res.status === 401 || res.status === 403) {
+    return toolResult('This agent token was not given access to health metrics. Mint one from Account Profile with the "Health" scope selected.', true);
+  }
+  if (!res.ok) return toolResult(`YourPHR answered ${res.status} ${res.statusText}.`, true);
+  const page = ((await res.json()) as { data?: { total?: number; samples?: { start_time?: string; value_num?: number; value_text?: string; unit?: string; components?: { code: string; display?: string; value: number }[] }[] } }).data ?? {};
+  const samples = page.samples ?? [];
+  const head = `${metricType} readings over the last ${days} day${days === 1 ? '' : 's'}`;
+  if (samples.length === 0) return toolResult(`${head}: no samples recorded.`);
+  const lines = samples.map((sample) => {
+    const when = sample.start_time ?? '';
+    if (sample.components?.length) {
+      const parts = sample.components.map((part) => `${part.display || part.code} ${round(part.value)}`).join(' / ');
+      return `- ${when}: ${parts}`;
+    }
+    if (sample.value_num != null) return `- ${when}: ${round(sample.value_num)}${sample.unit ? ` ${sample.unit}` : ''}`;
+    return `- ${when}: ${sample.value_text || '—'}`;
+  });
+  return toolResult(`${head} — ${page.total ?? samples.length} reading(s), showing ${samples.length}:\n${lines.join('\n')}`);
+}
+
 async function readHealthMetric(metricType: string, days: number, mode: string): Promise<Record<string, unknown>> {
+  if (mode === 'points') return readHealthSamples(metricType, days);
   const startAfter = new Date(Date.now() - days * 86_400_000).toISOString();
   const params = new URLSearchParams({ metric_type: metricType, start_after: startAfter, mode });
   let res: Response;
@@ -571,7 +602,7 @@ async function handle(msg: Rpc): Promise<void> {
         const mode = askedMode !== '' ? askedMode
           : metricType === 'step_count' ? 'day'
           : metricType === 'sleep_stage' ? 'stages'
-          : 'points';
+          : 'daily-stats';
         reply(id, await readHealthMetric(metricType, days, mode));
         return;
       }
@@ -580,12 +611,12 @@ async function handle(msg: Rpc): Promise<void> {
         fail(id, -32602, `unknown tool: ${String(call?.name ?? '')}`);
         return;
       }
-      const args = readSearchArguments(call.arguments);
-      if (!args.ok) {
-        reply(id, toolResult(args.message, true));
+      const search = readSearchArguments(call.arguments);
+      if (!search.ok) {
+        reply(id, toolResult(search.message, true));
         return;
       }
-      reply(id, await searchRecords(args.query, args.limit));
+      reply(id, await searchRecords(search.query, search.limit));
       return;
     }
 

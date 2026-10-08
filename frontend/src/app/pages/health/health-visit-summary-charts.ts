@@ -8,12 +8,10 @@ const SPARK_H = 26;
 const SPARK_PAD = 3;
 
 const SLEEP_FILL: Record<string, string> = {
-  awake: 'rgba(253, 126, 20, 0.85)',
-  asleepCore: 'rgba(47, 111, 143, 0.85)',
-  asleepDeep: 'rgba(47, 111, 143, 1)',
-  asleepREM: 'rgba(47, 111, 143, 0.55)',
-  asleepUnspecified: 'rgba(108, 117, 125, 0.7)',
-  inBed: 'rgba(173, 181, 189, 0.55)',
+  '93828-2': 'rgba(253, 126, 20, 0.85)',
+  '93830-8': 'rgba(47, 111, 143, 0.85)',
+  '93831-6': 'rgba(47, 111, 143, 1)',
+  '93829-0': 'rgba(47, 111, 143, 0.55)',
 };
 
 export function sparklineSvg(values: (number | null)[]): string {

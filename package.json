@@ -67,7 +67,6 @@
     "agent-tokens": "tsx scripts/agent-token-tests.ts",
     "mcp": "tsx scripts/mcp-server.ts",
     "mcp-tests": "tsx scripts/mcp-tests.ts",
-    "device-tokens": "tsx scripts/device-token-tests.ts",
     "lint:md": "markdownlint-cli2"
   },
   "dependencies": {

@@ -50,11 +50,6 @@ export class HeaderComponent implements OnInit, OnDestroy {
   /** yourphr#919: shown on every screen, so nobody mistakes test data for a real record. */
   isTestAccount = false;
 
-  // The iOS companion appends YourPHRCompanion/<version> to the WebView user agent. Sign-out in
-  // that web view only clears the cookie, and the app would mint another from the device token,
-  // so unpair lives on the native sync sheet instead of this menu.
-  readonly isCompanionApp = typeof navigator !== 'undefined' && navigator.userAgent.includes('YourPHRCompanion');
-
   // True only for the public demo's read-only admin (#516). Drives the banner below the header.
   isReadOnlyDemoAdmin = false;
   isDarkMode = false;

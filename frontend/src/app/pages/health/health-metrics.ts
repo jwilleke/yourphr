@@ -10,9 +10,13 @@ export const LOINC_BP_SYS = '8480-6';
 export const LOINC_BP_DIA = '8462-4';
 export const LOINC_STEPS = '55423-8';
 export const LOINC_WEIGHT = '29463-7';
-export const LOINC_OXYGEN = '2708-6';
+export const LOINC_OXYGEN = '59408-5';
+export const LOINC_OXYGEN_ALSO = '2708-6';
 export const LOINC_TEMP = '8310-5';
-export const LOINC_SLEEP = '93832-4';
+export const LOINC_SLEEP_AWAKE = '93828-2';
+export const LOINC_SLEEP_REM = '93829-0';
+export const LOINC_SLEEP_LIGHT = '93830-8';
+export const LOINC_SLEEP_DEEP = '93831-6';
 
 export interface MetricDef {
   id: string
@@ -37,37 +41,31 @@ export const KNOWN_METRICS: MetricDef[] = [
   {id: 'resting_heart_rate', label: 'Resting Heart Rate', codes: [LOINC_RESTING_HR], viz: 'line', unit: 'bpm'},
   {id: 'heart_rate_variability_sdnn', label: 'Heart Rate Variability (SDNN)', codes: [LOINC_HRV], viz: 'line', unit: 'ms'},
   {id: 'step_count', label: 'Steps', codes: [LOINC_STEPS], viz: 'bar-daily', unit: 'steps'},
-  {id: 'sleep_stage', label: 'Sleep', codes: [LOINC_SLEEP], viz: 'sleep-stages'},
-  {id: 'oxygen_saturation', label: 'Oxygen', codes: [LOINC_OXYGEN], viz: 'line', unit: '%'},
+  {id: 'sleep_stage', label: 'Sleep', codes: [LOINC_SLEEP_AWAKE, LOINC_SLEEP_LIGHT, LOINC_SLEEP_DEEP, LOINC_SLEEP_REM], viz: 'sleep-stages'},
+  {id: 'oxygen_saturation', label: 'Oxygen', codes: [LOINC_OXYGEN, LOINC_OXYGEN_ALSO], viz: 'line', unit: '%'},
   {id: 'body_mass', label: 'Weight', codes: [LOINC_WEIGHT], viz: 'line', unit: 'kg'},
   {id: 'body_temperature', label: 'Body Temperature', codes: [LOINC_TEMP], viz: 'line', unit: '°C'},
 ];
 
-export const SLEEP_AWAKE = '248218006';
-export const SLEEP_CORE = '248219008';
-export const SLEEP_DEEP = '248220008';
-export const SLEEP_REM = '248218000';
-export const SLEEP_UNSPECIFIED = '248171000';
-export const SLEEP_IN_BED = '133877004';
+export const SLEEP_AWAKE = LOINC_SLEEP_AWAKE;
+export const SLEEP_LIGHT = LOINC_SLEEP_LIGHT;
+export const SLEEP_DEEP = LOINC_SLEEP_DEEP;
+export const SLEEP_REM = LOINC_SLEEP_REM;
 
-export const SLEEP_STAGE_ORDER = [SLEEP_AWAKE, SLEEP_CORE, SLEEP_DEEP, SLEEP_REM, SLEEP_UNSPECIFIED, SLEEP_IN_BED] as const;
+export const SLEEP_STAGE_ORDER = [SLEEP_AWAKE, SLEEP_LIGHT, SLEEP_DEEP, SLEEP_REM] as const;
 
 export const SLEEP_STAGE_LABELS: Record<string, string> = {
   [SLEEP_AWAKE]: 'Awake',
-  [SLEEP_CORE]: 'Core',
+  [SLEEP_LIGHT]: 'Light',
   [SLEEP_DEEP]: 'Deep',
   [SLEEP_REM]: 'REM',
-  [SLEEP_UNSPECIFIED]: 'Asleep',
-  [SLEEP_IN_BED]: 'In bed',
   awake: 'Awake',
-  asleepCore: 'Core',
+  asleepCore: 'Light',
   asleepDeep: 'Deep',
   asleepREM: 'REM',
-  asleepUnspecified: 'Asleep',
-  inBed: 'In bed',
 };
 
-export const SLEEP_ASLEEP_STAGES = [SLEEP_CORE, SLEEP_DEEP, SLEEP_REM, SLEEP_UNSPECIFIED, 'asleepCore', 'asleepDeep', 'asleepREM', 'asleepUnspecified'] as const;
+export const SLEEP_ASLEEP_STAGES = [SLEEP_LIGHT, SLEEP_DEEP, SLEEP_REM, 'asleepCore', 'asleepDeep', 'asleepREM'] as const;
 
 export function asleepHours(stages: Record<string, number> | undefined): number {
   if (!stages) return 0;
@@ -75,7 +73,7 @@ export function asleepHours(stages: Record<string, number> | undefined): number 
 }
 
 export function isAsleepStageLabel(label: string | undefined): boolean {
-  return !!label && ['Core', 'Deep', 'REM', 'Asleep'].includes(label);
+  return !!label && ['Light', 'Core', 'Deep', 'REM'].includes(label);
 }
 
 export type WeightUnit = 'kg' | 'lbs' | 'st';
@@ -191,9 +189,11 @@ export function groupSummaries(summaries: HealthMetricSummary[]): CatalogEntry[]
   return entries;
 }
 
-export function seriesMode(viz: VizKind): 'points' | 'day' | 'stages' {
+export function seriesMode(viz: VizKind): 'points' | 'day' | 'daily-stats' | 'stages' {
   if (viz === 'bar-daily') return 'day';
   if (viz === 'sleep-stages') return 'stages';
+  if (viz === 'dual-line') return 'points';
+  if (viz === 'line') return 'daily-stats';
   return 'points';
 }
 

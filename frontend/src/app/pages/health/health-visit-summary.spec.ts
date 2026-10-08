@@ -144,7 +144,7 @@ describe('health visit summary', () => {
     expect(html).toContain('1935-12-10');
     expect(html).toContain('Wearable devices');
     expect(html).toContain('yourphr-health-20260828.csv');
-    expect(html).toContain('page-break-inside: avoid');
+    expect(html).toContain('page-break-inside:avoid');
     expect(html).toContain('Systolic');
     expect(html).toContain('128');
     expect(html).toContain('Sampling');

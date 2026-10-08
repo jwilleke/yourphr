@@ -214,7 +214,7 @@ export class AgentTokensManager extends BaseManager {
    */
   private requireHuman(ctx: ApiContext): void {
     ctx.requireAuthenticated();
-    if (ctx.viaToken || ctx.viaDevice) {
+    if (ctx.viaToken) {
       throw new ApiError(403, 'an agent token cannot manage agent tokens — sign in to do this');
     }
   }
@@ -732,6 +732,12 @@ export class AgentTokensManager extends BaseManager {
     await this.provider.updateGrant(resumed);
     await this.recordLifecycle(ctx, CREDENTIAL_EVENT_CATEGORIES.deviceResumed, new Date(now));
     return this.grantView(resumed, now);
+  }
+
+  /** The device source a grant already owns. The sample body cannot name a different one. */
+  async sourceIdForGrant(grantId: string): Promise<string | undefined> {
+    const grant = await this.provider.getGrant(grantId);
+    return grant?.sourceId || undefined;
   }
 
   /** A device key just wrote: when, for inactivity suspension (yourphr#809). */

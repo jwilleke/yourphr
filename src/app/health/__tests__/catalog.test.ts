@@ -9,6 +9,8 @@ import {
   normalizeCodeableValue,
   normalizeQuantityValue,
   normalizeUnit,
+  resolveStage,
+  toCanonicalQuantity,
 } from '../catalog.js';
 
 describe('lookup', () => {
@@ -20,9 +22,9 @@ describe('lookup', () => {
 
   it('maps a sleep category type', () => {
     const metric = lookup('HKCategoryTypeIdentifierSleepAnalysis');
-    expect(metric?.code).toBe('93832-4');
+    expect(metric?.code).toBe('93828-2');
     expect(metric?.kind).toBe('codeable');
-    expect(metric?.category).toBe('sleep');
+    expect(metric?.category).toBe('activity');
   });
 
   it('maps blood pressure halves onto the panel', () => {
@@ -80,30 +82,37 @@ describe('normalizeUnit', () => {
     expect(normalizeUnit(heart, 'mmHg')).toBeUndefined();
     expect(normalizeUnit(heart, '')).toBeUndefined();
   });
+
+  it('converts pounds and fahrenheit on ingest and keeps the original unit', () => {
+    expect(toCanonicalQuantity(mass, 10, 'lb', false)).toMatchObject({ unit: 'kg', originalUnit: 'lb' });
+    const temp = lookup('HKQuantityTypeIdentifierBodyTemperature')!;
+    expect(toCanonicalQuantity(temp, 98.6, 'degF', false)).toMatchObject({ value: 37, unit: 'Cel', originalUnit: 'degF' });
+    expect(toCanonicalQuantity(mass, 10, 'stone', false)).toBeUndefined();
+  });
 });
 
-describe('normalizeCodeableValue', () => {
+describe('resolveStage', () => {
   const sleep = lookup('HKCategoryTypeIdentifierSleepAnalysis')!;
 
-  it('stores SNOMED, accepting HealthKit names and integer enums as aliases', () => {
-    expect(normalizeCodeableValue(sleep, '248220008')).toBe('248220008');
-    expect(normalizeCodeableValue(sleep, 'asleepDeep')).toBe('248220008');
-    expect(normalizeCodeableValue(sleep, 'ASLEEPREM')).toBe('248218000');
-    expect(normalizeCodeableValue(sleep, '4')).toBe('248220008');
-    expect(normalizeCodeableValue(sleep, '0')).toBe('133877004');
-    expect(normalizeCodeableValue(sleep, 'asleep')).toBe('248171000');
-    expect(normalizeCodeableValue(sleep, 'HKCategoryValueSleepAnalysisAwake')).toBe('248218006');
-    expect(normalizeCodeableValue(sleep, 'STAGE_TYPE_SLEEPING_DEEP')).toBe('248220008');
-    expect(normalizeCodeableValue(sleep, 'STAGE_TYPE_SLEEPING_LIGHT')).toBe('248219008');
-    expect(normalizeCodeableValue(sleep, 'STAGE_TYPE_SLEEPING_REM')).toBe('248218000');
-    expect(normalizeCodeableValue(sleep, 'STAGE_TYPE_SLEEPING')).toBe('248171000');
-    expect(normalizeCodeableValue(sleep, 'STAGE_TYPE_AWAKE')).toBe('248218006');
+  it('maps each vendor\'s own names onto the four night LOINC codes', () => {
+    expect(resolveStage(sleep, '93831-6', 'manual')).toBe('93831-6');
+    expect(resolveStage(sleep, 'asleepDeep', 'healthkit')).toBe('93831-6');
+    expect(resolveStage(sleep, 'ASLEEPREM', 'healthkit')).toBe('93829-0');
+    expect(resolveStage(sleep, '4', 'healthkit')).toBe('93831-6');
+    expect(resolveStage(sleep, 'HKCategoryValueSleepAnalysisAwake', 'healthkit')).toBe('93828-2');
+    expect(resolveStage(sleep, 'STAGE_TYPE_SLEEPING_DEEP', 'health-connect')).toBe('93831-6');
+    expect(resolveStage(sleep, 'STAGE_TYPE_SLEEPING_LIGHT', 'health-connect')).toBe('93830-8');
+    expect(resolveStage(sleep, 'STAGE_TYPE_SLEEPING_REM', 'health-connect')).toBe('93829-0');
+    expect(resolveStage(sleep, 'STAGE_TYPE_AWAKE', 'health-connect')).toBe('93828-2');
   });
 
-  it('rejects an unknown stage, an out-of-range enum, and the empty string', () => {
-    expect(normalizeCodeableValue(sleep, 'dreaming')).toBeUndefined();
-    expect(normalizeCodeableValue(sleep, '99')).toBeUndefined();
-    expect(normalizeCodeableValue(sleep, '')).toBeUndefined();
+  it('leaves in-bed, unspecified, and the other vendor\'s numbers unmapped', () => {
+    expect(resolveStage(sleep, '0', 'healthkit')).toBeUndefined();
+    expect(resolveStage(sleep, 'asleep', 'healthkit')).toBeUndefined();
+    expect(resolveStage(sleep, 'STAGE_TYPE_SLEEPING', 'health-connect')).toBeUndefined();
+    expect(resolveStage(sleep, '4', 'health-connect')).toBeUndefined();
+    expect(resolveStage(sleep, 'dreaming', 'healthkit')).toBeUndefined();
+    expect(resolveStage(sleep, '', 'healthkit')).toBeUndefined();
   });
 });
 
@@ -123,6 +132,9 @@ describe('codesForQuery', () => {
     expect(codesForQuery(['blood_pressure_systolic'], [], '').codes).toEqual(['85354-9']);
     expect(codesForQuery([], ['8480-6'], '').codes).toEqual(['85354-9']);
     expect(codesForQuery([], [], 'HKQuantityTypeIdentifierHeartRate').vendorType).toBe('HKQuantityTypeIdentifierHeartRate');
+    expect(codesForQuery(['sleep_stage'], [], '').codes.sort()).toEqual(['93828-2', '93829-0', '93830-8', '93831-6']);
+    expect(codesForQuery([], ['93831-6'], '').codes).toEqual(['93831-6']);
+    expect(codesForQuery([], ['2708-6'], '').codes).toEqual(['59408-5']);
   });
 });
 

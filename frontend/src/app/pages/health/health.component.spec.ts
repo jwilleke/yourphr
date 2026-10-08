@@ -96,6 +96,7 @@ describe('HealthComponent', () => {
     expect(component.narrow).toBeFalse();
     expect(component.detailOpen).toBeFalse();
     expect(mockApi.getHealthSeries).toHaveBeenCalled();
+    expect(mockApi.getHealthSeries.calls.mostRecent().args[0]?.mode).toBe('daily-stats');
     const el: HTMLElement = fixture.nativeElement;
     expect(el.textContent).toContain('Heart Rate');
     expect(el.textContent).toContain('Blood Pressure');
@@ -392,7 +393,7 @@ describe('HealthComponent', () => {
 
   it('plots oxygen saturation as a percentage rather than a HealthKit fraction', () => {
     const oxygen: HealthMetricSummary = {
-      code: '2708-6',
+      code: '59408-5',
       metric_type: 'oxygen_saturation',
       vendor_type: 'HKQuantityTypeIdentifierOxygenSaturation',
       unit: '%',

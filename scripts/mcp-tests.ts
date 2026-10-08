@@ -83,24 +83,14 @@ async function mint(base: string, session: string, scopes: string[], name = 'Cla
   return { token: data.token ?? '', id: data.record?.id ?? '' };
 }
 
-/** A companion device token — the credential the phone holds, and the only way samples get in. */
-async function pairDevice(base: string, session: string, name: string): Promise<string> {
-  const res = await fetch(`${base}/api/secure/access/token`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json', authorization: `Bearer ${session}` },
-    body: JSON.stringify({ name }),
-  });
-  return ((await res.json()) as { data?: string }).data ?? '';
-}
-
 /**
- * Wearable samples for one account, pushed through the REAL ingest route.
+ * Wearable samples for one account, pushed through the REAL ingest route with the patient's session.
  *
  * Not written straight to the table, because what is being tested is what an agent can reach, and
  * a row inserted behind the manager is a row whose code, category and unit were never normalized —
  * the bridge would then be reading a shape the phone never produces.
  */
-async function seedHealth(base: string, deviceToken: string, deviceId: string, restingHr: number): Promise<void> {
+async function seedHealth(base: string, session: string, deviceId: string, restingHr: number): Promise<void> {
   // Dated from NOW, not from a fixed calendar date: read_health_metric clamps its window to 365
   // days, so a sample hard-coded to 2024 falls out of every query the moment the year turns and
   // the harness starts reporting "no samples recorded" as a pass.
@@ -118,7 +108,7 @@ async function seedHealth(base: string, deviceToken: string, deviceId: string, r
   });
   await fetch(`${base}/api/secure/health/samples`, {
     method: 'POST',
-    headers: { 'content-type': 'application/json', authorization: `Bearer ${deviceToken}` },
+    headers: { 'content-type': 'application/json', authorization: `Bearer ${session}` },
     body: JSON.stringify({ device: { device_id: deviceId, name: 'Harness iPhone' }, samples }),
   });
 }
@@ -201,10 +191,8 @@ async function main(): Promise<void> {
     check('the bridge completes the MCP handshake',
       (init?.result?.['protocolVersion'] ?? '') === '2025-06-18');
     const tools = (hello.find((r) => r.id === 2)?.result?.['tools'] ?? []) as { name: string }[];
-    // Two, because the record and the wearable are two different stores reached by two different
-    // routes: search_records runs over the FHIR resources a provider sent, and health_samples is a
-    // separate projection search cannot see. One tool over both would be a tool that quietly
-    // answers "no sleep data" to a patient whose phone has recorded it every night.
+    // Two, because the record and the wearable trend are reached by two different routes.
+    // search_records runs over the FHIR resources a provider sent. Raw samples stay in phd-samples.db.
     const toolNames = tools.map((t) => t.name).sort();
     check('it offers exactly two tools: search_records and read_health_metric',
       toolNames.length === 2 && toolNames[0] === 'read_health_metric' && toolNames[1] === 'search_records',
