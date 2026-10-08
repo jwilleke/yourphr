@@ -28,7 +28,7 @@
  *   - Restore STAGES: the backup is opened under its key, integrity-checked, exported to a fresh
  *     file under the TARGET key, and the caller swaps files. Never on top of a live database.
  */
-import { existsSync, mkdirSync, readdirSync, statSync, unlinkSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, rmSync, statSync, unlinkSync } from 'node:fs';
 import { join } from 'node:path';
 import { Worker } from 'node:worker_threads';
 import Database from 'better-sqlite3-multiple-ciphers';
@@ -324,14 +324,21 @@ export function stageRestore(
  * the live key into <dataDir>/*.staged; the next start swaps them in. Live files are never touched.
  */
 export function stageInstanceRestore(backupFile: string, backupKey: string, dataDir: string, targetKey: string): { tables: number; phdSamples: boolean } {
-  const records = stageRestore(backupFile, backupKey, join(dataDir, STAGED_RECORDS), targetKey, (t) => RECORDS_TABLES.has(t));
-  stageRestore(backupFile, backupKey, join(dataDir, STAGED_APP), targetKey, (t) => !RECORDS_TABLES.has(t) && !isPhdTable(t) && t !== BACKUP_PAYLOAD_TABLE);
-  // phd-samples.db is staged only when the backup carries it. A backup taken before device samples
-  // existed has none of its tables, and staging an EMPTY file would wipe every sample on restart;
-  // the live file is left as it is instead.
-  const phdSamples = backupHasTable(backupFile, backupKey, isPhdTable);
-  if (phdSamples) stageRestore(backupFile, backupKey, join(dataDir, STAGED_PHD_SAMPLES), targetKey, isPhdTable);
-  return { tables: records.tables, phdSamples };
+  const staged = [STAGED_RECORDS, STAGED_APP, STAGED_PHD_SAMPLES].map((name) => join(dataDir, name));
+  try {
+    const records = stageRestore(backupFile, backupKey, join(dataDir, STAGED_RECORDS), targetKey, (t) => RECORDS_TABLES.has(t));
+    stageRestore(backupFile, backupKey, join(dataDir, STAGED_APP), targetKey, (t) => !RECORDS_TABLES.has(t) && !isPhdTable(t) && t !== BACKUP_PAYLOAD_TABLE);
+    // phd-samples.db is staged only when the backup carries it. A backup taken before device samples
+    // existed has none of its tables, and staging an EMPTY file would wipe every sample on restart;
+    // the live file is left as it is instead.
+    const phdSamples = backupHasTable(backupFile, backupKey, isPhdTable);
+    if (phdSamples) stageRestore(backupFile, backupKey, join(dataDir, STAGED_PHD_SAMPLES), targetKey, isPhdTable);
+    return { tables: records.tables, phdSamples };
+  } catch (err) {
+    // All or nothing (yourphr#866): a half-staged restore must not be applied at the next start.
+    for (const file of staged) rmSync(file, { force: true });
+    throw err;
+  }
 }
 
 function backupHasTable(backupFile: string, backupKey: string, match: (table: string) => boolean): boolean {

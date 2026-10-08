@@ -10,7 +10,7 @@
  * per-manager backup() contract yields a torn snapshot and quiescing is engine-level work still to design.
  */
 import { copyFileSync, existsSync, readFileSync, renameSync, unlinkSync, writeFileSync } from 'node:fs';
-import { basename, join } from 'node:path';
+import { basename, join, resolve } from 'node:path';
 import { BaseManager, type BackupData } from '../BaseManager.js';
 import type { Engine } from '../Engine.js';
 import { ApiContext, ApiError } from '../ApiContext.js';
@@ -100,16 +100,50 @@ export interface BackupOptions {
 /**
  * Applies a staged restore at start, BEFORE anything opens: each staged file's live counterpart
  * steps aside as *.pre-restore and the staged file takes its name. A rename, never a write into a
- * live database. The application names the pairs — which files its stores stage.
+ * live database. The application names the pairs — which files its stores stage. Each name is
+ * resolved against `dir`, so an absolute path names the database where it really lives (yourphr#866).
+ *
+ * THE WAL MOVES WITH ITS FILE (yourphr#866). A live database in WAL mode has `-wal` and `-shm`
+ * siblings. Left beside the restored file, SQLite would replay the old instance's pages onto it — a
+ * corrupt database wearing a fresh file's name (the demo reset learned this first). They step aside
+ * with the live file, as `*.pre-restore-wal` / `-shm`, so the kept copy still opens as it was.
+ *
+ * ALL OR NOTHING (yourphr#866). `required` names the staged files that only make sense together
+ * (records and accounts from one moment). If some are staged and others are not, nothing is
+ * applied: the partial set is renamed `*.incomplete`, so it is neither applied nor retried, and the
+ * reason is logged.
  */
-export function applyStagedRestore(dataDir: string, pairs: [staged: string, live: string][], log: (line: string) => void): void {
+export function applyStagedRestore(dir: string, pairs: [staged: string, live: string][], log: (line: string) => void, required: string[] = []): void {
+  const present = required.filter((staged) => existsSync(resolve(dir, staged)));
+  if (present.length > 0 && present.length < required.length) {
+    for (const staged of present) renameSync(resolve(dir, staged), `${resolve(dir, staged)}.incomplete`);
+    log(`restore NOT applied: only ${present.join(', ')} of ${required.join(', ')} was staged, and they belong together — set aside as *.incomplete; the instance starts on its current databases`);
+    return;
+  }
   for (const [staged, live] of pairs) {
-    const stagedPath = join(dataDir, staged);
+    const stagedPath = resolve(dir, staged);
     if (!existsSync(stagedPath)) continue;
-    const livePath = join(dataDir, live);
-    if (existsSync(livePath)) renameSync(livePath, `${livePath}.pre-restore`);
-    renameSync(stagedPath, livePath);
-    log(`restore applied: ${staged} -> ${live} (previous kept as ${live}.pre-restore)`);
+    const livePath = resolve(dir, live);
+    const kept = `${livePath}.pre-restore`;
+    // A previous restore's kept WAL must not pair with this restore's kept file.
+    for (const sibling of [`${kept}-wal`, `${kept}-shm`]) if (existsSync(sibling)) unlinkSync(sibling);
+    if (existsSync(livePath)) {
+      move(livePath, kept);
+      for (const suffix of ['-wal', '-shm']) if (existsSync(`${livePath}${suffix}`)) move(`${livePath}${suffix}`, `${kept}${suffix}`);
+    }
+    move(stagedPath, livePath);
+    log(`restore applied: ${basename(stagedPath)} -> ${livePath} (previous kept as ${basename(kept)})`);
+  }
+}
+
+/** A rename; a copy and unlink when the two paths are on different devices. */
+function move(from: string, to: string): void {
+  try {
+    renameSync(from, to);
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code !== 'EXDEV') throw err;
+    copyFileSync(from, to);
+    unlinkSync(from);
   }
 }
 

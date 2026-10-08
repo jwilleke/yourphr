@@ -208,6 +208,49 @@ describe('BackupManager — the coordinator', () => {
     expect(lines).toHaveLength(1);
   });
 
+  it('the live file\'s -wal and -shm step aside with it, and a previous restore\'s kept WAL is cleared (yourphr#866)', () => {
+    const { writeFileSync } = require('node:fs') as typeof import('node:fs');
+    writeFileSync(join(dir, 'records.db'), 'live');
+    writeFileSync(join(dir, 'records.db-wal'), 'live-wal');
+    writeFileSync(join(dir, 'records.db-shm'), 'live-shm');
+    writeFileSync(join(dir, 'spike.db'), 'live-app');
+    writeFileSync(join(dir, 'spike.db.pre-restore-wal'), 'from-an-earlier-restore');
+    writeFileSync(join(dir, 'records.db.staged'), 'staged');
+    writeFileSync(join(dir, 'spike.db.staged'), 'staged-app');
+    applyStagedRestore(dir, [['records.db.staged', 'records.db'], ['spike.db.staged', 'spike.db']], () => undefined, ['records.db.staged', 'spike.db.staged']);
+    expect(readFileSync(join(dir, 'records.db'), 'utf8')).toBe('staged');
+    expect(existsSync(join(dir, 'records.db-wal'))).toBe(false); // nothing left to replay onto the restore
+    expect(existsSync(join(dir, 'records.db-shm'))).toBe(false);
+    expect(readFileSync(join(dir, 'records.db.pre-restore-wal'), 'utf8')).toBe('live-wal'); // the kept copy keeps its own WAL
+    expect(readFileSync(join(dir, 'spike.db'), 'utf8')).toBe('staged-app');
+    expect(existsSync(join(dir, 'spike.db.pre-restore-wal'))).toBe(false); // the stale one is gone
+  });
+
+  it('a partial set is never applied: records without accounts are set aside as *.incomplete (yourphr#866)', () => {
+    const { writeFileSync } = require('node:fs') as typeof import('node:fs');
+    writeFileSync(join(dir, 'records.db'), 'live');
+    writeFileSync(join(dir, 'spike.db'), 'live-app');
+    writeFileSync(join(dir, 'records.db.staged'), 'staged');
+    const lines: string[] = [];
+    applyStagedRestore(dir, [['records.db.staged', 'records.db'], ['spike.db.staged', 'spike.db']], (l) => lines.push(l), ['records.db.staged', 'spike.db.staged']);
+    expect(readFileSync(join(dir, 'records.db'), 'utf8')).toBe('live');
+    expect(existsSync(join(dir, 'records.db.staged'))).toBe(false);
+    expect(readFileSync(join(dir, 'records.db.staged.incomplete'), 'utf8')).toBe('staged');
+    expect(lines.join('\n')).toContain('restore NOT applied');
+  });
+
+  it('a live database named by its absolute path is restored where it really lives (yourphr#866)', () => {
+    const { writeFileSync, mkdirSync } = require('node:fs') as typeof import('node:fs');
+    const elsewhere = join(dir, 'elsewhere');
+    mkdirSync(elsewhere);
+    writeFileSync(join(elsewhere, 'app.db'), 'live-app');
+    writeFileSync(join(dir, 'spike.db.staged'), 'staged-app');
+    applyStagedRestore(dir, [['spike.db.staged', join(elsewhere, 'app.db')]], () => undefined);
+    expect(readFileSync(join(elsewhere, 'app.db'), 'utf8')).toBe('staged-app');
+    expect(readFileSync(join(elsewhere, 'app.db.pre-restore'), 'utf8')).toBe('live-app');
+    expect(existsSync(join(dir, 'app.db'))).toBe(false);
+  });
+
   it('its own backup is the health state, and restoring it rewrites the file', async () => {
     await backups.backupNow(admin);
     const own = await backups.backup();

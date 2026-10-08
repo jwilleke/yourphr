@@ -19,7 +19,7 @@
  * A tool with its own idea of where the data lives is how a migration lands in the wrong place and
  * reports success.
  */
-import { basename, join } from 'node:path';
+import { dirname, join } from 'node:path';
 import Database from 'better-sqlite3-multiple-ciphers';
 import { FileConfigProvider } from './framework/providers/FileConfigProvider.js';
 import { addColumnWithDefault, type Migration } from './framework/providers/sqlite-migrations.js';
@@ -439,7 +439,11 @@ export async function openStores(dataDir: string, env: Record<string, string | u
   // never checked: it is meant to be on the NAS.
   for (const file of [appDbPath, recordsDbPath, phdSamplesDbPath]) refuseNetworkFilesystem(file);
   if (options.startup) {
-    applyStagedRestore(dataDir, [[STAGED_RECORDS, basename(recordsDbPath)], [STAGED_APP, basename(appDbPath)], [STAGED_PHD_SAMPLES, basename(phdSamplesDbPath)]], (line) => appLog.info(line)); // yourphr#602: a staged restore lands before anything opens
+    // yourphr#602: a staged restore lands before anything opens. Staging writes beside the records
+    // database (SqliteRecordsProvider.stageRestore), so that is where the staged files are read from,
+    // and each lands on its database's REAL path (yourphr#866). Records and accounts are applied
+    // together or not at all; the device samples are staged only when the backup carries them.
+    applyStagedRestore(dirname(recordsDbPath), [[STAGED_RECORDS, recordsDbPath], [STAGED_APP, appDbPath], [STAGED_PHD_SAMPLES, phdSamplesDbPath]], (line) => appLog.info(line), [STAGED_RECORDS, STAGED_APP]);
     await applyStagedConfig(dataDir, config, (line) => appLog.info(line)); // yourphr#631: and its settings with it
     // The demo reset (yourphr#645), after an operator's explicit restore and before anything opens:
     // an operator asking for a specific database must beat the demo's automatic one. Refuses unless
