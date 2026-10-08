@@ -136,6 +136,15 @@ describe('UsersManager — accounts, roles, policy, consent, bootstrap and recov
     expect(await users.record('alice')).toBeUndefined();
   });
 
+  it('bootstrap recreates `admin` when other accounts exist but none is named admin (ngdpbase\'s rule, yourphr#886)', async () => {
+    await users.createUser(ApiContext.system('test', 'admin', engine), 'demo', 'a-long-enough-password');
+    const made = await users.bootstrapAdmin(dir);
+    expect(made).toMatchObject({ created: true, others: 1 });
+    expect(await users.isAdmin('admin')).toBe(true);
+    expect((await users.bootstrapAdmin(dir)).created).toBe(false);
+    rmSync(dir, { recursive: true, force: true });
+  });
+
   it('bootstrap creates the first admin once with a 0600 file, the file goes at first sign-in; recovery ends sessions', async () => {
     const first = await users.bootstrapAdmin(dir);
     expect(first.created).toBe(true);

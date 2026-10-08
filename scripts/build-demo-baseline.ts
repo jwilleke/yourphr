@@ -10,7 +10,10 @@
  *
  * What it contains, and why each part is needed:
  *   - the demo account, so the one-click entrance has something to sign in to (yourphr#643);
- *   - the bootstrap admin, because an instance with users and no admin is administrable by nobody;
+ *   - NO admin (yourphr#886). The build runs assembleApp, which provisions `admin` with a password
+ *     written into this throwaway directory; shipping that row would give every demo an admin whose
+ *     password nobody has, restored at every reset. It is removed below. The instance provisions its
+ *     own admin at first start (.admin_bootstrap_password), and the reset carries that one across;
  *   - a connected source and its records, so a visitor lands on a populated PHR rather than the
  *     empty one that made the Go demo useless to evaluate (yourphr#494).
  *
@@ -33,6 +36,7 @@ import { createServer, type ServerResponse } from 'node:http';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
+import Database from 'better-sqlite3-multiple-ciphers';
 import { assembleApp } from '../src/app.js';
 import { ApiContext } from '../src/framework/ApiContext.js';
 import { BASELINE_APP, BASELINE_RECORDS, baselineIsPresent } from '../src/app/providers/demo-reset.js';
@@ -80,6 +84,7 @@ async function main(): Promise<void> {
   mkdirSync(outDir, { recursive: true });
   cpSync(join(dir, 'spike.db'), join(outDir, BASELINE_APP));
   cpSync(join(dir, 'records.db'), join(outDir, BASELINE_RECORDS));
+  withoutAdmin(join(outDir, BASELINE_APP));
   rmSync(dir, { recursive: true, force: true });
 
   if (!baselineIsPresent(outDir)) throw new Error(`baseline: nothing usable was written to ${outDir}`);
@@ -128,3 +133,23 @@ main().catch((err) => {
   console.error(err);
   process.exit(1);
 });
+
+/**
+ * Remove the build's own `admin` from the baseline (yourphr#886): its password went with the build
+ * directory, so shipping it would lock every demo's operator out after each reset. Its passkeys and
+ * any other trace of it go too. Fails the build if anything named admin is left.
+ */
+function withoutAdmin(appDb: string): void {
+  const db = new Database(appDb);
+  try {
+    db.prepare("DELETE FROM auth_users WHERE lower(username) = 'admin'").run();
+    if (db.prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'auth_credentials'").get()) {
+      db.prepare("DELETE FROM auth_credentials WHERE lower(username) = 'admin'").run();
+    }
+    db.exec('VACUUM');
+    const left = db.prepare("SELECT count(*) AS n FROM auth_users WHERE lower(username) = 'admin'").get() as { n: number };
+    if (left.n !== 0) throw new Error('baseline: the build admin is still in the baseline');
+  } finally {
+    db.close();
+  }
+}

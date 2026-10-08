@@ -258,12 +258,20 @@ export class UsersManager extends BaseManager {
   // --- bootstrap and recovery: the proof is filesystem access, not a session ---
 
   /**
-   * Provision the first admin without the first-run wizard (yourphr#504). One-way and only on an
-   * EMPTY user table. The generated password is written 0600 to <dataDir>/.admin_bootstrap_password;
-   * the caller logs the PATH only; the file is deleted after the admin's first sign-in.
+   * Provision the bootstrap admin without the first-run wizard (yourphr#504). The generated password
+   * is written 0600 to <dataDir>/.admin_bootstrap_password; the caller logs the PATH only; the file
+   * is deleted after the admin's first sign-in.
+   *
+   * Runs whenever no account is NAMED `admin` — ngdpbase's rule (UserManager.initialize), not "only
+   * on an empty table". The empty-table rule left a trap: a store holding other accounts but no
+   * admin never regains one. On a public demo that is every restart, because the baseline it resets
+   * to holds the demo account and no admin (yourphr#886). Keyed on the name, not the role, so the
+   * read-only `demoadmin` never counts. Recreating it is safe: the password is random and readable
+   * only by whoever can read the data directory, which is the same proof `reset-password` asks for.
    */
-  async bootstrapAdmin(dataDir: string, username = BOOTSTRAP_ADMIN_USERNAME): Promise<{ created: boolean; passwordFile?: string }> {
-    if ((await this.provider.count()) > 0) return { created: false };
+  async bootstrapAdmin(dataDir: string, username = BOOTSTRAP_ADMIN_USERNAME): Promise<{ created: boolean; passwordFile?: string; others?: number }> {
+    if (await this.provider.get(username)) return { created: false };
+    const others = await this.provider.count();
     const password = randomBytes(24).toString('base64url');
     await this.provider.create({ username, passwordHash: this.passwords.hash(password), tokenGeneration: 0, role: ADMIN_ROLE });
     mkdirSync(dataDir, { recursive: true });
@@ -271,7 +279,7 @@ export class UsersManager extends BaseManager {
     writeFileSync(file, password + '\n', { mode: 0o600 });
     this.bootstrapFile = file;
     this.bootstrapUsername = username;
-    return { created: true, passwordFile: file };
+    return { created: true, passwordFile: file, ...(others > 0 ? { others } : {}) };
   }
 
   /**

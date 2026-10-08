@@ -32,15 +32,20 @@
  * This bites harder here than in Go, because these instances encrypt at rest by default — which is
  * the correct direction for a refusal to bite in.
  *
- * WHAT GO DROPS THAT WE DO NOT HAVE TO. Go deletes its cache database and its generated JWT signing
- * key so that tokens minted before a reset cannot verify against users who no longer exist. This
- * stack mints its session key with randomBytes(32) at every boot (see openStores), so every restart
- * already ends every session — the property is inherent rather than maintained. A returning visitor
- * gets the sign-in page, which is what the requirement asks for.
+ * THE OPERATOR'S ACCOUNT IS KEPT (yourphr#886). The bootstrap admin's row and passkeys are read
+ * before the files are replaced and written back after, so a reset never locks the operator out of
+ * their own demo. The baseline itself holds no admin; the first start on a fresh volume provisions
+ * one and writes .admin_bootstrap_password, as on any other install.
+ *
+ * SESSIONS. Go deleted its JWT signing key so tokens minted before a reset could not verify. This
+ * stack used to regenerate its session key at every boot, which ended every session for free; since
+ * yourphr#815 the key is kept in .env, so that no longer holds — see the known gaps in
+ * docs/guides/demo-mode.md.
  */
 import { copyFileSync, existsSync, readdirSync, rmSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import Database from 'better-sqlite3-multiple-ciphers';
+import { AUTH_CREDENTIALS_SCHEMA } from '../../framework/providers/SqliteCredentialsProvider.js';
 
 /** The two files a baseline holds, named for what they are rather than for the live filenames. */
 export const BASELINE_APP = 'app.db';
@@ -59,6 +64,13 @@ export interface DemoResetRequest {
   databaseKey: string;
   /** The accounts this demo is allowed to hold. Anything else refuses the reset. */
   allowedAccounts: string[];
+  /**
+   * The accounts carried ACROSS the reset (yourphr#886): the operator's. Their row — password, role,
+   * token generation — and their passkeys are read from the live database and written into the
+   * restored one, so the operator is never locked out of their own demo. Must be a subset of
+   * `allowedAccounts`; the proof is unchanged.
+   */
+  keepAccounts?: string[];
   log: (line: string) => void;
 }
 
@@ -98,9 +110,15 @@ export function applyDemoReset(request: DemoResetRequest): DemoResetOutcome {
     }
   }
 
-  log(`demo reset: replacing the live databases with the baseline at ${baselineDir} — every account and record in them is being discarded (yourphr.demo.reset-on-restart)`);
+  // Read BEFORE anything is replaced: the operator's account is the one thing the reset must keep.
+  const keep = (request.keepAccounts ?? []).filter((name) => name !== '');
+  const kept = existsSync(appDbPath) && keep.length > 0 ? readKept(appDbPath, keep, log) : undefined;
+  if (kept === 'unreadable') return { applied: false, reason: 'unreadable' };
+
+  log(`demo reset: replacing the live databases with the baseline at ${baselineDir} — every account and record in them is being discarded except ${keep.join(', ') || 'none'} (yourphr.demo.reset-on-restart)`);
   install(baselineApp, appDbPath);
   install(baselineRecords, recordsDbPath);
+  if (kept && kept.users.length > 0) writeKept(appDbPath, kept, log);
   log('demo reset: the instance now holds the baked-in SYNTHETIC baseline and a shared demo account, not real data');
   return { applied: true };
 }
@@ -125,6 +143,71 @@ function foreignAccount(appDbPath: string, allowed: string[], log: (line: string
     return 'unreadable';
   } finally {
     db?.close();
+  }
+}
+
+/** The rows a reset carries across: the kept accounts and their stored credentials (passkeys). */
+interface KeptRows { users: Record<string, unknown>[]; credentials: Record<string, unknown>[] }
+
+/**
+ * The kept accounts' rows, read from the live database before it is replaced. A database with no
+ * credentials table (one from before yourphr#876) simply has no passkeys to keep. 'unreadable' when
+ * the accounts cannot be read — refuse rather than reset and lock the operator out.
+ */
+function readKept(appDbPath: string, keep: string[], log: (line: string) => void): KeptRows | 'unreadable' {
+  const names = keep.map((n) => n.toLowerCase());
+  const marks = names.map(() => '?').join(', ');
+  let db: InstanceType<typeof Database> | undefined;
+  try {
+    db = new Database(appDbPath, { readonly: true, fileMustExist: true });
+    const users = db.prepare(`SELECT * FROM auth_users WHERE lower(username) IN (${marks})`).all(...names) as Record<string, unknown>[];
+    const hasCredentials = db.prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'auth_credentials'").get() !== undefined;
+    const credentials = hasCredentials
+      ? db.prepare(`SELECT * FROM auth_credentials WHERE lower(username) IN (${marks})`).all(...names) as Record<string, unknown>[]
+      : [];
+    return { users, credentials };
+  } catch (err) {
+    log(`demo reset: refused — could not read the operator's account to keep it (${(err as Error).message}); the instance starts normally with its data intact`);
+    return 'unreadable';
+  } finally {
+    db?.close();
+  }
+}
+
+/**
+ * Write the kept rows into the restored database, replacing any same-named account the baseline
+ * holds. Only the columns both schemas have are copied: the baseline is built by the same image, so
+ * in practice that is every column, and the app's migrations add anything else when it opens.
+ * Passkey rows stay valid as they are — they are signed with YOURPHR_CREDENTIALS_KEY, which lives in
+ * .env and is not touched by a reset.
+ */
+function writeKept(appDbPath: string, kept: KeptRows, log: (line: string) => void): void {
+  const db = new Database(appDbPath);
+  try {
+    const columnsOf = (table: string): Set<string> =>
+      new Set((db.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[]).map((c) => c.name));
+    const insert = (table: string, row: Record<string, unknown>, columns: Set<string>): void => {
+      const names = Object.keys(row).filter((c) => columns.has(c));
+      db.prepare(`INSERT INTO ${table} (${names.join(', ')}) VALUES (${names.map(() => '?').join(', ')})`).run(...names.map((c) => row[c]));
+    };
+    db.transaction(() => {
+      const userColumns = columnsOf('auth_users');
+      for (const row of kept.users) {
+        db.prepare('DELETE FROM auth_users WHERE lower(username) = lower(?)').run(row['username']);
+        insert('auth_users', row, userColumns);
+      }
+      if (kept.credentials.length > 0) {
+        db.exec(AUTH_CREDENTIALS_SCHEMA);
+        const credentialColumns = columnsOf('auth_credentials');
+        for (const row of kept.credentials) {
+          db.prepare('DELETE FROM auth_credentials WHERE id = ? OR (kind = ? AND subject = ?)').run(row['id'], row['kind'], row['subject']);
+          insert('auth_credentials', row, credentialColumns);
+        }
+      }
+    })();
+    log(`demo reset: kept ${kept.users.map((u) => String(u['username'])).join(', ')} — password, role and ${kept.credentials.length} passkey(s) carried across (yourphr#886)`);
+  } finally {
+    db.close();
   }
 }
 

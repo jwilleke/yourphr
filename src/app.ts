@@ -436,7 +436,7 @@ export async function openStores(dataDir: string, env: Record<string, string | u
   await applyStagedConfig(dataDir, config, (line) => appLog.info(line)); // yourphr#631: and its settings with it
   // The demo reset (yourphr#645), after an operator's explicit restore and before anything opens:
   // an operator asking for a specific database must beat the demo's automatic one. Refuses unless
-  // armed AND proven — see src/demo/reset.ts for what it proves and why it refuses.
+  // armed AND proven — see src/app/providers/demo-reset.ts for what it proves and why it refuses.
   applyDemoReset({
     appDbPath,
     recordsDbPath,
@@ -452,6 +452,8 @@ export async function openStores(dataDir: string, env: Record<string, string | u
       config.getString('yourphr.demo.admin.username'),
       BOOTSTRAP_ADMIN_USERNAME,
     ],
+    // The operator's account survives every reset (yourphr#886): password, role and passkeys.
+    keepAccounts: [BOOTSTRAP_ADMIN_USERNAME],
     log: (line) => appLog.warn(line),
   });
   // The app database's one connection is the engine's (yourphr#617): opened and migrated by its
@@ -584,6 +586,8 @@ export async function assembleApp(dataDir: string, options: { seeds?: CatalogWri
 
   // Bootstrap the first admin on an empty install — after the managers exist, before anything serves.
   const bootstrap = await users.bootstrapAdmin(dataDir);
+  // ngdpbase's warning: `admin` was missing among existing accounts and has been recreated (yourphr#886).
+  if (bootstrap.others) appLog.warn(`no 'admin' account among ${bootstrap.others} existing account(s) — recreated it; its password is in ${bootstrap.passwordFile} (mode 0600)`);
 
   // The demo credential (yourphr#643): generated here, so a public demo's one-click entrance works
   // on a fresh instance with nobody choosing a password. Idempotent, and does nothing at all when

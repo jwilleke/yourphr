@@ -93,7 +93,7 @@ Order matters, and it is fixed in `assembleApp` ([`src/app.ts`](../../src/app.ts
 1. __Staged restore and staged config__, if an operator asked for one. An explicit restore beats the demo's automatic one.
 2. __Demo reset__ (`applyDemoReset`), before any database is opened.
 3. Databases open, managers initialise.
-4. __`users.bootstrapAdmin()`__: on an empty user table only, creates `admin` and writes its password to `<data>/.admin_bootstrap_password`.
+4. __`users.bootstrapAdmin()`__: whenever no account is named `admin` (ngdpbase's rule), creates it and writes its password to `<data>/.admin_bootstrap_password`. The file is readable only by the server's user and is deleted after `admin` first signs in. On a demo this runs at the first start, whether or not the reset is already on, because the baseline holds no `admin` ([#886](https://github.com/jwilleke/yourphr/issues/886)).
 5. __`demo.provision()`__: sets the demo passwords (next section).
 
 ### Provisioning the credentials
@@ -155,7 +155,7 @@ __`refuseWrite(ctx, what)`: account changes that would take the demo from everyo
 - connecting or changing a device;
 - adding, renaming or removing a passkey ([#876](https://github.com/jwilleke/yourphr/issues/876)).
 
-The demo patient __can__ still add and edit records by hand. That is the product being demonstrated, and a reset puts the baseline back.
+The demo patient also __cannot add records by hand__: the first hand-entered record creates the account's own "Added by you" source, and `SourcesManager.add` refuses the demo account. Whether that is intended for a demo is an open question (see Known gaps).
 
 __`refuseUnlessRead(ctx, method, path)`: the demo admin changes nothing__ ([#644](https://github.com/jwilleke/yourphr/issues/644)). This one is not called route by route. The request guard in [`src/server.ts`](../../src/server.ts) calls it on every `/api/secure/*` request:
 
@@ -168,7 +168,7 @@ __`refuseUnlessRead(ctx, method, path)`: the demo admin changes nothing__ ([#644
 
 - __Everything is synthetic.__ It comes from the same deterministic, PHI-free corpus CI uses: one patient over 30 months, about 114 resources across nine types.
 - __It goes through the ordinary sync path:__ a source is connected to a local FHIR server over the corpus, and the worker imports it. Writing rows straight into the database would build a baseline no code path could produce.
-- __It holds no working password.__ The demo password is provisioned at startup.
+- __It holds no working password, and no `admin`.__ The demo password is provisioned at startup. The build's own `admin` (created by `assembleApp`, its password lost with the build directory) is deleted from the baseline, and the build fails if it is still there ([#886](https://github.com/jwilleke/yourphr/issues/886)).
 - __It is plaintext,__ because it ships in a public image (see the reset's encryption refusal).
 - The build fails if the sync produced no records: an empty demo is the bug this exists to prevent ([#494](https://github.com/jwilleke/yourphr/issues/494)).
 
@@ -185,6 +185,8 @@ __Armed three ways.__ All must hold:
 __Then it must prove what it is about to destroy.__ Every account in the existing database must be the demo patient, the demo admin or the bootstrap admin. One unrecognised account and the reset is refused, and the instance starts normally with its data intact. A production instance that somehow arrives here misconfigured must survive.
 
 __Refused outright on an encrypted database.__ The baseline is plaintext; installing it over an instance with a key would leave databases the app cannot open. The demo deployment therefore runs with no encryption keys.
+
+__The operator's account is kept__ ([#886](https://github.com/jwilleke/yourphr/issues/886)). Before replacing the files, the reset reads the `admin` row (password hash, role, token generation, sign-in history) and its passkey rows from the live `spike.db`. After installing the baseline, it writes them back. So the operator signs in with the same password and passkeys after every reset. The passkeys stay valid because they are signed with `YOURPHR_CREDENTIALS_KEY`, which is in `.env` and untouched. Only the account is kept: the operator's records, like everyone's, are discarded. Keeping an account never widens the proof; the request's `keepAccounts` must be a subset of `allowedAccounts`.
 
 It lives among the providers because it opens the database file directly, and the database driver belongs to providers ([#609](https://github.com/jwilleke/yourphr/issues/609)). It is a function, not a manager, because it runs before the engine exists. `app-custom-config.json` is not touched, so settings survive a reset.
 
@@ -208,7 +210,7 @@ Relay settings for the demo, set in Admin → Configuration by the operator:
 |---|---|---|
 | `DemoManager` unit tests: inert by default, provisioning and drift, every sign-in refusal, `refuseConnect`, the `refuseWrite` set, the admin tour, default-deny | [`src/app/managers/__tests__/DemoManager.test.ts`](../../src/app/managers/__tests__/DemoManager.test.ts) | `npm test` |
 | Over the wire: inert install, empty-body sign-in, connect refused at the door, admin tour and banner flag, account writes refused, rate limit | [`scripts/app-tests.ts`](../../scripts/app-tests.ts) (the "demo mode" section) | `npm run app` |
-| The reset's refusals on real database files: a foreign account, an encrypted database, a missing baseline | [`scripts/demo-reset-tests.ts`](../../scripts/demo-reset-tests.ts) | `npm run demo-reset` |
+| The reset on real database files: its refusals (a foreign account, an encrypted database, a missing baseline), keeping the operator's account and passkeys, and end to end: a first start with the reset armed provisions `admin`, and its password still works after a reset | [`scripts/demo-reset-tests.ts`](../../scripts/demo-reset-tests.ts) | `npm run demo-reset` |
 | The baseline builds | [`.github/workflows/server-ci.yaml`](../../.github/workflows/server-ci.yaml) | CI, every push |
 
 There is no Playwright journey for demo mode yet.
@@ -228,8 +230,8 @@ When you add a route or a capability, answer these before merging:
 
 Found while writing this guide; check each before relying on the behaviour it describes.
 
-- __Sessions survive a reset.__ The reset's header comment, and the `_comment_demo_reset` config entry, say every restart ends every session because the session key is generated at boot. Since [#815](https://github.com/jwilleke/yourphr/issues/815) the key is kept in `.env`, so a token minted before a reset stays valid afterwards. Harmless for the demo patient (same account name); the comments are wrong either way.
-- __The operator's admin password on a resetting demo is unknown.__ The baseline is built through `assembleApp`, whose `bootstrapAdmin()` creates `admin` on the empty build database and writes its password into the build directory, which the build then deletes. So the shipped baseline has an `admin` whose password nobody has, and a reset restores it at every restart. The only way in is the `reset-password` CLI ([`src/cli/reset-password.ts`](../../src/cli/reset-password.ts)), and the next restart undoes that. Tracked in [#886](https://github.com/jwilleke/yourphr/issues/886).
+- __Sessions survive a reset.__ Since [#815](https://github.com/jwilleke/yourphr/issues/815) the session key is kept in `.env`, so a token minted before a reset stays valid afterwards. Harmless for the demo patient (same account name) and intended for the operator, whose account is kept. The harness check `sessionsDieAcrossARestart` in `scripts/demo-reset-tests.ts` still passes only because the harness supplies no persisted key; it no longer describes production.
+- __The demo patient cannot add records by hand.__ Adding the first one creates a source, which `refuseConnect` blocks. Manual entry is part of what a demo should show; decide whether to give the baseline an "Added by you" source or let `SourcesManager.add` allow the manual kind.
 - __The passkeys card offers "Add a passkey" to the demo patient.__ The server refuses it and the interceptor shows a toast, but the card does not yet check `demo_account`.
 - __Provisioning runs only at startup.__ Turning demo mode on in Admin → Configuration, or creating the `demo` account, takes effect after a restart, and nothing says so. See [#885](https://github.com/jwilleke/yourphr/issues/885).
 - __No E2E journey.__ See Tests.
