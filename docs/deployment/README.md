@@ -98,7 +98,7 @@ Two things it does deliberately:
 - __It ends that account's existing sessions__ ([#508](https://github.com/jwilleke/yourphr/issues/508)). A reset is usually a response to losing control of an account, so leaving the old sessions alive would defeat the point.
 - __The generated password satisfies this instance's own policy__ ([#506](https://github.com/jwilleke/yourphr/issues/506)), so it cannot hand you a credential the change-password screen would then refuse.
 
-It works against a stopped instance or a running one, and refuses a username that does not exist rather than writing a password file for an account that is not there.
+It works against a stopped instance or a running one, and refuses a username that does not exist rather than writing a password file for an account that is not there. Against a running one, the server sees the new password at once. Like every CLI tool, it never applies a staged restore or a demo reset; only the server applies those, when it starts ([#887](https://github.com/jwilleke/yourphr/issues/887)).
 
 __You do not supply a password.__ At first start with an empty user table, the app generates one, creates the admin, and writes the value to `<data root>/.admin_bootstrap_password` (mode `0600`). Startup logs the path, never the value. Read it once:
 

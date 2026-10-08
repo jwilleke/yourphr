@@ -16,6 +16,7 @@ A demo that has been resetting on an older release already holds the old baselin
    `kubectl -n demo-yourphr get deploy demo-yourphr-ts -o jsonpath='{.spec.template.spec.containers[0].image}'`
 2. Set a new `admin` password. It is written to a file on the volume, never printed:
    `kubectl -n demo-yourphr exec deploy/demo-yourphr-ts -- node dist/server/main.js reset-password --user admin`
+   __Then restart the pod straight away__ (`kubectl -n demo-yourphr rollout restart deploy/demo-yourphr-ts`): on v3.16.2 this command also runs the demo reset underneath the running server, which leaves it on deleted files until a restart ([#887](https://github.com/jwilleke/yourphr/issues/887)). The restart keeps `admin` with the recovered password.
 3. Read it and keep it in your password manager:
    `kubectl -n demo-yourphr exec deploy/demo-yourphr-ts -- cat /opt/yourphr/data/.recovery_password`
 4. Sign in at <https://demo.yourphr.org> as `admin`, and change the password in Account Profile.

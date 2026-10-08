@@ -387,7 +387,13 @@ async function sourceClientFor(name: string, env: Record<string, string | undefi
   throw new Error(`sources.client.provider: unknown provider '${name}' (smart or null)`);
 }
 
-export async function openStores(dataDir: string, env: Record<string, string | undefined> = process.env): Promise<Stores> {
+/**
+ * `startup` (yourphr#887): only the SERVER starting may apply the steps that replace database files —
+ * a staged restore, its staged settings, and the demo reset. Every CLI tool (reset-password, migrate,
+ * compact, reindex) opens the same stores, often beside a running server; replacing files under it
+ * leaves the server on deleted inodes and its view diverged from the disk. Off unless asked for.
+ */
+export async function openStores(dataDir: string, env: Record<string, string | undefined> = process.env, options: { startup?: boolean } = {}): Promise<Stores> {
   // 1. Config — everything below reads it, so the engine and its first manager come first.
   // The configuration capability is the BOOTSTRAP LAYER (yourphr#621): the one capability NOT
   // selected by configuration, because it is what reads configuration. The composition root picks
@@ -432,30 +438,32 @@ export async function openStores(dataDir: string, env: Record<string, string | u
   // before the staged-restore swap or any open. The backup destination is not a database and is
   // never checked: it is meant to be on the NAS.
   for (const file of [appDbPath, recordsDbPath, phdSamplesDbPath]) refuseNetworkFilesystem(file);
-  applyStagedRestore(dataDir, [[STAGED_RECORDS, basename(recordsDbPath)], [STAGED_APP, basename(appDbPath)], [STAGED_PHD_SAMPLES, basename(phdSamplesDbPath)]], (line) => appLog.info(line)); // yourphr#602: a staged restore lands before anything opens
-  await applyStagedConfig(dataDir, config, (line) => appLog.info(line)); // yourphr#631: and its settings with it
-  // The demo reset (yourphr#645), after an operator's explicit restore and before anything opens:
-  // an operator asking for a specific database must beat the demo's automatic one. Refuses unless
-  // armed AND proven — see src/app/providers/demo-reset.ts for what it proves and why it refuses.
-  applyDemoReset({
-    appDbPath,
-    recordsDbPath,
-    baselineDir: config.getString('yourphr.demo.baseline.dir'),
-    demoEnabled: config.getBool('yourphr.demo.enabled'),
-    resetOnRestart: config.getBool('yourphr.demo.reset-on-restart'),
-    databaseKey: dbKey,
-    // Every account a demo is allowed to hold: the shared patient account, the read-only admin tour
-    // (yourphr#644 — omitted at first, which refused the reset on every demo that enables it), and
-    // the bootstrap admin. Anything else and the reset refuses, which is the point.
-    allowedAccounts: [
-      config.getString('yourphr.demo.username'),
-      config.getString('yourphr.demo.admin.username'),
-      BOOTSTRAP_ADMIN_USERNAME,
-    ],
-    // The operator's account survives every reset (yourphr#886): password, role and passkeys.
-    keepAccounts: [BOOTSTRAP_ADMIN_USERNAME],
-    log: (line) => appLog.warn(line),
-  });
+  if (options.startup) {
+    applyStagedRestore(dataDir, [[STAGED_RECORDS, basename(recordsDbPath)], [STAGED_APP, basename(appDbPath)], [STAGED_PHD_SAMPLES, basename(phdSamplesDbPath)]], (line) => appLog.info(line)); // yourphr#602: a staged restore lands before anything opens
+    await applyStagedConfig(dataDir, config, (line) => appLog.info(line)); // yourphr#631: and its settings with it
+    // The demo reset (yourphr#645), after an operator's explicit restore and before anything opens:
+    // an operator asking for a specific database must beat the demo's automatic one. Refuses unless
+    // armed AND proven — see src/app/providers/demo-reset.ts for what it proves and why it refuses.
+    applyDemoReset({
+      appDbPath,
+      recordsDbPath,
+      baselineDir: config.getString('yourphr.demo.baseline.dir'),
+      demoEnabled: config.getBool('yourphr.demo.enabled'),
+      resetOnRestart: config.getBool('yourphr.demo.reset-on-restart'),
+      databaseKey: dbKey,
+      // Every account a demo is allowed to hold: the shared patient account, the read-only admin tour
+      // (yourphr#644 — omitted at first, which refused the reset on every demo that enables it), and
+      // the bootstrap admin. Anything else and the reset refuses, which is the point.
+      allowedAccounts: [
+        config.getString('yourphr.demo.username'),
+        config.getString('yourphr.demo.admin.username'),
+        BOOTSTRAP_ADMIN_USERNAME,
+      ],
+      // The operator's account survives every reset (yourphr#886): password, role and passkeys.
+      keepAccounts: [BOOTSTRAP_ADMIN_USERNAME],
+      log: (line) => appLog.warn(line),
+    });
+  }
   // The app database's one connection is the engine's (yourphr#617): opened and migrated by its
   // provider before any sibling provider is built over it; closed last at shutdown.
   const database = new DatabaseManager(engine, new SqliteDatabaseProvider(appDbPath, dbKey, APP_MIGRATIONS));
@@ -579,7 +587,7 @@ export interface App {
 }
 
 export async function assembleApp(dataDir: string, options: { seeds?: CatalogWrite[]; env?: Record<string, string | undefined>; workerIntervalMs?: number; webDir?: string; version?: string } = {}): Promise<App> {
-  const stores = await openStores(dataDir, options.env ?? process.env);
+  const stores = await openStores(dataDir, options.env ?? process.env, { startup: true });
   const { config, users, sessions, catalog, sources, audit, backups, engine, records, events } = stores;
   /** The worker and the migration tool act for an account as a named system principal. */
   const systemCtx = (name: string, username: string): ApiContext => ApiContext.system(name, username, engine);

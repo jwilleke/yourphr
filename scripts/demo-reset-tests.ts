@@ -15,6 +15,7 @@ import Database from 'better-sqlite3-multiple-ciphers';
 import { applyDemoReset, BASELINE_APP, BASELINE_RECORDS, baselineIsPresent } from '../src/app/providers/demo-reset.js';
 import { assembleApp } from '../src/app.js';
 import { ApiContext } from '../src/framework/ApiContext.js';
+import { resetPassword } from '../src/cli/reset-password.js';
 
 const results: { name: string; ok: boolean; detail: string }[] = [];
 function check(name: string, ok: boolean, detail = ''): void {
@@ -285,8 +286,23 @@ async function operatorKeepsTheirDemo(): Promise<void> {
   check('a first start with the reset already armed still provisions admin and writes its password file',
     password !== '' && signedIn, `file ${file ?? 'none'}, signed in ${signedIn}`);
 
+  // yourphr#887: `reset-password` beside the RUNNING server. It must change the one password and
+  // nothing else — no demo reset under the server's open files — and the server must see it at once.
+  const running = await assembleApp(dir, { env });
+  const marked = ApiContext.system('test', 'admin', running.engine);
+  await running.engine.managers.records.savePatientRecord(marked, { resourceType: 'Condition', id: 'still-here', code: { text: 'Synthetic' } } as never);
+  const code = await resetPassword(['--user', 'admin', '--data', dir]);
+  const recovered = readFileSync(join(dir, '.recovery_password'), 'utf8').trim();
+  const seesIt = (await running.sessions.signIn('admin', { password: recovered }, { remoteAddr: '127.0.0.1' })).ok;
+  const recordKept = (await running.engine.managers.records.typesHeld(marked)).includes('Condition');
+  const demoStillOpens = (await running.engine.managers.demo.signIn()).ok;
+  await running.close();
+  check('reset-password beside a running demo changes only the password: no reset underneath, the server sees it, the demo button still works (yourphr#887)',
+    code === 0 && seesIt && recordKept && demoStillOpens, `exit ${code}, server sees it ${seesIt}, record kept ${recordKept}, demo opens ${demoStillOpens}`);
+  rmSync(join(dir, '.recovery_password'), { force: true });
+
   const second = await assembleApp(dir, { env });
-  const again = password !== '' && (await second.sessions.signIn('admin', { password }, { remoteAddr: '127.0.0.1' })).ok;
+  const again = (await second.sessions.signIn('admin', { password: recovered }, { remoteAddr: '127.0.0.1' })).ok;
   const reset = leftBefore && !(await second.engine.managers.records.typesHeld(ApiContext.system('test', 'admin', second.engine))).includes('Condition');
   await second.close();
   check('after a restart that resets the demo (records are gone), the operator\'s password still signs in', again && reset, `signed in ${again}, reset ${reset}`);

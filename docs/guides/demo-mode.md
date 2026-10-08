@@ -188,6 +188,8 @@ __Refused outright on an encrypted database.__ The baseline is plaintext; instal
 
 __The operator's account is kept__ ([#886](https://github.com/jwilleke/yourphr/issues/886)). Before replacing the files, the reset reads the `admin` row (password hash, role, token generation, sign-in history) and its passkey rows from the live `spike.db`. After installing the baseline, it writes them back. So the operator signs in with the same password and passkeys after every reset. The passkeys stay valid because they are signed with `YOURPHR_CREDENTIALS_KEY`, which is in `.env` and untouched. Only the account is kept: the operator's records, like everyone's, are discarded. Keeping an account never widens the proof; the request's `keepAccounts` must be a subset of `allowedAccounts`.
 
+__Only the server starting runs it.__ `openStores(dataDir, env, { startup: true })` is passed by `assembleApp` alone. The CLI tools (`reset-password`, `migrate`, `compact`, `reindex`) open the same stores, often beside a running server, and must never replace files under it ([#887](https://github.com/jwilleke/yourphr/issues/887)). The same rule covers a staged restore and its staged settings.
+
 It lives among the providers because it opens the database file directly, and the database driver belongs to providers ([#609](https://github.com/jwilleke/yourphr/issues/609)). It is a function, not a manager, because it runs before the engine exists. `app-custom-config.json` is not touched, so settings survive a reset.
 
 ## Deployment
@@ -206,7 +208,7 @@ Relay settings for the demo, set in Admin → Configuration by the operator:
 
 ### Upgrading a demo that predates #886
 
-A demo that was resetting before v3.16.2 holds the old baseline's `admin`, whose password nobody has, and the reset now keeps it. Recover it once with `reset-password`, after v3.16.2 is running there. The step-by-step is in the [v3.16.2 CHANGELOG entry](../../CHANGELOG.md) and on [#886](https://github.com/jwilleke/yourphr/issues/886#issuecomment-6064713386). A new demo volume needs nothing.
+A demo that was resetting before v3.16.2 holds the old baseline's `admin`, whose password nobody has, and the reset now keeps it. Recover it once with `reset-password`, after v3.16.2 is running there. On v3.16.2 itself, restart the pod straight after `reset-password`: on that version the CLI also ran the reset underneath the server ([#887](https://github.com/jwilleke/yourphr/issues/887)), fixed in the next release. The step-by-step is in the [v3.16.2 CHANGELOG entry](../../CHANGELOG.md) and on [#886](https://github.com/jwilleke/yourphr/issues/886#issuecomment-6064713386). A new demo volume needs nothing.
 
 ## Tests
 
