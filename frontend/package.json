@@ -73,7 +73,7 @@
     "@storybook/addon-docs": "^10.5.10",
     "@storybook/addon-links": "^10.5.10",
     "@storybook/angular": "^10.5.10",
-    "@types/jasmine": "~6.0.0",
+    "@types/jasmine": "~7.0.0",
     "@types/jasminewd2": "~2.0.13",
     "@types/qrcode": "^1.5.6",
     "angular-eslint": "22.5.0",
