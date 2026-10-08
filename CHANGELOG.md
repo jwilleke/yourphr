@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.16.1](https://github.com/jwilleke/yourphr/compare/v3.16.0...v3.16.1) (2026-10-08)
+
+__Passkey settings work as soon as they are saved, and Account Profile says when passkeys are off.__
+
+### Bug Fixes
+
+- __No restart needed to turn passkeys on__ ([#883](https://github.com/jwilleke/yourphr/issues/883)): setting the instance's address (`yourphr.application.base-url`) or switching passkeys on or off in Admin → Configuration now takes effect when saved. Before, nothing changed until the server restarted, and nothing said so.
+- __Account Profile always shows Sign-in methods__ ([#883](https://github.com/jwilleke/yourphr/issues/883)): while passkeys are off, the card says so instead of being missing, and an administrator is told which setting turns them on.
+
 ## [3.16.0](https://github.com/jwilleke/yourphr/compare/v3.15.1...v3.16.0) (2026-10-08)
 
 __Sign in with a passkey, and record the implants you carry.__ You can now sign in with your fingerprint, face or device PIN instead of a password, and add an implant such as a stent or a pacemaker to your own record, with when it was put in and taken out.
