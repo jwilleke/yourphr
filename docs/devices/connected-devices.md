@@ -1,6 +1,6 @@
 # Connected devices: the contract for mobile device apps
 
-For developers of a __mobile device app__ (a phone app that reads Apple Health or Google Health Connect) or a connected scale, cuff or meter that sends readings to a patient's yourPHR instance. This is what yourPHR guarantees today. The design and its decisions are in [2026-09-30-device-write-scope-and-consent-grant.md](planning/2026-09-30-device-write-scope-and-consent-grant.md) ([#807](https://github.com/jwilleke/yourphr/issues/807)). Built in [#808](https://github.com/jwilleke/yourphr/issues/808) and [#809](https://github.com/jwilleke/yourphr/issues/809) as part of [#810](https://github.com/jwilleke/yourphr/issues/810).
+For developers of a __mobile device app__ (a phone app that reads Apple Health or Google Health Connect) or a connected scale, cuff or meter that sends readings to a patient's yourPHR instance. This is what yourPHR guarantees today. The design and its decisions are in [2026-09-30-device-write-scope-and-consent-grant.md](../planning/2026-09-30-device-write-scope-and-consent-grant.md) ([#807](https://github.com/jwilleke/yourphr/issues/807)). Built in [#808](https://github.com/jwilleke/yourphr/issues/808) and [#809](https://github.com/jwilleke/yourphr/issues/809) as part of [#810](https://github.com/jwilleke/yourphr/issues/810).
 
 > __Status.__ Setup, keys, refresh, pausing and the write gate are live on `main`. The samples upload itself (`POST /api/secure/health/samples`, its body and the `sync-state` read) arrives with [#314](https://github.com/jwilleke/yourphr/issues/314) PR 1, and this page will describe it then. Until then those two routes answer `404` after the gate.
 
@@ -120,6 +120,6 @@ Decided on [#314](https://github.com/jwilleke/yourphr/issues/314). The upload bo
 
 ## Related
 
-- [#314](https://github.com/jwilleke/yourphr/issues/314): wearables and connected devices, and the [review](planning/2026-09-30-yourphr-314-device-review.md)
-- [authorization-framework.md](planning/authorization-framework.md): the auth plan. RFC 8628 for devices with their own screen is a later path ([ngdpbase#1526](https://github.com/jwilleke/ngdpbase/issues/1526))
-- [agent-access-policy.md](agent-access-policy.md): the read-only agent tokens this builds on
+- [#314](https://github.com/jwilleke/yourphr/issues/314): wearables and connected devices, and the [review](../planning/2026-09-30-yourphr-314-device-review.md)
+- [authorization-framework.md](../planning/authorization-framework.md): the auth plan. RFC 8628 for devices with their own screen is a later path ([ngdpbase#1526](https://github.com/jwilleke/ngdpbase/issues/1526))
+- [agent-access-policy.md](../agent-access-policy.md): the read-only agent tokens this builds on

@@ -161,7 +161,7 @@ __Ready for connected devices, and two privacy and safety fixes.__ yourPHR can n
 
 ### Internal
 
-- The contract for mobile device app developers: [docs/connected-devices.md](docs/connected-devices.md).
+- The contract for mobile device app developers: [docs/devices/connected-devices.md](docs/devices/connected-devices.md).
 - Required checks now report on pull requests that change only documentation ([#837](https://github.com/jwilleke/yourphr/pull/837)).
 - The release script reads its notes without building a pattern from the version number ([#826](https://github.com/jwilleke/yourphr/issues/826)).
 
