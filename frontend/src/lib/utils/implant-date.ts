@@ -15,8 +15,19 @@ export function definitelyBefore(earlier: string, later: string): boolean {
   return upper < lower;
 }
 
-/** Date-only FHIR values are not instants: no missing month/day or timezone is invented. */
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+/**
+ * Date-only FHIR values are not instants: shown at the precision the record states (2024,
+ * Jun 2024, Jun 30, 2024), never with an invented month, day or timezone shift.
+ */
 export function displayFhirDate(value?: string | null): string {
   if (!value) return '';
-  return /^\d{4}(-\d{2}(-\d{2})?)?$/.test(value) ? value : new DatePipe('en-US').transform(value) || value;
+  const partial = /^(\d{4})(?:-(\d{2})(?:-(\d{2}))?)?$/.exec(value);
+  if (!partial) return new DatePipe('en-US').transform(value) || value;
+  const [, year, month, day] = partial;
+  if (!month) return year;
+  const name = MONTHS[Number(month) - 1];
+  if (!name) return value;
+  return day ? `${name} ${Number(day)}, ${year}` : `${name} ${year}`;
 }

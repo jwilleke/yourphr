@@ -1,7 +1,7 @@
 import {expect, test} from '@playwright/test';
 import type {Device} from '@medplum/fhirtypes';
 import {BASE, login, trackPageErrors} from './helpers.js';
-import {E2E_PASS, E2E_USER, E2E_PW_PASS, E2E_PW_USER} from './constants.js';
+import {E2E_NOTE_PASS, E2E_NOTE_USER, E2E_PASS, E2E_USER} from './constants.js';
 import {PGHD_TAG, US_CORE_IMPLANTABLE_DEVICE} from '../src/patient-entry/shared.js';
 
 test('a patient records an implant and its lifecycle, sees its Device card, and cannot select it for a measurement', async ({page}) => {
@@ -101,18 +101,18 @@ test('partial implant dates flow through entry, Procedures, search and linked de
   expect(projections).toHaveLength(2);
   expect(projections.map(r => r.resource_raw.performedDateTime)).toEqual(['2024-06', '2024']);
   await page.goto(`${BASE}/procedures`);
-  const placement = page.locator('.procedure-row').filter({hasText: 'Implant placement'}).filter({hasText: '2024-06'});
+  const placement = page.locator('.procedure-row').filter({hasText: 'Implant placement'}).filter({hasText: 'Jun 2024'});
   await expect(placement).toHaveCount(1);
   await placement.click();
-  const procedureCard = page.locator('fhir-procedure').filter({hasText: 'Date performed 2024-06'});
+  const procedureCard = page.locator('fhir-procedure').filter({hasText: 'Date performed Jun 2024'});
   await expect(procedureCard).toContainText('Synthetic precision implant');
   await expect(procedureCard).not.toContainText('Jun 1');
   await procedureCard.getByRole('link', {name: 'details', exact: true}).click();
-  await expect(page.locator('fhir-procedure')).toContainText('Date performed 2024-06');
+  await expect(page.locator('fhir-procedure')).toContainText('Date performed Jun 2024');
   await page.locator('fhir-procedure').getByRole('link', {name: /^Patient\//}).click();
   await expect(page.locator('fhir-patient')).toBeVisible();
   await page.goBack();
-  await expect(page.locator('fhir-procedure')).toContainText('Date performed 2024-06');
+  await expect(page.locator('fhir-procedure')).toContainText('Date performed Jun 2024');
   await page.locator('fhir-procedure').getByRole('link', {name: 'Synthetic precision implant', exact: true}).click();
   await expect(page.locator('fhir-device')).toContainText('Synthetic precision implant');
 
@@ -138,13 +138,17 @@ test('partial implant dates flow through entry, Procedures, search and linked de
   expect(original.manufactureDate).toBe('2020');
   expect(original.expirationDate).toBe('2030-07');
   expect(original.contained?.[0]).toMatchObject({id: 'implant-placement', focalDevice: [{manipulated: {reference: '#'}}]});
-  await login(page, E2E_PW_USER, E2E_PW_PASS);
+  // nora, not carol: journey 03 changes carol's password earlier in the full run.
+  await login(page, E2E_NOTE_USER, E2E_NOTE_PASS);
   const otherList = await page.request.get(`${BASE}/api/secure/resource/fhir?sourceResourceType=Procedure`);
   expect((await otherList.json()).data.some((r: {source_resource_id: string}) => r.source_resource_id.startsWith(`${parentId}#`))).toBe(false);
   const otherSearch = await page.request.get(`${BASE}/api/secure/resources/search?q=precision`);
   expect((await otherSearch.json()).data).toEqual([]);
   expect((await page.request.get(`${BASE}/api/secure/resource/fhir/${sourceId}/${encodeURIComponent(`${parentId}#implant-removal`)}`)).status()).toBe(404);
   await login(page, E2E_USER, E2E_PASS);
+  // A malformed escape is the caller's mistake: 400, not a 500 from decodeURIComponent.
+  expect((await page.request.get(`${BASE}/api/secure/resource/fhir/${sourceId}/%E0`)).status()).toBe(400);
+  expect((await page.request.get(`${BASE}/api/secure/resource/provenance/Device/%E0`)).status()).toBe(400);
   const deleted = await page.request.delete(`${BASE}/api/secure/resource/fhir/Device/${parentId}`);
   expect(deleted.status()).toBe(200);
   const after = await page.request.get(`${BASE}/api/secure/resource/fhir?sourceResourceType=Procedure`);

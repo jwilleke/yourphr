@@ -1734,6 +1734,11 @@ export function createYourPhrServer(options: ServerOptions) {
         send(res, err.status, {success: false, error: err.message, ...err.extra});
         return;
       }
+      // decodeURIComponent on a malformed escape (%E0) is the caller's mistake, not the server's.
+      if (err instanceof URIError) {
+        send(res, 400, {success: false, error: 'malformed path'});
+        return;
+      }
       send(res, 500, serverFailure(err, req.method ?? '', (req.url ?? '/').split('?')[0] ?? '/'));
     }
   });

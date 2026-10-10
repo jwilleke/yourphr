@@ -4,8 +4,11 @@ describe('implant date precision', () => {
   it('preserves year, month and date without inventing an instant', () => {
     for (const date of ['2024', '2024-02', '2024-02-29']) {
       expect(validImplantDate(date)).toBeTrue();
-      expect(displayFhirDate(date)).toBe(date);
     }
+    expect(displayFhirDate('2024')).toBe('2024');
+    expect(displayFhirDate('2024-02')).toBe('Feb 2024');
+    expect(displayFhirDate('2024-02-29')).toBe('Feb 29, 2024');
+    expect(displayFhirDate('2026-01-01')).toBe('Jan 1, 2026');
   });
   it('rejects invalid calendar values and malformed partial dates', () => {
     for (const date of ['0000', '2024-00', '2024-13', '2023-02-29', '1900-02-29', '2024-04-31', '2024-1', ' 2024']) {

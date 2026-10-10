@@ -50,7 +50,7 @@ describe('ProceduresComponent', () => {
     fixture.changeDetectorRef.markForCheck();
     fixture.detectChanges();
     const dates = Array.from(fixture.nativeElement.querySelectorAll('.procedure-row td:nth-child(4)')) as HTMLElement[];
-    expect(dates.map(d => d.textContent?.trim()).sort()).toEqual(['2024', '2024-06']);
+    expect(dates.map(d => d.textContent?.trim()).sort()).toEqual(['2024', 'Jun 2024']);
     expect(component.rowKey(component.procedures[0])).not.toBe(component.rowKey(component.procedures[1]));
     expect(fixture.nativeElement.textContent).not.toContain('Jun 1');
     expect(fixture.nativeElement.textContent).not.toContain('Jan 1');
