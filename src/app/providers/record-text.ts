@@ -67,9 +67,22 @@ export function textFor(resource: unknown): string {
   return out.join(' ').replace(/\s+/g, ' ').trim().slice(0, MAX_CHARS);
 }
 
+export function queryTerms(q: string): string[] {
+  return q.toLowerCase().split(/[^\p{L}\p{N}]+/u).filter((t) => t.length > 0).slice(0, 12);
+}
+
 /** A person's words as an FTS5 query: every term required, the last one as a prefix, nothing else interpreted. */
 export function ftsQuery(q: string): string {
-  const terms = q.toLowerCase().split(/[^\p{L}\p{N}]+/u).filter((t) => t.length > 0).slice(0, 12);
+  const terms = queryTerms(q);
   if (terms.length === 0) return '';
   return terms.map((t, i) => `"${t.replace(/"/g, '')}"${i === terms.length - 1 ? '*' : ''}`).join(' AND ');
+}
+
+/** The same word/prefix contract for a contained projection of an indexed parent. */
+export function matchesText(text: string, q: string): boolean {
+  const plain = (s: string): string => s.normalize('NFD').replace(/\p{M}/gu, '');
+  const terms = queryTerms(plain(q));
+  const words = plain(text).toLowerCase().split(/[^\p{L}\p{N}]+/u);
+  return terms.length > 0 && terms.every((term, i) =>
+    words.some(word => i === terms.length - 1 ? word.startsWith(term) : word === term));
 }

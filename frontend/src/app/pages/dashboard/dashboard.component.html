@@ -43,7 +43,7 @@
                       <i class="search-item-icon {{iconForType(item.source_resource_type)}}" aria-hidden="true"></i>
                       <span class="search-item-title">{{item.title || (item.source_resource_type | resourceTypeLabel)}}</span>
                       @if (item.date) {
-                        <span class="search-item-date">{{item.date | date:'MMM d, yyyy'}}</span>
+                        <span class="search-item-date">{{displayDate(item.date)}}</span>
                       }
                     </button>
                   </li>

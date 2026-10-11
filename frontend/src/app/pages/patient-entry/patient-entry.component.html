@@ -75,11 +75,11 @@
           </div>
           <div class="col-md-3 mg-b-15">
             <label class="form-label" for="implant-insertion-date">When was it put in? <span class="tx-gray-500 tx-11">(optional)</span></label>
-            <input id="implant-insertion-date" type="date" class="form-control" [(ngModel)]="implantInsertionDate" name="implantInsertionDate" />
+            <input id="implant-insertion-date" type="text" placeholder="YYYY, YYYY-MM or YYYY-MM-DD" aria-describedby="implant-date-help" class="form-control" [(ngModel)]="implantInsertionDate" name="implantInsertionDate" />
           </div>
           <div class="col-md-3 mg-b-15">
             <label class="form-label" for="implant-removal-date">When was it removed? <span class="tx-gray-500 tx-11">(if removed, optional)</span></label>
-            <input id="implant-removal-date" type="date" class="form-control" [(ngModel)]="implantRemovalDate" name="implantRemovalDate" [min]="implantInsertionDate" />
+            <input id="implant-removal-date" type="text" placeholder="YYYY, YYYY-MM or YYYY-MM-DD" aria-describedby="implant-date-help" class="form-control" [(ngModel)]="implantRemovalDate" name="implantRemovalDate" />
           </div>
           <div class="col-md-3 mg-b-15">
             <label class="form-label" for="implant-status">Status</label>
@@ -107,11 +107,12 @@
           </div>
           <div class="col-md-3 mg-b-15">
             <label class="form-label" for="implant-manufacture-date">Manufacture date <span class="tx-gray-500 tx-11">(optional)</span></label>
-            <input id="implant-manufacture-date" type="date" class="form-control" [(ngModel)]="implantManufactureDate" name="implantManufactureDate" />
+            <input id="implant-manufacture-date" type="text" placeholder="YYYY, YYYY-MM or YYYY-MM-DD" aria-describedby="implant-date-help" class="form-control" [(ngModel)]="implantManufactureDate" name="implantManufactureDate" />
           </div>
           <div class="col-md-3 mg-b-15">
             <label class="form-label" for="implant-expiration-date">Expiration date <span class="tx-gray-500 tx-11">(optional)</span></label>
-            <input id="implant-expiration-date" type="date" class="form-control" [(ngModel)]="implantExpirationDate" name="implantExpirationDate" />
+            <input id="implant-expiration-date" type="text" placeholder="YYYY, YYYY-MM or YYYY-MM-DD" aria-describedby="implant-date-help" class="form-control" [(ngModel)]="implantExpirationDate" name="implantExpirationDate" />
+            <small id="implant-date-help" class="form-text">Use only the precision you know: year, year-month, or full date. Overlapping partial dates do not establish which came first.</small>
           </div>
         }
 

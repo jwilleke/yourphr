@@ -4,6 +4,7 @@ import {FormsModule} from '@angular/forms';
 import {Router, RouterModule} from '@angular/router';
 import {FastenApiService} from '../../services/fasten-api.service';
 import {extractErrorFromResponse} from '../../../lib/utils/error_extract';
+import {validImplantDate, definitelyBefore} from '../../../lib/utils/implant-date';
 
 /**
  * What a person adds about themselves (#313, #696, #763).
@@ -128,8 +129,23 @@ export class PatientEntryComponent implements OnInit {
         payload.implant_insertion_date = this.implantInsertionDate || undefined;
         payload.implant_removal_date = this.implantRemovalDate || undefined;
         payload.effective_date_time = undefined;
-        if (this.implantInsertionDate && this.implantRemovalDate && this.implantRemovalDate < this.implantInsertionDate) {
+        for (const [label, date] of [
+          ['placement', this.implantInsertionDate], ['removal', this.implantRemovalDate],
+          ['manufacture', this.implantManufactureDate], ['expiration', this.implantExpirationDate],
+        ]) {
+          if (date && !validImplantDate(date)) {
+            this.error = `Enter a valid implant ${label} date (YYYY, YYYY-MM or YYYY-MM-DD).`;
+            this.saving = false;
+            return;
+          }
+        }
+        if (this.implantInsertionDate && this.implantRemovalDate && definitelyBefore(this.implantRemovalDate, this.implantInsertionDate)) {
           this.error = 'The removal date cannot be before the implant was put in.';
+          this.saving = false;
+          return;
+        }
+        if (this.implantManufactureDate && this.implantExpirationDate && definitelyBefore(this.implantExpirationDate, this.implantManufactureDate)) {
+          this.error = 'The expiration date cannot be before manufacture.';
           this.saving = false;
           return;
         }

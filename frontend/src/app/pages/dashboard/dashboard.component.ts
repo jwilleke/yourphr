@@ -10,6 +10,7 @@ import {Summary} from '../../models/fasten/summary';
 import {ClassifiedCondition} from '../../models/fasten/classified-condition';
 import {ClassifiedAllergy} from '../../models/fasten/classified-allergy';
 import {ResourceListItem} from '../../models/fasten/resource-list-item';
+import {displayFhirDate} from '../../../lib/utils/implant-date';
 
 // The palette a patient can pick a tile color from (matches the SCSS .tile-color-* classes).
 export const TILE_PALETTE = ['amber', 'blue', 'red', 'green', 'teal', 'purple', 'pink', 'gray']
@@ -60,6 +61,7 @@ export const DEFAULT_TILES: DashboardTile[] = [
     standalone: false
 })
 export class DashboardComponent implements OnInit, OnDestroy {
+  displayDate = displayFhirDate;
   loading = false
 
   lastUpdated: Date = null

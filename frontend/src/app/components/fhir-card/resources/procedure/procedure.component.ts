@@ -9,6 +9,7 @@ import {BadgeComponent} from "../../common/badge/badge.component";
 import {TableComponent} from "../../common/table/table.component";
 import {GlossaryLookupComponent} from '../../../glossary-lookup/glossary-lookup.component';
 import { FastenDisplayModel } from 'src/lib/models/fasten/fasten-display-model';
+import {displayFhirDate} from '../../../../../lib/utils/implant-date';
 
 @Component({
     imports: [NgbCollapseModule, CommonModule, BadgeComponent, TableComponent, GlossaryLookupComponent, RouterModule],
@@ -18,6 +19,7 @@ import { FastenDisplayModel } from 'src/lib/models/fasten/fasten-display-model';
     styleUrls: ['./procedure.component.scss']
 })
 export class ProcedureComponent implements OnInit, FhirCardEditableComponentInterface {
+  displayDate = displayFhirDate;
   @Input() displayModel: ProcedureModel | null
   @Input() showDetails = true
   @Input() isCollapsed = false
@@ -46,6 +48,12 @@ export class ProcedureComponent implements OnInit, FhirCardEditableComponentInte
     }
 
     this.tableData = [
+      {
+        label: 'Device',
+        data: this.displayModel?.focal_device,
+        data_type: TableRowItemDataType.Reference,
+        enabled: !!this.displayModel?.focal_device,
+      },
       {
         label: 'Identification',
         data: this.displayModel?.coding,

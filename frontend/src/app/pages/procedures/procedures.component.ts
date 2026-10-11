@@ -4,6 +4,7 @@ import {ResourceFhir} from '../../models/fasten/resource_fhir';
 import {fhirModelFactory} from '../../../lib/models/factory';
 import {ResourceType} from '../../../lib/models/constants';
 import {ProcedureModel} from '../../../lib/models/resources/procedure-model';
+import {displayFhirDate} from '../../../lib/utils/implant-date';
 
 type SortColumn = 'name' | 'category' | 'date';
 
@@ -20,6 +21,7 @@ type SortColumn = 'name' | 'category' | 'date';
   standalone: false,
 })
 export class ProceduresComponent implements OnInit {
+  displayDate = displayFhirDate;
   loading = true;
   errored = false;
   procedures: ProcedureModel[] = [];
@@ -107,7 +109,7 @@ export class ProceduresComponent implements OnInit {
       if (!da && !db) return this.name(a).localeCompare(this.name(b));
       if (!da) return 1;
       if (!db) return -1;
-      return dir * (new Date(da).getTime() - new Date(db).getTime());
+      return dir * da.localeCompare(db);
     }
     const av = this.sortColumn === 'name' ? this.name(a) : this.categoryLabel(a);
     const bv = this.sortColumn === 'name' ? this.name(b) : this.categoryLabel(b);

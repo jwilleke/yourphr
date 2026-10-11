@@ -92,6 +92,43 @@ describe('PatientEntryComponent', () => {
     expect(component.saving).toBeFalse();
   });
 
+  it('accepts partial dates, does not infer ordering inside a year, and preserves the payload precision', () => {
+    component.kind = 'implant';
+    component.name = 'Synthetic stent';
+    component.implantInsertionDate = '2024-06';
+    component.implantRemovalDate = '2024';
+    component.implantManufactureDate = '2020';
+    component.implantExpirationDate = '2030-07';
+    fixture.detectChanges();
+    for (const id of ['insertion', 'removal', 'manufacture', 'expiration']) {
+      expect(fixture.nativeElement.querySelector(`#implant-${id}-date`).type).toBe('text');
+    }
+    component.submit();
+    expect(api.createPatientEntry.calls.mostRecent().args[0]).toEqual(jasmine.objectContaining({
+      implant_insertion_date: '2024-06', implant_removal_date: '2024',
+      implant_manufacture_date: '2020', implant_expiration_date: '2030-07',
+    }));
+  });
+
+  it('rejects malformed and provably reversed partial dates without losing the draft', () => {
+    component.kind = 'implant';
+    component.name = 'Synthetic stent';
+    component.implantInsertionDate = '2024-13';
+    component.submit();
+    expect(component.error).toContain('valid implant placement date');
+    component.implantInsertionDate = '2024-06';
+    component.implantRemovalDate = '2024-05';
+    component.submit();
+    expect(component.error).toContain('cannot be before');
+    component.implantRemovalDate = '';
+    component.implantManufactureDate = '2025';
+    component.implantExpirationDate = '2024';
+    component.submit();
+    expect(component.error).toContain('expiration date cannot be before manufacture');
+    expect(component.name).toBe('Synthetic stent');
+    expect(api.createPatientEntry).not.toHaveBeenCalled();
+  });
+
   it('requires an implant name and retains implant fields after a failed save', () => {
     component.kind = 'implant';
     component.submit();

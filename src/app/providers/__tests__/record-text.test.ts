@@ -8,7 +8,17 @@
  * than an attack, and the function must not decide it meant something else.
  */
 import { describe, expect, it } from 'vitest';
-import { textFor } from '../record-text.js';
+import { matchesText, textFor } from '../record-text.js';
+
+describe('contained Procedure word matching', () => {
+  it('requires every word, allows only the last as a prefix, and matches FTS diacritics', () => {
+    expect(matchesText('Procedure Implant removal Synthetic stent 2024', 'implant rem')).toBe(true);
+    expect(matchesText('Procedure Implant placement 2020', 'implant rem')).toBe(false);
+    expect(matchesText('Procedure Implant removal', 'impl removal')).toBe(false);
+    expect(matchesText('Procedure Révision implant', 'revision impl')).toBe(true);
+    expect(matchesText('Procedure Implant placement', '%%%')).toBe(false);
+  });
+});
 
 const narrative = (div: string): Record<string, unknown> => ({
   resourceType: 'Condition',
