@@ -4,7 +4,7 @@ Everything YourPHR knows about devices: the implants a patient records, and the 
 
 | Kind | Document | For | State |
 |---|---|---|---|
-| __Implants__ (stent, pacemaker, artificial joint) | [using-patient-entered-implants.md](using-patient-entered-implants.md) | Patients and operators | Live. Partial dates and placement and removal under Procedures arrive with [#882](https://github.com/jwilleke/yourphr/pull/882) |
+| __Implants__ (stent, pacemaker, artificial joint) | [using-patient-entered-implants.md](using-patient-entered-implants.md) | Patients and operators | Live, including partial dates and the placement and removal rows under Procedures ([#882](https://github.com/jwilleke/yourphr/pull/882)) |
 | __Connected devices__ (Apple Health or Health Connect apps, scales, cuffs, meters) | [connected-devices.md](connected-devices.md): __the developer contract__ (setup code, claim, keys, refresh rotation, refusals, what pauses or ends a grant) | Developers of device apps | Setup, keys, refresh and pausing are live. The upload arrives with [#314](https://github.com/jwilleke/yourphr/issues/314) PR 1 |
 
 External equipment a patient reads by hand, such as a hearing aid, a CGM or a CPAP machine, is neither of these. Its readings go in through __Add record → A measurement__, with the equipment named under __Measured with__.
