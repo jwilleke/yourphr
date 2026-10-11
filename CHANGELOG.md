@@ -1,5 +1,22 @@
 # Changelog
 
+## [3.17.0](https://github.com/jwilleke/yourphr/compare/v3.16.4...v3.17.0) (2026-10-11)
+
+__An implant's history shows when it went in and came out, at the precision you know.__
+
+### Features
+
+- __Implant placement and removal show under Procedures__ ([#882](https://github.com/jwilleke/yourphr/pull/882), contributed by Phil Hobrla): when you record an implant with the date it was put in or taken out, those events now show on the Procedures page, in dashboard search, and on their own detail page, each linked back to the implant. They belong to the implant: deleting the implant removes them.
+- __Partial implant dates__ ([#882](https://github.com/jwilleke/yourphr/pull/882)): implant dates take just a year (`2019`), a year and month (`2019-03`), or a full date, and they are shown that way: `2019`, `Mar 2019`, `Mar 14, 2019`. A missing month or day is never filled in. Two dates are refused only when they definitely conflict, such as a removal year before the placement year.
+
+### Bug Fixes
+
+- __A malformed web address answers 400, not a server error__: a request whose path held a broken escape such as `%E0` used to fail with a 500. It now gets a 400.
+
+### Documentation
+
+- __A devices section__ ([docs/devices/](https://github.com/jwilleke/yourphr/tree/main/docs/devices)): an index, a guide to patient-entered implants, and the connected-device developer contract, which moved to `docs/devices/connected-devices.md`.
+
 ## [3.16.4](https://github.com/jwilleke/yourphr/compare/v3.16.3...v3.16.4) (2026-10-08)
 
 __The databases are closed cleanly, written safely, and restored safely.__
