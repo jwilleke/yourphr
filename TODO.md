@@ -13,7 +13,6 @@
   - Triage Dependabot [#889](https://github.com/jwilleke/yourphr/pull/889) (handlebars), and the `braces` (high) advisory from the frontend yarn audit, which may not have a tracking issue yet.
   - [#863](https://github.com/jwilleke/yourphr/issues/863): no reply from Epic. Assess what dropping the 10 non-USCDI-v3 APIs loses; instant activation makes that path fast.
   - [#888](https://github.com/jwilleke/yourphr/issues/888) — [BUG] /patient-profile is wrong for logged in user
-- [#882](https://github.com/jwilleke/yourphr/pull/882) (Phil): waiting on his fixes.
 - Blockers / significant notes: the demo account cannot add records by hand (docs/guides/demo-mode.md, Known gaps); decide if intended.
 <!-- RESUME:END -->
 
@@ -23,7 +22,6 @@ Open work in [jwilleke/yourphr](https://github.com/jwilleke/yourphr), ranked. Ge
 
 - [#819](https://github.com/jwilleke/yourphr/issues/819) — [security] webpack-dev-middleware — 1 open advisory in the frontend lockfile (high)
 - [#507](https://github.com/jwilleke/yourphr/issues/507) — [FEATURE] Authentication policy survey: password reset, MFA, re-auth, audit — decide what to build
-- [#882](https://github.com/jwilleke/yourphr/pull/882) — Show implant lifecycle procedures and support partial dates *(PR · ready, CI green — review fixes pushed 2026-10-10, merge pending)* — refs [#868](https://github.com/jwilleke/yourphr/issues/868)
 - [#870](https://github.com/jwilleke/yourphr/issues/870) — [BUG] Every provider connect on prod fails — yourPHR was never pointed at the SMART relay
 - [#863](https://github.com/jwilleke/yourphr/issues/863) — [BUG] Epic paused production for app 56252 at all 519 organizations — it selects APIs outside USCDI v3 automatic distribution
 - [#657](https://github.com/jwilleke/yourphr/issues/657) — [FEATURE] Chat over records as an MCP server — the patient's own AI client connects, YourPHR transmits nothing
