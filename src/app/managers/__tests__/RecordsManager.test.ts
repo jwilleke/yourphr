@@ -108,6 +108,19 @@ describe('RecordsManager — the one door, scoped to whoever is asking', () => {
     await expect(records.detail(bob, 'synthetic-implant#placement')).rejects.toMatchObject({status: 404});
   });
 
+  it('resolves projected Procedure parents by Device type when FHIR ids collide', async () => {
+    provider.seed('alice', 'source-1', {resourceType: 'Patient', id: 'shared-id', name: [{text: 'Synthetic patient'}]} as Resource);
+    provider.seed('alice', 'source-2', implant('shared-id'));
+
+    expect(await records.detail(alice, 'shared-id#removal')).toMatchObject({
+      source_resource_type: 'Procedure',
+      source_resource_id: 'shared-id#removal',
+    });
+    expect(await records.provenance(alice, 'Procedure', 'shared-id#removal')).toMatchObject({
+      sourceId: 'source-2',
+    });
+  });
+
   it('also exposes explicitly linked contained Procedures from imported Devices without US Core profiles', async () => {
     const imported = implant();
     delete imported.meta;

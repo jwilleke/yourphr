@@ -57,6 +57,8 @@ export abstract class BaseRecordsProvider {
   abstract indexedValues(userId: string, resourceType: string, id: string, param: string): Promise<string[]>;
   /** Find anything by words (yourphr#599): the caller's records whose text matches, best first, with a snippet. */
   abstract textSearch(userId: string, q: string, page: { limit: number; offset: number }): Promise<{ resourceType: string; id: string; snippet: string }[]>;
+  /** Check candidate text with the same tokenizer and query semantics as textSearch. */
+  abstract textMatches(text: string, q: string): Promise<boolean>;
   /** The references one record makes, as "Type/id" strings (yourphr#605) — the graph's out-edges. */
   abstract referencesFrom(userId: string, resourceType: string, id: string): Promise<string[]>;
   /** The records that reference "Type/id" (yourphr#605) — the graph's in-edges. */

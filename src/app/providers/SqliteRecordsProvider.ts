@@ -5,7 +5,7 @@
  * seam, yourphr#537). Every raw query over records lives in this file and nowhere else; the
  * store-boundary lint keeps it that way.
  */
-import type Database from 'better-sqlite3-multiple-ciphers';
+import Database from 'better-sqlite3-multiple-ciphers';
 import type { Bundle, Resource } from '@medplum/fhirtypes';
 import type { SearchRequest, WithId } from '@medplum/core';
 import { SEARCH_INDEX_VERSION, SqliteFhirRepository, sameContent } from '../../SqliteFhirRepository.js';
@@ -161,6 +161,8 @@ export class SqliteRecordsProvider extends BaseRecordsProvider {
       h.db.close();
     }
     this.handles.clear();
+    this.matchDb?.close();
+    this.matchDb = undefined;
   }
 
   /** The per-account handle. Deliberately not public: a handle is the store, and the store is the provider's. */
@@ -172,6 +174,9 @@ export class SqliteRecordsProvider extends BaseRecordsProvider {
     }
     return h;
   }
+
+  /** In-memory FTS5 for matching contained projections (textMatches); holds one row at a time. */
+  private matchDb: InstanceType<typeof Database> | undefined;
 
   private anyDb(): InstanceType<typeof Database> {
     return this.handle('__any__').db;
@@ -275,6 +280,24 @@ export class SqliteRecordsProvider extends BaseRecordsProvider {
                 ORDER BY bm25(search_text) LIMIT ? OFFSET ?`)
       .all(userId, match, page.limit, page.offset) as { resource_type: string; resource_id: string; snippet: string }[];
     return rows.map((r) => ({ resourceType: r.resource_type, id: r.resource_id, snippet: r.snippet }));
+  }
+
+  async textMatches(text: string, q: string): Promise<boolean> {
+    const match = ftsQuery(q);
+    if (match === '') return false;
+    // A private in-memory database, never the records connection: the text is a patient's record,
+    // and a temp table there may spill to an unencrypted temp file (TEMP_STORE=1, temp_store 0).
+    if (!this.matchDb) {
+      this.matchDb = new Database(':memory:');
+      this.matchDb.exec("CREATE VIRTUAL TABLE projection_text_match USING fts5(body, tokenize = 'porter unicode61')");
+    }
+    const db = this.matchDb;
+    try {
+      db.prepare('INSERT INTO projection_text_match (body) VALUES (?)').run(text);
+      return db.prepare('SELECT rowid FROM projection_text_match WHERE projection_text_match MATCH ? LIMIT 1').get(match) !== undefined;
+    } finally {
+      db.prepare('DELETE FROM projection_text_match').run();
+    }
   }
 
   async referencesFrom(userId: string, resourceType: string, id: string): Promise<string[]> {
