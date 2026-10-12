@@ -55,9 +55,7 @@ export class ProcedureModel extends FastenDisplayModel {
     this.has_note = _.has(fhirResource, 'note');
     this.note = _.get(fhirResource, 'note', []);
     this.outcome = _.get(fhirResource, 'outcome');
-    const device = _.get(fhirResource, 'focalDevice.0.manipulated');
-    this.focal_device = device?.reference?.startsWith('Device/')
-      ? {...device, reference: device.reference.slice('Device/'.length)} : device;
+    this.focal_device = _.get(fhirResource, 'focalDevice.0.manipulated');
 
   }
 

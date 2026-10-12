@@ -80,9 +80,15 @@ export class FakeRecordsProvider extends BaseRecordsProvider {
     if (terms.length === 0) return [];
     return this.mine(userId)
       .map((r) => ({ r, text: textFor(r.resource).toLowerCase() }))
-      .filter(({ text }) => terms.every((t) => text.includes(t)))
+      .filter(({ text }) => terms.every((term) => text.includes(term)))
       .slice(page.offset, page.offset + page.limit)
       .map(({ r, text }) => ({ resourceType: r.resourceType, id: r.id, snippet: text.slice(0, 60) }));
+  }
+  async textMatches(text: string, q: string): Promise<boolean> {
+    const terms = q.toLowerCase().split(/[^\p{L}\p{N}]+/u).filter(Boolean);
+    const words = text.toLowerCase().split(/[^\p{L}\p{N}]+/u);
+    return terms.length > 0 && terms.every((term, i) =>
+      words.some((word) => i === terms.length - 1 ? word.startsWith(term) : word === term));
   }
 
   /** References found anywhere in the stored JSON — what the search index holds for reference parameters. */

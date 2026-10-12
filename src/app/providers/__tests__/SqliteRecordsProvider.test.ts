@@ -112,6 +112,8 @@ describe('SqliteRecordsProvider — find anything by words (yourphr#599)', () =>
     expect((await provider.textSearch('alice', 'cardio', { limit: 10, offset: 0 })).map((h) => h.id)).toEqual(['d1']); // the last word is a prefix
     expect((await provider.textSearch('bob', 'metformin', { limit: 10, offset: 0 })).map((h) => h.id)).toEqual(['m9']);
     expect(await provider.textSearch('alice', '"; DROP TABLE resources; --', { limit: 10, offset: 0 })).toEqual([]);
+    expect(await provider.textMatches('Implant removal', 'implant removing')).toBe(true);
+    expect(await provider.textMatches('Implant placement', 'implant removing')).toBe(false);
     await provider.removeBySource('alice', 'source-1');
     expect(await provider.textSearch('alice', 'metformin', { limit: 10, offset: 0 })).toEqual([]);
     await provider.close();

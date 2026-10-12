@@ -30,7 +30,7 @@ import { buildIps, type IpsDocument } from '../../ips/index.js';
 import type { RecordProvenance } from '../../provenance/index.js';
 import { dateFor, toResourceFhir } from '../../server.js';
 import { implantProcedures } from './implant-procedures.js';
-import { matchesText, textFor } from '../providers/record-text.js';
+import { textFor } from '../providers/record-text.js';
 
 declare module '../../framework/Engine.js' {
   interface ManagerRegistry {
@@ -269,7 +269,7 @@ export class RecordsManager extends BaseManager {
       stored = await this.provider.read(this.who(ctx), relativeReference[1]!, relativeReference[2]!);
     }
     if (!stored && id.includes('#')) {
-      const parent = await this.provider.readById(this.who(ctx), id.split('#')[0]!);
+      const parent = await this.provider.read(this.who(ctx), 'Device', id.split('#')[0]!);
       if (parent && !RecordsManager.needsReview(parent.resource)) {
         stored = implantProcedures(parent).find(p => p.id === id && !RecordsManager.needsReview(p.resource));
       }
@@ -348,7 +348,7 @@ export class RecordsManager extends BaseManager {
     const userId = this.who(ctx);
     let stored = await this.provider.read(userId, resourceType, id);
     if (!stored && resourceType === 'Procedure' && id.includes('#')) {
-      const parent = await this.provider.readById(userId, id.split('#')[0]!);
+      const parent = await this.provider.read(userId, 'Device', id.split('#')[0]!);
       if (parent && !RecordsManager.needsReview(parent.resource)
         && implantProcedures(parent).some(p => p.id === id && !RecordsManager.needsReview(p.resource))) stored = parent;
     }
@@ -702,8 +702,11 @@ export class RecordsManager extends BaseManager {
         const stored = await this.provider.read(userId, hit.resourceType, hit.id);
         if (!stored) continue;
         if (RecordsManager.needsReview(stored.resource)) continue; // kept, but not yet a chart fact
-        const projections = implantProcedures(stored).filter(p =>
-          !RecordsManager.needsReview(p.resource) && matchesText(textFor(p.resource), query));
+        const projections: StoredRecord[] = [];
+        for (const projection of implantProcedures(stored)) {
+          if (!RecordsManager.needsReview(projection.resource)
+            && await this.provider.textMatches(textFor(projection.resource), query)) projections.push(projection);
+        }
         for (const row of [stored, ...projections]) {
           const shaped = toResourceFhir(row.resource, row.sourceId);
           const date = String(shaped['sort_date'] ?? '').slice(0, 10);

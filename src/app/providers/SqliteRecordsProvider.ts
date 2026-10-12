@@ -277,6 +277,20 @@ export class SqliteRecordsProvider extends BaseRecordsProvider {
     return rows.map((r) => ({ resourceType: r.resource_type, id: r.resource_id, snippet: r.snippet }));
   }
 
+  async textMatches(text: string, q: string): Promise<boolean> {
+    const match = ftsQuery(q);
+    if (match === '') return false;
+    const db = this.anyDb();
+    db.exec("CREATE VIRTUAL TABLE IF NOT EXISTS temp.projection_text_match USING fts5(body, tokenize = 'porter unicode61')");
+    db.prepare('DELETE FROM temp.projection_text_match').run();
+    try {
+      db.prepare('INSERT INTO temp.projection_text_match (body) VALUES (?)').run(text);
+      return db.prepare('SELECT rowid FROM temp.projection_text_match WHERE projection_text_match MATCH ? LIMIT 1').get(match) !== undefined;
+    } finally {
+      db.prepare('DELETE FROM temp.projection_text_match').run();
+    }
+  }
+
   async referencesFrom(userId: string, resourceType: string, id: string): Promise<string[]> {
     // A reference value is "Type/id"; a token is "system|code"; dates and strings carry neither shape.
     return (this.anyDb()

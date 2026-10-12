@@ -37,4 +37,12 @@ describe('ProcedureModel', () => {
     expect(model.has_coding).toEqual(false)
     expect(model.performed_datetime).toEqual('2010-10-29')
   });
+
+  it('should preserve the resource type in a focal Device reference', () => {
+    const model = new ProcedureModel({
+      resourceType: 'Procedure',
+      focalDevice: [{ manipulated: { reference: 'Device/implant-1' } }],
+    });
+    expect(model.focal_device).toEqual({ reference: 'Device/implant-1' });
+  });
 });
