@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.17.1](https://github.com/jwilleke/yourphr/compare/v3.17.0...v3.17.1) (2026-10-12)
+
+__Searching finds an implant's placement and removal the same way it finds everything else.__
+
+### Bug Fixes
+
+- __Implant search understands word forms__ ([#891](https://github.com/jwilleke/yourphr/pull/891), contributed by Phil Hobrla): a search such as "implant removing" now finds an implant's "Implant removal" row, the same way it already found the implant itself. The text is matched in memory only and never written to disk.
+- __Implant links always open the implant__ ([#891](https://github.com/jwilleke/yourphr/pull/891)): an implant's placement and removal rows link to their implant by type, so a record from another kind of resource that shares the same id can no longer be opened by mistake.
+
 ## [3.17.0](https://github.com/jwilleke/yourphr/compare/v3.16.4...v3.17.0) (2026-10-11)
 
 __An implant's history shows when it went in and came out, at the precision you know.__
