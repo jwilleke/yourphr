@@ -63,7 +63,7 @@ Everything you enter is marked __patient-reported__, so it's clear the record ca
 - Placement and removal are `Procedure` resources __contained__ in the Device (`id` `implant-placement` / `implant-removal`, `focalDevice.manipulated.reference = "#"`). Saving, exporting and deleting the Device therefore always carries them along.
 - `src/app/managers/implant-procedures.ts` projects the contained Procedures as read-only records with id `<deviceId>#implant-placement`. They appear in lists, counts, search, detail and provenance, but they are never stored rows and never enter the review queue.
 - Dates are validated on the server (`src/patient-entry/implant-dates.ts`) and again in the browser (`frontend/src/lib/utils/implant-date.ts`), and the two use the same rules.
-- Known gap: Copilot's comments on [#882](https://github.com/jwilleke/yourphr/pull/882) point out that lookups by id aren't scoped to the Device type, and that projection search doesn't use FTS Porter stemming, so "implant removing" misses the removal row. The first is tracked under [#784](https://github.com/jwilleke/yourphr/issues/784). The second is a possible follow-up.
+- Search matches placement and removal rows with the same SQLite FTS5 `porter unicode61` tokenizer as the main index ([#891](https://github.com/jwilleke/yourphr/pull/891)), so "implant removing" finds "Implant removal". The match runs in a small in-memory database, never on the records connection. Parents are looked up as `Device`, so a Device that shares an id with another resource still resolves.
 
 ## Testing it
 
