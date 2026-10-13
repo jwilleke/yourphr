@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.19.0](https://github.com/jwilleke/yourphr/compare/v3.18.1...v3.19.0) (2026-10-13)
+
+__Administration stays in Administration.__
+
+### Features
+
+- __Admin-only pages live under Admin__ ([#904](https://github.com/jwilleke/yourphr/issues/904)): __Users__ is now a card on the Admin Dashboard (at `/admin/users`), not a link in the top bar, and Sandbox Testing is at `/admin/sandbox`. Old links redirect. The top bar is the same for everyone.
+- __Explore shows all your sources__: the admin-only "Show sandbox sources" switch is gone. Test data belongs on a separate test login, not hidden inside a real account.
+
 ## [3.18.1](https://github.com/jwilleke/yourphr/compare/v3.18.0...v3.18.1) (2026-10-13)
 
 __The dashboard greets you, not someone else in your account.__
