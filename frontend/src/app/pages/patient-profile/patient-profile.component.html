@@ -7,6 +7,7 @@
 
       @if (!loading['page']) {
         <div class="ps-3 pe-3">
+          @if (patient) {
           <!-- Patient Name Row -->
           <div class="row mt-5 mb-3">
             <div class="col-6">
@@ -99,6 +100,13 @@
               <p class="tx-gray-500 tx-12 mt-2">Only providers stated in your imported records are shown here.</p>
             </div>
           </div>
+          <p class="tx-gray-500 tx-12">As recorded by {{ patientSourceLabel }}.</p>
+          } @else {
+            <div class="alert alert-info mt-4" role="status" id="profile-unconfirmed">
+              <strong>Which record is you?</strong> Your connected records have not been confirmed as being about you yet,
+              so no one's details are shown here. <a routerLink="/records/review">Review your records</a> and say which ones are yours.
+            </div>
+          }
           <!-- Allergies and Immunizations now have dedicated pages (/allergies, /immunizations) — #289. -->
           <!-- Personal & social information (SDOH / health-concern) -->
           @if (profileItems.length > 0) {
