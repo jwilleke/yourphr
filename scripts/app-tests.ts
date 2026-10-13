@@ -474,15 +474,26 @@ async function main(): Promise<void> {
     disconnected.status === 200 && afterDisconnect.accessToken === '' && afterDisconnect.refreshToken === '' && jobsAfterDisconnect.data.length === 2
       && ((await (await fetch(`${base}/api/secure/resource/fhir?sourceResourceType=Condition`, authed(aliceToken))).json()) as { data: unknown[] }).data.length === 3);
 
-  const removed = (await (await fetch(`${base}/api/secure/source/source-1/remove-data`, { method: 'POST', ...authed(aliceToken) })).json()) as { data: number };
-  const afterRemove = (await (await fetch(`${base}/api/secure/resource/fhir?sourceResourceType=Condition`, authed(aliceToken))).json()) as { data: unknown[] };
-  check('remove-data deletes that source\'s records (rows reported) and the source stays listed', removed.data === 4 && afterRemove.data.length === 0
-      && ((await (await fetch(`${base}/api/secure/source`, authed(aliceToken))).json()) as { data: Src[] }).data.length === 1);
+  // Set and walk away (yourphr#905): both removals answer 202 at once and finish in the background;
+  // the person is told by a notice. Poll briefly rather than assume the order of events.
+  const until = async (done: () => Promise<boolean>): Promise<boolean> => {
+    for (let i = 0; i < 100; i++) { if (await done()) return true; await new Promise((r) => setTimeout(r, 20)); }
+    return false;
+  };
+  const conditionCount = async (): Promise<number> => ((await (await fetch(`${base}/api/secure/resource/fhir?sourceResourceType=Condition`, authed(aliceToken))).json()) as { data: unknown[] }).data.length;
+  const sourcesListed = async (): Promise<number> => ((await (await fetch(`${base}/api/secure/source`, authed(aliceToken))).json()) as { data: Src[] }).data.length;
+  const removed = await fetch(`${base}/api/secure/source/source-1/remove-data`, { method: 'POST', ...authed(aliceToken) });
+  const recordsGone = await until(async () => (await conditionCount()) === 0);
+  check('remove-data answers 202 at once, the records go in the background, and the source stays listed',
+    removed.status === 202 && recordsGone && (await sourcesListed()) === 1);
 
   const deleted = await fetch(`${base}/api/secure/source/source-1`, { method: 'DELETE', ...authed(aliceToken) });
-  check('DELETE removes the source itself; it is gone from the list and its id 404s',
-    deleted.status === 200 && ((await (await fetch(`${base}/api/secure/source`, authed(aliceToken))).json()) as { data: Src[] }).data.length === 0
-      && (await fetch(`${base}/api/secure/source/source-1`, authed(aliceToken))).status === 404);
+  const sourceGone = await until(async () => (await sourcesListed()) === 0);
+  const notices = app.engine.managers.notifications.getUserNotifications('alice').map((n) => n.title);
+  check('DELETE answers 202 at once; the source is gone from the list, its id 404s, and alice is told',
+    deleted.status === 202 && sourceGone
+      && (await fetch(`${base}/api/secure/source/source-1`, authed(aliceToken))).status === 404
+      && notices.some((t) => / removed$/.test(t)));
 
   const connectable = (await (await fetch(`${base}/api/secure/provider-catalog/connectable`, authed(aliceToken))).json()) as { data: { id: string; display: string; brand_logo_url: string }[] };
   check('the connectable catalog is served in Go\'s ConnectableProvider shape — enabled production entries, sandboxes stay admin-only',

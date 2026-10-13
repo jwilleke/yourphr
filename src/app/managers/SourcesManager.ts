@@ -516,10 +516,47 @@ export class SourcesManager extends BaseManager {
   async remove(ctx: ApiContext, publicId: string): Promise<number | undefined> {
     const s = await this.get(ctx, publicId);
     if (!s) return undefined;
+    // Disconnect first (yourphr#905): the removal runs in batches, and a sync landing in between
+    // must not write the source's records back.
+    await this.provider.clearTokens(s.id);
     const rows = await this.engine.managers.records.removeSource(ctx, publicId);
     await this.engine.managers.jobs.removeForSource(s.id);
     await this.provider.remove(s.id);
     return rows;
+  }
+
+  /**
+   * Start removing a source (or only its records) and return at once — set and walk away
+   * (yourphr#905, a rule). The removal runs in the background in batches that keep the server
+   * responsive; the person gets a notice when it ends. A source being removed stops syncing
+   * immediately. False when there is no such source.
+   */
+  async startRemoval(ctx: ApiContext, publicId: string, keepSource: boolean): Promise<boolean> {
+    const s = await this.get(ctx, publicId);
+    if (!s) return false;
+    if (!keepSource) await this.provider.clearTokens(s.id);
+    const name = s.display || 'a source';
+    void (async () => {
+      let level: 'success' | 'error' = 'success';
+      let message: string;
+      try {
+        const rows = keepSource ? await this.removeData(ctx, publicId) : await this.remove(ctx, publicId);
+        message = keepSource
+          ? `Removed ${rows ?? 0} record(s) imported from ${name}. The source is still connected.`
+          : `Removed ${name} and the ${rows ?? 0} record(s) imported from it.`;
+      } catch (err) {
+        level = 'error';
+        message = `Removing ${name} stopped part-way: ${(err as Error).message}. Try again to finish it.`;
+        this.log(`sources: removal of source ${s.id} failed: ${(err as Error).message}`);
+      }
+      if (!this.engine.has('notifications')) return;
+      await this.engine.managers.notifications.createNotification({
+        type: 'system', level, targetUsers: [ctx.username], link: '/sources',
+        title: level === 'success' ? `${name} removed` : `Removing ${name} did not finish`,
+        message,
+      }).catch((err: Error) => this.log(`sources: removal notice not sent: ${err.message}`));
+    })();
+    return true;
   }
 
   /** The records go, the source stays — Go's "clear data" (yourphr#594). */

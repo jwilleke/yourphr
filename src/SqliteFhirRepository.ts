@@ -211,12 +211,37 @@ export class SqliteFhirRepository extends FhirRepository {
         resource_type UNINDEXED, resource_id UNINDEXED, user_id UNINDEXED, body,
         tokenize = 'porter unicode61'
       );
+
+      -- Which search_text row holds which record's text (yourphr#905). FTS5 cannot look a row up by
+      -- an UNINDEXED column: every "DELETE FROM search_text WHERE resource_id = ?" scanned the whole
+      -- table, per record — 21,017 records x ~64 ms froze a live server for 20+ minutes and got the
+      -- pod killed. With this key every text row is found by rowid. Not named search_text_*: that
+      -- prefix is the FTS table's own shadow tables, which the backup skips.
+      CREATE TABLE IF NOT EXISTS text_rowids (
+        resource_type TEXT NOT NULL,
+        resource_id   TEXT NOT NULL,
+        user_id       TEXT NOT NULL DEFAULT '',
+        text_rowid    INTEGER NOT NULL,
+        PRIMARY KEY (resource_type, resource_id, user_id)
+      );
+      CREATE INDEX IF NOT EXISTS idx_text_rowids_user ON text_rowids (user_id);
     `);
   }
 
   // ---------------------------------------------------------------------------------------------
   // Indexing — the part the whole spike is about
   // ---------------------------------------------------------------------------------------------
+
+  /**
+   * Drop one record's search text by its key (yourphr#905): a rowid lookup, never a scan of the
+   * FTS table. A record with no key has no text row.
+   */
+  private forgetText(resourceType: string, id: string, owner: string): void {
+    const key = this.db.prepare('SELECT text_rowid FROM text_rowids WHERE resource_type = ? AND resource_id = ? AND user_id = ?').get(resourceType, id, owner) as {text_rowid: number} | undefined;
+    if (!key) return;
+    this.db.prepare('DELETE FROM search_text WHERE rowid = ?').run(key.text_rowid);
+    this.db.prepare('DELETE FROM text_rowids WHERE resource_type = ? AND resource_id = ? AND user_id = ?').run(resourceType, id, owner);
+  }
 
   /**
    * Derive every search value for a resource from FHIR's own SearchParameter definitions.
@@ -234,10 +259,11 @@ export class SqliteFhirRepository extends FhirRepository {
       'DELETE FROM search_index WHERE resource_type = ? AND resource_id = ? AND user_id = ?'
     );
     del.run(resource.resourceType, resource.id, owner);
-    this.db.prepare('DELETE FROM search_text WHERE resource_type = ? AND resource_id = ? AND user_id = ?').run(resource.resourceType, resource.id, owner);
+    this.forgetText(resource.resourceType, resource.id, owner);
     const body = textFor(resource);
     if (body !== '') {
-      this.db.prepare('INSERT INTO search_text (resource_type, resource_id, user_id, body) VALUES (?, ?, ?, ?)').run(resource.resourceType, resource.id, owner, body);
+      const row = this.db.prepare('INSERT INTO search_text (resource_type, resource_id, user_id, body) VALUES (?, ?, ?, ?)').run(resource.resourceType, resource.id, owner, body);
+      this.db.prepare('INSERT OR REPLACE INTO text_rowids (resource_type, resource_id, user_id, text_rowid) VALUES (?, ?, ?, ?)').run(resource.resourceType, resource.id, owner, row.lastInsertRowid);
     }
 
     const insert = this.db.prepare(
@@ -284,6 +310,7 @@ export class SqliteFhirRepository extends FhirRepository {
         .all(owner) as {content: string}[];
       this.db.prepare('DELETE FROM search_index WHERE user_id = ?').run(owner);
       this.db.prepare('DELETE FROM search_text WHERE user_id = ?').run(owner);
+      this.db.prepare('DELETE FROM text_rowids WHERE user_id = ?').run(owner);
       for (const row of rows) {
         this.indexResource(JSON.parse(row.content) as WithId<Resource>);
       }
@@ -304,6 +331,7 @@ export class SqliteFhirRepository extends FhirRepository {
     try {
       this.db.prepare('DELETE FROM search_index WHERE user_id = ?').run(owner);
       this.db.prepare('DELETE FROM search_text WHERE user_id = ?').run(owner);
+      this.db.prepare('DELETE FROM text_rowids WHERE user_id = ?').run(owner);
       let after = 0;
       for (;;) {
         const rows = page.all(owner, after, pageSize) as {rowid: number; content: string}[];
@@ -498,9 +526,7 @@ export class SqliteFhirRepository extends FhirRepository {
       this.db
         .prepare('DELETE FROM search_index WHERE resource_type = ? AND resource_id = ? AND user_id = ?')
         .run(resourceType, id, this.userId ?? '');
-      this.db
-        .prepare('DELETE FROM search_text WHERE resource_type = ? AND resource_id = ? AND user_id = ?')
-        .run(resourceType, id, this.userId ?? '');
+      this.forgetText(resourceType, id, this.userId ?? '');
     });
     tx();
   }

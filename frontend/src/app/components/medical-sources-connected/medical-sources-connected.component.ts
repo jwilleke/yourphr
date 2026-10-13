@@ -408,12 +408,12 @@ export class MedicalSourcesConnectedComponent implements OnInit, OnDestroy {
     this.modalService.dismissAll()
 
     this.fastenApi.removeSourceData(source.id).subscribe(
-      (respData) => {
+      () => {
         delete this.status[source.id]
         delete this.status[source.brand_id]
         const toastNotification = new ToastNotification()
         toastNotification.type = ToastType.Success
-        toastNotification.message = `Removed imported records from ${sourceDisplayName} (${respData} row(s)). Connection credentials were kept.`
+        toastNotification.message = `Removing the records imported from ${sourceDisplayName} in the background. You can leave this page; you'll get a notice when it's done. The connection is kept.`
         this.toastService.show(toastNotification)
       },
       (err) => {
@@ -445,11 +445,11 @@ export class MedicalSourcesConnectedComponent implements OnInit, OnDestroy {
     this.modalService.dismissAll()
 
     this.fastenApi.deleteSource(source.id).subscribe(
-      (respData) => {
+      () => {
         delete this.status[source.id]
         delete this.status[source.brand_id]
 
-        //delete this source from the connnected list
+        // It has stopped syncing and is being removed in the background (#905): take the card off now
         const foundIndex = this.connectedSourceList.findIndex((connectedSource) => {
           return connectedSource?.source?.id == source.id
         }, this)
@@ -457,12 +457,9 @@ export class MedicalSourcesConnectedComponent implements OnInit, OnDestroy {
           this.connectedSourceList.splice(foundIndex, 1)
         }
 
-        console.log("source delete response:", respData)
-
-
         const toastNotification = new ToastNotification()
         toastNotification.type = ToastType.Success
-        toastNotification.message = `Disconnected ${sourceDisplayName} and removed its imported records from this instance (${respData} row(s)).`
+        toastNotification.message = `Removing ${sourceDisplayName} and its records in the background. You can leave this page; you'll get a notice when it's done.`
         this.toastService.show(toastNotification)
 
       },

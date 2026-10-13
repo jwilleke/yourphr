@@ -1170,8 +1170,8 @@ export function createYourPhrServer(options: ServerOptions) {
             return;
           }
           if (!action && req.method === 'DELETE') {
-            const rows = await src.remove(ctx, id);
-            rows === undefined ? notFound() : send(res, 200, {success: true, data: rows});
+            // Set and walk away (yourphr#905): 202 at once; the notice says when it is done.
+            (await src.startRemoval(ctx, id, false)) ? send(res, 202, {success: true, data: {removing: true}}) : notFound();
             return;
           }
           if (action === 'summary' && req.method === 'GET') {
@@ -1195,8 +1195,7 @@ export function createYourPhrServer(options: ServerOptions) {
             return;
           }
           if (action === 'remove-data' && req.method === 'POST') {
-            const rows = await src.removeData(ctx, id);
-            rows === undefined ? notFound() : send(res, 200, {success: true, data: rows});
+            (await src.startRemoval(ctx, id, true)) ? send(res, 202, {success: true, data: {removing: true}}) : notFound();
             return;
           }
           if (action === 'export' && req.method === 'GET') {

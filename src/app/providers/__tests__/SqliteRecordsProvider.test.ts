@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { Resource } from '@medplum/fhirtypes';
-import { HISTORY_PER_PERSON_MIGRATION, PGHD_TAG_MIGRATION, SqliteRecordsProvider } from '../SqliteRecordsProvider.js';
+import { HISTORY_PER_PERSON_MIGRATION, PGHD_TAG_MIGRATION, SqliteRecordsProvider, TEXT_ROWIDS_MIGRATION } from '../SqliteRecordsProvider.js';
 import { RecordsManager } from '../../managers/RecordsManager.js';
 import { SqliteFhirRepository } from '../../../SqliteFhirRepository.js';
 import Database from 'better-sqlite3-multiple-ciphers';
@@ -457,5 +457,54 @@ describe('PGHD_TAG_MIGRATION rewrites patient-reported to pghd on current record
     PGHD_TAG_MIGRATION.up(db);
     expect(read('typed').meta.tag).toHaveLength(2);
     db.close();
+  });
+});
+
+describe('search text is keyed by record, so a delete never scans the FTS table (yourphr#905)', () => {
+  const note = (id: string, text: string): Resource => ({ resourceType: 'Condition', id, code: { text } } as Resource);
+  const db = (): InstanceType<typeof Database> => (provider as unknown as { anyDb(): InstanceType<typeof Database> }).anyDb();
+  const n = (sql: string): number => (db().prepare(sql).get() as { n: number }).n;
+
+  it('every text row has a key, and removing a source bigger than one batch takes its records, text and keys', async () => {
+    const w = provider.writer('alice', 'source-big');
+    for (let i = 0; i < 450; i++) await w.upsert(note(`c${i}`, `zebrafinch condition ${i}`));
+    expect(n('SELECT count(*) n FROM search_text')).toBe(n('SELECT count(*) n FROM text_rowids'));
+    expect((await provider.textSearch('alice', 'zebrafinch', { limit: 5, offset: 0 })).length).toBe(5);
+
+    expect(await provider.removeBySource('alice', 'source-big')).toBe(450);
+    expect(await provider.textSearch('alice', 'zebrafinch', { limit: 5, offset: 0 })).toEqual([]);
+    expect(n("SELECT count(*) n FROM text_rowids WHERE resource_type = 'Condition'")).toBe(0);
+    expect(n('SELECT count(*) n FROM search_text')).toBe(n('SELECT count(*) n FROM text_rowids'));
+    // Nobody else's records went with it.
+    expect((await provider.textSearch('bob', '718', { limit: 5, offset: 0 })).map((h) => h.id)).toEqual(['o9']);
+  });
+
+  it('TEXT_ROWIDS_MIGRATION keys an older store, keeps the newest text row per record, and drops older duplicates', () => {
+    const d = db();
+    d.exec('DELETE FROM text_rowids');
+    d.prepare('INSERT INTO search_text (resource_type, resource_id, user_id, body) VALUES (?, ?, ?, ?)').run('Observation', 'o1', 'alice', 'newest text for o1');
+    const distinct = n('SELECT count(*) n FROM (SELECT DISTINCT resource_type, resource_id, user_id FROM search_text)');
+    TEXT_ROWIDS_MIGRATION.up(d);
+    expect(n('SELECT count(*) n FROM text_rowids')).toBe(distinct);
+    expect(n('SELECT count(*) n FROM search_text')).toBe(distinct);
+    const kept = d.prepare("SELECT t.body FROM search_text t JOIN text_rowids k ON k.text_rowid = t.rowid WHERE k.resource_id = 'o1' AND k.user_id = 'alice'").get() as { body: string };
+    expect(kept.body).toBe('newest text for o1');
+  });
+
+  it('a backup and restore keep each text row\'s rowid, so the keys still point at the right rows', async () => {
+    await provider.removeRecord('alice', 'Observation', 'o2'); // a gap in the rowids, as a real store has
+    await provider.close();
+    const repo = new SqliteFhirRepository({ file: join(dir, 'records.db'), key: 'unit-key', userId: 'alice' });
+    const taken = backupDatabase(repo, { destination: join(dir, 'backups'), backupKey: 'backup-key' });
+    repo.db.close();
+    stageInstanceRestore(taken.file, 'backup-key', dir, 'unit-key');
+    const staged = new Database(join(dir, STAGED_RECORDS));
+    staged.pragma("cipher='sqlcipher'");
+    staged.pragma("key='unit-key'");
+    const keys = staged.prepare('SELECT k.resource_id, t.resource_id AS text_id FROM text_rowids k LEFT JOIN search_text t ON t.rowid = k.text_rowid').all() as { resource_id: string; text_id: string | null }[];
+    expect(keys.length).toBeGreaterThan(0);
+    expect(keys.every((k) => k.text_id === k.resource_id)).toBe(true);
+    staged.close();
+    provider = new SqliteRecordsProvider(join(dir, 'records.db'), 'unit-key');
   });
 });

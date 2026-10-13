@@ -28,6 +28,9 @@ const DATE_PREFIX = /^(eq|ne|gt|ge|lt|le|sa|eb|ap)(\d.*)$/;
  * history carried the person) go too: they may hold the deleting person's data, and honouring a
  * deletion outweighs keeping another person's pre-#812 history of a shared Practitioner.
  */
+/** Records per batch when removing a source or an account (yourphr#905): well under a second of work at a time. */
+const REMOVE_BATCH = 200;
+
 const DELETE_HISTORY = "DELETE FROM resource_history WHERE resource_type = ? AND id = ? AND user_id IN (?, '')";
 
 /**
@@ -95,6 +98,39 @@ export const PGHD_TAG_MIGRATION: Migration = {
         .filter((t) => { const k = `${t.system}|${t.code}`; if (seen.has(k)) return false; seen.add(k); return true; });
       write.run(JSON.stringify(resource), row.rowid);
     }
+  },
+};
+
+/**
+ * records.db ledger entry (yourphr#905): every search_text row gets a key, so a record's text is
+ * found by rowid instead of by scanning the FTS table. Fills text_rowids from what is there — one
+ * scan — keeping the newest row per record, and drops any older duplicate text rows (they were
+ * unreachable by a keyed delete and would turn up twice in search).
+ *
+ * A frozen snapshot of intent, like every ledger entry.
+ */
+export const TEXT_ROWIDS_MIGRATION: Migration = {
+  id: '20261013160000',
+  description: 'search_text rows keyed by record in text_rowids, so deletes stop scanning the FTS table (yourphr#905)',
+  up: (db) => {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS text_rowids (
+        resource_type TEXT NOT NULL,
+        resource_id   TEXT NOT NULL,
+        user_id       TEXT NOT NULL DEFAULT '',
+        text_rowid    INTEGER NOT NULL,
+        PRIMARY KEY (resource_type, resource_id, user_id)
+      );
+      CREATE INDEX IF NOT EXISTS idx_text_rowids_user ON text_rowids (user_id);
+    `);
+    const hasText = db.prepare("SELECT 1 FROM sqlite_master WHERE name = 'search_text'").get() !== undefined;
+    if (!hasText) return;
+    db.exec(`
+      DELETE FROM text_rowids;
+      INSERT INTO text_rowids (resource_type, resource_id, user_id, text_rowid)
+        SELECT resource_type, resource_id, user_id, MAX(rowid) FROM search_text GROUP BY resource_type, resource_id, user_id;
+      DELETE FROM search_text WHERE rowid NOT IN (SELECT text_rowid FROM text_rowids);
+    `);
   },
 };
 
@@ -335,27 +371,53 @@ export class SqliteRecordsProvider extends BaseRecordsProvider {
   }
 
   async removeBySource(userId: string, sourceId: string): Promise<number> {
+    return this.removeInBatches(userId, 'source_id = ?', [sourceId]);
+  }
+
+  /**
+   * Remove an account's records matching `where` in batches (yourphr#905). Every statement goes
+   * through an index, and each batch commits on its own and yields to the event loop before the
+   * next, so a large removal never holds the server: 21,017 records with ~505k index rows took
+   * ~13 s in one block — still a freeze for everyone. A removal cut short (a restart) leaves the
+   * rest in place; running it again finishes the job, so batches need not be one transaction.
+   */
+  private async removeInBatches(userId: string, where: string, args: unknown[], batchSize = REMOVE_BATCH): Promise<number> {
     const db = this.anyDb();
-    const remove = db.transaction((): number => {
-      const rows = db.prepare('SELECT resource_type, id FROM resources WHERE user_id = ? AND source_id = ?').all(userId, sourceId) as { resource_type: string; id: string }[];
-      const delIndex = db.prepare('DELETE FROM search_index WHERE resource_type = ? AND resource_id = ? AND user_id = ?');
-      const delText = db.prepare('DELETE FROM search_text WHERE resource_type = ? AND resource_id = ? AND user_id = ?');
-      const delHistory = db.prepare(DELETE_HISTORY);
-      for (const r of rows) {
-        delIndex.run(r.resource_type, r.id, userId);
-        delText.run(r.resource_type, r.id, userId);
-        delHistory.run(r.resource_type, r.id, userId);
-      }
-      return db.prepare('DELETE FROM resources WHERE user_id = ? AND source_id = ?').run(userId, sourceId).changes;
-    });
-    return remove();
+    const page = db.prepare(`SELECT rowid, resource_type, id FROM resources WHERE user_id = ? AND ${where} AND rowid > ? ORDER BY rowid LIMIT ?`);
+    const delIndex = db.prepare('DELETE FROM search_index WHERE resource_type = ? AND resource_id = ? AND user_id = ?');
+    const textKey = db.prepare('SELECT text_rowid FROM text_rowids WHERE resource_type = ? AND resource_id = ? AND user_id = ?');
+    const delText = db.prepare('DELETE FROM search_text WHERE rowid = ?');
+    const delKey = db.prepare('DELETE FROM text_rowids WHERE resource_type = ? AND resource_id = ? AND user_id = ?');
+    const delHistory = db.prepare(DELETE_HISTORY);
+    const delResource = db.prepare('DELETE FROM resources WHERE rowid = ?');
+    let removed = 0;
+    let after = 0;
+    for (;;) {
+      const rows = page.all(userId, ...args, after, batchSize) as { rowid: number; resource_type: string; id: string }[];
+      if (rows.length === 0) break;
+      db.transaction(() => {
+        for (const r of rows) {
+          delIndex.run(r.resource_type, r.id, userId);
+          const key = textKey.get(r.resource_type, r.id, userId) as { text_rowid: number } | undefined;
+          if (key) delText.run(key.text_rowid);
+          delKey.run(r.resource_type, r.id, userId);
+          delHistory.run(r.resource_type, r.id, userId);
+          removed += delResource.run(r.rowid).changes;
+        }
+      })();
+      after = rows[rows.length - 1]!.rowid;
+      await new Promise<void>((resolve) => setImmediate(resolve));
+    }
+    return removed;
   }
 
   async removeRecord(userId: string, resourceType: string, id: string): Promise<boolean> {
     const db = this.anyDb();
     const remove = db.transaction((): boolean => {
       db.prepare('DELETE FROM search_index WHERE resource_type = ? AND resource_id = ? AND user_id = ?').run(resourceType, id, userId);
-      db.prepare('DELETE FROM search_text WHERE resource_type = ? AND resource_id = ? AND user_id = ?').run(resourceType, id, userId);
+      const key = db.prepare('SELECT text_rowid FROM text_rowids WHERE resource_type = ? AND resource_id = ? AND user_id = ?').get(resourceType, id, userId) as { text_rowid: number } | undefined;
+      if (key) db.prepare('DELETE FROM search_text WHERE rowid = ?').run(key.text_rowid);
+      db.prepare('DELETE FROM text_rowids WHERE resource_type = ? AND resource_id = ? AND user_id = ?').run(resourceType, id, userId);
       db.prepare(DELETE_HISTORY).run(resourceType, id, userId);
       return db.prepare('DELETE FROM resources WHERE user_id = ? AND resource_type = ? AND id = ?').run(userId, resourceType, id).changes > 0;
     });
@@ -363,16 +425,7 @@ export class SqliteRecordsProvider extends BaseRecordsProvider {
   }
 
   async removeAll(userId: string): Promise<number> {
-    const db = this.anyDb();
-    const remove = db.transaction((): number => {
-      const rows = db.prepare('SELECT resource_type, id FROM resources WHERE user_id = ?').all(userId) as { resource_type: string; id: string }[];
-      const delHistory = db.prepare(DELETE_HISTORY);
-      for (const r of rows) delHistory.run(r.resource_type, r.id, userId);
-      db.prepare('DELETE FROM search_index WHERE user_id = ?').run(userId);
-      db.prepare('DELETE FROM search_text WHERE user_id = ?').run(userId);
-      return db.prepare('DELETE FROM resources WHERE user_id = ?').run(userId).changes;
-    });
-    return remove();
+    return this.removeInBatches(userId, '1 = 1', []);
   }
 
   async release(userId: string): Promise<void> {

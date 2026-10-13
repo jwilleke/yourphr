@@ -51,7 +51,7 @@ const isOurs = (name: string): boolean => BACKUP_SUFFIXES.some((s) => name.endsW
  */
 /** records.db's migration ledger (yourphr#784) — its own name, so a restore can return it to records.db. */
 export const RECORDS_LEDGER_TABLE = 'records_schema_migrations';
-export const RECORDS_TABLES = new Set(['resources', 'resource_history', 'search_index', 'search_text', RECORDS_LEDGER_TABLE]);
+export const RECORDS_TABLES = new Set(['resources', 'resource_history', 'search_index', 'search_text', 'text_rowids', RECORDS_LEDGER_TABLE]);
 /**
  * phd-samples.db (yourphr#805, #314): raw connected-device samples, PHD = Personal Health Device.
  * Every table in it — its migration ledger included (`phd_schema_migrations`) — is named with this
@@ -115,9 +115,19 @@ function copyObjects(db: InstanceType<typeof Database>, from: string, schema: st
     );
     db.exec(ddl);
     if (object.type === 'table') {
-      db.exec(`INSERT INTO ${schema}."${object.name}" SELECT * FROM ${from}."${object.name}"`);
+      // A virtual table's rowids are carried explicitly: SELECT * leaves them out, the copy would be
+      // renumbered, and text_rowids (yourphr#905) would point at the wrong rows after a restore.
+      const isVirtual = virtual.includes(object.name);
+      db.exec(isVirtual
+        ? `INSERT INTO ${schema}."${object.name}" (rowid, ${columnsOf(db, from, object.name)}) SELECT rowid, ${columnsOf(db, from, object.name)} FROM ${from}."${object.name}"`
+        : `INSERT INTO ${schema}."${object.name}" SELECT * FROM ${from}."${object.name}"`);
     }
   }
+}
+
+/** A table's columns, quoted, in order — for a copy that must name them (a virtual table's rowid). */
+function columnsOf(db: InstanceType<typeof Database>, schema: string, table: string): string {
+  return (db.prepare(`SELECT name FROM ${schema}.pragma_table_info(?)`).all(table) as { name: string }[]).map((c) => `"${c.name}"`).join(', ');
 }
 
 /** SQLCipher key pragma escaping, matching SqliteFhirRepository. */
