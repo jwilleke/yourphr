@@ -4,9 +4,12 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { Resource } from '@medplum/fhirtypes';
 import { HISTORY_PER_PERSON_MIGRATION, PGHD_TAG_MIGRATION, SqliteRecordsProvider } from '../SqliteRecordsProvider.js';
+import { RecordsManager } from '../../managers/RecordsManager.js';
 import { SqliteFhirRepository } from '../../../SqliteFhirRepository.js';
 import Database from 'better-sqlite3-multiple-ciphers';
 import { backupDatabase, stageInstanceRestore, STAGED_APP, STAGED_PHD_SAMPLES, STAGED_RECORDS, RECORDS_LEDGER_TABLE } from '../sqlite-backup.js';
+import { ApiContext } from '../../../framework/ApiContext.js';
+import { Engine } from '../../../framework/Engine.js';
 import { runMigrations } from '../../../framework/providers/sqlite-migrations.js';
 import { SqliteDatabaseProvider } from '../../../framework/providers/SqliteDatabaseProvider.js';
 
@@ -95,6 +98,32 @@ describe('SqliteRecordsProvider — PHI storage over SQLCipher, scoped per accou
 });
 
 describe('SqliteRecordsProvider — find anything by words (yourphr#599)', () => {
+  it('finds a contained implant Procedure through the manager using Porter stemming', async () => {
+    await provider.writer('alice', 'source-1').upsert({
+      resourceType: 'Device',
+      id: 'implant-search',
+      type: { text: 'Synthetic stent' },
+      contained: [{
+        resourceType: 'Procedure',
+        id: 'removal',
+        status: 'completed',
+        code: { text: 'Implant removal' },
+        performedDateTime: '2024-06',
+        focalDevice: [{ manipulated: { reference: '#' } }],
+      }],
+    } as Resource);
+
+    const engine = new Engine();
+    const records = new RecordsManager(engine, provider);
+    const ctx = ApiContext.from({ username: 'alice', role: 'user' }, engine);
+    const hits = await records.searchText(ctx, 'implant removing');
+
+    expect(hits).toContainEqual(expect.objectContaining({
+      source_resource_type: 'Procedure',
+      source_resource_id: 'implant-search#removal',
+    }));
+  });
+
   it('indexes the record\'s own text into FTS5 on the same write, searches per owner with a snippet, and forgets a deleted record', async () => {
     const { mkdtempSync, rmSync } = await import('node:fs');
     const { tmpdir } = await import('node:os');
