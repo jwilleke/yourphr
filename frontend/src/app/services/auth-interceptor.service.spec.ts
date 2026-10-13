@@ -60,6 +60,22 @@ describe('AuthInterceptorService', () => {
     expect(router.navigateByUrl).toHaveBeenCalledWith('/auth/signin');
   });
 
+  // #911: a wrong password is not an ended session. The sign-in page needs the 401 itself, or it
+  // cannot tell "incorrect" from "the server is down".
+  it('hands a 401 from the sign-in endpoint to the caller, without signing anyone out', (done) => {
+    const signinUrl = apiUrl.replace(/\/api\/.*$/, '/api/auth/signin');
+    http.post(signinUrl, {}).subscribe({
+      next: () => done.fail('a rejected sign-in must reach the caller as an error'),
+      error: (err) => {
+        expect(err.status).toBe(401);
+        expect(authService.Logout).not.toHaveBeenCalled();
+        expect(router.navigateByUrl).not.toHaveBeenCalled();
+        done();
+      },
+    });
+    httpMock.expectOne(signinUrl).flush({success: false}, {status: 401, statusText: 'Unauthorized'});
+  });
+
   // The reported symptom: as the read-only demo admin, pressing Connect ended the session.
   it('does NOT sign the user out on a 403', (done) => {
     http.get(apiUrl).subscribe({

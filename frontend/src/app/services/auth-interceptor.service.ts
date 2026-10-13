@@ -66,6 +66,12 @@ export class AuthInterceptorService implements HttpInterceptor {
   }
 
   private reportAuthError(err: HttpErrorResponse): Observable<any> {
+    // A 401 from the sign-in endpoints themselves is "wrong credentials", not "your session ended"
+    // (#911): hand it to the caller untouched. Swallowing it here made the sign-in page crash on a
+    // missing token, and its catch-all then blamed the password for every failure, even a dead server.
+    if (err.status === 401 && /\/api\/auth\//.test(err.url ?? '')) {
+      return throwError(err);
+    }
     if (err.status === 401) {
       this.authService.Logout()
       this.router.navigateByUrl(`/auth/signin`);
