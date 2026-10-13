@@ -1,5 +1,23 @@
 # Changelog
 
+## [3.18.0](https://github.com/jwilleke/yourphr/compare/v3.17.1...v3.18.0) (2026-10-13)
+
+__Your profile shows only you, and a connected device keeps syncing through a quiet spell.__
+
+### Features
+
+- __A connected device pauses after 90 days without an upload, not 14__ ([#861](https://github.com/jwilleke/yourphr/issues/861)): a scale that sits unused during a trip no longer stops syncing. A lost or abandoned device is still caught. It takes full effect once a device's permission lasts until you revoke it ([#860](https://github.com/jwilleke/yourphr/issues/860)); until then, the 30-day term ends first.
+
+### Bug Fixes
+
+- __Your profile shows you, never someone else__ ([#888](https://github.com/jwilleke/yourphr/issues/888)): the Patient Profile page used to show whichever person record it found first, which could be someone you care for or a test import. It now shows only the record you confirmed is about you on __Review your records__, and says which provider it came from. If you haven't confirmed one yet, it asks you to, rather than guessing.
+- __Bare-metal setup serves the app__ ([#778](https://github.com/jwilleke/yourphr/issues/778)): the bare-metal example file and guide named a setting the server never reads, so the install served no pages. They now name `YOURPHR_WEB_STATIC_DIR` and `YOURPHR_FAST_STORAGE`, and build with npm and yarn. The server also warns at startup when no app directory is set.
+
+### Internal
+
+- Security: handlebars 4.7.10 clears two critical advisories and one medium ([#889](https://github.com/jwilleke/yourphr/pull/889)).
+- A search test through the real database for implant placement and removal rows, contributed by Phil Hobrla ([#892](https://github.com/jwilleke/yourphr/pull/892)).
+
 ## [3.17.1](https://github.com/jwilleke/yourphr/compare/v3.17.0...v3.17.1) (2026-10-12)
 
 __Searching finds an implant's placement and removal the same way it finds everything else.__
