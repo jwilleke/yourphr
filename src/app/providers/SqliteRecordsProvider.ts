@@ -155,6 +155,21 @@ export const RESOURCE_READ_INDEXES_MIGRATION: Migration = {
   },
 };
 
+/**
+ * records.db ledger entry (yourphr#910): "which records reference X" by index. referencedBy filtered
+ * search_index by (user_id, value), which no index covered — every call scanned ~637k rows, and the
+ * Medical History graph made thousands of calls per load.
+ *
+ * A frozen snapshot of intent, like every ledger entry.
+ */
+export const SEARCH_REFERENCE_INDEX_MIGRATION: Migration = {
+  id: '20261013210000',
+  description: 'index search_index by (user_id, value) for reverse-reference lookups (yourphr#910)',
+  up: (db) => {
+    db.exec('CREATE INDEX IF NOT EXISTS idx_search_user_value ON search_index (user_id, value);');
+  },
+};
+
 /** The search index's derivation version, kept in the file's PRAGMA user_version (yourphr#713). */
 function indexVersion(db: InstanceType<typeof Database>): number {
   const row = (db.pragma('user_version') as { user_version: number }[])[0];

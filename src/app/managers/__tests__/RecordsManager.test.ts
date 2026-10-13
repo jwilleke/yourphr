@@ -483,7 +483,7 @@ describe('RecordsManager — the one door, scoped to whoever is asking', () => {
     await expect(bare.favorites(alice, 'Practitioner')).rejects.toMatchObject({ status: 501 });
   });
 
-  it('the MedicalHistory graph: each requested encounter with everything reachable through references, both ways, Binary excluded, newest first', async () => {
+  it('the MedicalHistory graph: each requested encounter with what it references and what references it, Binary excluded, newest first', async () => {
     const ref = (r: string) => ({ reference: r });
     provider.seed('alice', 'source-1', { resourceType: 'Encounter', id: 'e1', period: { start: '2024-03-01' }, participant: [{ individual: ref('Practitioner/dr-1') }], serviceProvider: ref('Organization/org-1'), diagnosis: [{ condition: ref('Condition/c1') }] } as Resource);
     provider.seed('alice', 'source-1', { resourceType: 'Practitioner', id: 'dr-1', name: [{ text: 'Dr One' }] } as Resource);
@@ -512,6 +512,19 @@ describe('RecordsManager — the one door, scoped to whoever is asking', () => {
     await expect(records.graph(alice, 'AddressBook', ids)).rejects.toMatchObject({ status: 400 });
     await expect(records.graph(alice, 'MedicalHistory', [])).rejects.toMatchObject({ status: 400 });
     await expect(records.graph(ApiContext.anonymous(engine), 'MedicalHistory', ids)).rejects.toMatchObject({ status: 401 });
+  });
+
+  it('the MedicalHistory graph is bounded: one hop out from the visit\'s neighbours, never through the Patient (yourphr#910)', async () => {
+    const ref = (r: string) => ({ reference: r });
+    provider.seed('alice', 'source-1', { resourceType: 'Patient', id: 'p1' } as Resource);
+    provider.seed('alice', 'source-1', { resourceType: 'Encounter', id: 'e1', subject: ref('Patient/p1'), period: { start: '2024-03-01' } } as Resource);
+    provider.seed('alice', 'source-1', { resourceType: 'DiagnosticReport', id: 'dr1', status: 'final', code: { text: 'Panel' }, subject: ref('Patient/p1'), encounter: ref('Encounter/e1'), result: [ref('Observation/ob-in-report')] } as Resource);
+    provider.seed('alice', 'source-1', { resourceType: 'Observation', id: 'ob-in-report', status: 'final', code: { text: 'Glucose' }, subject: ref('Patient/p1') } as Resource);
+    // Records about the same person from other visits: reachable only through the Patient.
+    for (let i = 0; i < 25; i++) provider.seed('alice', 'source-1', { resourceType: 'Condition', id: `elsewhere-${i}`, code: { text: `Other ${i}` }, subject: ref('Patient/p1') } as Resource);
+    const graph = await records.graph(alice, 'MedicalHistory', [{ source_id: 'source-1', source_resource_type: 'Encounter', source_resource_id: 'e1' }]);
+    const related = (graph.results['Encounter']![0]!['related_resources'] as Record<string, unknown>[]).map((r) => `${r['source_resource_type']}/${r['source_resource_id']}`).sort();
+    expect(related).toEqual(['DiagnosticReport/dr1', 'Observation/ob-in-report']);
   });
 
   it('find anything by words: every word must match the record\'s own text, best first with a snippet; user A never sees user B', async () => {

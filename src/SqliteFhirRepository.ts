@@ -212,6 +212,9 @@ export class SqliteFhirRepository extends FhirRepository {
       CREATE INDEX IF NOT EXISTS idx_resources_user_source ON resources (user_id, source_id, deleted, resource_type);
       CREATE INDEX IF NOT EXISTS idx_resources_user_updated ON resources (user_id, deleted, last_updated);
       CREATE INDEX IF NOT EXISTS idx_resources_user_id ON resources (user_id, id);
+      -- "Which records reference X" (yourphr#910): search_index's keys lead with resource_type, so a
+      -- lookup by the referenced value scanned all ~637k rows of a real account, per call.
+      CREATE INDEX IF NOT EXISTS idx_search_user_value ON search_index (user_id, value);
 
       -- Find anything by words (yourphr#599): the record's human-readable text, inside the same
       -- encrypted file, fed by the same write path as the search index. Never the raw JSON.

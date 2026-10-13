@@ -735,29 +735,37 @@ export class RecordsManager extends BaseManager {
     if (!Array.isArray(ids) || ids.length === 0) throw new ApiError(400, 'resource_ids is required');
     const byDateDesc = (a: Record<string, unknown>, b: Record<string, unknown>): number => String(b['sort_date'] ?? '').localeCompare(String(a['sort_date'] ?? ''));
     const results: Record<string, Record<string, unknown>[]> = {};
+    let walked = 0;
     for (const id of ids) {
       const resourceType = String(id.source_resource_type ?? '');
       const resourceId = String(id.source_resource_id ?? '');
       if (!resourceType || !resourceId) continue;
+      // Let the server answer between visits (yourphr#910): a page can ask for thousands.
+      if (++walked % 50 === 0) await new Promise<void>((resolve) => setImmediate(resolve));
       const root = await this.provider.read(userId, resourceType, resourceId);
       if (!root) continue; // not this account's, or gone — silently absent, as Go's IN query leaves it
+      // Bounded (yourphr#910): a visit's related records are what it points to and what points at
+      // it, plus ONE hop out from those (a report's results, an observation's performer). Never back
+      // in through anything else, and never through the Patient: nearly every record references the
+      // Patient, so an unbounded walk pulled the whole chart into every visit and hung production.
       const rootKey = `${resourceType}/${resourceId}`;
       const visited = new Set<string>([rootKey]);
-      const queue = [rootKey];
+      const queue: { key: string; depth: number }[] = [{ key: rootKey, depth: 0 }];
       const related: Record<string, unknown>[] = [];
       while (queue.length > 0) {
-        const current = queue.shift()!;
+        const { key: current, depth } = queue.shift()!;
+        if (depth >= 2) continue;
         const [type, rid] = current.split('/') as [string, string];
         const neighbours = new Set<string>(await this.provider.referencesFrom(userId, type, rid));
-        for (const r of await this.provider.referencedBy(userId, current)) neighbours.add(`${r.resourceType}/${r.id}`);
+        if (depth === 0) for (const r of await this.provider.referencedBy(userId, current)) neighbours.add(`${r.resourceType}/${r.id}`);
         for (const next of neighbours) {
-          if (visited.has(next) || next.startsWith('Binary/')) continue;
+          if (visited.has(next) || next.startsWith('Binary/') || next.startsWith('Patient/')) continue;
           visited.add(next);
           const [nType, nId] = next.split('/') as [string, string];
           const stored = await this.provider.read(userId, nType, nId);
           if (!stored) continue; // a dangling reference: the record was never synced
           related.push(toResourceFhir(stored.resource, stored.sourceId));
-          queue.push(next);
+          queue.push({ key: next, depth: depth + 1 });
         }
       }
       related.sort(byDateDesc);
