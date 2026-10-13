@@ -144,21 +144,23 @@ running instance — no restart and no redeploy.
 
 ### C. Bare metal
 
-Build the binary (or download a release asset), then run it with a config file and/or env:
+Build from a checkout, then run the server __from that checkout__. The shipped defaults are read from `./config` in the working directory, as in ngdpbase; `.env` says where the instance's data lives.
 
 ```bash
-# build (needs Go + Node toolchains; see the Develop section of the README)
-make build-frontend-prod
-go build -o fasten ./backend/cmd/fasten/
+# build (Node 24 and yarn; see the Develop section of the README)
+npm ci && npm run build                        # the server, into dist/server
+(cd frontend && yarn install && yarn build -- -c prod)   # the Angular app, into dist/web; -c prod is required, see yourphr#673
 
-# run — the shipped defaults are CONTAINER paths, so bare metal must set its own
+# configure: where the data lives, where the app is, and the two keys
 cp .env.baremetal.example .env   # then edit it
-./fasten start
+
+# run, from the checkout
+npm start
 ```
 
-`fasten migrate` runs DB migrations without starting the server.
+`npm start` runs `node dist/server/main.js`, which reads `<YOURPHR_FAST_STORAGE>/.env` and then `./.env`.
 
-Bare metal in particular __must__ set `YOURPHR_WEB_SRC_FRONTEND_PATH` to wherever you put the compiled Angular app. Its default points inside the container image, and without it the backend starts and serves no interface, with nothing in the log explaining why.
+Bare metal in particular __must__ set `YOURPHR_WEB_STATIC_DIR` to the built app (the checkout's `dist/web`). Without it the server starts and the API answers, but no page is served.
 
 ### D. Kubernetes / GitOps
 

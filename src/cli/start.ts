@@ -82,6 +82,10 @@ export async function start(): Promise<void> {
   if (webDir !== '' && !existsSync(join(webDir, 'index.html'))) {
     refuse(`${envNameFor('yourphr.web.static-dir')}=${webDir} holds no index.html — the built Angular app is expected there`);
   }
+  if (webDir === '') {
+    // yourphr#778: an instance with no interface is rarely what an operator meant, and nothing else says why every page 404s.
+    appLog.warn(`${envNameFor('yourphr.web.static-dir')} is not set — the API answers but no page is served; point it at the built Angular app (dist/web)`);
+  }
 
   // Bootstrap values are read once here; assembleApp() builds its own manager over the same files
   // for everything else. Two reads of one file, one truth. Configuration is the bootstrap layer
