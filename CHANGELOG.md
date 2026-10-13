@@ -1,5 +1,19 @@
 # Changelog
 
+## [3.19.3](https://github.com/jwilleke/yourphr/compare/v3.19.2...v3.19.3) (2026-10-13)
+
+__Medical History opens again, and sign-in tells the truth when the server is down.__
+
+### Bug Fixes
+
+- __Medical History no longer hangs the server__ ([#910](https://github.com/jwilleke/yourphr/issues/910)): for each visit, the page followed every link outward, through your own patient record and so into your whole chart, with each step searching the full index. It could freeze the server indefinitely. A visit's related records are now what it points to, what points at it, and one step beyond, never routed through your patient record. A new index makes "what refers to this?" a direct lookup. On a real account that's about a second for thousands of visits, never holding the server for more than a fraction of a second.
+- __Sign-in no longer blames your password when the server is down__ ([#911](https://github.com/jwilleke/yourphr/issues/911)): any failure used to read "username or password is incorrect". Now that message appears only when the password really was wrong. If the server doesn't answer, it says so and that your password wasn't checked; a server error shows its error id.
+
+### Internal
+
+- A rejected sign-in's 401 now reaches the sign-in page instead of being treated as an expired session.
+- A new reverse-reference index on the search index, added by a one-time migration at startup (a few seconds on a large account).
+
 ## [3.19.2](https://github.com/jwilleke/yourphr/compare/v3.19.1...v3.19.2) (2026-10-13)
 
 __The dashboard stays fast on a large record.__
