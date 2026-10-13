@@ -134,6 +134,27 @@ export const TEXT_ROWIDS_MIGRATION: Migration = {
   },
 };
 
+/**
+ * records.db ledger entry (yourphr#908): indexes for per-person reads. The dashboard summary,
+ * recent items and a record by id each scanned the whole resources table (every row's content,
+ * ~600 MB on a real account); the summary froze production after a large removal. One table read
+ * each to build (~0.4 s apiece on a production copy).
+ *
+ * A frozen snapshot of intent, like every ledger entry.
+ */
+export const RESOURCE_READ_INDEXES_MIGRATION: Migration = {
+  id: '20261013200000',
+  description: 'indexes for per-person reads of resources: by type, by source, by last update, by id (yourphr#908)',
+  up: (db) => {
+    db.exec(`
+      CREATE INDEX IF NOT EXISTS idx_resources_user_type ON resources (user_id, deleted, resource_type);
+      CREATE INDEX IF NOT EXISTS idx_resources_user_source ON resources (user_id, source_id, deleted, resource_type);
+      CREATE INDEX IF NOT EXISTS idx_resources_user_updated ON resources (user_id, deleted, last_updated);
+      CREATE INDEX IF NOT EXISTS idx_resources_user_id ON resources (user_id, id);
+    `);
+  },
+};
+
 /** The search index's derivation version, kept in the file's PRAGMA user_version (yourphr#713). */
 function indexVersion(db: InstanceType<typeof Database>): number {
   const row = (db.pragma('user_version') as { user_version: number }[])[0];

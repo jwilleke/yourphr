@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { Resource } from '@medplum/fhirtypes';
-import { HISTORY_PER_PERSON_MIGRATION, PGHD_TAG_MIGRATION, SqliteRecordsProvider, TEXT_ROWIDS_MIGRATION } from '../SqliteRecordsProvider.js';
+import { HISTORY_PER_PERSON_MIGRATION, PGHD_TAG_MIGRATION, RESOURCE_READ_INDEXES_MIGRATION, SqliteRecordsProvider, TEXT_ROWIDS_MIGRATION } from '../SqliteRecordsProvider.js';
 import { RecordsManager } from '../../managers/RecordsManager.js';
 import { SqliteFhirRepository } from '../../../SqliteFhirRepository.js';
 import Database from 'better-sqlite3-multiple-ciphers';
@@ -506,5 +506,26 @@ describe('search text is keyed by record, so a delete never scans the FTS table 
     expect(keys.every((k) => k.text_id === k.resource_id)).toBe(true);
     staged.close();
     provider = new SqliteRecordsProvider(join(dir, 'records.db'), 'unit-key');
+  });
+});
+
+describe('per-person reads go through an index, never a scan of record content (yourphr#908)', () => {
+  const plan = (sql: string, ...args: unknown[]): string =>
+    ((provider as unknown as { anyDb(): InstanceType<typeof Database> }).anyDb().prepare(`EXPLAIN QUERY PLAN ${sql}`).all(...args) as { detail: string }[]).map((r) => r.detail).join(' | ');
+
+  it('the dashboard summary, a source\'s counts, recent items and a record by id each search an index', () => {
+    expect(plan('SELECT resource_type, COUNT(*) AS count FROM resources WHERE user_id = ? AND deleted = 0 GROUP BY resource_type ORDER BY resource_type', 'alice')).toMatch(/COVERING INDEX idx_resources_user_type/);
+    expect(plan('SELECT resource_type, COUNT(*) AS count FROM resources WHERE user_id = ? AND source_id = ? AND deleted = 0 GROUP BY resource_type ORDER BY resource_type', 'alice', 'source-1')).toMatch(/INDEX idx_resources_user_source/);
+    expect(plan('SELECT content FROM resources WHERE user_id = ? AND deleted = 0 ORDER BY last_updated DESC, id LIMIT 5', 'alice')).toMatch(/INDEX idx_resources_user_updated/);
+    expect(plan('SELECT content FROM resources WHERE id = ? AND user_id = ? AND deleted = 0', 'o1', 'alice')).toMatch(/INDEX idx_resources_user_id/);
+  });
+
+  it('RESOURCE_READ_INDEXES_MIGRATION creates them on a store made before #908, and is idempotent', () => {
+    const db = (provider as unknown as { anyDb(): InstanceType<typeof Database> }).anyDb();
+    for (const ix of ['idx_resources_user_type', 'idx_resources_user_source', 'idx_resources_user_updated', 'idx_resources_user_id']) db.exec(`DROP INDEX ${ix}`);
+    RESOURCE_READ_INDEXES_MIGRATION.up(db);
+    RESOURCE_READ_INDEXES_MIGRATION.up(db);
+    const names = (db.prepare("SELECT name FROM sqlite_master WHERE type = 'index' AND tbl_name = 'resources' AND name LIKE 'idx_resources_%'").all() as { name: string }[]).map((r) => r.name).sort();
+    expect(names).toEqual(['idx_resources_user_id', 'idx_resources_user_source', 'idx_resources_user_type', 'idx_resources_user_updated']);
   });
 });

@@ -205,6 +205,14 @@ export class SqliteFhirRepository extends FhirRepository {
 
       CREATE INDEX IF NOT EXISTS idx_search_lookup ON search_index (resource_type, code, value, user_id);
 
+      -- Per-person reads without reading record content (yourphr#908). The primary key leads with
+      -- resource_type, so "WHERE user_id = ?" scanned every row of a ~600 MB file: the dashboard
+      -- summary froze production. Each of these turns a scan into an index search.
+      CREATE INDEX IF NOT EXISTS idx_resources_user_type ON resources (user_id, deleted, resource_type);
+      CREATE INDEX IF NOT EXISTS idx_resources_user_source ON resources (user_id, source_id, deleted, resource_type);
+      CREATE INDEX IF NOT EXISTS idx_resources_user_updated ON resources (user_id, deleted, last_updated);
+      CREATE INDEX IF NOT EXISTS idx_resources_user_id ON resources (user_id, id);
+
       -- Find anything by words (yourphr#599): the record's human-readable text, inside the same
       -- encrypted file, fed by the same write path as the search index. Never the raw JSON.
       CREATE VIRTUAL TABLE IF NOT EXISTS search_text USING fts5(

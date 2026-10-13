@@ -42,7 +42,7 @@ import { PolicyManager } from './framework/managers/PolicyManager.js';
 export { coerceToShippedType };
 import { ApiContext } from './framework/ApiContext.js';
 import { RecordsManager } from './app/managers/RecordsManager.js';
-import { HISTORY_PER_PERSON_MIGRATION, PGHD_TAG_MIGRATION, SqliteRecordsProvider, TEXT_ROWIDS_MIGRATION } from './app/providers/SqliteRecordsProvider.js';
+import { HISTORY_PER_PERSON_MIGRATION, PGHD_TAG_MIGRATION, RESOURCE_READ_INDEXES_MIGRATION, SqliteRecordsProvider, TEXT_ROWIDS_MIGRATION } from './app/providers/SqliteRecordsProvider.js';
 import { SourcesManager, sourceShape } from './app/managers/SourcesManager.js';
 import { JobsManager, backgroundJobShape } from './framework/managers/JobsManager.js';
 import { SqliteSourcesProvider } from './app/providers/SqliteSourcesProvider.js';
@@ -305,6 +305,7 @@ const RECORDS_MIGRATIONS: Migration[] = [
   HISTORY_PER_PERSON_MIGRATION,
   PGHD_TAG_MIGRATION,
   TEXT_ROWIDS_MIGRATION,
+  RESOURCE_READ_INDEXES_MIGRATION,
 ];
 
 /** Everything that owns data, opened the one way the server opens it. */
