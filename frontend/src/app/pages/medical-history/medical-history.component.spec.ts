@@ -14,7 +14,9 @@ describe('MedicalHistoryComponent', () => {
 
   beforeEach(async () => {
 
-    mockedFastenApiService = jasmine.createSpyObj('FastenApiService', ['getResources', 'getResourceGraph', 'getSummary', 'getReconciledConditions'])
+    mockedFastenApiService = jasmine.createSpyObj('FastenApiService', ['getResources', 'getResourceGraph', 'getSummary', 'getReconciledConditions', 'getSelfPatient'])
+
+    mockedFastenApiService.getSelfPatient.and.returnValue(of({patient: null, sourceLabel: ''}));
     await TestBed.configureTestingModule({
       declarations: [ MedicalHistoryComponent, ReportHeaderComponent ],
       imports: [ RouterTestingModule ],

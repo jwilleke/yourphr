@@ -46,8 +46,9 @@ export class ReportHeaderComponent implements OnInit {
         .filter((d) => !isNaN(d.getTime()));
       this.lastUpdated = synced.length ? new Date(Math.max(...synced.map((d) => d.getTime()))) : null;
     })
-    this.fastenApi.getResources("Patient").subscribe(results => {
-      this.patient = results[0]
+    // #888: the confirmed self Patient only — never the first one held.
+    this.fastenApi.getSelfPatient().subscribe(({patient}) => {
+      this.patient = patient
       if(!this.patient) return
 
       const primaryCareId = fhirpath.evaluate(this.patient?.resource_raw, "Patient.generalPractitioner.reference.first()")

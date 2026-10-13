@@ -14,7 +14,9 @@ describe('ReportLabsComponent', () => {
 
   beforeEach(async () => {
 
-    mockedFastenApiService = jasmine.createSpyObj('FastenApiService', ['getResources', 'queryResources', 'getSummary'])
+    mockedFastenApiService = jasmine.createSpyObj('FastenApiService', ['getResources', 'queryResources', 'getSummary', 'getSelfPatient'])
+
+    mockedFastenApiService.getSelfPatient.and.returnValue(of({patient: null, sourceLabel: ''}));
     await TestBed.configureTestingModule({
       declarations: [ ReportLabsComponent, ReportHeaderComponent ],
       imports: [RouterTestingModule, LoadingSpinnerComponent, RouterTestingModule],

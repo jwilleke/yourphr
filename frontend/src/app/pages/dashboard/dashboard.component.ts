@@ -169,11 +169,12 @@ export class DashboardComponent implements OnInit, OnDestroy {
     return 'Good evening'
   }
 
-  // The record being viewed is identified by its Patient resource (a family PHR may hold several).
+  // Whose record this is (#888): only a Patient the person confirmed as themselves (#761). A family
+  // PHR holds several; with none confirmed the greeting names no one rather than guess.
   private loadPatientName() {
-    this.fastenApi.getResources('Patient').subscribe({
-      next: (patients) => {
-        const raw = (patients && patients[0]?.resource_raw) as any
+    this.fastenApi.getSelfPatient().subscribe({
+      next: ({patient}) => {
+        const raw = patient?.resource_raw as any
         const name = raw?.name?.find((n) => n?.use === 'official') || raw?.name?.[0]
         if (!name) return
         const given = (name.given || []).join(' ')

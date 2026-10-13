@@ -1,9 +1,9 @@
 import {Inject, Injectable} from '@angular/core';
 import { Practitioner } from 'src/app/models/fasten/practitioner';
 import { HttpClient, HttpHeaders, HttpResponse } from '@angular/common/http';
-import {Observable, of} from 'rxjs';
+import {forkJoin, Observable, of} from 'rxjs';
 import { Router } from '@angular/router';
-import {map} from 'rxjs/operators';
+import {catchError, map} from 'rxjs/operators';
 import {ResponseWrapper} from '../models/response-wrapper';
 import {ReconciledMedication} from '../models/fasten/reconciled-medication';
 import {MailSendResult, MailStatus} from '../models/fasten/mail-status';
@@ -924,6 +924,22 @@ export class FastenApiService {
   getSourceIdentities(): Observable<SourceIdentity[]> {
     return this._httpClient.get<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/records/identities`)
       .pipe(map((response: ResponseWrapper) => (response.data ?? []) as SourceIdentity[]))
+  }
+
+  // Whose record this is (#888): the Patient the person CONFIRMED is them (#761), never the first
+  // Patient held — an account holds one per source, and some are someone they care for or a test
+  // import. Null when nothing is confirmed: callers show no name rather than guess.
+  getSelfPatient(): Observable<{patient: ResourceFhir | null, sourceLabel: string}> {
+    return forkJoin({
+      patients: this.getResources('Patient'),
+      identities: this.getSourceIdentities().pipe(catchError(() => of([] as SourceIdentity[]))),
+    }).pipe(map(({patients, identities}) => {
+      for (const identity of identities.filter((i) => i.answer === 'self')) {
+        const match = (patients || []).find((p) => p.source_id === identity.sourceId && p.source_resource_id === identity.patientId)
+        if (match) return {patient: match, sourceLabel: identity.label}
+      }
+      return {patient: null, sourceLabel: ''}
+    }))
   }
 
   // The person answers, once, per source. Their chart's attribution does not move either way.

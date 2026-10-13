@@ -36,4 +36,31 @@ describe('FastenApiService', () => {
     http.verify();
   });
 
+
+  describe('getSelfPatient (yourphr#888)', () => {
+    const identity = (sourceId: string, patientId: string, answer: string, label = sourceId) =>
+      ({sourceId, patientId, answer, label, display: '', demographics: {}, suggested: '', evidence: [], conflicts: []});
+    const answer = (patients: unknown[], identities: unknown[]) => {
+      const http = TestBed.inject(HttpTestingController);
+      http.expectOne(req => req.url.endsWith('/secure/resource/fhir') && req.params.get('sourceResourceType') === 'Patient').flush({success: true, data: patients});
+      http.expectOne(req => req.url.endsWith('/secure/records/identities')).flush({success: true, data: identities});
+    };
+    const someoneElse = {source_id: 'source-a', source_resource_id: 'p-child'};
+    const me = {source_id: 'source-b', source_resource_id: 'p-me'};
+
+    it('returns the Patient answered self, not the first one held', () => {
+      let got: any;
+      service.getSelfPatient().subscribe((r) => got = r);
+      answer([someoneElse, me], [identity('source-a', 'p-child', 'not-self'), identity('source-b', 'p-me', 'self', 'Clinic B')]);
+      expect(got.patient).toEqual(jasmine.objectContaining(me));
+      expect(got.sourceLabel).toBe('Clinic B');
+    });
+
+    it('returns no one when nothing is confirmed, even with a single Patient held', () => {
+      let got: any;
+      service.getSelfPatient().subscribe((r) => got = r);
+      answer([someoneElse], [identity('source-a', 'p-child', '')]);
+      expect(got).toEqual({patient: null, sourceLabel: ''});
+    });
+  });
 });

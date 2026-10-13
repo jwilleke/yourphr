@@ -13,7 +13,7 @@ describe('PatientProfileComponent', () => {
   let mockedFastenApiService
 
   beforeEach(async () => {
-    mockedFastenApiService = jasmine.createSpyObj('FastenApiService', ['getResources', 'getSummary', 'getReconciledConditions', 'getClassifiedAllergies', 'getSourceIdentities'])
+    mockedFastenApiService = jasmine.createSpyObj('FastenApiService', ['getResources', 'getSummary', 'getReconciledConditions', 'getClassifiedAllergies', 'getSelfPatient'])
     await TestBed.configureTestingModule({
       declarations: [ PatientProfileComponent, ReportHeaderComponent ],
       imports: [PipesModule, RouterTestingModule],
@@ -28,7 +28,7 @@ describe('PatientProfileComponent', () => {
     // an untyped {} made that throw surface as an async unhandled error → "thrown in afterAll" →
     // ChromeHeadless DISCONNECT at a random later spec (the CI flake this fixes).
     mockedFastenApiService.getResources.and.callFake((type: string) => of(type === 'Patient' ? [{}] : []));
-    mockedFastenApiService.getSourceIdentities.and.returnValue(of([]));
+    mockedFastenApiService.getSelfPatient.and.returnValue(of({patient: null, sourceLabel: ''}));
     mockedFastenApiService.getSummary.and.returnValue(of({sources: []}));
     mockedFastenApiService.getReconciledConditions.and.returnValue(of([]));
     mockedFastenApiService.getClassifiedAllergies.and.returnValue(of([]));
@@ -52,22 +52,16 @@ describe('PatientProfileComponent', () => {
   });
 
   describe('whose profile it is (yourphr#888)', () => {
-    const someoneElse = {source_id: 'source-a', source_resource_id: 'p-child', resource_raw: {resourceType: 'Patient', name: [{family: 'Abbott', given: ['Barney']}]}};
-    const me = {source_id: 'source-b', source_resource_id: 'p-me', resource_raw: {resourceType: 'Patient', name: [{family: 'Willeke', given: ['Jim']}]}};
-    const identity = (sourceId: string, patientId: string, answer: string) => ({sourceId, patientId, answer, label: sourceId, display: '', demographics: {}, suggested: '', evidence: [], conflicts: []});
-
-    it('shows the Patient the person confirmed as themselves, not the first one held', () => {
-      mockedFastenApiService.getResources.and.callFake(() => of([someoneElse, me]));
-      mockedFastenApiService.getSourceIdentities.and.returnValue(of([identity('source-a', 'p-child', 'not-self'), identity('source-b', 'p-me', 'self')]));
+    it('shows the confirmed self Patient and names its source', () => {
+      const me = {source_id: 'source-b', source_resource_id: 'p-me', resource_raw: {resourceType: 'Patient', name: [{family: 'Willeke', given: ['Jim']}]}};
+      mockedFastenApiService.getSelfPatient.and.returnValue(of({patient: me, sourceLabel: 'Clinic B'}));
       component.ngOnInit();
       expect(component.patient as unknown).toBe(me);
-      expect(component.patientSourceLabel).toBe('source-b');
+      expect(component.patientSourceLabel).toBe('Clinic B');
     });
 
     it('shows no one, and asks, when nothing is confirmed', () => {
-      mockedFastenApiService.getResources.and.callFake(() => of([someoneElse]));
-      mockedFastenApiService.getSourceIdentities.and.returnValue(of([identity('source-a', 'p-child', '')]));
-      component.patient = null;
+      mockedFastenApiService.getSelfPatient.and.returnValue(of({patient: null, sourceLabel: ''}));
       component.ngOnInit();
       fixture.detectChanges();
       expect(component.patient).toBeNull();

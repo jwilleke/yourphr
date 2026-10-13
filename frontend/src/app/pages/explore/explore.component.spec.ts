@@ -25,7 +25,8 @@ describe('ExploreComponent', () => {
     localStorage.removeItem('explore_show_sandbox_sources');
     authService = jasmine.createSpyObj('AuthService', ['IsAdmin']);
     authService.IsAdmin.and.resolveTo(true);
-    fastenApi = jasmine.createSpyObj('FastenApiService', ['getSources', 'getSummary', 'getResources']);
+    fastenApi = jasmine.createSpyObj('FastenApiService', ['getSources', 'getSummary', 'getResources', 'getSelfPatient']);
+    fastenApi.getSelfPatient.and.returnValue(of({patient: null, sourceLabel: ''}));
     fastenApi.getSources.and.returnValue(of([productionSource, sandboxSource]));
     fastenApi.getSummary.and.returnValue(of({ sources: [], patients: [], resource_type_counts: [] }));
     fastenApi.getResources.and.returnValue(of([]));
