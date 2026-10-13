@@ -12,7 +12,6 @@
   - Sign off #865, #866, #867 (in-review).
   - Triage Dependabot [#889](https://github.com/jwilleke/yourphr/pull/889) (handlebars), and the `braces` (high) advisory from the frontend yarn audit, which may not have a tracking issue yet.
   - [#863](https://github.com/jwilleke/yourphr/issues/863): no reply from Epic. Assess what dropping the 10 non-USCDI-v3 APIs loses; instant activation makes that path fast.
-  - [#888](https://github.com/jwilleke/yourphr/issues/888) — [BUG] /patient-profile is wrong for logged in user
 - Blockers / significant notes: the demo account cannot add records by hand (docs/guides/demo-mode.md, Known gaps); decide if intended.
 <!-- RESUME:END -->
 
@@ -20,6 +19,8 @@ Open work in [jwilleke/yourphr](https://github.com/jwilleke/yourphr), ranked. Ge
 
 ## 🔴 P0 — Security & Critical
 
+- [#888](https://github.com/jwilleke/yourphr/issues/888) — [BUG] /patient-profile shows another person's Patient for the logged-in user (GH title garbled)
+- [#892](https://github.com/jwilleke/yourphr/pull/892) — Test Porter-stemmed implant procedure search *(PR · Phil, CI green)*
 - [#819](https://github.com/jwilleke/yourphr/issues/819) — [security] webpack-dev-middleware — 1 open advisory in the frontend lockfile (high)
 - [#507](https://github.com/jwilleke/yourphr/issues/507) — [FEATURE] Authentication policy survey: password reset, MFA, re-auth, audit — decide what to build
 - [#870](https://github.com/jwilleke/yourphr/issues/870) — [BUG] Every provider connect on prod fails — yourPHR was never pointed at the SMART relay
@@ -67,6 +68,7 @@ Open work in [jwilleke/yourphr](https://github.com/jwilleke/yourphr), ranked. Ge
 
 ## 🟡 P2
 
+- [#893](https://github.com/jwilleke/yourphr/issues/893) — [FEATURE] Adopt ngdpbase's file logging provider: rotating logs on the data volume
 - [#885](https://github.com/jwilleke/yourphr/issues/885) — [FEATURE] Admin → Configuration says when a saved setting needs a restart
 - [#884](https://github.com/jwilleke/yourphr/issues/884) — [FEATURE] Restart the server from the admin UI, without depending on PM2
 - [#833](https://github.com/jwilleke/yourphr/issues/833) — [FEATURE] Per-person notification channels: each person chooses where notices reach them
