@@ -1,5 +1,13 @@
 # Changelog
 
+## [3.18.1](https://github.com/jwilleke/yourphr/compare/v3.18.0...v3.18.1) (2026-10-13)
+
+__The dashboard greets you, not someone else in your account.__
+
+### Bug Fixes
+
+- __The greeting and record headers name only you__ ([#888](https://github.com/jwilleke/yourphr/issues/888)): 3.18.0 fixed the Patient Profile page, but the dashboard ("Good morning, …") and the header on the record pages still took whichever person record came first. All three now use the record you confirmed is about you on __Review your records__. Until you confirm one, they show no name rather than guess.
+
 ## [3.18.0](https://github.com/jwilleke/yourphr/compare/v3.17.1...v3.18.0) (2026-10-13)
 
 __Your profile shows only you, and a connected device keeps syncing through a quiet spell.__
