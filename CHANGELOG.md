@@ -1,5 +1,18 @@
 # Changelog
 
+## [3.19.1](https://github.com/jwilleke/yourphr/compare/v3.19.0...v3.19.1) (2026-10-13)
+
+__Removing a source no longer stops the server, and you don't have to wait for it.__
+
+### Bug Fixes
+
+- __Removing a source finishes, and the site stays up while it does__ ([#905](https://github.com/jwilleke/yourphr/issues/905)): removing a large source used to freeze the whole server until it was restarted, and the removal was undone. Finding a record's search text took a scan of the entire search table, once per record. Each record's text is now found directly, so removing 21,000 records takes seconds instead of most of half an hour, in small steps that keep the site responsive. The same fix makes every sync and reindex faster.
+- __Set it and walk away__: "Remove data" and "Disconnect & remove data" now answer at once and finish in the background. You can leave the page; a notice tells you when it's done.
+
+### Internal
+
+- Search text is keyed by record in a new table, filled from existing data by a one-time migration at startup (well under a second on a large account). Backups keep the search table's row numbers, so the keys stay correct after a restore.
+
 ## [3.19.0](https://github.com/jwilleke/yourphr/compare/v3.18.1...v3.19.0) (2026-10-13)
 
 __Administration stays in Administration.__
