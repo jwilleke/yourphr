@@ -682,7 +682,7 @@ export class AgentTokensManager extends BaseManager {
 
   /** `yourphr.devices.inactive-after-days`, read live so a change applies to the next pass (yourphr#809). */
   private inactiveAfterDays(): number {
-    return boundedNumber(this.engine.managers.configuration.getInt(`${DEVICES_PREFIX}.inactive-after-days`), 14, `${DEVICES_PREFIX}.inactive-after-days`, 1);
+    return boundedNumber(this.engine.managers.configuration.getInt(`${DEVICES_PREFIX}.inactive-after-days`), 90, `${DEVICES_PREFIX}.inactive-after-days`, 1);
   }
 
   /**

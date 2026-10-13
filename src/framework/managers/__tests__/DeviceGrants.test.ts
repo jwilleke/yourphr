@@ -9,7 +9,7 @@
  *   - the per-patient cap holds, and suspended grants count toward it.
  */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync, rmSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { openStores, type Stores } from '../../../app.js';
@@ -26,7 +26,8 @@ let sourceId: string;
 
 beforeEach(async () => {
   dir = mkdtempSync(join(tmpdir(), 'device-grants-'));
-  s = await openStores(dir, { YOURPHR_DEVICES_ENABLED: 'true', YOURPHR_DEVICES_MAX_PER_USER: '2' });
+  // The pause tests below run at 14 days so they fit inside today's 30-day term; the shipped default is 90 (yourphr#861).
+  s = await openStores(dir, { YOURPHR_DEVICES_ENABLED: 'true', YOURPHR_DEVICES_MAX_PER_USER: '2', YOURPHR_DEVICES_INACTIVE_AFTER_DAYS: '14' });
   await s.users.createUser(ApiContext.system('test', 'test', s.engine), 'jim', PASSWORD);
   jim = ApiContext.system('test', 'jim', s.engine);
   sourceId = `source-${(await s.sources.addDeviceSource(jim, "Jim's iPhone — Apple Health")).id}`;
@@ -181,7 +182,12 @@ describe('end-of-term reminders (#807 decision 5)', () => {
 });
 
 describe('inactivity suspension (yourphr#809)', () => {
-  it('pauses a grant silent for inactive-after-days (14), not before, and tells the patient', async () => {
+  it('ships with a 90-day default (yourphr#861)', () => {
+    const defaults = JSON.parse(readFileSync(join(process.cwd(), 'config', 'app-default-config.json'), 'utf8')) as Record<string, unknown>;
+    expect(defaults['yourphr.devices.inactive-after-days']).toBe(90);
+  });
+
+  it('pauses a grant silent for inactive-after-days (14 here), not before, and tells the patient', async () => {
     const t0 = Date.now();
     const { grant: g, setupCode } = await grant(t0);
     const keys = await tokens().claimDeviceGrant(setupCode, t0);

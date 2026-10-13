@@ -12,7 +12,7 @@ External equipment a patient reads by hand, such as a hearing aid, a CGM or a CP
 ## Where the work stands
 
 - [#314](https://github.com/jwilleke/yourphr/issues/314): wearable and device data as patient-generated health data. Its prerequisites, epic [#810](https://github.com/jwilleke/yourphr/issues/810), are done. It is waiting on the contributor's first PR.
-- Decided but not yet built: [#860](https://github.com/jwilleke/yourphr/issues/860), [#861](https://github.com/jwilleke/yourphr/issues/861) and [#862](https://github.com/jwilleke/yourphr/issues/862). A grant will last until the patient revokes it, a device will pause after 90 days without an upload, and scopes will take SMART on FHIR v2 names (`patient/Observation.c`). The developer contract describes what is live today and is updated when these land.
+- Decided but not yet built: [#860](https://github.com/jwilleke/yourphr/issues/860) and [#862](https://github.com/jwilleke/yourphr/issues/862). A grant will last until the patient revokes it, and scopes will take SMART on FHIR v2 names (`patient/Observation.c`). The pause after 90 days without an upload ([#861](https://github.com/jwilleke/yourphr/issues/861)) is the default now, and takes full effect once grants outlast their 30-day term ([#860](https://github.com/jwilleke/yourphr/issues/860)). The developer contract describes what is live today and is updated when these land.
 
 ## Design and decisions
 

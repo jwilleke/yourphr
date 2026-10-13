@@ -101,7 +101,7 @@ Refusals:
 - __The patient removes it__, or it reaches `grant_ends_at` without being extended.
 - __The patient changes their password or signs out everywhere.__ Every device permission ends with their sessions.
 - __A used refresh token is presented again__ (see above).
-- __Nothing is uploaded__ for `yourphr.devices.inactive-after-days` (14 by default). The permission is __paused__, not ended: keys stop, the patient is told, and they can resume it. Phones and scales get replaced and sold, and the old credential should not live on. Refreshing does not count as activity; uploading does.
+- __Nothing is uploaded__ for `yourphr.devices.inactive-after-days` (90 by default; [#861](https://github.com/jwilleke/yourphr/issues/861)). The permission is __paused__, not ended: keys stop, the patient is told, and they can resume it. Phones and scales get replaced and sold, and the old credential should not live on. Refreshing does not count as activity; uploading does.
 
 The patient is reminded before the end (`yourphr.devices.notice-days`, 7 and 1 days by default) and can extend from Settings. Extending never needs anything from the app.
 
