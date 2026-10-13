@@ -107,4 +107,32 @@ describe('AuthSigninComponent', () => {
       demoRequest.flush({success: true, data: 'a-session-token'});
     });
   });
+
+  describe('what a failed sign-in says', () => {
+    const failWith = async (err: unknown): Promise<string> => {
+      spyOn((component as any).authService, 'Signin').and.returnValue(Promise.reject(err));
+      component.signinSubmit();
+      await fixture.whenStable();
+      return component.errorMsg;
+    };
+
+    it('says the credentials are wrong only when the server said so (401/403)', async () => {
+      expect(await failWith({ name: 'HttpErrorResponse', status: 401 })).toBe('username or password is incorrect');
+    });
+
+    it('never blames the password when the server did not answer: down, restarting or overloaded', async () => {
+      const signin = spyOn((component as any).authService, 'Signin');
+      for (const status of [0, 502, 503, 504]) {
+        signin.and.returnValue(Promise.reject({ name: 'HttpErrorResponse', status }));
+        component.signinSubmit();
+        await fixture.whenStable();
+        expect(component.errorMsg).withContext(`status ${status}`).toContain("isn't responding");
+        expect(component.errorMsg).withContext(`status ${status}`).not.toContain('incorrect');
+      }
+    });
+
+    it('a server error says so, with its error id', async () => {
+      expect(await failWith({ name: 'HttpErrorResponse', status: 500, error: { error_id: 'ab12cd34' } })).toContain('(error ab12cd34)');
+    });
+  });
 });

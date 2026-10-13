@@ -116,8 +116,14 @@ export class AuthSigninComponent implements OnInit {
           // the E2E suite hit the cap and the failure read as a login regression (#481).
           // The wording Jim chose (yourphr#507): the same for any username, so it reveals nothing.
           this.errorMsg = "Too many attempts. Wait a few minutes and try again."
-        } else if(err?.name){
+        } else if(err?.status === 401 || err?.status === 403){
           this.errorMsg = "username or password is incorrect"
+        } else if(err?.status === 0 || err?.status === 502 || err?.status === 503 || err?.status === 504){
+          // The server did not answer (down, restarting, overloaded). The password was never checked,
+          // so "incorrect" would send the person hunting for a typo that is not there.
+          this.errorMsg = "YourPHR isn't responding right now, so your password wasn't checked. Try again in a minute."
+        } else if(err?.status >= 500){
+          this.errorMsg = `Something went wrong on the server while signing you in${err?.error?.error_id ? ` (error ${err.error.error_id})` : ''}. Try again in a minute.`
         } else{
           this.errorMsg = "an unknown error occurred during sign-in"
         }
