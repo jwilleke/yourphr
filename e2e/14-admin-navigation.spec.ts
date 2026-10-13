@@ -10,7 +10,8 @@ const DOORS: { name: RegExp; url: RegExp }[] = [
   { name: /view server logs/i, url: /\/admin\/logs$/ },
   { name: /open database/i, url: /\/admin\/database$/ },
   { name: /open configuration/i, url: /\/admin\/config$/ },
-  { name: /open sandbox testing/i, url: /\/sandbox$/ },
+  { name: /open sandbox testing/i, url: /\/admin\/sandbox$/ },
+  { name: /manage users/i, url: /\/admin\/users$/ },
 ];
 
 for (const door of DOORS) {
@@ -23,3 +24,13 @@ for (const door of DOORS) {
     expect(errors).toEqual([]);
   });
 }
+
+// #904 (a rule): admin-only UI lives under /admin. The top navigation shows the same links to an
+// admin as to anyone else; the admin's way in is the account menu.
+test('the top navigation carries no admin-only link', async ({ page }) => {
+  await login(page, 'admin', adminPassword());
+  await page.goto(`${BASE}/dashboard`);
+  const nav = page.locator('.az-header-menu');
+  await expect(nav.getByRole('link', { name: /dashboard/i })).toBeVisible({ timeout: 15_000 });
+  await expect(nav.getByRole('link', { name: /^\s*users\s*$/i })).toHaveCount(0);
+});

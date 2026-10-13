@@ -115,11 +115,14 @@ const routes: Routes = [
   { path: 'labs', component: ReportLabsComponent, canActivate: [ IsAuthenticatedAuthGuard ] },
   { path: 'labs/report/:source_id/:resource_type/:resource_id', component: ReportLabsComponent, canActivate: [ IsAuthenticatedAuthGuard ] },
 
-  { path: 'users', component: UserListComponent, canActivate: [ IsAuthenticatedAuthGuard, IsAdminAuthGuard ] },
-  { path: 'users/new', component: UserCreateComponent, canActivate: [ IsAuthenticatedAuthGuard, IsAdminAuthGuard ] },
-
+  // Admin-only UI lives under /admin (#904, a rule). The old paths redirect so bookmarks keep working.
+  { path: 'admin/users', component: UserListComponent, canActivate: [ IsAuthenticatedAuthGuard, IsAdminAuthGuard ] },
+  { path: 'admin/users/new', component: UserCreateComponent, canActivate: [ IsAuthenticatedAuthGuard, IsAdminAuthGuard ] },
   // Admin-only SMART sandbox-testing page (bring-your-own client_id connect flow, EPIC #20).
-  { path: 'sandbox', component: SandboxComponent, canActivate: [ IsAuthenticatedAuthGuard, IsAdminAuthGuard ] },
+  { path: 'admin/sandbox', component: SandboxComponent, canActivate: [ IsAuthenticatedAuthGuard, IsAdminAuthGuard ] },
+  { path: 'users', redirectTo: 'admin/users', pathMatch: 'full' },
+  { path: 'users/new', redirectTo: 'admin/users/new', pathMatch: 'full' },
+  { path: 'sandbox', redirectTo: 'admin/sandbox', pathMatch: 'full' },
 
   { path: 'practitioners', component: PractitionerListComponent, canActivate: [ IsAuthenticatedAuthGuard ] },
   { path: 'practitioners/new', component: PractitionerCreateComponent, canActivate: [ IsAuthenticatedAuthGuard ] },

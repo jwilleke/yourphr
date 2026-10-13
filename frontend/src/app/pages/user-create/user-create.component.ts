@@ -50,7 +50,7 @@ export class UserCreateComponent implements OnInit {
           toastNotification.type = ToastType.Success;
           toastNotification.message = 'User created successfully';
           this.toastService.show(toastNotification);
-          this.router.navigate(['/users']);
+          this.router.navigate(['/admin/users']);
         },
         (error) => {
           this.loading = false;

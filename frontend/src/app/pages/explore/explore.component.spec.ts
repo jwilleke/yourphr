@@ -22,7 +22,6 @@ describe('ExploreComponent', () => {
   const sandboxSource = { id: 'sand-1', platform_type: 'epic', environment: 'sandbox', endpoint_id: 'e', patient: '', client_id: '', access_token: '', expires_at: 0 } as Source;
 
   beforeEach(async () => {
-    localStorage.removeItem('explore_show_sandbox_sources');
     authService = jasmine.createSpyObj('AuthService', ['IsAdmin']);
     authService.IsAdmin.and.resolveTo(true);
     fastenApi = jasmine.createSpyObj('FastenApiService', ['getSources', 'getSummary', 'getResources', 'getSelfPatient']);
@@ -66,29 +65,9 @@ describe('ExploreComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  it('hides sandbox sources by default for admins', async () => {
+  it('shows every connected source, with no admin-only switch on the page (#904)', async () => {
     await init();
-    expect(component.isAdmin).toBeTrue();
-    expect(component.sandboxSourceCount).toBe(1);
-    expect(component.showSandboxSources).toBeFalse();
-    expect(component.connectedSources.map(s => s.source.id)).toEqual(['prod-1']);
-  });
-
-  it('shows sandbox sources when admin toggles on', async () => {
-    await init();
-    component.onShowSandboxChange(true);
-    expect(component.showSandboxSources).toBeTrue();
-    expect(localStorage.getItem('explore_show_sandbox_sources')).toBe('true');
     expect(component.connectedSources.map(s => s.source.id).sort()).toEqual(['prod-1', 'sand-1']);
-  });
-
-  it('does not show sandbox toggle state for non-admins', async () => {
-    authService.IsAdmin.and.resolveTo(false);
-    await init();
-    expect(component.isAdmin).toBeFalse();
-    expect(component.connectedSources.map(s => s.source.id)).toEqual(['prod-1']);
-    component.onShowSandboxChange(true);
-    // Non-admin cannot force sandbox visibility
-    expect(component.connectedSources.map(s => s.source.id)).toEqual(['prod-1']);
+    expect(fixture.nativeElement.querySelector('#exploreShowSandbox')).toBeNull();
   });
 });

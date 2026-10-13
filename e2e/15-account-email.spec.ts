@@ -28,7 +28,7 @@ test('a person adds their email address on Settings, the admin sees one is given
 
   const admin = await browser.newPage();
   await login(admin, 'admin', adminPassword());
-  await admin.goto(`${BASE}/users`);
+  await admin.goto(`${BASE}/admin/users`);
   const row = admin.getByRole('row').filter({ has: admin.getByRole('cell', { name: E2E_USER, exact: true }) });
   await expect(row).toContainText('Given', { timeout: 20_000 });
   await expect(admin.getByText('e2e-person@example.org')).toHaveCount(0);

@@ -11,7 +11,7 @@ test('a connection that fails is written down, and shows on Background Jobs', as
   // The sandbox page is the admin/developer connect tool, so this journey is the admin's.
   await login(page, 'admin', adminPassword());
 
-  await page.goto(`${BASE}/sandbox`);
+  await page.goto(`${BASE}/admin/sandbox`);
   await expect(page.getByRole('button', { name: 'Connect' }).first()).toBeVisible({ timeout: 20_000 });
   await page.getByRole('button', { name: 'Connect' }).first().click();
 

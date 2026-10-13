@@ -16,7 +16,20 @@
         </div>
         <div class="card-body">
           <p class="tx-gray-500 mg-b-15">Connect to SMART-on-FHIR sandboxes (Epic, CMS Blue Button, …) with a bring-your-own <code>client_id</code> to test the connect &rarr; sync &rarr; display path. Admin-only — patients never see credentials.</p>
-          <a routerLink="/sandbox" class="btn btn-az-primary"><i class="fas fa-flask mg-r-5"></i> Open Sandbox Testing</a>
+          <a routerLink="/admin/sandbox" class="btn btn-az-primary"><i class="fas fa-flask mg-r-5"></i> Open Sandbox Testing</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Users card (#904: admin-only UI lives under /admin, not in the top bar) -->
+    <div class="col-lg-4 mg-b-20">
+      <div class="card">
+        <div class="card-header">
+          <h6 class="card-title mg-b-0"><i class="fas fa-users"></i>&nbsp; Users</h6>
+        </div>
+        <div class="card-body">
+          <p class="tx-gray-500 mg-b-15">The accounts on this instance: create one, reset a password, see who has signed in. Each person's records stay theirs; this page shows accounts, never records.</p>
+          <a routerLink="/admin/users" class="btn btn-az-primary"><i class="fas fa-users mg-r-5"></i> Manage Users</a>
         </div>
       </div>
     </div>

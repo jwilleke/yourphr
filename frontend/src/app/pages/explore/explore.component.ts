@@ -4,10 +4,6 @@ import {Source} from '../../models/fasten/source';
 import {forkJoin, of} from 'rxjs';
 import {Router} from '@angular/router';
 import {SourceListItem} from '../medical-sources/medical-sources.component';
-import {AuthService} from '../../services/auth.service';
-
-/** localStorage key for admin preference: include sandbox sources on Explore. */
-const EXPLORE_SHOW_SANDBOX_KEY = 'explore_show_sandbox_sources';
 
 @Component({
     selector: 'app-explore',
@@ -18,33 +14,17 @@ const EXPLORE_SHOW_SANDBOX_KEY = 'explore_show_sandbox_sources';
 })
 export class ExploreComponent implements OnInit {
   loading = false
-  /** All connected sources (production + sandbox). */
-  private allSources: SourceListItem[] = []
-  /** Sources currently shown (after sandbox filter). */
+  /** Every connected source. No admin filter here (#904): admin-only UI lives under /admin, and test
+   * data belongs on a test login rather than hidden inside a real account. */
   connectedSources: SourceListItem[] = []
-  /** Admin-only: include sources with environment=sandbox. Default off. */
-  showSandboxSources = false
-  isAdmin = false
-  /** How many sandbox sources are connected (for the toggle label). */
-  sandboxSourceCount = 0
 
   constructor(
     private fastenApi: FastenApiService,
-    private authService: AuthService,
     private router: Router
   ) { }
 
   async ngOnInit(): Promise<void> {
     this.loading = true
-    try {
-      this.isAdmin = await this.authService.IsAdmin()
-    } catch {
-      this.isAdmin = false
-    }
-    // Only admins may opt into sandbox tiles; restore their last choice.
-    if (this.isAdmin) {
-      this.showSandboxSources = localStorage.getItem(EXPLORE_SHOW_SANDBOX_KEY) === 'true'
-    }
 
     this.fastenApi.getSources().subscribe(results => {
       const connectedSources = results as Source[]
@@ -57,12 +37,10 @@ export class ExploreComponent implements OnInit {
           return of(null)
         }
       })).subscribe((connectedMetadata) => {
-          this.allSources = []
+          this.connectedSources = []
           for(const ndx in connectedSources){
-            this.allSources.push({source: connectedSources[ndx], brand: connectedMetadata[ndx]})
+            this.connectedSources.push({source: connectedSources[ndx], brand: connectedMetadata[ndx]})
           }
-          this.sandboxSourceCount = this.allSources.filter(item => this.isSandboxSource(item)).length
-          this.applyFilter()
           this.loading = false
         }, () => {
           this.loading = false
@@ -72,26 +50,6 @@ export class ExploreComponent implements OnInit {
     }, () => {
       this.loading = false
     })
-  }
-
-  /** True when source is marked sandbox (admin testing); missing env counts as production (#331). */
-  isSandboxSource(item: SourceListItem): boolean {
-    return (item.source?.environment || 'production') === 'sandbox'
-  }
-
-  applyFilter(): void {
-    if (this.showSandboxSources && this.isAdmin) {
-      this.connectedSources = [...this.allSources]
-      return
-    }
-    this.connectedSources = this.allSources.filter(item => !this.isSandboxSource(item))
-  }
-
-  onShowSandboxChange(checked: boolean): void {
-    if (!this.isAdmin) { return }
-    this.showSandboxSources = checked
-    localStorage.setItem(EXPLORE_SHOW_SANDBOX_KEY, checked ? 'true' : 'false')
-    this.applyFilter()
   }
 
   public exploreSource(sourceListItem: SourceListItem, ) {
