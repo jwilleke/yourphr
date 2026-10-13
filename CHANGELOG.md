@@ -1,5 +1,17 @@
 # Changelog
 
+## [3.19.2](https://github.com/jwilleke/yourphr/compare/v3.19.1...v3.19.2) (2026-10-13)
+
+__The dashboard stays fast on a large record.__
+
+### Bug Fixes
+
+- __The dashboard no longer reads your whole record to count it__ ([#908](https://github.com/jwilleke/yourphr/issues/908)): the summary, recent items and opening a record each read every stored record to find yours, which on a large account could freeze the server. They now look your records up directly. On a real account that's milliseconds instead of most of a second each, and far longer on a small server.
+
+### Internal
+
+- Four indexes on the records table, added by a one-time migration at startup (about a second and a half on a large account).
+
 ## [3.19.1](https://github.com/jwilleke/yourphr/compare/v3.19.0...v3.19.1) (2026-10-13)
 
 __Removing a source no longer stops the server, and you don't have to wait for it.__
