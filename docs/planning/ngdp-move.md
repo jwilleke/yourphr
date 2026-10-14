@@ -52,6 +52,16 @@ __The project stays at yourphr.org and in `jwilleke/yourphr`__ (Jim, 2026-10-14:
 2. __Pull the framework out of ngdpbase into a package__ YourPHR depends on — the governing document's own *"extract the package second"*. It ends the copying for back-end services, but not for required-pages help or the admin screens.
 3. __YourPHR as an ngdpbase add-on.__ It ends the double work. The cost is the `src/server.ts` rewrite, which has grown by a third since this document sized it.
 
+### The reference add-on, and what changed in core
+
+[ngdp-accounting-addons](https://github.com/jwilleke/ngdp-accounting-addons) is the working example of a complex add-on. It is optional by configuration (`ngdpbase.addons.accounting.enabled`, default false; its defaults merge only while on). It fails soft: with no database it mounts nothing and says why in `status()`. `LedgerManager` is the one door, calling `requirePermission` on the request's `ApiContext`. Permissions carry their own audit rule (`on-failure: refuse`), its role sits at `required-aal: 2`, and the riskiest actions use step-up. For YourPHR that turns "audit refuses to boot" into per-permission refusal, and puts `ngdpbase.addons.yourphr.enabled: true` in yourphr.org's own config. A deploy smoke check then has to prove the add-on is actually on.
+
+__Core now has encrypted SQLite.__ `DatabaseManager` ([ngdpbase#1536](https://github.com/jwilleke/ngdpbase/issues/1536), ported from YourPHR) runs SQLCipher on `better-sqlite3-multiple-ciphers`. Since `9832f05a` (2026-10-07) every add-on can open its own file through `openAddonDatabase(owner, …)`, with owner-prefixed tables and migration ledger. The *Encrypted SQLite* section below and the first row of *Core improvements* are therefore superseded: the encrypted store has flowed up. What has not flowed up is __backup__. `DatabaseManager` inherits `BaseManager`'s unimplemented `backup()`/`restore()`, so no database is in ngdpbase's backups. [ngdpbase#1723](https://github.com/jwilleke/ngdpbase/issues/1723) ports YourPHR's `sqlite-backup.ts` and now blocks the "go" outcome of [#920](https://github.com/jwilleke/yourphr/issues/920). Two more gaps for PHI: one key covers every database, and a missing key opens unencrypted with only a warning.
+
+### The front end: Angular for the patient, ngdpbase for the chrome
+
+The Angular app is about 32.9k lines in 170 components, bigger than the backend. About 155 of those components are the patient's record screens, the product, with no ngdpbase analogue; they stay. ngdpbase already ships what the other ~15 duplicate: sign-in with MFA (password, passkeys, second factor, magic link, recovery, device approval, outside sign-in), OIDC consent and approved apps, `/profile` (agent tokens, delegations, proxy grants) and 27 `/admin` views. Those, plus `UsersManager`, `SessionsManager`, `AgentTokensManager` and `SettingsManager`, are deleted at cutover. Auth and chrome issues on this side are parked until #920 reports (the list is on #920). The first thing #920 tests is whether the add-on can serve the Angular bundle on ngdpbase's session.
+
 Option 3 is now being measured instead of argued: [#920](https://github.com/jwilleke/yourphr/issues/920) runs the Sources slice (mapped below under *One vertical slice*) as an add-on on the branch `yourphr-addon`, time-boxed to one week. Until it reports, no further ngdpbase manager is ported into `src/framework/`. If it says no, option 2 is the fallback.
 
 ## The question, stated properly
@@ -162,6 +172,8 @@ In order of size.
 __The SSRF boundary is not the blocker it appears to be.__ YourPHR's hard rule is that all outbound network access goes through `src/http`, enforced by `scripts/check-http-boundary.sh`. ngdpbase core has __three__ genuine server-side outbound call sites: `ImportManager.ts:958`, `WikiRoutes.ts:1591`, `WikiRoutes.ts:13094`. The other matches are client-side `fetch()` emitted into browser JS (`CommentsPlugin`, `FootnotesPlugin`) and a plugin lifecycle method that happens to be named `fetch`. Routing three call sites through a guarded fetch is a day, not a programme. __Done upstream since__ — see *What flows the other way*: all three now go through `guardedFetch`, and ngdpbase's ESLint forbids a bare `fetch` outside `src/http`, add-ons included ([ngdpbase#1239](https://github.com/jwilleke/ngdpbase/issues/1239)).
 
 ## Encrypted SQLite: the seam exists, the implementation does not
+
+> __Superseded 2026-10-14.__ ngdpbase's `DatabaseManager` ([ngdpbase#1536](https://github.com/jwilleke/ngdpbase/issues/1536)) now runs SQLCipher and opens a database per add-on; only backup is missing ([ngdpbase#1723](https://github.com/jwilleke/ngdpbase/issues/1723)). See *Where it stands, 2026-10-14*. Kept as the record of how it was sized.
 
 The provider architecture would accept an encrypted SQLite store — that much is right, and it is the reason this is worth doing at all. But the base is emptier than it looks, and the direction of travel is the opposite of what it seems:
 
@@ -299,7 +311,7 @@ So the working test is concrete: __would The Fairways or GeoHazardWatch want thi
 
 | Contribution | Why core | Size |
 |---|---|---|
-| SQLite / SQLCipher providers | ngdpbase uses no SQLite (though `node:sqlite` would make plain SQLite free — encryption is the missing half), but the seams are cut — `DatabaseAuditProvider` is a scaffold and `database.type` is advertised in config | Large, into declared holes |
+| ~~SQLite / SQLCipher providers~~ | ~~ngdpbase uses no SQLite (though `node:sqlite` would make plain SQLite free — encryption is the missing half), but the seams are cut — `DatabaseAuditProvider` is a scaffold and `database.type` is advertised in config~~ __Landed upstream__ — [ngdpbase#1536](https://github.com/jwilleke/ngdpbase/issues/1536); backup still open in [ngdpbase#1723](https://github.com/jwilleke/ngdpbase/issues/1723) | — |
 | ~~Outbound HTTP boundary and the SSRF guard~~ | ~~Three unguarded `fetch()` sites; the most reachable is gated on the __page edit ACL__, so any author can make the server fetch any URL and keep the bytes.~~ __Landed upstream__ — [ngdpbase#1133](https://github.com/jwilleke/ngdpbase/issues/1133) closed 2026-09-04 | — |
 | ~~Retire `WikiEngine.setContext()`~~ | ~~The doc names it as one concurrent request from a cross-user leak~~ __Landed upstream__ — [ngdpbase#1132](https://github.com/jwilleke/ngdpbase/issues/1132) closed 2026-09-02 | — |
 | The store-boundary lint | The doc calls it core and unwritten; YourPHR wrote it. Filed as [ngdpbase#1134](https://github.com/jwilleke/ngdpbase/issues/1134) | Small |
@@ -563,6 +575,7 @@ Recorded because each was asserted confidently before being checked, and the pat
 | `DatabaseAuditProvider` carries six `TODO`s | Thirteen, unchanged since it was written |
 | YourPHR backups use `sqlcipher_export()` | A hand-written copy loop; the SQLite3MultipleCiphers build does not ship that function |
 | ngdpbase's #1118 removed the Null audit fallback | It made it loud and recorded; `on-failure: continue` still degrades to Null by default |
+| ngdpbase has no SQLite, so the encrypted store is YourPHR's to contribute (2026-08-30 to 2026-09-25) | `DatabaseManager` with SQLCipher and per-add-on databases landed upstream ([ngdpbase#1536](https://github.com/jwilleke/ngdpbase/issues/1536), `9832f05a`); backup did not ([ngdpbase#1723](https://github.com/jwilleke/ngdpbase/issues/1723)) (2026-10-14) |
 | Consumers take the base image | geohazardwatch does; Fairways is a direct clone run on the host |
 | The Angular app has 37 pages | 41 page components, both then and now |
 | The maintenance toggle's restart defect is worth filing upstream | ngdpbase#1147 had fixed it the day before this section was amended |
