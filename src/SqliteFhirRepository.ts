@@ -335,27 +335,34 @@ export class SqliteFhirRepository extends FhirRepository {
    * the pod killed mid-rebuild. Returns the number of records reindexed.
    */
   async reindexAllYielding(pageSize = 250): Promise<number> {
+    // Committed in steps, yielding between them (yourphr#906): one transaction around the whole
+    // rebuild made its COMMIT a single synchronous write of ~640k index rows on a real account,
+    // holding the event loop for seconds. A rebuild runs under maintenance mode and is idempotent —
+    // one cut short leaves the index version un-bumped and is simply run again.
     const owner = this.userId ?? '';
+    const yieldNow = (): Promise<void> => new Promise((resolve) => setImmediate(resolve));
+    const dropIndex = this.db.prepare('DELETE FROM search_index WHERE rowid IN (SELECT rowid FROM search_index WHERE user_id = ? LIMIT 5000)');
+    while (dropIndex.run(owner).changes > 0) await yieldNow();
+    const keys = this.db.prepare('SELECT resource_type, resource_id, text_rowid FROM text_rowids WHERE user_id = ? LIMIT 2000');
+    const dropText = this.db.prepare('DELETE FROM search_text WHERE rowid = ?');
+    const dropKey = this.db.prepare('DELETE FROM text_rowids WHERE resource_type = ? AND resource_id = ? AND user_id = ?');
+    for (;;) {
+      const batch = keys.all(owner) as {resource_type: string; resource_id: string; text_rowid: number}[];
+      if (batch.length === 0) break;
+      this.db.transaction(() => { for (const k of batch) { dropText.run(k.text_rowid); dropKey.run(k.resource_type, k.resource_id, owner); } })();
+      await yieldNow();
+    }
+    this.db.prepare('DELETE FROM search_text WHERE user_id = ?').run(owner); // any unkeyed leftovers: one scan
     const page = this.db.prepare('SELECT rowid, content FROM resources WHERE deleted = 0 AND user_id = ? AND rowid > ? ORDER BY rowid LIMIT ?');
     let done = 0;
-    this.db.exec('BEGIN IMMEDIATE');
-    try {
-      this.db.prepare('DELETE FROM search_index WHERE user_id = ?').run(owner);
-      this.db.prepare('DELETE FROM search_text WHERE user_id = ?').run(owner);
-      this.db.prepare('DELETE FROM text_rowids WHERE user_id = ?').run(owner);
-      let after = 0;
-      for (;;) {
-        const rows = page.all(owner, after, pageSize) as {rowid: number; content: string}[];
-        if (rows.length === 0) break;
-        for (const row of rows) this.indexResource(JSON.parse(row.content) as WithId<Resource>);
-        done += rows.length;
-        after = rows[rows.length - 1]!.rowid;
-        await new Promise((resolve) => setImmediate(resolve));
-      }
-      this.db.exec('COMMIT');
-    } catch (err) {
-      try { this.db.exec('ROLLBACK'); } catch { /* already rolled back by SQLite */ }
-      throw err;
+    let after = 0;
+    for (;;) {
+      const rows = page.all(owner, after, pageSize) as {rowid: number; content: string}[];
+      if (rows.length === 0) break;
+      this.db.transaction(() => { for (const row of rows) this.indexResource(JSON.parse(row.content) as WithId<Resource>); })();
+      done += rows.length;
+      after = rows[rows.length - 1]!.rowid;
+      await yieldNow();
     }
     return done;
   }

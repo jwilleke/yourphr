@@ -77,6 +77,14 @@ jobs:
       - name: Write path (create, update, delete, reindex)
         run: npx tsx scripts/write-tests.ts --in "$RUNNER_TEMP/corpus.ndjson" --db "$RUNNER_TEMP/writes.db"
 
+      # yourphr#906 — a synthetic account the size of a real one (~26k records). Three production
+      # freezes on 2026-10-13 (#905, #908, #910) were costs that grew with the table, invisible at
+      # the handful of records every other test uses. Fails on event-loop blocking, on one person's
+      # reads growing with other people's data, and on writes slowing as the table grows.
+      - name: Scale (a real-sized account; blocking and growth)
+        timeout-minutes: 20
+        run: npm run scale
+
       - name: Auth (sessions, revocation, throttling, the wire)
         run: npm run auth
       - name: Agent tokens — the delegated-read gate (yourphr#695)

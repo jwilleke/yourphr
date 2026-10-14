@@ -48,6 +48,7 @@
     "migrate:tool": "tsx scripts/migrate-tool-tests.ts",
     "process": "tsx scripts/process-tests.ts",
     "records": "tsx scripts/records-tests.ts",
+    "scale": "tsx scripts/scale-tests.ts",
     "framework": "tsx scripts/framework-tests.ts",
     "test": "vitest run",
     "test:watch": "vitest",
