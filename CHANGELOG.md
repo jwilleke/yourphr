@@ -1,5 +1,22 @@
 # Changelog
 
+## [3.20.0](https://github.com/jwilleke/yourphr/compare/v3.19.3...v3.20.0) (2026-10-14)
+
+__Upload a file or restore a backup, and walk away.__
+
+### Features
+
+- __Uploading a records file runs in the background__ ([#913](https://github.com/jwilleke/yourphr/issues/913)): a file that can't be read is still refused straight away. Otherwise the page says the import is under way, and you can leave. A notice tells you what was added, in the same words as before ("Added 12 new records…"). A large import used to freeze the whole server until it finished, long enough on a small server for it to be restarted mid-import.
+- __Restoring a backup runs in the background__ ([#914](https://github.com/jwilleke/yourphr/issues/914)): the admin's restore now answers at once. The current databases are backed up, the restore is prepared off to the side so the server keeps answering, and a notice says when it's ready to apply with a restart.
+
+### Bug Fixes
+
+- __A full search-index rebuild never holds the server for long__: it now works in small steps, each well under a second.
+
+### Internal
+
+- A scale test runs in CI on a synthetic account the size of a real one (~26,000 records) ([#906](https://github.com/jwilleke/yourphr/issues/906)). It fails if removing a source, Medical History, uploading, backup, restore or a rebuild ever holds the server for more than 2 seconds; if one person's pages slow down because of someone else's records; or if writing gets slower as the record grows.
+
 ## [3.19.3](https://github.com/jwilleke/yourphr/compare/v3.19.2...v3.19.3) (2026-10-13)
 
 __Medical History opens again, and sign-in tells the truth when the server is down.__
