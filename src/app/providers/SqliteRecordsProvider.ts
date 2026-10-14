@@ -170,6 +170,22 @@ export const SEARCH_REFERENCE_INDEX_MIGRATION: Migration = {
   },
 };
 
+/**
+ * records.db ledger entry (yourphr#915): an index for one type of a person's records, newest first.
+ * #908's (user_id, deleted, last_updated) index won every typed, date-sorted search — the planner
+ * prefers it for the ORDER BY — and, holding no resource_type, walked all of the person's records
+ * to find one type: ~400 ms per search on a real account. Save Report runs one per section.
+ *
+ * A frozen snapshot of intent, like every ledger entry.
+ */
+export const TYPED_LIST_INDEX_MIGRATION: Migration = {
+  id: '20261014100000',
+  description: 'index resources by (user_id, resource_type, deleted, last_updated) for typed, date-sorted searches (yourphr#915)',
+  up: (db) => {
+    db.exec('CREATE INDEX IF NOT EXISTS idx_resources_user_type_updated ON resources (user_id, resource_type, deleted, last_updated);');
+  },
+};
+
 /** The search index's derivation version, kept in the file's PRAGMA user_version (yourphr#713). */
 function indexVersion(db: InstanceType<typeof Database>): number {
   const row = (db.pragma('user_version') as { user_version: number }[])[0];

@@ -125,6 +125,7 @@ async function main(): Promise<void> {
       ['allergies', () => records.allergies(mary)],
       ['identities', () => records.sourceIdentities(mary)],
       ['search "routine"', () => records.searchText(mary, 'routine')],
+      ['Save Report (IPS)', () => records.ips(mary)],
       ['Medical History graph', () => records.graph(mary, 'MedicalHistory', maryEncounters)],
     ];
     const before = new Map<string, number>();
@@ -177,6 +178,9 @@ async function main(): Promise<void> {
     check(`uploading a ${(bundleBytes.length / 1e6).toFixed(1)} MB file of ${total(MAIN)} records never holds the server (#913)`,
       imported.blockedMs <= BLOCK_LIMIT_MS && imported.value.data.created === total(MAIN),
       `${imported.value.data.created} imported in ${fmt(imported.ms)}, blocked ≤ ${fmt(imported.blockedMs)}`);
+
+    const report = await measure(() => records.ips(jim));
+    check('Save Report (IPS) for a real-sized account never holds the server (#915)', report.blockedMs <= BLOCK_LIMIT_MS, `${fmt(report.ms)}, blocked ≤ ${fmt(report.blockedMs)}`);
 
     const summary = await measure(() => records.countsByType(jim));
     check('the dashboard summary of a real-sized account never holds the server (#908)', summary.blockedMs <= BLOCK_LIMIT_MS, `${fmt(summary.ms)}, blocked ≤ ${fmt(summary.blockedMs)}`);

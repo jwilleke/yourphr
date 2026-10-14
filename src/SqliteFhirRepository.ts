@@ -212,6 +212,10 @@ export class SqliteFhirRepository extends FhirRepository {
       CREATE INDEX IF NOT EXISTS idx_resources_user_source ON resources (user_id, source_id, deleted, resource_type);
       CREATE INDEX IF NOT EXISTS idx_resources_user_updated ON resources (user_id, deleted, last_updated);
       CREATE INDEX IF NOT EXISTS idx_resources_user_id ON resources (user_id, id);
+      -- One type of a person's records, newest first — every FHIR search by type (yourphr#915). Without
+      -- the type in it, idx_resources_user_updated sent each such search through ALL the person's
+      -- records (~400 ms apiece on a real account, even for a type they hold none of).
+      CREATE INDEX IF NOT EXISTS idx_resources_user_type_updated ON resources (user_id, resource_type, deleted, last_updated);
       -- "Which records reference X" (yourphr#910): search_index's keys lead with resource_type, so a
       -- lookup by the referenced value scanned all ~637k rows of a real account, per call.
       CREATE INDEX IF NOT EXISTS idx_search_user_value ON search_index (user_id, value);

@@ -112,6 +112,8 @@ export async function buildIps(repo: IpsSource, now: Date): Promise<IpsDocument>
   const presentKeys: string[] = [];
 
   for (const spec of IPSSections) {
+    // Let the server answer between sections (yourphr#915): each is a synchronous read and shaping.
+    await new Promise<void>((resolve) => setImmediate(resolve));
     const resources: Resource[] = [];
     for (const type of spec.resourceTypes) {
       const found = await repo.search({ resourceType: type as never, count: 1000, total: 'accurate' });
