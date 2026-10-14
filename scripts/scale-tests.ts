@@ -24,7 +24,7 @@
  *
  *   npx tsx scripts/scale-tests.ts [--scale 1]
  */
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import type { Resource } from '@medplum/fhirtypes';
@@ -101,7 +101,8 @@ const total = (s: Shape): number => 1 + Object.values(s).reduce((a, b) => a + b,
 async function main(): Promise<void> {
   const dir = mkdtempSync(join(tmpdir(), 'yourphr-scale-'));
   try {
-    const app = await assembleApp(dir, { env: { YOURPHR_DATABASE_ENCRYPTION_KEY: 'scale-key', YOURPHR_BACKUP_ENCRYPTION_KEY: 'scale-backup-key', YOURPHR_SYNC_INTERVAL_SECONDS: '0' }, version: 'scale' });
+    mkdirSync(join(dir, 'backups'));
+    const app = await assembleApp(dir, { env: { YOURPHR_DATABASE_ENCRYPTION_KEY: 'scale-key', YOURPHR_BACKUP_ENCRYPTION_KEY: 'scale-backup-key', YOURPHR_SYNC_INTERVAL_SECONDS: '0', YOURPHR_BACKUP_DESTINATION: join(dir, 'backups') }, version: 'scale' });
     const system = ApiContext.system('scale', 'admin', app.engine);
     for (const name of ['jim', 'mary']) await app.users.createUser(system, name, `${name}-scale-password`);
     const jim = ApiContext.system('scale', 'jim', app.engine);
@@ -166,6 +167,17 @@ async function main(): Promise<void> {
     const graph = await measure(() => records.graph(jim, 'MedicalHistory', jimEncounters));
     check(`Medical History graph for ${jimEncounters.length} visits never holds the server (#910)`, graph.blockedMs <= BLOCK_LIMIT_MS, `${fmt(graph.ms)} total, blocked ≤ ${fmt(graph.blockedMs)}`);
 
+    // Upload (#913): the main source exported as one FHIR bundle and imported into a fresh account,
+    // through the same import the Sources page starts in the background.
+    const exported = await sources.exportBundle(jim, mainSource);
+    const bundleBytes = Buffer.from(JSON.stringify(exported?.bundle ?? {}));
+    await app.users.createUser(system, 'una', 'una-scale-password');
+    const una = ApiContext.system('scale', 'una', app.engine);
+    const imported = await measure(() => sources.importUpload(una, { filename: 'records.json', bytes: bundleBytes }));
+    check(`uploading a ${(bundleBytes.length / 1e6).toFixed(1)} MB file of ${total(MAIN)} records never holds the server (#913)`,
+      imported.blockedMs <= BLOCK_LIMIT_MS && imported.value.data.created === total(MAIN),
+      `${imported.value.data.created} imported in ${fmt(imported.ms)}, blocked ≤ ${fmt(imported.blockedMs)}`);
+
     const summary = await measure(() => records.countsByType(jim));
     check('the dashboard summary of a real-sized account never holds the server (#908)', summary.blockedMs <= BLOCK_LIMIT_MS, `${fmt(summary.ms)}, blocked ≤ ${fmt(summary.blockedMs)}`);
 
@@ -184,6 +196,15 @@ async function main(): Promise<void> {
     });
     check('a full search index rebuild never holds the server (#713)', rebuild.value.status === 'completed' && rebuild.blockedMs <= BLOCK_LIMIT_MS,
       `${rebuild.value.status} in ${fmt(rebuild.ms)}, blocked ≤ ${fmt(rebuild.blockedMs)}`);
+
+    // Backup (#787) and restore staging (#914): both decrypt and copy every database — off the
+    // request thread, or the server answers nothing for the whole copy.
+    const admin = ApiContext.from({ username: 'admin', role: 'admin' }, app.engine);
+    const backup = await measure(() => app.backups.backupNow(admin));
+    check('a backup never holds the server (#787)', backup.blockedMs <= BLOCK_LIMIT_MS, `${fmt(backup.ms)}, blocked ≤ ${fmt(backup.blockedMs)}`);
+    const name = (backup.value as { name: string }).name;
+    const staging = await measure(() => app.backups.stageRestore(admin, name));
+    check('staging a restore never holds the server (#914)', staging.blockedMs <= BLOCK_LIMIT_MS && staging.value.staged === true, `${fmt(staging.ms)}, blocked ≤ ${fmt(staging.blockedMs)}`);
 
     await app.close();
   } finally {

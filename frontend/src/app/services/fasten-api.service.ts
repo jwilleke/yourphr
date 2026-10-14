@@ -44,7 +44,6 @@ import {LegalDocument} from '../models/fasten/legal-document';
 import {LegalConsentStatus} from '../models/fasten/legal-consent';
 import {AdminMetrics} from '../models/fasten/admin-metrics';
 import {CDAConverterStatus} from '../models/fasten/cda-converter-status';
-import {UploadResult} from '../models/fasten/upload-result';
 import {ConnectableProvider, ProviderCatalogEntry, ProviderCatalogEntryRequest} from '../models/fasten/provider-catalog';
 import {FormRequestHealthSystem} from '../models/fasten/form-request-health-system';
 import { Favorite } from '../pages/practitioner-list/practitioner-list.component';
@@ -401,12 +400,13 @@ export class FastenApiService {
 
   // restoreDatabase STAGES a restore from a backup in the destination folder; it is applied on the next
   // app restart. DANGER: replaces the entire database. Admin-only; requires confirmation.
-  restoreDatabase(backupName: string): Observable<{staged: boolean; message: string}> {
+  // Set and walk away (#914): the server answers once the request is checked; a notice says when it is ready.
+  restoreDatabase(backupName: string): Observable<{started: boolean}> {
     return this._httpClient.post<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/admin/database/restore`,
       {backup_name: backupName, confirm: true})
       .pipe(
         map((response: ResponseWrapper) => {
-          return response.data as {staged: boolean; message: string}
+          return response.data as {started: boolean}
         })
       );
   }
@@ -706,19 +706,15 @@ export class FastenApiService {
     return this._httpClient.delete<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/provider-catalog/${encodeURIComponent(id)}`);
   }
 
-  // Imports an uploaded FHIR or C-CDA file (#736, #735). Answers with what the import did — the
-  // counts, including what was left out — rather than the source, so the page can say it.
-  createManualSource(file: File): Observable<UploadResult> {
+  // Starts importing an uploaded FHIR or C-CDA file (#736, #735). Set and walk away (#913): the server
+  // answers once the file is read and checked; what the import added arrives as a notice.
+  createManualSource(file: File): Observable<void> {
 
     const formData = new FormData();
     formData.append('file', file);
 
     return this._httpClient.post<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/source/manual`, formData)
-      .pipe(
-        map((response: ResponseWrapper) => {
-          return response.data as UploadResult
-        })
-      );
+      .pipe(map(() => undefined));
   }
 
   getSources(): Observable<Source[]> {

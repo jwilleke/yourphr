@@ -879,11 +879,21 @@ async function main(): Promise<void> {
     ],
   });
   const sourcesBefore = ((await (await fetch(`${base}/api/secure/source`, authed(upToken))).json()) as { data: unknown[] }).data.length;
+  // Set and walk away (yourphr#913): 202 once the file is read and checked; the import finishes in the
+  // background and its counts arrive as carol's notice. Wait for the Nth "<file> imported" notice.
+  const importNotices = (file = 'export.json'): { title: string; message: string }[] => app.engine.managers.notifications.getUserNotifications('carol')
+    .filter((n) => n.title === `${file} imported`).map((n) => ({ title: n.title, message: n.message }));
+  const importDone = async (count: number, file = 'export.json'): Promise<{ title: string; message: string } | undefined> => {
+    for (let i = 0; i < 200; i++) { const all = importNotices(file); if (all.length >= count) return all[all.length - 1]; await new Promise((r) => setTimeout(r, 20)); }
+    return undefined;
+  };
   const uploaded = await upload(upToken, 'export.json', upBundle);
-  const uploadedBody = (await uploaded.json()) as { success: boolean; data?: { created?: number; format?: string }; source?: { id?: string; platform_type?: string; patient?: string; display?: string }; error?: string };
-  check('POST /secure/source/manual imports a FHIR bundle as a manual source — the route v3 lost',
-    uploaded.status === 200 && uploadedBody.data?.created === 2 && uploadedBody.data?.format === 'fhir' && uploadedBody.source?.platform_type === 'manual' && uploadedBody.source?.patient === 'up-pat-1',
-    `status ${uploaded.status} ${JSON.stringify(uploadedBody)}`);
+  const uploadedBody = (await uploaded.json()) as { success: boolean; data?: { importing?: boolean }; source?: { id?: string; platform_type?: string; patient?: string; display?: string }; error?: string };
+  const firstNotice = await importDone(1);
+  check('POST /secure/source/manual answers 202 with the new manual source, and the notice says what was added',
+    uploaded.status === 202 && uploadedBody.data?.importing === true && uploadedBody.source?.platform_type === 'manual' && uploadedBody.source?.patient === 'up-pat-1'
+      && firstNotice?.message === 'Added 2 new records.',
+    `status ${uploaded.status} ${JSON.stringify(uploadedBody)} notice ${JSON.stringify(firstNotice)}`);
 
   const upConditions = (await (await fetch(`${base}/api/secure/resource/fhir?sourceResourceType=Condition`, authed(upToken))).json()) as { data: { source_resource_id?: string; source_id?: string; resource_raw?: { subject?: { reference?: string } } }[] };
   const upCondition = upConditions.data.find((c) => c.source_resource_id === 'up-cond-1');
@@ -891,11 +901,13 @@ async function main(): Promise<void> {
     upCondition?.source_id === uploadedBody.source?.id && upCondition?.resource_raw?.subject?.reference === 'Patient/up-pat-1',
     JSON.stringify(upCondition));
 
-  const again = (await (await upload(upToken, 'export.json', upBundle)).json()) as { data?: { created?: number; updated?: number; unchanged?: number; collisions?: number }; source?: { id?: string } };
+  const againRes = await upload(upToken, 'export.json', upBundle);
+  const again = (await againRes.json()) as { source?: { id?: string } };
+  const secondNotice = await importDone(2);
   const sourcesAfter = ((await (await fetch(`${base}/api/secure/source`, authed(upToken))).json()) as { data: unknown[] }).data.length;
   check('re-uploading the same file lands in the same source: nothing new, nothing rewritten, no refusals',
-    again.source?.id === uploadedBody.source?.id && again.data?.created === 0 && again.data?.updated === 0 && again.data?.unchanged === 2 && again.data?.collisions === 0 && sourcesAfter === sourcesBefore + 1,
-    `${JSON.stringify(again)} sources ${sourcesBefore} -> ${sourcesAfter}`);
+    againRes.status === 202 && again.source?.id === uploadedBody.source?.id && secondNotice?.message === 'You already had all 2 records in this file; nothing changed.' && sourcesAfter === sourcesBefore + 1,
+    `${JSON.stringify(again)} notice ${JSON.stringify(secondNotice)} sources ${sourcesBefore} -> ${sourcesAfter}`);
 
   const notMultipart = await fetch(`${base}/api/secure/source/manual`, { method: 'POST', headers: { authorization: `Bearer ${upToken}`, 'content-type': 'application/json' }, body: upBundle });
   const pdf = await upload(upToken, 'scan.pdf', '%PDF-1.7 not really', 'application/pdf');
@@ -1018,16 +1030,18 @@ async function main(): Promise<void> {
   const setUrl = await fetch(`${base}/api/secure/admin/config`, { method: 'PUT', headers: { authorization: `Bearer ${adminToken}`, 'content-type': 'application/json' }, body: JSON.stringify({ key: 'yourphr.cda-converter.url', value: converterBase }) });
   const statusSet = (await (await fetch(`${base}/api/secure/source/cda-converter/status`, authed(upToken))).json()) as { data?: { ready?: boolean } };
   const ccdUp = await upload(upToken, 'summary.xml', ccd, 'text/xml');
-  const ccdUpBody = (await ccdUp.json()) as { data?: { format?: string; created?: number }; source?: { patient?: string } };
+  const ccdUpBody = (await ccdUp.json()) as { source?: { patient?: string } };
+  const ccdNotice = await importDone(1, 'summary.xml');
   const call = converterCalls[0];
   check('with the address set (no restart), a C-CDA upload is converted by the sidecar and imported',
-    setUrl.status === 200 && statusSet.data?.ready === true && ccdUp.status === 200 && ccdUpBody.data?.format === 'ccda' && ccdUpBody.data?.created === 2 &&
+    setUrl.status === 200 && statusSet.data?.ready === true && ccdUp.status === 202 && ccdNotice?.message === 'Added 2 new records.' &&
       call?.path.startsWith('/api/convert/cda/ccd.hbs?patientId=cda-') === true && call?.type === 'text/plain' && call?.body === ccd,
-    `set ${setUrl.status} ready ${statusSet.data?.ready} upload ${ccdUp.status} ${JSON.stringify(ccdUpBody)} call ${call?.path}`);
-  const again2 = (await (await upload(upToken, 'summary-copy.xml', ccd, 'text/xml')).json()) as { data?: { created?: number; updated?: number; unchanged?: number }; source?: { id?: string; patient?: string } };
+    `set ${setUrl.status} ready ${statusSet.data?.ready} upload ${ccdUp.status} ${JSON.stringify(ccdNotice)} call ${call?.path}`);
+  const again2 = (await (await upload(upToken, 'summary-copy.xml', ccd, 'text/xml')).json()) as { source?: { id?: string; patient?: string } };
+  const again2Notice = await importDone(1, 'summary-copy.xml');
   check('the same C-CDA again lands on the same Patient and source — the derived id is stable',
-    again2.source?.patient === ccdUpBody.source?.patient && again2.data?.created === 0 && again2.data?.updated === 0 && again2.data?.unchanged === 2,
-    JSON.stringify(again2));
+    again2.source?.patient === ccdUpBody.source?.patient && again2Notice?.message === 'You already had all 2 records in this file; nothing changed.',
+    `${JSON.stringify(again2)} ${JSON.stringify(again2Notice)}`);
 
   // A portal's download zip, as the patient has it (yourphr#786): documents beside a viewer, its
   // stylesheet (which mentions ClinicalDocument), images, XDM metadata and a PDF. Only the
@@ -1044,12 +1058,13 @@ async function main(): Promise<void> {
   ]);
   const before = converterCalls.length;
   const zipUp = await upload(upToken, 'Requested-Records.zip', portalZip, 'application/zip');
-  const zipBody = (await zipUp.json()) as { data?: { format?: string; received?: number; created?: number; unchanged?: number; skipped?: number } };
+  const zipBody = (await zipUp.json()) as { data?: { importing?: boolean } };
+  const zipNotice = await importDone(1, 'Requested-Records.zip');
   const zipCalls = converterCalls.slice(before);
   check('a portal download zip imports as one upload: both documents converted, the viewer files passed over',
-    zipUp.status === 200 && zipBody.data?.format === 'zip' && zipBody.data?.skipped === 0 &&
+    zipUp.status === 202 && zipBody.data?.importing === true && zipNotice !== undefined && !zipNotice.message.includes('could not be read') &&
       zipCalls.length === 2 && zipCalls.every((c) => c.body === ccd || c.body === ccd2),
-    `${zipUp.status} ${JSON.stringify(zipBody)} calls ${zipCalls.length}`);
+    `${zipUp.status} ${JSON.stringify(zipNotice)} calls ${zipCalls.length}`);
   const noRecords = await upload(upToken, 'photos.zip', buildZip([{ name: 'a.png', data: 'x' }]), 'application/zip');
   const noRecordsBody = (await noRecords.json()) as { error_code?: string; error?: string };
   const locked = await upload(upToken, 'locked.zip', buildZip([{ name: 'DOC0001.XML', data: ccd, encrypted: true }]), 'application/zip');
@@ -1196,11 +1211,16 @@ async function main(): Promise<void> {
     const tok = ((await (await fetch(`${rBase}/api/auth/signin`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ username: 'admin', password: bootPw }) })).json()) as { data: string }).data;
     const b = (await (await fetch(`${rBase}/api/secure/admin/database/backup`, { method: 'POST', headers: { authorization: `Bearer ${tok}` } })).json()) as { data: { filename: string } };
     await a.users.createUser(ApiContext.system('harness', 'admin', a.engine), 'latecomer', 'latecomers-long-enough-password');
-    const staged = (await (await fetch(`${rBase}/api/secure/admin/database/restore`, { method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${tok}` }, body: JSON.stringify({ backup_name: b.data.filename, confirm: true }) })).json()) as { data: { staged: boolean } };
+    const stagedRes = await fetch(`${rBase}/api/secure/admin/database/restore`, { method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${tok}` }, body: JSON.stringify({ backup_name: b.data.filename, confirm: true }) });
+    const staged = (await stagedRes.json()) as { data?: { started?: boolean } };
+    // Set and walk away (yourphr#914): staged in the background; wait for the admin's notice before restarting.
+    let ready: { title: string } | undefined;
+    for (let i = 0; i < 500 && !ready; i++) { ready = a.engine.managers.notifications.getUserNotifications('admin').find((n) => n.title.endsWith('is ready')); if (!ready) await new Promise((r) => setTimeout(r, 20)); }
+
     await a.close();
     const after = await assembleApp(rDir, { env });
-    check('a confirmed restore is STAGED, applied on the next start, and the previous databases are kept as *.pre-restore',
-      staged.data.staged === true && (await after.users.roleOf('keeper')) === 'user' && (await after.users.roleOf('latecomer')) === undefined && existsSync(join(rDir, 'spike.db.pre-restore')) && existsSync(join(rDir, 'records.db.pre-restore')));
+    check('a confirmed restore answers 202, is STAGED in the background with a notice, applied on the next start, and the previous databases are kept as *.pre-restore',
+      stagedRes.status === 202 && staged.data?.started === true && ready !== undefined && (await after.users.roleOf('keeper')) === 'user' && (await after.users.roleOf('latecomer')) === undefined && existsSync(join(rDir, 'spike.db.pre-restore')) && existsSync(join(rDir, 'records.db.pre-restore')));
     await after.close();
     rmSync(rDir, { recursive: true, force: true });
   }

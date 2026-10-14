@@ -18,7 +18,6 @@ import {SmartAuthorizeResponse} from '../../models/fasten/smart-authorize';
 import {LegalConsentStatus} from '../../models/fasten/legal-consent';
 import {AttributionNotice, attributionsForContext} from '../../models/fasten/attributions';
 import {PreConnectCopy, preConnectCopyForProfile} from '../../models/fasten/pre-connect-copy';
-import {uploadResultMessage} from '../../models/fasten/upload-result';
 
 // Max time to wait for the patient to finish logging in at the provider (relay-poll phase, across
 // retries). A first login can be slow (read consent, pick account, authorize) — allow several
@@ -352,9 +351,8 @@ export class MedicalSourcesComponent implements OnInit {
         }
       }
       try {
-        const result = await firstValueFrom(this.fastenApi.createManualSource(file))
-        const msg = result ? uploadResultMessage(result) : ""
-        results.push(files.length > 1 ? `${file.name}: ${msg}` : msg)
+        await firstValueFrom(this.fastenApi.createManualSource(file))
+        results.push(`${file.name}: importing in the background. You can leave this page; a notice will say what was added.`)
       } catch (err) {
         console.log(err)
         errors.push(`${files.length > 1 ? file.name + ": " : ""}${extractErrorFromResponse(err) || "Unknown Error"}`)

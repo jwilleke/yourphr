@@ -61,6 +61,9 @@ export interface SyncReport {
   truncated: boolean;
 }
 
+/** Records written between yields to the event loop (yourphr#913): ~0.2 s of work at a time. */
+const STORE_YIELD_EVERY = 50;
+
 export function emptySyncReport(): SyncReport {
   return { pages: 0, collisions: [], received: 0, created: 0, updated: 0, unchanged: 0, duplicatesWithinRun: 0, byType: {}, skipped: [], truncated: false };
 }
@@ -71,7 +74,12 @@ export function emptySyncReport(): SyncReport {
  * a resync, and a contested id is refused the same way whichever path brought it.
  */
 export async function storeEntries(entries: { resource?: Resource }[], writer: RecordsWriter, report: SyncReport, seenThisRun: Set<string>): Promise<void> {
+  let sinceYield = 0;
   for (const entry of entries) {
+    // Each write is synchronous SQLite; let the server answer between small groups (yourphr#913).
+    // An upload of 5,936 records was one 26 s block — every request waited, and on production the
+    // liveness probe would have killed the pod mid-import.
+    if (++sinceYield >= STORE_YIELD_EVERY) { sinceYield = 0; await new Promise<void>((resolve) => setImmediate(resolve)); }
     const resource = entry.resource;
     if (!resource?.resourceType) {
       report.skipped.push({ reason: 'entry carried no resource', detail: JSON.stringify(entry).slice(0, 120) });

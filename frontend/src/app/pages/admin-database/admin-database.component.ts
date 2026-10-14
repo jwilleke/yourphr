@@ -187,7 +187,7 @@ export class AdminDatabaseComponent implements OnInit, OnDestroy {
     this.restoring = name;
     this.restoreMsg = '';
     this.fastenApi.restoreDatabase(name).subscribe({
-      next: (res) => { this.restoreMsg = res.message || 'Restore staged. Restart the app to apply.'; this.restoring = ''; this.load(false); },
+      next: () => { this.restoreMsg = 'Staging the restore in the background (the current databases are backed up first). You can leave this page; a notice will say when it is ready, and a restart then applies it.'; this.restoring = ''; },
       error: (e) => { this.restoreMsg = e?.error?.error || 'Restore failed.'; this.restoring = ''; },
     });
   }

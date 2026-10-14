@@ -11,7 +11,7 @@ import type { SearchRequest, WithId } from '@medplum/core';
 import { SEARCH_INDEX_VERSION, SqliteFhirRepository, sameContent } from '../../SqliteFhirRepository.js';
 import { dirname } from 'node:path';
 import { existsSync, statSync } from 'node:fs';
-import { backupFiles, readBackupPayloads, stageInstanceRestore, RECORDS_LEDGER_TABLE, type BackupPayload, type BackupResult, type DatabaseFile } from './sqlite-backup.js';
+import { backupFiles, readBackupPayloads, stageInstanceRestoreOffThread, RECORDS_LEDGER_TABLE, type BackupPayload, type BackupResult, type DatabaseFile } from './sqlite-backup.js';
 import { ftsQuery } from './record-text.js';
 import { quickCheck } from './sqlite-integrity.js';
 import { runMigrations, type Migration, type MigrationReport } from '../../framework/providers/sqlite-migrations.js';
@@ -630,7 +630,8 @@ export class SqliteRecordsProvider extends BaseRecordsProvider {
   }
 
   async stageRestore(backupFile: string, backupKey: string): Promise<{ tables: number }> {
-    return stageInstanceRestore(backupFile, backupKey, dirname(this.file), this.key ?? '');
+    // Off the request thread (yourphr#914), as the backup export is (#787).
+    return stageInstanceRestoreOffThread(backupFile, backupKey, dirname(this.file), this.key ?? '');
   }
 
   /** The managers' payloads carried in a backup (yourphr#631); {} for one taken before they were. */

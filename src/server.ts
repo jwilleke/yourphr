@@ -1155,8 +1155,9 @@ export function createYourPhrServer(options: ServerOptions) {
             send(res, upload.status, {success: false, error: upload.error});
             return;
           }
-          const result = await src.importUpload(ctx, { ...upload.file, maxUnpackedBytes: maxBytes }); // ApiError -> the error boundary; a zip unpacks under the same cap (yourphr#786)
-          send(res, 200, {success: true, data: result.data, source: result.source});
+          const result = await src.startUpload(ctx, { ...upload.file, maxUnpackedBytes: maxBytes }); // ApiError -> the error boundary; a zip unpacks under the same cap (yourphr#786)
+          // Set and walk away (yourphr#913): 202 once the file is read and checked; a notice says what was added.
+          send(res, 202, {success: true, data: {importing: true}, source: result.source});
           return;
         }
         const sourceMatch = url.pathname.match(/^\/api\/secure\/source\/([^/]+)(?:\/(summary|sync|disconnect|remove-data|export))?$/);
@@ -1505,7 +1506,8 @@ export function createYourPhrServer(options: ServerOptions) {
             return;
           }
           try {
-            send(res, 200, {success: true, data: await backups.stageRestore(ctx, name)});
+            // Set and walk away (yourphr#914): 202 once checked; the admin's notice says when it is ready.
+            send(res, 202, {success: true, data: await backups.startRestore(ctx, name)});
           } catch (err) {
             backupFailed(err);
           }

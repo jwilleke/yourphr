@@ -334,16 +334,16 @@ export class SqliteFhirRepository extends FhirRepository {
    * and a 20k-record account takes ~48s — done in one go it would starve the health probe and get
    * the pod killed mid-rebuild. Returns the number of records reindexed.
    */
-  async reindexAllYielding(pageSize = 250): Promise<number> {
+  async reindexAllYielding(pageSize = 100): Promise<number> {
     // Committed in steps, yielding between them (yourphr#906): one transaction around the whole
     // rebuild made its COMMIT a single synchronous write of ~640k index rows on a real account,
     // holding the event loop for seconds. A rebuild runs under maintenance mode and is idempotent —
     // one cut short leaves the index version un-bumped and is simply run again.
     const owner = this.userId ?? '';
     const yieldNow = (): Promise<void> => new Promise((resolve) => setImmediate(resolve));
-    const dropIndex = this.db.prepare('DELETE FROM search_index WHERE rowid IN (SELECT rowid FROM search_index WHERE user_id = ? LIMIT 5000)');
+    const dropIndex = this.db.prepare('DELETE FROM search_index WHERE rowid IN (SELECT rowid FROM search_index WHERE user_id = ? LIMIT 1000)');
     while (dropIndex.run(owner).changes > 0) await yieldNow();
-    const keys = this.db.prepare('SELECT resource_type, resource_id, text_rowid FROM text_rowids WHERE user_id = ? LIMIT 2000');
+    const keys = this.db.prepare('SELECT resource_type, resource_id, text_rowid FROM text_rowids WHERE user_id = ? LIMIT 500');
     const dropText = this.db.prepare('DELETE FROM search_text WHERE rowid = ?');
     const dropKey = this.db.prepare('DELETE FROM text_rowids WHERE resource_type = ? AND resource_id = ? AND user_id = ?');
     for (;;) {
@@ -352,7 +352,8 @@ export class SqliteFhirRepository extends FhirRepository {
       this.db.transaction(() => { for (const k of batch) { dropText.run(k.text_rowid); dropKey.run(k.resource_type, k.resource_id, owner); } })();
       await yieldNow();
     }
-    this.db.prepare('DELETE FROM search_text WHERE user_id = ?').run(owner); // any unkeyed leftovers: one scan
+    // No sweep for unkeyed text rows: every row has had a key since TEXT_ROWIDS_MIGRATION (#905), and a
+    // one-statement scan of the whole FTS table was itself the longest block left in the rebuild.
     const page = this.db.prepare('SELECT rowid, content FROM resources WHERE deleted = 0 AND user_id = ? AND rowid > ? ORDER BY rowid LIMIT ?');
     let done = 0;
     let after = 0;

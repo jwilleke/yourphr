@@ -74,15 +74,16 @@ describe('MedicalSourcesComponent', () => {
 
     const upload = (name: string) => (r: { url: string; body: unknown }) => r.url.includes('/secure/source/manual') && (r.body as FormData).get('file') instanceof File && ((r.body as FormData).get('file') as File).name === name;
     await new Promise((r) => setTimeout(r));
-    httpMock.expectOne(upload('Requested-Records.zip')).flush({ success: true, data: { format: 'zip', received: 3, created: 3, updated: 0, unchanged: 0, collisions: 0, skipped: 0 } });
+    httpMock.expectOne(upload('Requested-Records.zip')).flush({ success: true, data: { importing: true } }, { status: 202, statusText: 'Accepted' });
     await new Promise((r) => setTimeout(r));
-    httpMock.expectOne(upload('patient.json')).flush({ success: true, data: { format: 'fhir', received: 1, created: 1, updated: 0, unchanged: 0, collisions: 0, skipped: 0 } });
+    httpMock.expectOne(upload('patient.json')).flush({ success: true, data: { importing: true } }, { status: 202, statusText: 'Accepted' });
     await done;
 
     httpMock.expectNone((r) => r.url.includes('cda-converter/status'));
     expect(component.uploadErrorMsg).toBe('');
-    expect(component.uploadResultMsg).toContain('Requested-Records.zip: Added 3 new records.');
-    expect(component.uploadResultMsg).toContain('patient.json: Added 1 new record.');
+    // Set and walk away (#913): the page says the import is under way; the counts arrive as a notice.
+    expect(component.uploadResultMsg).toContain('Requested-Records.zip: importing in the background');
+    expect(component.uploadResultMsg).toContain('patient.json: importing in the background');
     expect(component.uploadInProgress).toBe(false);
   });
 });

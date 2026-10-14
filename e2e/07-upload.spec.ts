@@ -16,19 +16,27 @@ const bundle = JSON.stringify({
   ],
 });
 
-test('uploading a FHIR file imports it and says what was added', async ({ page }) => {
+test('uploading a FHIR file imports it in the background and the notice says what was added', async ({ page }) => {
   const errors = trackPageErrors(page);
   await login(page, E2E_USER, E2E_PASS);
   await page.goto(`${BASE}/sources`);
   await page.locator('input[type=file]').setInputFiles({ name: 'e2e-export.json', mimeType: 'application/json', buffer: Buffer.from(bundle) });
-  await expect(page.getByText('Added 2 new records.')).toBeVisible({ timeout: 20_000 });
+  // Set and walk away (yourphr#913): the page says the import is under way; what it added is a notice.
+  await expect(page.getByText(/e2e-export\.json: importing in the background/)).toBeVisible({ timeout: 20_000 });
   await expect(page.getByText(/Error uploading file/)).toHaveCount(0);
+  const banner = page.getByTestId('notification-banner');
+  await expect(async () => {
+    await page.reload();
+    await expect(banner).toContainText('Added 2 new records.', { timeout: 2_000 });
+  }).toPass({ timeout: 20_000 });
 
   // The file is now a source of its own, and a second upload of it changes nothing, and says so (#781).
-  await page.reload();
   await expect(page.getByText('Uploaded e2e-export.json').first()).toBeVisible({ timeout: 20_000 });
   await page.locator('input[type=file]').setInputFiles({ name: 'e2e-export.json', mimeType: 'application/json', buffer: Buffer.from(bundle) });
-  await expect(page.getByText('You already had all 2 records in this file; nothing changed.')).toBeVisible({ timeout: 20_000 });
+  await expect(async () => {
+    await page.reload();
+    await expect(banner).toContainText('You already had all 2 records in this file; nothing changed.', { timeout: 2_000 });
+  }).toPass({ timeout: 20_000 });
   expect(errors, errors.join('\n')).toEqual([]);
 });
 

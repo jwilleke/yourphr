@@ -263,6 +263,28 @@ export function backupFiles(sources: DatabaseFile[], options: BackupOptions): Pr
   });
 }
 
+/**
+ * stageInstanceRestore on a worker thread (yourphr#914): decrypting and copying a whole backup is
+ * synchronous SQLite — 22 s for a 555 MB backup on a fast machine — and on the request thread it
+ * answered nothing, not even the liveness probe, so production would kill the pod mid-staging.
+ * Keys travel in workerData (memory), never argv or the environment.
+ */
+export function stageInstanceRestoreOffThread(backupFile: string, backupKey: string, dataDir: string, targetKey: string): Promise<{ tables: number; phdSamples: boolean }> {
+  const fromSource = import.meta.url.endsWith('.ts');
+  const entry = new URL(fromSource ? './sqlite-restore-worker.ts' : './sqlite-restore-worker.js', import.meta.url);
+  return new Promise((resolve, reject) => {
+    const worker = new Worker(entry, { workerData: { backupFile, backupKey, dataDir, targetKey }, ...(fromSource ? { execArgv: ['--import', 'tsx'] } : {}) });
+    let settled = false;
+    worker.once('message', (m: { ok: true; result: { tables: number; phdSamples: boolean } } | { ok: false; error: string }) => {
+      settled = true;
+      if (m.ok) resolve(m.result);
+      else reject(new Error(m.error));
+    });
+    worker.once('error', (err) => { settled = true; reject(err); });
+    worker.once('exit', (code) => { if (!settled) reject(new Error(`the restore worker exited (code ${code}) without a result`)); });
+  });
+}
+
 /** The repository's own file, plus `alsoExport`, in one backup. Synchronous: tests and harnesses; the server uses backupFiles. */
 export function backupDatabase(repo: SqliteFhirRepository, options: BackupOptions & { alsoExport?: DatabaseFile[] }): BackupResult {
   return backupFilesSync([{ file: repo.file, key: repo.key }, ...(options.alsoExport ?? [])], options);

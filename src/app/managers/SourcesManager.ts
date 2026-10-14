@@ -99,6 +99,31 @@ export interface SourcesOptions {
 }
 
 /** What an upload did (yourphr#736): the sync report's counts, so the page can say what happened. */
+/** An upload read and checked, and its source chosen — ready to be written. */
+interface PreparedUpload {
+  source: ConnectedSource;
+  parsed: ParsedUpload;
+  format: string;
+  filename: string;
+}
+
+/**
+ * What an import did, in plain language for its notice (yourphr#913, wording from the Sources page's
+ * uploadResultMessage, #736/#262): what was added, refreshed, already there, and what was left out.
+ */
+export function uploadSummary(r: UploadReport): string {
+  const plural = (n: number, one: string, many: string): string => `${n} ${n === 1 ? one : many}`;
+  const parts: string[] = [];
+  if (r.created > 0) parts.push(`Added ${plural(r.created, 'new record', 'new records')}.`);
+  if (r.updated > 0) parts.push(`Updated ${plural(r.updated, 'record', 'records')} you already had from this file.`);
+  if (r.created === 0 && r.updated === 0 && r.unchanged > 0) parts.push(`You already had ${r.unchanged === 1 ? 'the 1 record' : `all ${r.unchanged} records`} in this file; nothing changed.`);
+  else if (r.unchanged > 0) parts.push(`${plural(r.unchanged, 'record was', 'records were')} already up to date.`);
+  if (r.created === 0 && r.updated === 0 && r.unchanged === 0) parts.push('Nothing new was added.');
+  if (r.collisions > 0) parts.push(`${plural(r.collisions, 'record was', 'records were')} left out because another of your connected sources already has ${r.collisions === 1 ? 'it' : 'them'}.`);
+  if (r.skipped > 0) parts.push(`${plural(r.skipped, 'part', 'parts')} of the file could not be read and ${r.skipped === 1 ? 'was' : 'were'} skipped.`);
+  return parts.join(' ');
+}
+
 export interface UploadReport {
   /** The format converted from ('ccda'), 'zip' for a portal download read whole (yourphr#786), or 'fhir' when the file was FHIR already. */
   format: string;
@@ -388,7 +413,41 @@ export class SourcesManager extends BaseManager {
    * A zip — a portal's "download my records" as the patient has it — is read whole (yourphr#786):
    * every record inside is imported as this one upload. `maxUnpackedBytes` caps what it may unpack.
    */
+  /**
+   * Import an uploaded file and wait for it — the whole import, start to finish. Kept for the CLI and
+   * the harnesses; the Sources page uses startUpload (yourphr#913), which returns at once.
+   */
   async importUpload(ctx: ApiContext, upload: { filename: string; bytes: Buffer; maxUnpackedBytes?: number }, now = Math.floor(Date.now() / 1000)): Promise<{ source: Record<string, unknown>; data: UploadReport }> {
+    const prepared = await this.prepareUpload(ctx, upload, now);
+    const { job, data } = await this.storeUpload(ctx, prepared, now);
+    if (job.outcome !== 'success') throw new ApiError(500, `the import stopped part-way: ${job.error}`, { error_code: 'upload_failed' });
+    return { source: sourceShape((await this.provider.byId(prepared.source.id)) ?? prepared.source, job), data };
+  }
+
+  /**
+   * Set and walk away (yourphr#913, a rule): the file is read, converted and checked here — so an
+   * unreadable or empty file is still refused at once — then the records are written in the
+   * background and the person gets a notice saying what was added. Returns the new source.
+   */
+  async startUpload(ctx: ApiContext, upload: { filename: string; bytes: Buffer; maxUnpackedBytes?: number }, now = Math.floor(Date.now() / 1000)): Promise<{ source: Record<string, unknown> }> {
+    const prepared = await this.prepareUpload(ctx, upload, now);
+    const name = prepared.filename || 'your file';
+    void this.storeUpload(ctx, prepared, now).then(
+      ({ job, data }) => this.notifyUpload(ctx, job.outcome === 'success' ? 'success' : 'error', job.outcome === 'success' ? `${name} imported` : `Importing ${name} did not finish`,
+        job.outcome === 'success' ? uploadSummary(data) : `The import stopped part-way: ${job.error}. Upload the file again to finish; records already imported are kept.`),
+      (err: Error) => { this.log(`upload: ${name} failed: ${err.message}`); return this.notifyUpload(ctx, 'error', `Importing ${name} did not finish`, `The import stopped: ${err.message}. Upload the file again to finish.`); },
+    );
+    return { source: sourceShape(prepared.source, undefined) };
+  }
+
+  private async notifyUpload(ctx: ApiContext, level: 'success' | 'error', title: string, message: string): Promise<void> {
+    if (!this.engine.has('notifications')) return;
+    await this.engine.managers.notifications.createNotification({ type: 'system', level, targetUsers: [ctx.username], link: '/sources', title, message })
+      .catch((err: Error) => this.log(`upload: notice not sent: ${err.message}`));
+  }
+
+  /** Read, convert and check an upload, and file it under its source. Throws 400 for a file that cannot be imported. */
+  private async prepareUpload(ctx: ApiContext, upload: { filename: string; bytes: Buffer; maxUnpackedBytes?: number }, now: number): Promise<PreparedUpload> {
     ctx.requireAuthenticated();
     // Before any conversion work, not just at add(): the shared demo account may not bring outside data in (yourphr#496).
     if (this.engine.has('demo')) this.engine.managers.demo.refuseConnect(ctx);
@@ -416,6 +475,12 @@ export class SourcesManager extends BaseManager {
     if (parsed.resources.length === 0) throw new ApiError(400, `${filename || 'the file'} holds no FHIR records`, { error_code: 'upload_empty' });
 
     const source = await this.uploadSourceFor(ctx, patientOf(parsed.resources), filename, now);
+    return { source, parsed, format, filename };
+  }
+
+  /** Write a prepared upload's records — in groups that yield to the event loop (storeEntries). */
+  private async storeUpload(ctx: ApiContext, prepared: PreparedUpload, now: number): Promise<{ job: JobRecord; data: UploadReport }> {
+    const { source, parsed, format } = prepared;
     const publicId = `source-${source.id}`;
     const report = emptySyncReport();
     report.skipped.push(...parsed.skipped);
@@ -435,8 +500,7 @@ export class SourcesManager extends BaseManager {
     }
     const data: UploadReport = { format, received: report.received, created: report.created, updated: report.updated, unchanged: report.unchanged, collisions: report.collisions.length, skipped: report.skipped.length };
     this.log(`upload: source ${source.id} (${data.format}): received ${data.received}, created ${data.created}, updated ${data.updated}, unchanged ${data.unchanged}, collisions ${data.collisions}, skipped ${data.skipped}`);
-    if (job.outcome !== 'success') throw new ApiError(500, `the import stopped part-way: ${job.error}`, { error_code: 'upload_failed' });
-    return { source: sourceShape((await this.provider.byId(source.id)) ?? source, job), data };
+    return { job, data };
   }
 
   /**

@@ -406,6 +406,27 @@ export class BackupManager extends BaseManager {
     };
   }
 
+  /**
+   * Set and walk away (yourphr#914, a rule): checks the request (admin, a backup that exists), then
+   * stages the restore in the background — a backup of the current databases first, then the
+   * staging on a worker thread — and tells the admin when it is ready to apply or why it failed.
+   */
+  async startRestore(ctx: ApiContext, backupName: string): Promise<{ started: true }> {
+    this.manage(ctx);
+    const file = await this.provider.resolve(this.destination(), backupName);
+    if (!file) throw new ApiError(404, 'no such backup in the destination folder');
+    const notify = async (level: 'success' | 'error', title: string, message: string): Promise<void> => {
+      if (!this.engine.has('notifications')) return;
+      await this.engine.managers.notifications.createNotification({ type: 'system', level, targetUsers: [ctx.username], link: '/admin/database', title, message })
+        .catch(() => undefined);
+    };
+    void this.stageRestore(ctx, backupName).then(
+      (done) => notify('success', `Restore of ${backupName} is ready`, done.message),
+      (err: Error) => notify('error', `Restore of ${backupName} was not staged`, `${err.message}. Nothing was changed; the current databases stay as they are.`),
+    );
+    return { started: true };
+  }
+
   /** The coordinator keeps no data of its own; the health file is derived and rewritten by the next outcome. */
   async backup(): Promise<BackupData> {
     return { manager: this.name, takenAt: this.now().toISOString(), payload: this.state };
