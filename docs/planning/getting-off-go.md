@@ -1,5 +1,7 @@
 # Getting off Go — both instances
 
+> __Complete (checked 2026-10-14).__ Both instances run the TypeScript stack (v3.21.0); [#494](https://github.com/jwilleke/yourphr/issues/494), [#584](https://github.com/jwilleke/yourphr/issues/584) and [#654](https://github.com/jwilleke/yourphr/issues/654) are closed, and the only Go left is the separate `relay/` service. Still open: [#641](https://github.com/jwilleke/yourphr/issues/641). Kept because its rules — prove the swap and not only the migration, household before demo, the stop rule — are being reused for the next move, YourPHR as an ngdpbase add-on ([#920](https://github.com/jwilleke/yourphr/issues/920)).
+>
 > __Status: written 2026-08-25, after the migration rehearsal.__ Two Go instances run today. This is the order they move in, what blocks each, and what has actually been proven rather than assumed.
 
 The goal is [#543](https://github.com/jwilleke/yourphr/issues/543): the TypeScript stack replaces yourPHR, Go goes silent, and at a major version `main` carries no Go at all. Parity is done — [#591](https://github.com/jwilleke/yourphr/issues/591) has no open children.
