@@ -78,6 +78,7 @@ __Before any work on the TypeScript stack, read [`architecture-principles-typesc
 - __Improvements are FILED, not built in flight.__ A better idea found mid-implementation becomes an issue against the adopted shape, never a structure invented on the spot.
 - __A divergence is legitimate only if that document names it.__ The test before writing code: *does the document name this divergence, or am I about to create one?*
 - __Nothing says "spike".__ That word was scaffolding for the transition, never the product. This stack becomes YourPHR; the Go stack goes silent.
+- __Direction lives in [`docs/planning/ngdp-move.md`](docs/planning/ngdp-move.md)__ — the lead document for YourPHR relative to ngdpbase: direction, constraints, decisions, plan and blockers. Read it before work that touches the ngdpbase relationship. Other documents and issues link to it rather than restate it, and a changed decision changes there first.
 
 ## Project Context
 

@@ -1,4 +1,66 @@
-# Moving YourPHR onto ngdpbase — what it would take, and what it would buy
+# YourPHR on ngdpbase — direction
+
+> __Lead document: the source of truth for YourPHR's direction relative to ngdpbase.__ The direction, the decisions, the constraints and the plan live here. Issues, other planning documents and AGENTS.md link here rather than restate it; a document covering one part links back until that part is finished. When a decision changes, it changes here first.
+>
+> __Last updated 2026-10-14.__ Below the direction sections is the analysis record (2026-08-30 onward) that the direction rests on. Its superseded claims are struck through with dated notes, not deleted.
+
+## Direction
+
+__YourPHR becomes an ngdpbase add-on — `@jwilleke/yourphr-addon` on an ngdpbase base image — if the measurement in [#920](https://github.com/jwilleke/yourphr/issues/920) says go.__ If it says no, the fallback is pulling ngdpbase's framework out as a package YourPHR depends on. Either way, YourPHR stops copying ngdpbase managers by hand. Copying is what makes every fix land twice: the overlap table was closed by six ports in three weeks, and each copy has drifted since (*Where it stands, 2026-10-14*).
+
+Until #920 reports, the standing rule from [#697](https://github.com/jwilleke/yourphr/issues/697) applies: __default to ngdpbase__ (AGENTS.md § *TypeScript stack: DEFAULT TO ngdpbase*).
+
+## Constraints
+
+- __The project stays at yourphr.org and in `jwilleke/yourphr`.__ The domain is paid for and the GitHub name is owned. The add-on follows the geohazardwatch shape: its own repo and domain, a Dockerfile `FROM ghcr.io/jwilleke/ngdpbase:<version>`. Never fold YourPHR into the ngdpbase repo or serve it from an ngdpbase-branded host.
+- __Add-ons are optional, by configuration.__ `ngdpbase.addons.yourphr.enabled` defaults to false; yourphr.org's own configuration turns it on. The add-on fails soft when a dependency is missing, so each deploy needs a smoke check proving it is on.
+- __PHI stays in the add-on's encrypted database__, behind its own managers. Never in ngdpbase pages. A missing database key must refuse to start, not open unencrypted.
+- __Nothing new is named "spike".__
+
+## Decisions
+
+| Date | Decision | Recorded |
+|---|---|---|
+| 2026-10-13 | Default to ngdpbase: take its shape as built, file improvements, diverge only where the architecture-principles document names it. The add-on question stays open. | [#697](https://github.com/jwilleke/yourphr/issues/697), AGENTS.md |
+| 2026-10-14 | yourphr.org and `jwilleke/yourphr` remain the home under every option. | Constraints |
+| 2026-10-14 | Measure, don't argue: one Sources-page slice as an add-on, on branch `yourphr-addon`, one-week time-box. | [#920](https://github.com/jwilleke/yourphr/issues/920) |
+| 2026-10-14 | No new ngdpbase manager is ported into `src/framework/` until #920 reports. | [#920](https://github.com/jwilleke/yourphr/issues/920) |
+| 2026-10-14 | Angular keeps the patient record screens. ngdpbase takes sign-in and MFA, OIDC consent, `/profile`, `/admin`, help and notifications. Our ~15 chrome components and `UsersManager`, `SessionsManager`, `AgentTokensManager`, `SettingsManager` are deleted at cutover. | [#920](https://github.com/jwilleke/yourphr/issues/920#issuecomment-6174353470) |
+| 2026-10-14 | Auth and chrome issues on our side are parked until #920 reports; [#814](https://github.com/jwilleke/yourphr/issues/814) is judged on its own as a possible live exposure. Patient-domain work continues. | [#920](https://github.com/jwilleke/yourphr/issues/920#issuecomment-6174353470) |
+| 2026-10-14 | A "go" requires ngdpbase [#1723](https://github.com/jwilleke/ngdpbase/issues/1723) (database backup), ported from current yourphr `main`. | blocked-by on [#920](https://github.com/jwilleke/yourphr/issues/920) |
+| 2026-10-14 | Cutover follows the Go move's rules: rehearse the swap, not only the code; household instance first, demo second; migration tooling in the image; stop rule — copied and add-on code coexist one release cycle at most. | [#920](https://github.com/jwilleke/yourphr/issues/920#issuecomment-6174419416), [`getting-off-go.md`](getting-off-go.md) |
+
+## Plan
+
+1. __First test on `yourphr-addon`:__ the add-on serves the Angular bundle, and after sign-in on ngdpbase's login page, the app's API calls ride the same session (`ApiContext.from(req)`). This is the riskiest unknown, so it goes first.
+2. __The Sources slice:__ `SourcesManager` unchanged, its 12 routes as Express routes (SSE and the export download included), and the gate layer as middleware.
+3. __Measure__ (the list is on [#920](https://github.com/jwilleke/yourphr/issues/920)): hours for the gate layer and the slice, upstream changes needed, isolation and the encrypted store staying in the add-on, SSE, theme parity ([#502](https://github.com/jwilleke/yourphr/issues/502)), the deploy smoke check, and the size of the two migrations below.
+4. __Decide__, and write the result here.
+   - __On go:__ build the v3-to-v4 migration tool, rehearse the swap on yourphr.org, move section by section on main, then the demo, then delete the copies under the stop rule.
+   - __On no-go:__ delete the branch and start the framework-package extraction.
+
+## Open — blockers and questions
+
+- __Blocker for go:__ ngdpbase [#1723](https://github.com/jwilleke/ngdpbase/issues/1723) — no database is in ngdpbase's backups.
+- __Data migration:__ none of our 26 tables carries the `yourphr_` prefix that add-on databases and #1723's backup split rely on. Users, credentials, sessions, agent tokens and device grants move to ngdpbase's user store — compatible password hashes or a reset, and a decision about tokens already issued.
+- __Keys:__ one key covers every ngdpbase database; YourPHR holds a separate backup key (#1723 proposes one).
+- __Hosting:__ no add-on hosts an SPA yet; SSE under ngdpbase's process model is untested.
+- __Self-hosters:__ an upgrade page like `upgrading-v2-to-v3.md`. Deployment follows ngdpbase's targets ([#641](https://github.com/jwilleke/yourphr/issues/641), on hold).
+- __Carried from the record:__ whether the access log's day-folding is the granularity [#614](https://github.com/jwilleke/yourphr/issues/614) wants.
+
+## Linked documents and issues
+
+| What | Role |
+|---|---|
+| [`architecture-principles-typescript.md`](https://github.com/jwilleke/ngdpbase/blob/master/docs/planning/architecture-principles-typescript.md) (ngdpbase) | Governing architecture; names the legitimate divergences |
+| [#920](https://github.com/jwilleke/yourphr/issues/920), branch `yourphr-addon` | The measurement this direction waits on |
+| [`getting-off-go.md`](getting-off-go.md) | Complete; its cutover rules are reused here |
+| [ngdp-accounting-addons](https://github.com/jwilleke/ngdp-accounting-addons) | Reference shape for a complex, optional add-on |
+| [#591](https://github.com/jwilleke/yourphr/issues/591), [#608](https://github.com/jwilleke/yourphr/issues/608) | Parity epic; the ngdpbase-model architecture already applied |
+
+## Analysis record
+
+How the direction was reached, 2026-08-30 onward. Provenance of the original analysis:
 
 > __Status: analysis, 2026-08-30. Not adopted, nothing decided.__ Session notes from stepping through the question *"can YourPHR clone ngdpbase and work within it?"* Written down because the question keeps recurring and has been answered from structure rather than from evidence each time — see [yourphr#697](https://github.com/jwilleke/yourphr/issues/697), which argues it from repo layout alone.
 >
@@ -12,9 +74,9 @@
 >
 > Read with [`architecture-principles-typescript.md`](https://github.com/jwilleke/ngdpbase/blob/master/docs/planning/architecture-principles-typescript.md), which now lives in ngdpbase. That document is the governing one and already answers part of this.
 
-## Where it stands, 2026-10-14
+### Where it stands, 2026-10-14
 
-### The overlap table was closed by copying
+#### The overlap table was closed by copying
 
 Every row answered since 2026-09-25 was answered by porting ngdpbase's code into `src/framework/`, not by adopting it:
 
@@ -31,7 +93,7 @@ Every row answered since 2026-09-25 was answered by porting ngdpbase's code into
 
 Still open and next in line to be copied: help ([#632](https://github.com/jwilleke/yourphr/issues/632), [#633](https://github.com/jwilleke/yourphr/issues/633)), themes ([#436](https://github.com/jwilleke/yourphr/issues/436), [#499](https://github.com/jwilleke/yourphr/issues/499), [#502](https://github.com/jwilleke/yourphr/issues/502)), per-user settings ([#709](https://github.com/jwilleke/yourphr/issues/709)), patient notes on records ([#353](https://github.com/jwilleke/yourphr/issues/353)).
 
-### The copies drift, in both directions
+#### The copies drift, in both directions
 
 A port is a snapshot. ngdpbase moved 717 commits in the same window, and kept changing the very managers that had been copied:
 
@@ -42,29 +104,29 @@ A port is a snapshot. ngdpbase moved 717 commits in the same window, and kept ch
 
 This is the cost the "copy the shape" rule does not show when it is adopted: every later fix is made twice or the copies diverge. The operator's description of it on 2026-10-14 was *fighting two battles at once*.
 
-### A constraint on every option
+#### A constraint on every option
 
 __The project stays at yourphr.org and in `jwilleke/yourphr`__ (Jim, 2026-10-14: the domain is paid for and the GitHub name is owned). That rules out nothing above. The add-on route is the geohazardwatch shape: its own repo and domain, a Dockerfile `FROM ghcr.io/jwilleke/ngdpbase:<version>`, the domain shipped as `@jwilleke/yourphr-addon`. What it does rule out is folding YourPHR into the ngdpbase repo or serving it from an ngdpbase-branded host.
 
-### The options, and the measurement
+#### The options, and the measurement
 
 1. __Keep copying.__ The cost grows with each port and needs a standing upstream-diff sync per copied manager.
 2. __Pull the framework out of ngdpbase into a package__ YourPHR depends on — the governing document's own *"extract the package second"*. It ends the copying for back-end services, but not for required-pages help or the admin screens.
 3. __YourPHR as an ngdpbase add-on.__ It ends the double work. The cost is the `src/server.ts` rewrite, which has grown by a third since this document sized it.
 
-### The reference add-on, and what changed in core
+#### The reference add-on, and what changed in core
 
 [ngdp-accounting-addons](https://github.com/jwilleke/ngdp-accounting-addons) is the working example of a complex add-on. It is optional by configuration (`ngdpbase.addons.accounting.enabled`, default false; its defaults merge only while on). It fails soft: with no database it mounts nothing and says why in `status()`. `LedgerManager` is the one door, calling `requirePermission` on the request's `ApiContext`. Permissions carry their own audit rule (`on-failure: refuse`), its role sits at `required-aal: 2`, and the riskiest actions use step-up. For YourPHR that turns "audit refuses to boot" into per-permission refusal, and puts `ngdpbase.addons.yourphr.enabled: true` in yourphr.org's own config. A deploy smoke check then has to prove the add-on is actually on.
 
 __Core now has encrypted SQLite.__ `DatabaseManager` ([ngdpbase#1536](https://github.com/jwilleke/ngdpbase/issues/1536), ported from YourPHR) runs SQLCipher on `better-sqlite3-multiple-ciphers`. Since `9832f05a` (2026-10-07) every add-on can open its own file through `openAddonDatabase(owner, …)`, with owner-prefixed tables and migration ledger. The *Encrypted SQLite* section below and the first row of *Core improvements* are therefore superseded: the encrypted store has flowed up. What has not flowed up is __backup__. `DatabaseManager` inherits `BaseManager`'s unimplemented `backup()`/`restore()`, so no database is in ngdpbase's backups. [ngdpbase#1723](https://github.com/jwilleke/ngdpbase/issues/1723) ports YourPHR's `sqlite-backup.ts` and now blocks the "go" outcome of [#920](https://github.com/jwilleke/yourphr/issues/920). Two more gaps for PHI: one key covers every database, and a missing key opens unencrypted with only a warning.
 
-### The front end: Angular for the patient, ngdpbase for the chrome
+#### The front end: Angular for the patient, ngdpbase for the chrome
 
 The Angular app is about 32.9k lines in 170 components, bigger than the backend. About 155 of those components are the patient's record screens, the product, with no ngdpbase analogue; they stay. ngdpbase already ships what the other ~15 duplicate: sign-in with MFA (password, passkeys, second factor, magic link, recovery, device approval, outside sign-in), OIDC consent and approved apps, `/profile` (agent tokens, delegations, proxy grants) and 27 `/admin` views. Those, plus `UsersManager`, `SessionsManager`, `AgentTokensManager` and `SettingsManager`, are deleted at cutover. Auth and chrome issues on this side are parked until #920 reports (the list is on #920). The first thing #920 tests is whether the add-on can serve the Angular bundle on ngdpbase's session.
 
 Option 3 is now being measured instead of argued: [#920](https://github.com/jwilleke/yourphr/issues/920) runs the Sources slice (mapped below under *One vertical slice*) as an add-on on the branch `yourphr-addon`, time-boxed to one week. Until it reports, no further ngdpbase manager is ported into `src/framework/`. If it says no, option 2 is the fallback.
 
-## The question, stated properly
+### The question, stated properly
 
 Not *"should YourPHR use ngdpbase's ideas"* — `AGENTS.md` already mandates that, below `KIT:END`:
 
@@ -72,7 +134,7 @@ Not *"should YourPHR use ngdpbase's ideas"* — `AGENTS.md` already mandates tha
 
 The open question is the stronger one: __does YourPHR become an ngdpbase deployment__ — cloning the platform and shipping the PHR as an add-on — rather than a separate application that copies its shapes?
 
-## How ngdpbase is actually consumed
+### How ngdpbase is actually consumed
 
 Checked against the two live consumers rather than assumed.
 
@@ -84,7 +146,7 @@ One shape is explicitly ruled out by the governing document, and it is the one p
 
 > `src/plugins/` — JSPWiki-style __markup macros__, not application modules. __"YourPHR as an ngdpbase plugin" is not an available shape — this was checked.__
 
-## Scale
+### Scale
 
 Non-test TypeScript, counted 2026-09-25 (2026-09-21 figure in brackets):
 
@@ -99,7 +161,7 @@ ngdpbase has 36 `*Manager.ts` files (39 files in `src/managers/`); YourPHR has 1
 
 YourPHR grew 2,161 lines in four days while ngdpbase grew 4,397 — worth noting only because it is the shape of the trap this document describes: both ends move, and a comparison written once is wrong within the week.
 
-## What it would buy: the open-issue overlap
+### What it would buy: the open-issue overlap
 
 The strongest argument, and the one missing from [yourphr#697](https://github.com/jwilleke/yourphr/issues/697). These are __open YourPHR issues that ngdpbase core already implements__:
 
@@ -121,7 +183,7 @@ The strongest argument, and the one missing from [yourphr#697](https://github.co
 
 Ten still-open issues, four of them P1, plus one deferred item with no issue of its own — two rows having been answered in YourPHR since. (Originally counted as thirteen, with #695 appearing twice.)
 
-### Two capabilities the table missed, found by needing them
+#### Two capabilities the table missed, found by needing them
 
 Both surfaced on 2026-09-25 from design work that had nothing to do with adoption, which is the more useful way for this list to grow — a capability you reach for is better evidence than one you notice.
 
@@ -132,7 +194,7 @@ Both surfaced on 2026-09-25 from design work that had nothing to do with adoptio
 
 Neither is a row this document could have predicted. Both were found by designing a feature and discovering the design already existed, which is the argument for reading ngdpbase before building rather than after.
 
-### The gap nobody had filed: maintenance mode
+#### The gap nobody had filed: maintenance mode
 
 Worth separating from the rest of the table, because it was found the opposite way round. Every other row is an issue somebody wrote down and ngdpbase happens to answer. This one had __no issue at all__ until [#714](https://github.com/jwilleke/yourphr/issues/714), and it was invisible for the reason missing capabilities usually are: nothing fails, so nothing gets filed. The product simply has no way to say *"this instance is briefly not itself"*, and every operation that needs to say it has quietly worked around the absence.
 
@@ -146,7 +208,7 @@ The general lesson is the one this document keeps running into from the other di
 
 __Document search is a real want, not a wiki artefact.__ [#599](https://github.com/jwilleke/yourphr/issues/599) shipped full-text search over *record text*. Help content is a different corpus needing a different index, and ngdpbase's Lunr `SearchProvider` is exactly that.
 
-## The front end is where it breaks — and how far
+### The front end is where it breaks — and how far
 
 The obvious shape is: ngdpbase serves its EJS chrome, the Angular bundle is served as add-on static assets. __Two front ends. That was rejected on sight, and rightly.__ Two navigations, two session surfaces, two search boxes, a patient who clicks *Help* and lands somewhere that looks like a different product.
 
@@ -160,7 +222,7 @@ Same framework, same minor, same custom-property contract. __One `variables.css`
 
 So the front-end objection is narrower than "two front ends": it is __navigation, session and search__, not styling.
 
-## What it would actually take
+### What it would actually take
 
 In order of size.
 
@@ -171,7 +233,7 @@ In order of size.
 
 __The SSRF boundary is not the blocker it appears to be.__ YourPHR's hard rule is that all outbound network access goes through `src/http`, enforced by `scripts/check-http-boundary.sh`. ngdpbase core has __three__ genuine server-side outbound call sites: `ImportManager.ts:958`, `WikiRoutes.ts:1591`, `WikiRoutes.ts:13094`. The other matches are client-side `fetch()` emitted into browser JS (`CommentsPlugin`, `FootnotesPlugin`) and a plugin lifecycle method that happens to be named `fetch`. Routing three call sites through a guarded fetch is a day, not a programme. __Done upstream since__ — see *What flows the other way*: all three now go through `guardedFetch`, and ngdpbase's ESLint forbids a bare `fetch` outside `src/http`, add-ons included ([ngdpbase#1239](https://github.com/jwilleke/ngdpbase/issues/1239)).
 
-## Encrypted SQLite: the seam exists, the implementation does not
+### Encrypted SQLite: the seam exists, the implementation does not
 
 > __Superseded 2026-10-14.__ ngdpbase's `DatabaseManager` ([ngdpbase#1536](https://github.com/jwilleke/ngdpbase/issues/1536)) now runs SQLCipher and opens a database per add-on; only backup is missing ([ngdpbase#1723](https://github.com/jwilleke/ngdpbase/issues/1723)). See *Where it stands, 2026-10-14*. Kept as the record of how it was sized.
 
@@ -183,15 +245,15 @@ The provider architecture would accept an encrypted SQLite store — that much i
 
 So encrypted SQLite is not something YourPHR __receives__ from ngdpbase. It is the largest single thing YourPHR __contributes__, and it lands in a seam ngdpbase has kept open and never filled. Worth naming plainly, because "the base handles it" is the assumption that would set the schedule wrong.
 
-## Has `src/server.ts` outlived its usefulness?
+### Has `src/server.ts` outlived its usefulness?
 
-### What it actually is
+#### What it actually is
 
 68 route matches across seven labelled sections (the counting method was not recorded; on 2026-09-21 the file has 63 exact `pathname ===` and 12 `pathname.match` routes), and every section is a __product feature__, not infrastructure: the account page ([#596](https://github.com/jwilleke/yourphr/issues/596)), agent tokens ([#695](https://github.com/jwilleke/yourphr/issues/695)), Users ([#604](https://github.com/jwilleke/yourphr/issues/604)), the provider catalog ([#603](https://github.com/jwilleke/yourphr/issues/603)), Sources ([#594](https://github.com/jwilleke/yourphr/issues/594)), the dashboard and record pages ([#595](https://github.com/jwilleke/yourphr/issues/595)), practitioners ([#683](https://github.com/jwilleke/yourphr/issues/683)).
 
 That reframes the rewrite. It is not 1,345 lines of bespoke HTTP machinery to be deleted — it is the product's API surface, which survives the move and is re-expressed as Express handlers. The five gates become middleware. __Mechanical, not conceptual__, and the mechanical part is where the effort is.
 
-### Multi-tenancy is the wrong word, and the distinction matters
+#### Multi-tenancy is the wrong word, and the distinction matters
 
 The hand-rolled server can fairly be called past its usefulness: it was built to prove a spike could serve the Angular contract with no framework, and that is proven. Express plus ngdpbase's middleware would carry the same 68 routes with less bespoke code.
 
@@ -201,11 +263,11 @@ So: __the requirement survives the move; the implementation is negotiable.__ Per
 
 What the move does __not__ hand over is the compartment model itself. The governing document is explicit that ngdpbase's ACL secures *pages*, and *"the `PolicyEvaluator` shape transfers; its subject model does not."* Users, sessions and roles come from the host; deciding whose records these are stays YourPHR's, inside the add-on.
 
-## One vertical slice, mapped: the Sources page
+### One vertical slice, mapped: the Sources page
 
 Taken end to end so the "mostly mechanical" claim above is tested rather than asserted. Source: `src/server.ts:845-941` (was 812-890), `src/app/managers/SourcesManager.ts`.
 
-### What the slice contains
+#### What the slice contains
 
 Ten routes when mapped; twelve now. [#736](https://github.com/jwilleke/yourphr/issues/736) added `GET /api/secure/source/cda-converter/status` and `POST /api/secure/source/manual`, and the upload route reads configuration and parses the multipart body itself — the one exception to *"no domain logic"* below. Of the original ten, eight are one line each, of the identical shape:
 
@@ -220,7 +282,7 @@ Two routes are not plain JSON:
 - __Server-sent events__ — `/api/secure/events/stream`, Go's framing, a 15-second keep-alive, and `unsubscribe()` on client close.
 - __A file download__ — `export`, which sets `application/fhir+json` and a `Content-Disposition` attachment filename and writes the body itself.
 
-### How it maps
+#### How it maps
 
 | YourPHR today | Under ngdpbase | Cost |
 |---|---|---|
@@ -234,7 +296,7 @@ Two routes are not plain JSON:
 
 __The managers do not move.__ `SourcesManager` already takes `ctx` on every call and narrows inside itself. That is the whole point of [#608](https://github.com/jwilleke/yourphr/issues/608), and it is what makes the host swappable.
 
-### Isolation is already in the right place
+#### Isolation is already in the right place
 
 Worth correcting an earlier assumption in this document. Compartmentalisation is __not__ a per-request repository handed down from the server any more. `repoForUser` is gone from `src/` — it survives only in `scripts/provenance-tests.ts`, `scripts/worker-tests.ts` and `scripts/migrate-tests.ts`. The live mechanism is inside the manager:
 
@@ -251,7 +313,7 @@ if (source.userId !== ctx.username) throw new ApiError(403, '…');
 
 This is exactly the governing document's clause (b) — *narrow inside the door, never at the route* — so __isolation survives a host swap untouched__. The server carries none of it.
 
-### The one genuine hazard
+#### The one genuine hazard
 
 > __Resolved upstream 2026-09-02.__ [ngdpbase#1132](https://github.com/jwilleke/ngdpbase/issues/1132) deleted the process-global slot (`285dbad3`), and [ngdpbase#1399](https://github.com/jwilleke/ngdpbase/issues/1399) went further: the caller's context is now mandatory and positional, enforced by a lint, and `AsyncLocalStorage` is gone. The hazard and the `engine.context` lint proposed below no longer apply. Kept as the record of why it was filed.
 
@@ -264,13 +326,13 @@ The governing document already names the second as one of the five mechanisms to
 
 Hosting the PHR inside ngdpbase puts a PHI add-on in the same process as a global context slot the host's own wiki routes use. That is not a blocker — the add-on takes `ctx` explicitly everywhere and need never read `engine.context` — but it must become __a stated rule with a lint behind it__, in the same family as `check-store-boundary.sh` and `check-http-boundary.sh`: *nothing under the add-on reads `engine.context`.* Delete the rule, prove CI goes red.
 
-### What the slice says about the whole
+#### What the slice says about the whole
 
 For this slice the estimate holds: the manager and its provider move unchanged, the routes are a mechanical re-expression, and both non-JSON responses have working precedent in the host. The irreducible work is the __gate layer__ — session and Bearer, the agent-token gate, the demo gate, the access-log gate — which is written once and then serves all seven sections. (~~plus the context lint above~~ — no longer needed; see the resolved note.)
 
 The slice is representative of six of the seven sections. It is __not__ representative of `/api/secure/events/stream`'s subscription model under a multi-worker Express deployment, which is a question this slice raises and does not answer.
 
-## What flows the other way
+### What flows the other way
 
 YourPHR has mechanisms ngdpbase lacks. These are filed against ngdpbase, per the working agreement.
 
@@ -290,24 +352,24 @@ Two defects worth filing upstream, found while reading — the first withdrawn, 
 - ~~__ngdpbase ships two contradictory audit rules.__ Its #1111 and the governing document say audit writes are fire-and-forget with a caught error — *"refusing a credential mint because the log failed is worse."* Its #1121 registry marks `token.mint` __critical tier__, meaning the record must land before the action. Both are in the tree.~~ Withdrawn before filing: `recordAuditEvent` reconciles the two coherently.
 - __Bootstrap is pinned twice__, at 5.3.0 and 5.3.3 in different views, by CDN rather than as a dependency.
 
-## Core improvement or add-on? Sorting what YourPHR would contribute
+### Core improvement or add-on? Sorting what YourPHR would contribute
 
 If the move happens, the same question arrives for every piece: does it improve ngdpbase for everyone, or does it belong to the PHR? Getting this wrong in either direction is expensive — put domain logic in core and every consumer carries it; put a mechanism in the add-on and the next derivative rebuilds it.
 
-### The line is already drawn
+#### The line is already drawn
 
 The governing document's split table settles the principle: core owns *"engine and lifecycle, config system, manager and provider base contracts, auth, policy evaluator, audit, users/roles/sessions, backup and restore contract, share tokens, the permission registry __mechanism__"*; the derivative owns *"its resources and their managers, the permission registry __contents__, its scope resolver, its providers, its UI."*
 
 __Mechanism to core. Contents to the add-on.__
 
-### The project has already tested it, in both directions
+#### The project has already tested it, in both directions
 
 - __Wrongly core, moved out.__ `addons/demo` exists because demo pages went into core `required-pages/` first, which shipped them everywhere: *"The Fairways and the temp build both carry 'Demo Welcome' on disk today, offered as __New__ in their required-pages sync screens. Demo content belongs to the demo."*
 - __Rightly core, flowed down.__ `SimpleRateLimiter` is a core utility, and YourPHR ported it for [#647](https://github.com/jwilleke/yourphr/issues/647).
 
 So the working test is concrete: __would The Fairways or GeoHazardWatch want this?__ If yes, it is core.
 
-### Core improvements
+#### Core improvements
 
 | Contribution | Why core | Size |
 |---|---|---|
@@ -321,17 +383,17 @@ So the working test is concrete: __would The Fairways or GeoHazardWatch want thi
 | Cross-manager backup quiescing | The doc names it as engine-level work | Large |
 | Encryption and egress as binding attributes | The doc names it as a known gap | Medium |
 
-### Add-on
+#### Add-on
 
 The FHIR store and repository; the Records, Sources, Catalog and Glossary managers; classification, IPS composition, medication reconciliation and provenance; SMART, DCR and the relay wiring; the Go migration tooling; the Angular application. Plus two the governing document assigns explicitly: __the compartment model__ (*"the `PolicyEvaluator` shape transfers; its subject model does not"*) and __the nine access-log categories__, which are registry contents rather than mechanism.
 
-### Three worth arguing
+#### Three worth arguing
 
 - __Demo mode.__ ngdpbase answered this for *content*. YourPHR's demo is different in kind: a shared account whose password is __verified, not trusted__, writes refused at the manager door, and the password regenerated when the configured value and the stored hash drift apart. That is mechanism. Split it — core takes *"a shared credential whose writes are refused at the door"*, the add-on keeps which writes and the content.
 - __Rate limiting.__ Already core and already flowed down. But `SimpleRateLimiter`'s own header says *"not suitable for distributed deployments (each pod has its own counter)"*, and YourPHR runs on Kubernetes. The upstream improvement is a shared-store limiter, not a new mechanism.
 - __Agent-token scopes as auditable categories.__ YourPHR's own insight — *a surface that cannot be logged cannot be scoped*. The __derivation__ is core; the category map is add-on.
 
-### Proportion, by line
+#### Proportion, by line
 
 | Destination | Lines | Share |
 |---|---|---|
@@ -347,7 +409,7 @@ Which inverts the usual framing. __YourPHR's contribution upstream is mostly sec
 
 __As of 2026-09-21 most of that list has already flowed up.__ ngdpbase now has the guarded fetch, no global context and default-deny token routing of its own. What is still YourPHR's to contribute: the store-boundary lint ([ngdpbase#1134](https://github.com/jwilleke/ngdpbase/issues/1134), open), an encrypted relational store, audit that refuses to boot by default, and the demo method gate.
 
-### Filed upstream so far
+#### Filed upstream so far
 
 | Issue | What | Grade |
 |---|---|---|
@@ -360,7 +422,7 @@ A fourth was drafted and __withdrawn before filing__. The claim was that ngdpbas
 
 The real gap that resembled it was __ours__: `AgentTokensManager` in this repo emitted no audit event on mint, renew or revoke — the defect ngdpbase fixed in its #1111. __Closed 2026-09-02__ by `927110700` ([#698](https://github.com/jwilleke/yourphr/issues/698)): `recordLifecycle()` now records all three. Because YourPHR's log is a day-folded counter, they land as counts under pseudo-categories, not as individual events — see D19 below.
 
-### `WikiEngine.setContext()` is dead surface, not a refactor
+#### `WikiEngine.setContext()` is dead surface, not a refactor
 
 > __Resolved 2026-09-02__ — deleted upstream in `285dbad3` ([ngdpbase#1132](https://github.com/jwilleke/ngdpbase/issues/1132)). Kept as the record of how it was sized.
 
@@ -378,7 +440,7 @@ Retiring it is deleting one field, two methods and a constructor parameter — a
 
 __Filed upstream as [ngdpbase#1132](https://github.com/jwilleke/ngdpbase/issues/1132)__ (2026-08-31), as the first of the contributions in this section. It stands on its own merits and needs none of the platform decision.
 
-## Where the governing document already stands
+### Where the governing document already stands
 
 Relevant because a divergence is only legitimate if that document names it:
 
@@ -386,13 +448,13 @@ Relevant because a divergence is only legitimate if that document names it:
 - __Extraction has barely begun.__ Exactly one file in ngdpbase carries an extraction note — `AgentTokenManager.ts`, which parameterises `CONFIG_PREFIX` and `TOKEN_PREFIX` for *"when this class moves into the shared framework package."*
 - __What does not transfer__ is scoped to the __records domain__: page-oriented ACL cannot secure FHIR compartments, and `PageManager` / `RenderingManager` / `TemplateManager` have no PHR analogue *for records*. That table has been over-applied to the whole product — help pages and themes are exactly where those managers do have an analogue.
 
-## Security posture — ngdpbase settled it in the open, and YourPHR has most of the gaps
+### Security posture — ngdpbase settled it in the open, and YourPHR has most of the gaps
 
 > __Added 2026-09-02__, after reading [`docs/security-posture.md`](https://github.com/jwilleke/ngdpbase/blob/master/docs/security-posture.md) in ngdpbase against this tree. Twenty-three numbered decisions, D1–D23, each naming the issue that carries it (D24, on boot paths, and guiding principles P1–P2 have been added since); [ngdpbase#1137](https://github.com/jwilleke/ngdpbase/issues/1137) closed 2026-09-02 with all twelve sub-issues landed. This is __not a plan__ — `ngdpbase.security.posture` and `ngdpbase.audit.chain-witness.*` are shipped keys in `config/app-default-config.json`, and `scripts/verify-audit-chain.ts` exists. It is a decision record for something that runs.
 
 Worth reading here for a reason this document keeps arriving at: a decision record is portable without the platform. Every one of these is adoptable as a __rule__ whether or not the deciding question below ever resolves — which makes it the clearest test yet of what "default to ngdpbase, improvements are filed" actually buys.
 
-### The state of play, decision by decision
+#### The state of play, decision by decision
 
 | ngdpbase decision | YourPHR today |
 |---|---|
@@ -412,7 +474,7 @@ Worth reading here for a reason this document keeps arriving at: a decision reco
 | D22 — audit storage isolation is operator advice, with its limits stated | `yourphr.audit.provider: "sqlite"` — the log lives in the same database file as the PHI |
 | D23 — the witness: five ways it looks like it is working when it is not | No witness, no chain to witness |
 
-### D6 answers one third of [#624](https://github.com/jwilleke/yourphr/issues/624), from a direction it had not considered
+#### D6 answers one third of [#624](https://github.com/jwilleke/yourphr/issues/624), from a direction it had not considered
 
 [#624](https://github.com/jwilleke/yourphr/issues/624) says the bootstrap flag is doing three jobs — raw-env, restart-required, secret. D6 is the finished argument for the second of them: __the ingredient declares whether it needs a restart__, maintained by hand and updated in the same commit as any consumer that changes when it reads.
 
@@ -420,7 +482,7 @@ The valuable half is the __rejection__. Comparing the running process against th
 
 The shipped encoding is worth copying too, because the obvious one is wrong: groups holding arrays of key names break per-item editing, since array merge replaces wholesale. ngdpbase ships a __map keyed by the ingredient__, each entry carrying `group` and `restart`, with removal expressed as `null`.
 
-### D9–D12 are the worked answer to [#714](https://github.com/jwilleke/yourphr/issues/714)
+#### D9–D12 are the worked answer to [#714](https://github.com/jwilleke/yourphr/issues/714)
 
 [#714](https://github.com/jwilleke/yourphr/issues/714) — *"no way to say the instance is briefly not itself"* — was filed from the capability side. D9–D12 arrives at the same mechanism from the __failure__ side, and lands somewhere more useful:
 
@@ -432,7 +494,7 @@ One caution before copying: ngdpbase had to land [ngdpbase#1147](https://github.
 
 [#714](https://github.com/jwilleke/yourphr/issues/714) is currently P2. Nothing above changes that on its own, but it is a __dependency__ of any survivable-configuration-failure work, which is worth knowing before something else is scheduled that assumes one exists.
 
-### D18 is a live disclosure question here, not a hypothetical
+#### D18 is a live disclosure question here, not a hypothetical
 
 D18 requires `admin-system` to __view__ the posture section, departing from the usual view-with-`admin-read` pattern, and the concrete case it closes is __exactly YourPHR's shape__: a `demo-admin` role holding `admin-read` so a public demo can show every admin screen to visitors would, under the usual pattern, publish the instance's throttle thresholds, session flags and egress ranges to anonymous users.
 
@@ -440,7 +502,7 @@ YourPHR has a public demo instance and a read-only demo admin ([#644](https://gi
 
 ~~__Worth checking before adopting anything else from this document.__ It is a defect if it is true, and it is cheap to establish.~~ __Checked 2026-09-21: it is true, and live.__ The `demo-admin` role holds `admin-read` only (`config/app-default-config.json`); `/api/secure/admin/*` requires only `admin-read` (`src/server.ts:1042`), and `SettingsManager.configSnapshot()` requires only `admin-read` and masks only `secret-keys`. `DemoManager.refuseUnlessRead` blocks writes and the reveal route, not the snapshot. demo.yourphr.org has `demo.admin.enabled: true`, so any visitor can read `auth.throttle.*`, `auth.rate-limit.*`, `auth.session.*`, `auth.trusted-proxies` and `web.secure-cookies`. Filed as [#751](https://github.com/jwilleke/yourphr/issues/751) (P1: the demo's values are the public defaults; the exposure is an operator who tunes them and enables the tour).
 
-### D19, D21 and D23 are where the distance is largest — and larger than this document has been saying
+#### D19, D21 and D23 are where the distance is largest — and larger than this document has been saying
 
 YourPHR's `AuditManager` is not a general audit log. It is a __record-access counter__:
 
@@ -459,7 +521,7 @@ __A correction to this document.__ *"Audit refuses to boot"* is listed above und
 
 D23 is the most immediately useful part of the whole document regardless of any of this, because it is written from configuring the mechanism on a live instance and lists five ways a witness looks like it is working when it is not — including a witness that silently lands on the same volume as the log, which is __strictly worse than no witness at all__ since it converts an honest `unknown` into a confident `intact` backed by nothing.
 
-### D15's ingredient survey, done for this tree
+#### D15's ingredient survey, done for this tree
 
 Applying D15's two exclusion rules — never a secret, never plumbing — to `config/app-default-config.json`:
 
@@ -482,48 +544,48 @@ Two observations the survey produced, which is the point of doing one:
 
 The cost of D16's map is lower here than it looks, because __this config file already carries three curated key lists__ — `yourphr.public` (an allow-list, because a mistake exposes a value to the internet), `yourphr.config.secret-keys` (a deny-list, because a mistake shows a value to an already-authenticated admin) and `yourphr.config.env-keys` (a map of key to owning variable). A fourth curated list in the same file is the mechanism it already uses three times, not a new idea to introduce.
 
-### D17 is a second required-pages dependency
+#### D17 is a second required-pages dependency
 
 The `baseline`/`hardened`/`regulated` recommendations ship as __required pages rendered inside the instance__, one click from the section that edits the posture, each carrying a disclaimer that the operator alone is accountable for their configuration.
 
 That places them on the same side of the deciding question as help. This document already found one shipped page answering a YourPHR gap — *"Using Tokens"*, which is the minting-screen criterion of [#695](https://github.com/jwilleke/yourphr/issues/695), now carried by [#719](https://github.com/jwilleke/yourphr/issues/719). The posture recommendations are the second, and the pattern is now the argument rather than a coincidence: capability ngdpbase ships as __content__ costs YourPHR a page system it does not have.
 
-### D20 matters more here than it does upstream
+#### D20 matters more here than it does upstream
 
 *The instance never scores itself against a recommended posture.* No drift warning, no compliance percentage, no badge.
 
 ngdpbase's reason is that the thing being compared against does not exist — no authoritative value set, no two auditors agreeing on the same instance. __That reason is stronger for a PHR, and so is the pressure to ignore it.__ A personal health record is precisely where somebody will eventually ask for a `hipaa` profile value or a compliance score on the admin dashboard, and D2's objection applies exactly: naming a posture is a claim the label itself cannot establish. Adopting D20 as a standing rule costs nothing today and is much harder to adopt after the first such request has been agreed to.
 
-### What this changes about the deciding question
+#### What this changes about the deciding question
 
 __Nothing, and that is the finding.__ Every decision above is portable as a decision without adopting the platform, which is what a decision record is for. What is not portable by reading is the code behind D19, D21 and D23 — the chain, the witness, the verifier — and the maintenance-mode boot path behind D9–D12. Those are `src/framework`-shaped, which is the 34% column in the proportion table above, and they are reachable by the standing policy: copy the pattern, file the improvement.
 
 The one exception is D17, which is required-pages and therefore lands on the far side of the same question help does.
 
-## Help as a real document system — the `required-pages` mechanism
+### Help as a real document system — the `required-pages` mechanism
 
 __Decided in session, 2026-08-30: help should be a real document system__ — operator-editable, versioned, searchable. This is what ngdpbase already runs, and what it costs.
 
-### How it works
+#### How it works
 
 - `required-pages/` holds __134 UUID-named Markdown files committed to the repo__ (130 when first counted) and shipped in the release image. Frontmatter carries `title`, `uuid`, `slug`, `system-category` (`documentation` on 113, `system` on 21), `user-keywords` and `author: system`.
 - On install they __seed__ the pages directory; `required-pages/` is only ever a source ([ngdpbase#1371](https://github.com/jwilleke/ngdpbase/issues/1371)). Since [ngdpbase#1411](https://github.com/jwilleke/ngdpbase/issues/1411) shipped pages are __editable by administrators only__ — no longer an ordinary page edit — which is what a help system wants. A site can also decline a shipped page ([ngdpbase#1412](https://github.com/jwilleke/ngdpbase/issues/1412)).
 - Once seeded they are __ordinary pages__: versioned by `VersioningFileProvider`, indexed by Lunr, themed, ACL'd, and queryable from markup — `[{Search system-category='documentation'}]`.
 - Shipped text is application-neutral. Pages use `[{$applicationname}]`, so a derivative's docs name the derivative without a fork.
 
-### The part that is genuinely hard, and already solved
+#### The part that is genuinely hard, and already solved
 
 `/admin/required-pages` is a __sync and diff screen__, not a reseed button. It compares the shipped source against the live pages, counts what is new or modified, marks each `userModified`, warns when an operator edits a page whose source lives in GitHub, and raises a notification — *"X was edited by Y. Visit Required Pages Sync to review."*
 
 That is the three-way problem — shipped docs, operator edits, a newer release — handled as a review rather than a silent clobber. It is the reason this is worth adopting rather than approximating.
 
-### It is not a portable module
+#### It is not a portable module
 
 Getting this without ngdpbase means rebuilding `PageManager`, a versioning storage provider, Lunr indexing, the rendering pipeline (markdown plus plugin directives), page ACL, the sync/diff admin screen and the notification that drives it. __That is building a wiki.__
 
 So *"help should be a real document system"* is a decision to __run a wiki__. The only open question is whose — and writing a second one is precisely what the governing document exists to prevent.
 
-### The shape that keeps one patient-facing front end
+#### The shape that keeps one patient-facing front end
 
 The earlier objection was two front ends. It is answerable, because __ngdpbase exposes pages over a JSON API__:
 
@@ -543,22 +605,22 @@ The admin trade is favourable rather than a loss: YourPHR has 4 admin pages ([#6
 
 One shipped page is already the answer to an open YourPHR gap: `required-pages/` contains __"Using Tokens"__, end-user documentation for agent tokens — which is [#695](https://github.com/jwilleke/yourphr/issues/695)'s unmet criterion that *"the minting screen states what leaves"* — #695 closed without it, and the screen is now [#719](https://github.com/jwilleke/yourphr/issues/719).
 
-### What remains genuinely expensive
+#### What remains genuinely expensive
 
 Unchanged by any of the above: the `src/server.ts` rewrite under *What it would actually take* is the programme. Everything else is smaller than it first appeared.
 
-### Rejected alternative
+#### Rejected alternative
 
 __Run ngdpbase separately as a docs host.__ Two deployments, two URLs, two logins for the operator, and the help content cannot be themed or searched with the product. Worse than either real option.
 
-## The deciding question, now answered
+### The deciding question, now answered
 
 __Does help want to be a real document system__ — operator-editable, versioned, searchable, changeable without a release — __or is markdown shipped with the code enough?__
 
 - If shipped-static is enough, [#632](https://github.com/jwilleke/yourphr/issues/632)'s own title is the answer: markdown in the repo, served over the API, rendered by Angular. Days of work, one front end, no platform adoption. The five backend wins above stay reachable by copying managers, which is the standing policy.
 - If it wants to be a real document system, that is the one capability with no cheap substitute, and the platform question is worth reopening properly.
 
-## Corrections made while writing this
+### Corrections made while writing this
 
 Recorded because each was asserted confidently before being checked, and the pattern is the point.
 
@@ -580,7 +642,7 @@ Recorded because each was asserted confidently before being checked, and the pat
 | The Angular app has 37 pages | 41 page components, both then and now |
 | The maintenance toggle's restart defect is worth filing upstream | ngdpbase#1147 had fixed it the day before this section was amended |
 
-## Open, not decided
+### Open, not decided
 
 - The deciding question above — now being measured in [#920](https://github.com/jwilleke/yourphr/issues/920) rather than argued.
 - Whether the six audit gaps (see the session that produced this) are filed against YourPHR's own `AuditManager` or become *"adopt ngdpbase's"* — they are written differently depending on this document's outcome, so they are held. One of them, agent-token lifecycle audit, closed in `927110700`.
