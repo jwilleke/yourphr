@@ -148,7 +148,12 @@ __CPT__: codes for procedures and services, used for billing.
 
 __CVX__: codes for vaccines.
 
-__NPI (National Provider Identifier)__: a unique number for each US doctor and organization.
+__NPI (National Provider Identifier)__: a 10-digit number that identifies a US healthcare provider for life, the same everywhere they work. There are two kinds:
+
+- __Type 1 NPI__: a *person*, such as a doctor, nurse practitioner, therapist, or pharmacist. It follows them if they change jobs or move states.
+- __Type 2 NPI__: an *organization*, such as a hospital, clinic, group practice, lab, or pharmacy. A large health system can have several, one for each part that bills separately.
+
+A doctor working at a clinic has their own Type 1 NPI, and the clinic has its Type 2. A record or claim often shows both: who treated you, and where. Anyone can look a number up in the government's public NPI Registry. Unlike patient IDs, an NPI really does mean the same provider wherever you see it.
 
 __MedlinePlus__: the US National Library of Medicine's free health encyclopedia. YourPHR uses it to explain codes in plain language.
 
