@@ -69,6 +69,7 @@
               <th>Username</th>
               <th>Email</th>
               <th>Role</th>
+              <th>Test account</th>
               <!-- #512. "Never" rather than blank: an account nobody has ever used is a fact worth
               stating, and it is what an admin comes to this page to find out. -->
               <th>Last sign-in</th>
@@ -89,6 +90,8 @@
                     {{ user.role }}
                   </span>
                 </td>
+                <!-- yourphr#919: sandbox providers only, never real data. -->
+                <td>@if (user.is_test) { <span class="text-bg-info badge">Test</span> } @else { — }</td>
                 <td>{{ user.last_login ? (user.last_login | date:'short') : 'Never' }}</td>
                 <td>{{ user.login_count || 0 }}</td>
                 <td class="text-end">
@@ -108,6 +111,13 @@
                       }
                       Reset password
                     </button>
+                    <button type="button" class="btn btn-outline-secondary"
+                      [disabled]="markingUserId === user.id"
+                      [title]="(user.is_test ? 'Make ' + user.username + ' a real account' : 'Make ' + user.username + ' a test account')"
+                      (click)="toggleTestAccount(user)">
+                      <i class="fas fa-flask mg-r-5"></i>
+                      {{ user.is_test ? 'Make real account' : 'Make test account' }}
+                    </button>
                   </div>
                 </td>
               </tr>
@@ -115,7 +125,7 @@
             <!-- An empty table with headers reads as "broken"; this reads as "nothing matched". -->
             @if (filteredUsers.length === 0) {
               <tr>
-                <td colspan="7" class="text-center tx-gray-500 py-3">
+                <td colspan="8" class="text-center tx-gray-500 py-3">
                   {{ users.length === 0 ? 'No users on this instance yet.' : 'No users match the current filters.' }}
                 </td>
               </tr>

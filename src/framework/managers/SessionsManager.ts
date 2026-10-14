@@ -532,7 +532,9 @@ export class SessionsManager extends BaseManager {
     // same way it does everywhere else. Reading it raw would hand ApiContext a name the policy does
     // not know, and the caller would get NO permissions — not even to read their own records.
     const role = (await this.engine.managers.users.roleOf(claims.u)) ?? stored.role;
-    return { ok: true, principal: { username: claims.u, role, tokenGeneration: claims.g }, ...(renewed ? { renewed } : {}) };
+    // Read live, like the role: unmarking a test account takes effect on the next request (yourphr#919).
+    const isTest = stored.isTest === true;
+    return { ok: true, principal: { username: claims.u, role, tokenGeneration: claims.g, isTest }, ...(renewed ? { renewed } : {}) };
   }
 
   /** A fresh session for an account that just proved itself another way (after a password change). */

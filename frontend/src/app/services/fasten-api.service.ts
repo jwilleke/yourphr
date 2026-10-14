@@ -544,14 +544,6 @@ export class FastenApiService {
       .pipe(map((response: ResponseWrapper) => (response.data || []) as ConnectableProvider[]));
   }
 
-  // listSandboxProviders returns the admin-only sandbox catalog entries as a credential-free picker
-  // (id + display + logo only). Used by the /sandbox admin page for one-click connect — the sandbox
-  // client_id/secret are supplied server-side (env), never typed or returned to the browser (#291).
-  listSandboxProviders(): Observable<ConnectableProvider[]> {
-    return this._httpClient.get<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/provider-catalog/sandbox`)
-      .pipe(map((response: ResponseWrapper) => (response.data || []) as ConnectableProvider[]));
-  }
-
   // authorizeSourceFromCatalog builds the PKCE authorize URL for a catalog entry. The request carries
   // NOTHING — the backend fills client_id/scopes/FHIR base from the catalog and derives redirect_uri
   // from this deployment's relay config (#399); the effective value comes back in the response.
@@ -1043,6 +1035,12 @@ export class FastenApiService {
           return {}
         })
       );
+  }
+
+  /** yourphr#919: an admin marks or unmarks a test account. */
+  setUserTestAccount(username: string, isTest: boolean): Observable<{username: string, is_test: boolean}> {
+    return this._httpClient.put<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/users/${encodeURIComponent(username)}/test`, {is_test: isTest})
+      .pipe(map((response: ResponseWrapper) => response.data as {username: string, is_test: boolean}));
   }
 
   getAllUsers(): Observable<User[]> {

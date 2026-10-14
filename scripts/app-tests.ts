@@ -215,19 +215,41 @@ async function main(): Promise<void> {
   const updated = await catJson(`/api/secure/provider-catalog/${fakeId}`, adminToken, { method: 'PUT', body: JSON.stringify({ display: 'Fake Regional (Sandbox)', environment: 'sandbox', api_endpoint_base_url: fakeBase, scopes: 'launch/patient patient/Condition.read', client_id: 'fake-cid', client_secret: '', enabled: true, consent_policy: 'required' }) });
   const fetched = await catJson(`/api/secure/provider-catalog/${fakeId}`, adminToken);
   check('update: an empty client_secret keeps the stored one; the entry reads back', updated.status === 200 && fetched.body.data.has_client_secret === true && fetched.body.data.scopes === 'launch/patient patient/Condition.read' && fetched.body.data.consent_policy === 'required');
-  const sandboxList = await catJson('/api/secure/provider-catalog/sandbox', adminToken);
-  const connectableNow = (await (await fetch(`${base}/api/secure/provider-catalog/connectable`, authed(aliceToken))).json()) as { data: { id: string; display: string; requires_user_consent: boolean; pre_connect_profile: string; medicare_class: boolean }[] };
-  check('the sandbox list is the enabled sandbox entries in ConnectableProvider shape with Go\'s policy; production stays in connectable',
-    sandboxList.body.data.map((e: { display: string }) => e.display).join('|') === 'Fake Regional (Sandbox)' // the seeded sandbox is not enabled
-      && sandboxList.body.data.find((e: { id: string }) => e.id === fakeId)?.requires_user_consent === true && sandboxList.body.data.find((e: { id: string }) => e.id === fakeId)?.pre_connect_profile === 'none'
-      && connectableNow.data.length === 1 && connectableNow.data[0]?.display === 'Seeded Production');
-  const noRedirect = await catJson(`/api/secure/provider-catalog/${fakeId}/authorize`, aliceToken, { method: 'POST', body: '{}' });
-  const authz = await catJson(`/api/secure/provider-catalog/${fakeId}/authorize`, aliceToken, { method: 'POST', body: JSON.stringify({ redirect_uri: 'http://localhost/sources/callback' }) });
+  // yourphr#919: a test account is made over the wire by the admin, and sees the sandbox entries
+  // where everyone else sees the production ones. The old admin-only sandbox list is gone.
+  const tessMade = await catJson('/api/secure/users', adminToken, { method: 'POST', body: JSON.stringify({ username: 'tess', password: 'tess-long-enough-password', is_test: true }) });
+  const tessToken = ((await (await signIn('tess', 'tess-long-enough-password')).json()) as { data: string }).data;
+  const meOf = async (token: string) => ((await (await fetch(`${base}/api/secure/account/me`, authed(token))).json()) as { data: { test_account: unknown } }).data;
+  const flagListed = (await catJson('/api/secure/users', adminToken)).body.data as { username: string; is_test: boolean }[];
+  check('the admin creates a test account; /account/me says test_account true for it and false (never absent) for a real one; the Users list shows it (yourphr#919)',
+    tessMade.status === 200 && tessMade.body.data.is_test === true && (await meOf(tessToken)).test_account === true && (await meOf(aliceToken)).test_account === false
+      && flagListed.find((u) => u.username === 'tess')?.is_test === true && flagListed.find((u) => u.username === 'alice')?.is_test === false);
+  const markBad = await catJson('/api/secure/users/alice/test', adminToken, { method: 'PUT', body: JSON.stringify({ is_test: 'yes' }) });
+  const markByMember = await catJson('/api/secure/users/alice/test', aliceToken, { method: 'PUT', body: JSON.stringify({ is_test: true }) });
+  const markOn = await catJson('/api/secure/users/alice/test', adminToken, { method: 'PUT', body: JSON.stringify({ is_test: true }) });
+  const aliceWhileTest = (await meOf(aliceToken)).test_account;
+  const markOff = await catJson('/api/secure/users/alice/test', adminToken, { method: 'PUT', body: JSON.stringify({ is_test: false }) });
+  check('the admin marks and unmarks an account, effective on its next request; a boolean is required; a member may not (yourphr#919)',
+    markBad.status === 400 && markByMember.status === 401 && markOn.status === 200 && aliceWhileTest === true && markOff.status === 200 && (await meOf(aliceToken)).test_account === false);
+  type Connectable = { data: { id: string; display: string; requires_user_consent: boolean; pre_connect_profile: string; medicare_class: boolean }[] };
+  const connectableNow = (await (await fetch(`${base}/api/secure/provider-catalog/connectable`, authed(aliceToken))).json()) as Connectable;
+  const connectableTest = (await (await fetch(`${base}/api/secure/provider-catalog/connectable`, authed(tessToken))).json()) as Connectable;
+  const connectableAdmin = (await (await fetch(`${base}/api/secure/provider-catalog/connectable`, authed(adminToken))).json()) as Connectable;
+  const sandboxGone = await fetch(`${base}/api/secure/provider-catalog/sandbox`, authed(adminToken));
+  check('connectable: a test account gets the enabled sandbox entries in ConnectableProvider shape with Go\'s policy; a real account, the admin included, the production ones (yourphr#919)',
+    connectableTest.data.map((e) => e.display).join('|') === 'Fake Regional (Sandbox)' // the seeded sandbox is not enabled
+      && connectableTest.data.find((e) => e.id === fakeId)?.requires_user_consent === true && connectableTest.data.find((e) => e.id === fakeId)?.pre_connect_profile === 'none'
+      && connectableNow.data.length === 1 && connectableNow.data[0]?.display === 'Seeded Production'
+      && connectableAdmin.data.map((e) => e.display).join('|') === 'Seeded Production' && sandboxGone.status !== 200);
+  const wrongKind = await catJson(`/api/secure/provider-catalog/${fakeId}/authorize`, aliceToken, { method: 'POST', body: JSON.stringify({ redirect_uri: 'http://localhost/sources/callback' }) });
+  check('a real account asking to connect a sandbox entry is refused by the server, not only hidden (yourphr#919)', wrongKind.status === 403 && wrongKind.body.error_code === 'test_account_mismatch');
+  const noRedirect = await catJson(`/api/secure/provider-catalog/${fakeId}/authorize`, tessToken, { method: 'POST', body: '{}' });
+  const authz = await catJson(`/api/secure/provider-catalog/${fakeId}/authorize`, tessToken, { method: 'POST', body: JSON.stringify({ redirect_uri: 'http://localhost/sources/callback' }) });
   const authzUrl = new URL(authz.body.authorize_url ?? 'http://x/');
   check('authorize: no relay here — a redirect_uri is required (501 says so); with one, a PKCE S256 authorize URL, state and verifier come back',
     noRedirect.status === 501 && authz.status === 200 && authzUrl.pathname === '/authorize' && authzUrl.searchParams.get('code_challenge_method') === 'S256' && authzUrl.searchParams.get('state') === authz.body.state
       && authzUrl.searchParams.get('client_id') === 'fake-cid' && (authz.body.code_verifier ?? '').length > 20 && authz.body.redirect_uri === 'http://localhost/sources/callback');
-  await app.users.createUser(sys, 'carol', 'carols-long-enough-password');
+  await app.users.createUser(sys, 'carol', 'carols-long-enough-password', 'user', { isTest: true });
   const carolToken = ((await (await signIn('carol', 'carols-long-enough-password')).json()) as { data: string }).data;
   const consentGate = await catJson(`/api/secure/provider-catalog/${fakeId}/connect`, carolToken, { method: 'POST', body: JSON.stringify({ code: 'good-code', state: authz.body.state, code_verifier: authz.body.code_verifier, redirect_uri: authz.body.redirect_uri }) });
   check('connect refuses until the legal consent is accepted (Go\'s gate, with its error_code)', consentGate.status === 403 && consentGate.body.error_code === 'legal_consent_required');
@@ -282,10 +304,10 @@ async function main(): Promise<void> {
   // yourphr#496: the demo account is SHARED, so a visitor connecting their own real provider would
   // put their records in front of the next visitor. Refused at the first step, and at the door.
   const demoAuthorize = await catJson(`/api/secure/provider-catalog/${fakeId}/authorize`, demoToken, { method: 'POST', body: JSON.stringify({ redirect_uri: 'http://localhost/sources/callback' }) });
-  const aliceAuthorizeStill = await catJson(`/api/secure/provider-catalog/${fakeId}/authorize`, aliceToken, { method: 'POST', body: JSON.stringify({ redirect_uri: 'http://localhost/sources/callback' }) });
+  const otherAuthorizeStill = await catJson(`/api/secure/provider-catalog/${fakeId}/authorize`, tessToken, /* a test account: the entry is a sandbox (yourphr#919) */ { method: 'POST', body: JSON.stringify({ redirect_uri: 'http://localhost/sources/callback' }) });
   check('a demo session cannot connect a provider (403 with Go\'s code), while another account on the same demo instance still can',
-    demoAuthorize.status === 403 && (demoAuthorize.body as { code?: string }).code === 'demo_account_restricted' && aliceAuthorizeStill.status === 200,
-    `demo ${demoAuthorize.status}, alice ${aliceAuthorizeStill.status}`);
+    demoAuthorize.status === 403 && (demoAuthorize.body as { code?: string }).code === 'demo_account_restricted' && otherAuthorizeStill.status === 200,
+    `demo ${demoAuthorize.status}, alice ${otherAuthorizeStill.status}`);
   let addRefused = 0;
   try {
     await app.engine.managers.sources.add(ApiContext.from({ username: 'demo', role: 'user' }, app.engine), {

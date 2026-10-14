@@ -37,8 +37,8 @@ describe('MedicalSourcesComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  // The bring-your-own SMART connect flow moved to the admin-only /sandbox page
-  // (SandboxComponent) — its tests live in sandbox.component.spec.ts.
+  // Sandbox connecting is this page too, for a test account (yourphr#919): the server decides
+  // which entries /connectable returns, so there is nothing sandbox-specific to test here.
 
   // Provider catalog picker (#306): on init it loads the credential-free connectable list and renders
   // a button per enabled provider.

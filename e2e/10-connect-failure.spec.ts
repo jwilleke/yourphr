@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
-import { BASE, adminPassword, login, trackPageErrors } from './helpers.js';
+import { BASE, login, trackPageErrors } from './helpers.js';
+import { E2E_TEST_PASS, E2E_TEST_USER } from './constants.js';
 
 // yourphr#685. The gap this covers is not "an endpoint 404s" — it is that the record of a failed
 // connection was the thing going missing, and an empty job history reads exactly like a healthy
@@ -8,12 +9,17 @@ import { BASE, adminPassword, login, trackPageErrors } from './helpers.js';
 // check. Proving the endpoint answers 200 would prove nothing about that.
 test('a connection that fails is written down, and shows on Background Jobs', async ({ page }) => {
   const errors = trackPageErrors(page);
-  // The sandbox page is the admin/developer connect tool, so this journey is the admin's.
-  await login(page, 'admin', adminPassword());
+  // The catalog's one entry is a sandbox, so this journey is a test account's (yourphr#919): it
+  // connects from Sources like anyone, and sees the sandbox where a real account sees production.
+  await login(page, E2E_TEST_USER, E2E_TEST_PASS);
 
-  await page.goto(`${BASE}/admin/sandbox`);
-  await expect(page.getByRole('button', { name: 'Connect' }).first()).toBeVisible({ timeout: 20_000 });
-  await page.getByRole('button', { name: 'Connect' }).first().click();
+  await page.goto(`${BASE}/sources`);
+  const provider = page.getByRole('button', { name: /Fake Regional Health/ });
+  await expect(provider).toBeVisible({ timeout: 20_000 });
+  await provider.click();
+  // The pre-connect explanation, when the entry's profile has one; Continue starts the connect.
+  const proceed = page.locator('.modal-footer .btn-az-primary');
+  if (await proceed.isVisible({ timeout: 3_000 }).catch(() => false)) await proceed.click();
 
   // Told, in words, that it failed — this part already worked.
   const failure = page.locator('.alert-danger, .alert-warning').first();

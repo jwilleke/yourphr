@@ -62,7 +62,6 @@ const EXEMPT: Record<string, string> = {
   '/api/secure/records/review': 'the caller\'s own records held for review before they join the chart',
   '/api/secure/admin/catalog': 'admin: the provider catalog',
   '/api/secure/provider-catalog/connectable': 'which providers the caller may connect to',
-  '/api/secure/provider-catalog/sandbox': 'the sandbox providers offered for testing',
   '/api/secure/source/cda-converter/status': 'whether the C-CDA converter is reachable',
   '/api/secure/events/stream': 'sync progress events — outcomes and counts, not records',
   '/api/secure/glossary/code': 'a plain-language explanation of a code: a public dictionary, not the caller\'s record',

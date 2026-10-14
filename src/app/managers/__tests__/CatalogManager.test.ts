@@ -108,7 +108,6 @@ describe('CatalogManager — the admin curates', () => {
   it('management is the admin\'s (or a named system principal\'s); a member is refused with Go\'s message', async () => {
     await expect(catalog.list(alice)).rejects.toMatchObject({ status: 403, message: 'admin role required to manage the provider catalog' });
     await expect(catalog.create(alice, {})).rejects.toMatchObject({ status: 403 });
-    await expect(catalog.sandbox(alice)).rejects.toMatchObject({ status: 403, message: 'admin role required' });
     expect((await catalog.createEntry(seed, SANDBOX)).id).toBe(1);
     expect(await catalog.entries(seed)).toHaveLength(1);
   });
@@ -140,11 +139,14 @@ describe('CatalogManager — the admin curates', () => {
     expect(await catalog.entries(admin)).toEqual([]);
   });
 
-  it('removes by public id; sandboxes list for the admin only, connectable for members is enabled PRODUCTION only', async () => {
+  it('removes by public id; connectable is enabled PRODUCTION for a real account and enabled SANDBOX for a test account (yourphr#919)', async () => {
     await catalog.createEntry(admin, PROD);
     await catalog.createEntry(admin, SANDBOX);
     await catalog.createEntry(admin, { ...PROD, display: 'Off', enabled: false });
-    expect((await catalog.sandbox(admin)).map((e) => e['display'])).toEqual(['Sandbox']);
+    const tester = ApiContext.from({ username: 'tester', role: 'user', isTest: true }, engine);
+    expect((await catalog.connectable(tester)).map((e) => e['display'])).toEqual(['Sandbox']);
+    // The admin is a real account like any other: no sandbox from it.
+    expect((await catalog.connectable(admin)).map((e) => e['display'])).toEqual(['Big Hospital']);
     expect((await catalog.connectable(alice)).map((e) => e['display'])).toEqual(['Big Hospital']);
     expect((await catalog.connectable(alice))[0]).toMatchObject({ id: '1', requires_user_consent: true, pre_connect_profile: 'generic', medicare_class: false });
     expect(await catalog.remove(admin, '2')).toBe(true);
@@ -221,6 +223,18 @@ describe('CatalogManager — a member connects', () => {
   beforeEach(async () => {
     await catalog.createEntry(admin, { ...PROD, authorizeUrlOverride: 'https://override.example.org/authorize' });
     await catalog.createEntry(admin, { ...PROD, display: 'Off', enabled: false });
+  });
+
+  it('the wrong kind of provider is refused at both steps, whichever way round (yourphr#919)', async () => {
+    await catalog.createEntry(admin, SANDBOX); // id 3
+    const tester = ApiContext.from({ username: 'tester', role: 'user', isTest: true }, engine);
+    await users.setConsent(alice, '2026-01-01T00:00:00Z');
+    for (const [ctx, id] of [[tester, '1'], [alice, '3'], [admin, '3']] as const) {
+      await expect(catalog.authorize(ctx, id, { redirect_uri: 'https://app/cb' })).rejects.toMatchObject({ status: 403, extra: { error_code: 'test_account_mismatch' } });
+      await expect(catalog.connect(ctx, id, { code_verifier: 'v', code: 'c', redirect_uri: 'https://app/cb' })).rejects.toMatchObject({ status: 403, extra: { error_code: 'test_account_mismatch' } });
+    }
+    expect(await sourcesProvider.list()).toHaveLength(0);
+    expect(await catalog.authorize(tester, '3', { redirect_uri: 'https://app/cb' })).toMatchObject({ redirect_uri: 'https://app/cb' });
   });
 
   it('authorize needs an enabled entry and a redirect_uri (no relay here), then answers Go\'s shape from the client', async () => {

@@ -105,7 +105,7 @@ describe('AdminDashboardComponent', () => {
   it('renders working router links for every admin card', () => {
     const fixture = setup(READY_RELAY);
     const hrefs = Array.from(fixture.nativeElement.querySelectorAll('a[href]')).map((a: any) => a.getAttribute('href'));
-    expect(hrefs).toContain('/admin/sandbox');
+    expect(hrefs).not.toContain('/admin/sandbox'); // yourphr#919: a test account's Sources page now
     expect(hrefs).toContain('/admin/users');
     expect(hrefs).toContain('/admin/provider-catalog');
     expect(hrefs).toContain('/admin/logs');

@@ -19,7 +19,6 @@ Derived only from this repository’s source. Paths are relative to the repo roo
 | Config defaults | `backend/pkg/config/config.go` |
 | Angular API client | `frontend/src/app/services/fasten-api.service.ts` |
 | Patient connect UI | `frontend/src/app/pages/medical-sources/medical-sources.component.ts` |
-| Admin sandbox connect UI | `frontend/src/app/pages/sandbox/sandbox.component.ts` |
 | Routes (sandbox admin-gated) | `frontend/src/app/app-routing.module.ts` |
 
 ---
@@ -35,7 +34,6 @@ Registered under JWT `secure` group in `backend/pkg/web/server.go`:
 | `POST` | `/api/secure/source/connect` | `handler.ConnectSource` |
 | `POST` | `/api/secure/source/:sourceId/sync` | `handler.SourceSync` |
 | `GET` | `/api/secure/provider-catalog/connectable` | `handler.ListConnectableProviders` |
-| `GET` | `/api/secure/provider-catalog/sandbox` | `handler.ListSandboxProviders` |
 | `POST` | `/api/secure/provider-catalog/:id/authorize` | `handler.AuthorizeSourceFromCatalog` |
 | `POST` | `/api/secure/provider-catalog/:id/connect` | `handler.ConnectSourceFromCatalog` |
 
@@ -90,9 +88,9 @@ Browser                         YourPHR backend                    Relay        
 UI that implements this loop:
 
 - `MedicalSourcesComponent.connectCatalogProvider` → catalog authorize/connect
-- `SandboxComponent` → same catalog authorize/connect against sandbox-listed entries
+  (a test account gets the sandbox entries here; the admin `SandboxComponent` is gone, #919)
 
-Both open a blank popup synchronously (`window.open('', '_blank')`), call authorize, set `popup.location.href = authorize.authorize_url`, then retry connect until success or the login window expires.
+It opens a blank popup synchronously (`window.open('', '_blank')`), call authorize, set `popup.location.href = authorize.authorize_url`, then retry connect until success or the login window expires.
 
 ---
 
@@ -101,12 +99,9 @@ Both open a blank popup synchronously (`window.open('', '_blank')`), call author
 ### List
 
 - Patient: `GET /secure/provider-catalog/connectable`  
-  - Enabled entries only; __skips__ `environment == sandbox`  
+  - Enabled entries only; __production__ for a real account, __sandbox__ for a test account ([#919](https://github.com/jwilleke/yourphr/issues/919))  
   - Response is `ConnectableProvider` (id, display, logo) — no credentials  
   - `handler.ListConnectableProviders`
-- Admin sandbox page: `GET /secure/provider-catalog/sandbox` (admin required)  
-  - Enabled entries with `environment == sandbox` only  
-  - `handler.ListSandboxProviders`
 
 ### Authorize — `handler.AuthorizeSourceFromCatalog`
 
@@ -213,13 +208,13 @@ relay.url / relay.public_url / relay.secret = ""
 
 ## Frontend connect loop
 
-`medical-sources.component.ts` / `sandbox.component.ts` (same structure):
+`medical-sources.component.ts`:
 
 1. Guard double-submit; open blank popup (fail if blocked).
 2. `authorizeSourceFromCatalog(id)` — __no__ `redirect_uri` sent.
 3. Require `authorize_url`, `state`, `code_verifier`.
 4. `popup.location.href = authorize_url`.
-5. Login window: `login_wait_seconds * 1000` if > 0, else __4 minutes__ (`catalogConnectWindowMs` / `sandboxConnectWindowMs`).
+5. Login window: `login_wait_seconds * 1000` if > 0, else __4 minutes__ (`catalogConnectWindowMs`).
 6. Attempts = `ceil(windowMs / 30000)` — aligns with backend 30s `PollUntil`.
 7. Each attempt: `connectSourceFromCatalog` with `{ state, code_verifier, redirect_uri, display }`.
 8. Retry only if error message matches `/authorization code from relay|timed out/i`; other errors terminal.
@@ -285,7 +280,7 @@ Comments in `ConnectSource` / catalog connect: __browser never handles tokens__;
 | Relay code TTL | `backend/cmd/relay/main.go` `defaultTTL` | 60s |
 | One connect poll | `web.smart_connect.relay_poll_seconds` (default __55__, cap 60) via `relayPollTimeout` | 55s |
 | Default UI login wait | `web.smart_connect.login_wait_seconds` | 240 |
-| UI fallback window | `catalogConnectWindowMs` / `sandboxConnectWindowMs` | 4 min |
+| UI fallback window | `catalogConnectWindowMs` | 4 min |
 | UI retries | only `error_code=relay_poll_timeout` (see `smart-connect-error.ts`) | across login wait |
 | FHIR HTTP client timeout | `smart.defaultFetchTimeout` | 90s |
 

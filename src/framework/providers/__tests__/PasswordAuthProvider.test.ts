@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import bcryptjs from 'bcryptjs';
 import { PasswordAuthProvider, hashPassword, isLegacyBcrypt, verifyPassword } from '../PasswordAuthProvider.js';
 
-const record = (passwordHash: string) => ({ username: 'alice', passwordHash, tokenGeneration: 4, role: 'user' as const, createdAt: 'x', email: '' });
+const record = (passwordHash: string) => ({ username: 'alice', passwordHash, tokenGeneration: 4, role: 'user' as const, createdAt: 'x', email: '', isTest: false });
 
 describe('PasswordAuthProvider — scrypt with a self-describing hash, bcrypt upgrade-on-login', () => {
   it('hashes with per-user salt and verifies in constant time', () => {

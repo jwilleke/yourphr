@@ -106,6 +106,15 @@
   <!-- Read-only demo admin (#516). Persistent and above the content, because the honest thing to tell
   someone touring an admin screen is that nothing they press will take effect — the API refuses
   every change from this account, whatever the buttons look like. -->
+  <!-- yourphr#919 (ngdpbase#1805's banner): an administrator marked this a test account. On every
+  screen and never dismissible, so test data is never read as somebody's real record. -->
+  @if (isTestAccount) {
+    <div class="alert alert-info rounded-0 mb-0 py-2 text-center" role="status" data-test-account-banner>
+      <i class="fas fa-flask mg-r-5" aria-hidden="true"></i>
+      <strong>Test account.</strong>
+      It is for test or sample data only, never real data. It connects sandbox providers only.
+    </div>
+  }
   @if (isReadOnlyDemoAdmin) {
     <div class="alert alert-warning rounded-0 mb-0 py-2 text-center" role="status">
       <strong>Read-only demo.</strong>

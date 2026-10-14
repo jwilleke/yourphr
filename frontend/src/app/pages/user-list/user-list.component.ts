@@ -86,6 +86,29 @@ export class UserListComponent implements OnInit {
     });
   }
 
+  // yourphr#919. Which providers the account sees follows the flag; its existing sources do not
+  // move, and the server's boot check names any left in the wrong kind of account.
+  markingUserId: string | null = null;
+
+  toggleTestAccount(user: User): void {
+    this.errorMsg = '';
+    const next = !user.is_test;
+    this.markingUserId = user.id;
+    this.fastenApi.setUserTestAccount(user.username, next).subscribe({
+      next: () => {
+        this.markingUserId = null;
+        user.is_test = next;
+        this.notice = next
+          ? `${user.username} is now a test account: sandbox providers only.`
+          : `${user.username} is now a real account: real providers only.`;
+      },
+      error: (err) => {
+        this.markingUserId = null;
+        this.errorMsg = err?.error?.error || 'Could not change that account. Please try again.';
+      },
+    });
+  }
+
   copyPassword(): void {
     if (!this.resetResult?.password) { return; }
     navigator.clipboard?.writeText(this.resetResult.password).then(() => this.copied = true).catch(() => this.copied = false);

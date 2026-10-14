@@ -148,12 +148,34 @@ export class UsersManager extends BaseManager {
   // --- accounts ---
 
   /** An admin (or a system principal: bootstrap, tests) creates an account. */
-  async createUser(ctx: ApiContext, username: string, password: string, role: Role = 'user'): Promise<void> {
+  async createUser(ctx: ApiContext, username: string, password: string, role: Role = 'user', options: { isTest?: boolean } = {}): Promise<void> {
     if (ctx.system === '') ctx.require('user-create');
     this.checkUsername(username);
     this.checkPolicy(password);
     if (await this.provider.get(username)) throw new ApiError(400, 'User already exists');
-    await this.provider.create({ username, passwordHash: this.passwords.hash(password), tokenGeneration: 0, role: this.checkRole(role) });
+    const isTest = options.isTest === true;
+    await this.provider.create({ username, passwordHash: this.passwords.hash(password), tokenGeneration: 0, role: this.checkRole(role), isTest });
+    if (isTest) this.log(`${ctx.actor} created ${username} as a test account`);
+  }
+
+  /** Whether the account is a test account (yourphr#919); false for an unknown name. */
+  async isTest(username: string): Promise<boolean> {
+    return (await this.provider.get(username))?.isTest === true;
+  }
+
+  /**
+   * An admin marks or unmarks a test account (yourphr#919, ngdpbase#1805). An attribute, not a
+   * role: it decides which providers the account sees (sandbox, never production), nothing more.
+   * Logged only when it changes, with the value, as ngdpbase records it on user-edit.
+   */
+  async setTest(ctx: ApiContext, username: string, isTest: boolean): Promise<void> {
+    ctx.require('user-edit');
+    const stored = await this.provider.get(username);
+    if (!stored) throw new ApiError(404, 'no such user');
+    const was = stored.isTest;
+    if (was === isTest) return;
+    if (!(await this.provider.setTest(username, isTest))) throw new ApiError(500, 'could not change the account');
+    this.log(`${ctx.actor} changed ${username}: test account ${was} -> ${isTest}`);
   }
 
   /**
@@ -161,9 +183,9 @@ export class UsersManager extends BaseManager {
    * account has an email address, not the address itself (yourphr#792): an admin needs to know an
    * alert can reach someone, not to read everyone's inbox name.
    */
-  async listUsers(ctx: ApiContext): Promise<{ username: string; role: Role; created_at: string; has_email: boolean }[]> {
+  async listUsers(ctx: ApiContext): Promise<{ username: string; role: Role; created_at: string; has_email: boolean; is_test: boolean }[]> {
     ctx.require('user-read');
-    return (await this.provider.list()).map((u) => ({ username: u.username, role: u.role, created_at: u.createdAt, has_email: u.email !== '' }));
+    return (await this.provider.list()).map((u) => ({ username: u.username, role: u.role, created_at: u.createdAt, has_email: u.email !== '', is_test: u.isTest }));
   }
 
   /** The caller's own email address (yourphr#792), '' when they have not given one. */

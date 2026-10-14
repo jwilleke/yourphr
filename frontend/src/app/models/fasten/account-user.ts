@@ -15,6 +15,8 @@ export interface AccountUser {
    * disabled button is not a control.
    */
   demo_account?: boolean;
+  /** yourphr#919: an administrator marked this a test account — sandbox providers only, never real data. */
+  test_account?: boolean;
   /**
    * When this account last signed in, and how many times it has (#512). Absent until the first
    * sign-in, which the UI renders as "Never" rather than inventing a date.

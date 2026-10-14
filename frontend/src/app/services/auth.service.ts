@@ -245,6 +245,7 @@ export class AuthService {
     claims.email = data.email
     claims.picture = data.picture
     claims.role = data.role
+    claims.test_account = data.test_account === true
     return claims
   }
 

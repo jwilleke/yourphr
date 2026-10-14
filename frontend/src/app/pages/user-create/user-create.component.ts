@@ -33,7 +33,8 @@ export class UserCreateComponent implements OnInit {
       username: ['', [Validators.required, Validators.minLength(4)]],
       email: ['', [Validators.email]],
       password: ['', [Validators.required, Validators.minLength(8)]],
-      role: ['user', Validators.required]
+      role: ['user', Validators.required],
+      is_test: [false]
     });
   }
 

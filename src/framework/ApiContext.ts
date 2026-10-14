@@ -40,6 +40,8 @@ export interface Principal {
   role: Role;
   /** The account's token generation at verification time — the #528 revocation fact. */
   tokenGeneration?: number;
+  /** A test account (yourphr#919, ngdpbase#1805), read from the account at verification time. */
+  isTest?: boolean;
   /**
    * Set when the caller is an AGENT holding a token the owner minted (yourphr#695), absent for an
    * ordinary session. ngdpbase carries the same fact under the same name.
@@ -71,6 +73,12 @@ export class ApiContext {
   /** What this caller may do, resolved once from the role at construction (yourphr#620). */
   readonly permissions: readonly Permission[];
   readonly tokenGeneration: number | undefined;
+  /**
+   * Whether the caller is signed in to a test account (yourphr#919; ngdpbase#1805 carries the same
+   * fact under the same name). An attribute, not a permission: it grants nothing. The catalog reads
+   * it to keep a test account to sandbox providers and a real one to production ones.
+   */
+  readonly isTest: boolean;
   /** A named non-human caller (the migration tool, the worker); '' for a person. */
   readonly system: string;
   /** Present only when an agent token authenticated this request (yourphr#695). */
@@ -87,6 +95,7 @@ export class ApiContext {
     // with no policy manager grants NOTHING: failing closed is the only safe direction here.
     this.permissions = Object.freeze(engine.has('policy') ? [...engine.managers.policy.permissionsFor(this.role)] : []);
     this.tokenGeneration = principal?.tokenGeneration;
+    this.isTest = principal?.isTest === true;
     this.system = system;
     // Copied, and the scope array with it: this list is the read ceiling, so sharing the caller's
     // array would let anything downstream widen a token in place — the defect ngdpbase#1108 found

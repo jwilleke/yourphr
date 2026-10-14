@@ -15,4 +15,6 @@ export class User {
   // #792 — whether the account has given an email address. The Users list never carries the
   // address itself: an admin needs to know an alert can reach someone, not what their inbox is.
   has_email?: boolean
+  // #919 — a test account: sandbox providers only, never real data. Set by an admin.
+  is_test?: boolean
 }

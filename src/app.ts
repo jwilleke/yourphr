@@ -287,6 +287,15 @@ const APP_MIGRATIONS: Migration[] = [
       )`);
     },
   },
+  {
+    id: '20261014120000',
+    description: 'auth_users.is_test (yourphr#919, ngdpbase#1805) — a test account holds test data only; 0 for every existing account',
+    up: (db) => {
+      const columns = (db.pragma('table_info(auth_users)') as { name: string }[]).map((c) => c.name);
+      // Every account that exists today is real: nobody is made a test account by an upgrade.
+      if (!columns.includes('is_test')) addColumnWithDefault(db, 'auth_users', 'is_test', 'INTEGER', 0);
+    },
+  },
 ];
 
 /**
@@ -564,6 +573,8 @@ export async function openStores(dataDir: string, env: Record<string, string | u
   // would hold the health probe hostage. The admin's Database card offers the rebuild.
   const index = records.searchIndexStatus();
   await records.noticeIfSearchIndexStale();
+  // yourphr#919: sources whose kind does not match their account's test-account flag.
+  if (engine.has('sources')) await engine.managers.sources.noticeTestAccountMismatches();
   // yourphr#869: with maintenance off, no stored maintenance notice may stand — they say what was
   // true when written, and an "on" one left behind told every member the system was down.
   if (!config.getBool(MAINTENANCE_ENABLED_KEY) && engine.has('notifications')) await engine.managers.notifications.clearMaintenanceNotices();

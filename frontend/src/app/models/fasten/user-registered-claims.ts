@@ -11,4 +11,6 @@ export class UserRegisteredClaims {
   picture: string //Picture
   email: string //Email
   role: string //Role
+  // yourphr#919 (ngdpbase#1805's claim): a test account holds test or sandbox data, never real data.
+  test_account?: boolean
 }

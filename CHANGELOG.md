@@ -1,5 +1,19 @@
 # Changelog
 
+## [Unreleased]
+
+__Test accounts: test data and real data never share an account.__
+
+### Features
+
+- __Test accounts__ ([#919](https://github.com/jwilleke/yourphr/issues/919)): an admin can mark an account as a test account on Users, when creating it or later. A test account connects sandbox providers only, and every other account, the admin's included, connects real providers only. The server enforces this, so a sandbox can't be connected to a real record by any route. A test account shows a "Test account" banner on every screen. The flag is ngdpbase's `isTest` ([ngdpbase#1805](https://github.com/jwilleke/ngdpbase/issues/1805)), exposed as `test_account` on the account.
+- __Sandbox testing moves to Sources__: the admin-only Sandbox Testing page is gone. To try a sandbox provider, sign in to a test account and connect it from Sources like anyone else. The old address leads to Sources.
+- __A startup check__ names any source in the wrong kind of account (sandbox data in a real account, or real data in a test account), with one notice on the admin home.
+
+### Internal
+
+- `auth_users.is_test`, added by a one-time migration at startup; every existing account starts as a real account.
+
 ## [3.20.1](https://github.com/jwilleke/yourphr/compare/v3.20.0...v3.20.1) (2026-10-14)
 
 __Save Report is quick again, and so is every list of one kind of record.__

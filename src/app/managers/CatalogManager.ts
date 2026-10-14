@@ -67,6 +67,11 @@ export interface CatalogOptions {
 
 const MANAGE = 'admin role required to manage the provider catalog';
 
+/** The one kind of provider an account may connect (yourphr#919): sandbox for a test account, production otherwise. */
+function environmentFor(ctx: ApiContext): ProviderEnvironment {
+  return ctx.isTest ? 'sandbox' : 'production';
+}
+
 export class CatalogManager extends BaseManager {
   readonly name = 'catalog';
   override readonly dependsOn = ['users', 'sources'] as const;
@@ -201,12 +206,6 @@ export class CatalogManager extends BaseManager {
     return e ? this.provider.remove(e.id) : false;
   }
 
-  /** Sandboxes are for the admin to try a provider before a member meets it (the Sandbox page). */
-  async sandbox(ctx: ApiContext): Promise<Record<string, unknown>[]> {
-    ctx.require('admin-read');
-    return (await this.provider.list()).filter((e) => e.enabled && e.environment === 'sandbox').map(connectableShape);
-  }
-
   /** The secret, for the admin's eyes in a harness only; the exchange reads it below the door. */
   async clientSecretFor(ctx: ApiContext, id: number): Promise<string> {
     this.manage(ctx);
@@ -235,10 +234,32 @@ export class CatalogManager extends BaseManager {
     return this.options.relay.resolved() as unknown as Record<string, unknown>;
   }
 
-  /** What members may connect to, in Go's ConnectableProvider shape: enabled PRODUCTION entries only. */
+  /**
+   * What the caller may connect to, in Go's ConnectableProvider shape (yourphr#919): a test account
+   * sees the enabled SANDBOX entries and nothing else, every other account the enabled PRODUCTION
+   * entries. Test data and real data never meet in one account — the admin included, who tests
+   * from a test account like anyone else rather than from an admin-only page.
+   */
   async connectable(ctx: ApiContext): Promise<Record<string, unknown>[]> {
     ctx.requireAuthenticated();
-    return (await this.provider.list()).filter((e) => e.enabled && e.environment === 'production').map(connectableShape);
+    const environment = environmentFor(ctx);
+    return (await this.provider.list()).filter((e) => e.enabled && e.environment === environment).map(connectableShape);
+  }
+
+  /**
+   * An enabled entry this caller may connect (yourphr#919). The list above hides the others; this
+   * is the control, because a hidden button is not one. Same 404 as an unknown id for a disabled
+   * entry; a 403 naming the rule for the wrong kind, so a tester knows which account to use.
+   */
+  private async connectableEntry(ctx: ApiContext, publicId: string): Promise<CatalogEntry> {
+    const e = await this.enabledEntry(publicId);
+    if (e.environment !== environmentFor(ctx)) {
+      throw new ApiError(403, ctx.isTest
+        ? 'This is a test account: it connects sandbox providers only, never a real one.'
+        : 'Sandbox providers are for test accounts only. Ask an administrator for a test account.',
+        { error_code: 'test_account_mismatch' });
+    }
+    return e;
   }
 
   private async smartApp(e: CatalogEntry) {
@@ -258,7 +279,7 @@ export class CatalogManager extends BaseManager {
     // connect that follows is guarded too, but sending a visitor through a real provider's consent
     // screen to be turned away afterwards would have them hand credentials over for nothing.
     if (this.engine.has('demo')) this.engine.managers.demo.refuseConnect(ctx);
-    const e = await this.enabledEntry(publicId);
+    const e = await this.connectableEntry(ctx, publicId);
     let redirectUri = typeof body['redirect_uri'] === 'string' ? (body['redirect_uri'] as string).trim() : '';
     // Go's rule, restored (yourphr#700): when the request carries no redirect_uri, derive it from
     // this deployment's relay — the frontend never compiles one in (the product's #399).
@@ -280,7 +301,7 @@ export class CatalogManager extends BaseManager {
   /** The callback: exchange the code, connect the source for the caller, start the first import. */
   async connect(ctx: ApiContext, publicId: string, body: Record<string, unknown>): Promise<{ source: Record<string, unknown>; data: Record<string, unknown> }> {
     ctx.requireAuthenticated();
-    const e = await this.enabledEntry(publicId);
+    const e = await this.connectableEntry(ctx, publicId);
     if (connectionPolicy(e).requiresUserConsent && (await this.engine.managers.users.consentAcceptedAt(ctx)) === '') {
       throw new ApiError(403, 'Accept the Privacy Policy and Terms of Service on Account Profile before connecting a medical source.',
         { error_code: 'legal_consent_required', privacy_policy_url: '/privacy', terms_of_service_url: '/terms' });

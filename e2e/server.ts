@@ -15,7 +15,7 @@ import { join } from 'node:path';
 import { assembleApp } from '../src/app.js';
 import { ApiContext } from '../src/framework/ApiContext.js';
 import { startFakeProvider, listenFake } from '../scripts/lib/fake-provider.js';
-import { ADMIN_PASS_FILE, E2E_DIR, E2E_NOTE_PASS, E2E_NOTE_USER, E2E_PASS, E2E_PORT, E2E_PW_PASS, E2E_PW_USER, E2E_RESET_PASS, E2E_RESET_USER, E2E_USER } from './constants.js';
+import { ADMIN_PASS_FILE, E2E_DIR, E2E_NOTE_PASS, E2E_NOTE_USER, E2E_PASS, E2E_PORT, E2E_PW_PASS, E2E_PW_USER, E2E_RESET_PASS, E2E_RESET_USER, E2E_TEST_PASS, E2E_TEST_USER, E2E_USER } from './constants.js';
 
 const webDir = process.env['SPIKE_E2E_WEB_DIR'] ?? '/tmp/spike-web';
 if (!existsSync(join(webDir, 'index.html'))) {
@@ -60,12 +60,14 @@ await app.users.createUser(seed, E2E_USER, E2E_PASS);
 await app.users.createUser(seed, E2E_PW_USER, E2E_PW_PASS);
 await app.users.createUser(seed, E2E_RESET_USER, E2E_RESET_PASS);
 await app.users.createUser(seed, E2E_NOTE_USER, E2E_NOTE_PASS);
+await app.users.createUser(seed, E2E_TEST_USER, E2E_TEST_PASS, 'user', { isTest: true });
+await app.users.setConsent(ApiContext.system('e2e-seed', E2E_TEST_USER, app.engine), new Date().toISOString().replace(/\.\d{3}Z$/, 'Z'));
 await app.engine.managers.notifications.createNotification({ title: 'No backup in over 26 hours', message: 'Synthetic notice for the banner journey.', level: 'error', targetUsers: [E2E_NOTE_USER] });
 await app.users.setConsent(ApiContext.system('e2e-seed', E2E_USER, app.engine), new Date().toISOString().replace(/\.\d{3}Z$/, 'Z'));
 await app.sources.add(ApiContext.system('e2e-seed', E2E_USER, app.engine), {
   userId: E2E_USER, display: 'Fake Regional Health', fhirBaseUrl: fakeBase, tokenUrl: `${fakeBase}/token`, clientId: 'fake-cid',
   patient: 'pa', resourceTypes: ['Condition', 'MedicationStatement', 'Patient'], accessToken: 'tok', refreshToken: '', expiresAt: 99_999_999,
-  platformType: 'ehr', environment: 'production', // a production source for the member's Explore page; the catalog seed stays a sandbox entry
+  platformType: 'ehr', environment: 'production', // a production source for the member's Explore page; the catalog seed stays a sandbox entry, for the test account
 });
 await app.syncNow(1_000_000);
 

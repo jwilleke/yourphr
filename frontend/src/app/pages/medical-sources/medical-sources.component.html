@@ -28,7 +28,7 @@
       </div>
 
       @if (showConnectedList) {
-        <app-medical-sources-connected environment="production"></app-medical-sources-connected>
+        <app-medical-sources-connected></app-medical-sources-connected>
       }
 
 
@@ -106,8 +106,8 @@
       Patient-facing provider directory (#306 / #291): a picker of providers the admin has
       pre-configured. The patient picks one and logs in with their provider account — they never
       see a client_id/secret (the backend resolves them via authorizeSourceFromCatalog /
-      connectSourceFromCatalog). Admin sandbox testing is the same catalog path on /sandbox
-      (env-seeded entries); there is no free-form BYO client_id form in the UI (see #407).
+      connectSourceFromCatalog). A test account (yourphr#919) sees the sandbox entries here instead
+      of the real ones; there is no free-form BYO client_id form in the UI (see #407).
       -->
       <div class="az-content-label mg-b-5 mg-t-40">Connect a provider</div>
 
@@ -181,7 +181,7 @@
       } @else {
         @if (!connectableLoading) {
           <p class="mg-b-20 tx-gray-600">
-            No connectable providers are configured yet. For now, use <strong>Manual Upload</strong> above to import a downloaded records bundle. (An administrator can add providers from the Sandbox page.)
+            No connectable providers are configured yet. For now, use <strong>Manual Upload</strong> above to import a downloaded records bundle. (An administrator adds providers in the Provider Catalog.)
           </p>
         }
       }
@@ -189,7 +189,7 @@
       <ng-template #noProviders>
         @if (!connectableLoading) {
           <p class="mg-b-20 tx-gray-600">
-            No connectable providers are configured yet. For now, use <strong>Manual Upload</strong> above to import a downloaded records bundle. (An administrator can add providers from the Sandbox page.)
+            No connectable providers are configured yet. For now, use <strong>Manual Upload</strong> above to import a downloaded records bundle. (An administrator adds providers in the Provider Catalog.)
           </p>
         }
       </ng-template>

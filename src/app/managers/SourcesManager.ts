@@ -32,6 +32,17 @@ export const MANUAL_PLATFORM_TYPE = 'manual';
  * provider tokens, so the sync pass never touches it (isDisconnected), and nothing fetches from it.
  */
 export const DEVICE_PLATFORM_TYPE = 'device';
+
+/** The admin-home notice standing while a source's kind does not match its account's (yourphr#919). */
+export const TEST_ACCOUNT_MISMATCH_NOTICE = 'sources.test-account-mismatch';
+
+/**
+ * What a source this account adds is labelled (yourphr#919): a test account's uploads and devices
+ * are test data like its sandbox connections, so they say so rather than claiming 'production'.
+ */
+function environmentOf(ctx: ApiContext): 'sandbox' | 'production' {
+  return ctx.isTest ? 'sandbox' : 'production';
+}
 /** The display of the ONE source holding what the patient wrote themselves (yourphr#683). */
 export const MANUAL_SOURCE_DISPLAY = 'Added by you';
 import type { BaseSourceClientProvider } from '../providers/BaseSourceClientProvider.js';
@@ -286,6 +297,40 @@ export class SourcesManager extends BaseManager {
   }
 
   /**
+   * At boot (yourphr#919): every source whose kind does not match its account — sandbox data in a
+   * real account, or a real provider's data in a test account. The catalog refuses both from now
+   * on; this finds what is already there, from before the flag or from a flag changed since. A
+   * notice on the admin home, keyed so restarts replace it; none found resolves any left standing.
+   * Answers what it found, for the log line and the tests.
+   */
+  async noticeTestAccountMismatches(): Promise<{ username: string; display: string; environment: string }[]> {
+    if (!this.engine.has('users')) return [];
+    const users = this.engine.managers.users;
+    const found: { username: string; display: string; environment: string }[] = [];
+    const testers = new Map<string, boolean>();
+    for (const s of await this.provider.list()) {
+      if (s.environment !== 'sandbox' && s.environment !== 'production') continue; // unknown is never guessed
+      if (!testers.has(s.userId)) testers.set(s.userId, await users.isTest(s.userId));
+      if ((s.environment === 'sandbox') !== testers.get(s.userId)) found.push({ username: s.userId, display: s.display, environment: s.environment });
+    }
+    for (const f of found) this.log(`sources: ${f.username} holds a ${f.environment} source "${f.display}" but is ${f.environment === 'sandbox' ? 'not ' : ''}a test account`);
+    if (!this.engine.has('notifications')) return found;
+    const notifications = this.engine.managers.notifications;
+    if (found.length === 0) {
+      await notifications.resolve(TEST_ACCOUNT_MISMATCH_NOTICE);
+      return found;
+    }
+    const accounts = [...new Set(found.map((f) => f.username))].sort();
+    const admins = await users.holders(ApiContext.system('test-account check: who holds admin', 'sources', this.engine), 'admin');
+    await notifications.createNotification({
+      key: TEST_ACCOUNT_MISMATCH_NOTICE, type: 'system', level: 'warning', targetUsers: admins, link: '/admin/users',
+      title: `${found.length} source${found.length === 1 ? '' : 's'} in the wrong kind of account`,
+      message: `Test data and real data are kept in separate accounts. These accounts hold a source of the other kind: ${accounts.join(', ')}. Mark the account as a test account (or not) on Users, or remove the source from that account.`,
+    });
+    return found;
+  }
+
+  /**
    * The account's own source — where records the PATIENT wrote go (yourphr#683).
    *
    * Find-or-create, and the whole point is that patient-authored records are NOT anonymous. Every
@@ -320,7 +365,7 @@ export class SourcesManager extends BaseManager {
       refreshToken: '',
       expiresAt: 0,
       platformType: MANUAL_PLATFORM_TYPE,
-      environment: 'production',
+      environment: environmentOf(ctx),
     });
   }
 
@@ -345,7 +390,7 @@ export class SourcesManager extends BaseManager {
       refreshToken: '',
       expiresAt: 0,
       platformType: DEVICE_PLATFORM_TYPE,
-      environment: 'production',
+      environment: environmentOf(ctx),
     });
   }
 
@@ -400,7 +445,7 @@ export class SourcesManager extends BaseManager {
       refreshToken: '',
       expiresAt: 0,
       platformType: MANUAL_PLATFORM_TYPE,
-      environment: 'production',
+      environment: environmentOf(ctx),
     });
   }
 

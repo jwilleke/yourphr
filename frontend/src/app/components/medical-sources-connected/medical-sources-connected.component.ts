@@ -22,8 +22,8 @@ import {extractErrorFromResponse, replaceErrors} from '../../../lib/utils/error_
     standalone: false
 })
 export class MedicalSourcesConnectedComponent implements OnInit, OnDestroy {
-  // environment, when set, limits the connected sources shown to that environment ("sandbox" on the
-  // /sandbox page, "production" on /sources) so the two surfaces don't show the same tiles (#332).
+  // environment, when set, limits the connected sources shown to that environment (#332). Nothing
+  // sets it since yourphr#919: an account holds one kind of source, so /sources shows them all.
   // Unset = show everything. A source with no environment counts as production.
   @Input() environment?: string
 

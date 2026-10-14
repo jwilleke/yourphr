@@ -22,7 +22,7 @@ export interface ConnectableProvider {
 export interface ProviderCatalogEntry {
   id?: string;
   display: string;
-  // "production" (patient-facing /sources) or "sandbox" (admin-only /sandbox testing). #291
+  // "production" (what real accounts connect on /sources) or "sandbox" (what test accounts connect there, #919). #291
   environment?: string;
   api_endpoint_base_url: string;
   scopes: string;

@@ -31,7 +31,6 @@ import { AdminConfigComponent } from './pages/admin-config/admin-config.componen
 import { ProviderCatalogAdminComponent } from './pages/provider-catalog-admin/provider-catalog-admin.component';
 import { ServerLogsComponent } from './pages/server-logs/server-logs.component';
 import { MedicalSourcesComponent } from './pages/medical-sources/medical-sources.component';
-import { SandboxComponent } from './pages/sandbox/sandbox.component';
 import { PatientProfileComponent } from './pages/patient-profile/patient-profile.component';
 import { ReportLabsComponent } from './pages/report-labs/report-labs.component';
 import { PatientEntryComponent } from './pages/patient-entry/patient-entry.component';
@@ -118,11 +117,11 @@ const routes: Routes = [
   // Admin-only UI lives under /admin (#904, a rule). The old paths redirect so bookmarks keep working.
   { path: 'admin/users', component: UserListComponent, canActivate: [ IsAuthenticatedAuthGuard, IsAdminAuthGuard ] },
   { path: 'admin/users/new', component: UserCreateComponent, canActivate: [ IsAuthenticatedAuthGuard, IsAdminAuthGuard ] },
-  // Admin-only SMART sandbox-testing page (bring-your-own client_id connect flow, EPIC #20).
-  { path: 'admin/sandbox', component: SandboxComponent, canActivate: [ IsAuthenticatedAuthGuard, IsAdminAuthGuard ] },
   { path: 'users', redirectTo: 'admin/users', pathMatch: 'full' },
   { path: 'users/new', redirectTo: 'admin/users/new', pathMatch: 'full' },
-  { path: 'sandbox', redirectTo: 'admin/sandbox', pathMatch: 'full' },
+  // yourphr#919: sandbox testing is a test account's Sources page now, not an admin page.
+  { path: 'admin/sandbox', redirectTo: 'sources', pathMatch: 'full' },
+  { path: 'sandbox', redirectTo: 'sources', pathMatch: 'full' },
 
   { path: 'practitioners', component: PractitionerListComponent, canActivate: [ IsAuthenticatedAuthGuard ] },
   { path: 'practitioners/new', component: PractitionerCreateComponent, canActivate: [ IsAuthenticatedAuthGuard ] },

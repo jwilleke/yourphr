@@ -16,8 +16,8 @@ This catalog is the __self-hosted replacement__: the __instance admin__ register
 
 | Role | UI | Sees credentials? |
 |---|---|---|
-| __Admin__ | `/admin/provider-catalog`, `/sandbox` | Yes (once, centrally) — create/edit entries, sandbox test connects |
-| __Patient__ (any authenticated user) | `/sources` (often `/web/sources`) | __No__ — enabled __production__ entries only; connect by catalog id |
+| __Admin__ | `/admin/provider-catalog`, `/admin/users` | Yes (once, centrally) — create/edit entries; mark test accounts |
+| __Patient__ (any authenticated user) | `/sources` (often `/web/sources`) | __No__ — enabled __production__ entries only (a test account: __sandbox__ only); connect by catalog id |
 
 On a single-user self-hosted instance admin and patient may be the same person; credentials still must not appear in the normal connect flow.
 
@@ -27,10 +27,21 @@ __Connected sources__ (sync, download, disconnect) also live on __`/sources`__. 
 
 | `environment` | Shown on | Purpose |
 |---|---|---|
-| `production` (default) | Patient `/sources` connectable list | Real enrollee path |
-| `sandbox` | Admin `/sandbox` only | Test sandboxes; __never__ listed to patients |
+| `production` (default) | `/sources` for every real account, the admin's included | Real enrollee path |
+| `sandbox` | `/sources` for a __test account__ only | Test sandboxes; __never__ listed to a real account |
 
 Empty/legacy rows are treated as production for back-compat.
+
+### Test accounts ([#919](https://github.com/jwilleke/yourphr/issues/919))
+
+Test data and real data never share an account. An admin marks an account as a __test account__ on `/admin/users` (at creation or later) — ngdpbase's `isTest` flag ([ngdpbase#1805](https://github.com/jwilleke/ngdpbase/issues/1805)), exposed as `test_account` on `/api/secure/account/me` and `ApiContext.isTest`. It is an attribute, not a role: it grants nothing.
+
+- `GET /provider-catalog/connectable` answers the enabled __sandbox__ entries to a test account, the enabled __production__ entries to everyone else.
+- `authorize` and `connect` refuse the other kind with `403` / `error_code: test_account_mismatch` — the server enforces it, not only the list.
+- A test account shows a banner on every screen; its uploads and devices are labelled `sandbox`.
+- At startup the server names every source whose kind does not match its account (a log line per source, and one notice on the admin home).
+
+To test a sandbox provider, sign in to a test account and connect it from `/sources`. The old admin `/sandbox` page is gone; its address redirects to `/sources`.
 
 ## Data model
 
@@ -79,7 +90,6 @@ Admin (`UserRole == admin`):
 - `GET    /api/secure/provider-catalog/:id` — get one
 - `PUT    /api/secure/provider-catalog/:id` — update (omit `client_secret` to keep stored secret)
 - `DELETE /api/secure/provider-catalog/:id` — delete
-- `GET    /api/secure/provider-catalog/sandbox` — enabled __sandbox__ entries as connectable projection (admin test page)
 
 Patient (any authenticated user):
 
@@ -107,7 +117,7 @@ At startup, `SeedSandboxProviders` upserts entries from `SandboxProviderSeeds()`
 | athenahealth (Sandbox) | `YOURPHR_SANDBOX_ATHENA_CLIENT_ID` / `_SECRET` |
 | SMART Health IT (Sandbox) | always seeded (literal public client id) |
 
-All of these use `environment=sandbox` so they appear only on __`/sandbox`__, never on patient __`/sources`__.
+All of these use `environment=sandbox`, so only a __test account__ sees them on `/sources`; a real account never does.
 
 ### Production Medicare ([#432](https://github.com/jwilleke/yourphr/issues/432))
 

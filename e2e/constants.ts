@@ -14,5 +14,8 @@ export const E2E_RESET_PASS = 'daves-long-enough-password';
 /** Holds the one seeded notification (yourphr#793), so no other journey sees a banner. */
 export const E2E_NOTE_USER = 'nora';
 export const E2E_NOTE_PASS = 'noras-long-enough-password';
+/** A test account (yourphr#919): it connects the sandbox catalog entries, where everyone else sees production ones. */
+export const E2E_TEST_USER = 'tess';
+export const E2E_TEST_PASS = 'tess-long-enough-password';
 /** Written by server.ts at boot (0600, gitignored); read by the admin journeys. */
 export const ADMIN_PASS_FILE = join(E2E_DIR, '.admin-pass');

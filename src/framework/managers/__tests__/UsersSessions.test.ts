@@ -210,6 +210,43 @@ describe('UsersManager — an account\'s own email address (yourphr#792)', () =>
   });
 });
 
+describe('UsersManager — the test-account flag (yourphr#919, ngdpbase#1805)', () => {
+  it('is false for an ordinary account and set at create by an admin; the Users list shows it', async () => {
+    await users.createUser(sys, 'alice', PW);
+    await users.createUser(sys, 'sandbox-epic', PW, 'user', { isTest: true });
+    expect(await users.isTest('alice')).toBe(false);
+    expect(await users.isTest('sandbox-epic')).toBe(true);
+    expect(await users.isTest('ghost')).toBe(false);
+    const admin = ApiContext.from({ username: 'root', role: 'admin' }, engine);
+    expect((await users.listUsers(admin)).map((u) => [u.username, u.is_test])).toEqual([['alice', false], ['sandbox-epic', true]]);
+    expect(lines).toContain('test created sandbox-epic as a test account');
+  });
+
+  it('an admin marks and unmarks it, logged once per real change; a member may not; unknown is 404', async () => {
+    await users.createUser(sys, 'alice', PW);
+    const admin = ApiContext.from({ username: 'root', role: 'admin' }, engine);
+    await users.setTest(admin, 'alice', true);
+    await users.setTest(admin, 'alice', true); // no change, no line
+    expect(await users.isTest('alice')).toBe(true);
+    expect(lines.filter((l) => l.includes('test account'))).toEqual(['root changed alice: test account false -> true']);
+    await expect(users.setTest(ApiContext.from({ username: 'alice', role: 'user' }, engine), 'alice', false)).rejects.toMatchObject({ status: 403 });
+    await expect(users.setTest(admin, 'ghost', true)).rejects.toMatchObject({ status: 404 });
+    await users.setTest(admin, 'alice', false);
+    expect(await users.isTest('alice')).toBe(false);
+  });
+
+  it('a session carries it into the request context, read live: unmarking takes effect on the next request', async () => {
+    await users.createUser(sys, 'tess', PW, 'user', { isTest: true });
+    const token = (await sessions.issueFor('tess'))!;
+    const first = await sessions.verify(token);
+    expect(first.ok && ApiContext.from(first.principal, engine).isTest).toBe(true);
+    await users.setTest(ApiContext.from({ username: 'root', role: 'admin' }, engine), 'tess', false);
+    const second = await sessions.verify(token);
+    expect(second.ok && ApiContext.from(second.principal, engine).isTest).toBe(false);
+    expect(ApiContext.system('worker', 'tess', engine).isTest).toBe(false);
+  });
+});
+
 describe('SessionsManager — sign-in, tokens, revocation, throttling, cardinality', () => {
   it('signs in with a token carrying the generation; wrong password and unknown account get the one generic error', async () => {
     await users.createUser(sys, 'alice', PW);

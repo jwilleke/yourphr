@@ -980,6 +980,9 @@ export function createYourPhrServer(options: ServerOptions) {
           // offering an action the server will refuse (yourphr#496). Derived from demo mode plus
           // the configured name, so the demo account's NAME is never published.
           demo_account: engine.has('demo') && engine.managers.demo.isDemoSession(ctx),
+          // ngdpbase's OIDC claim name (ngdpbase#1805), always a boolean: the UI shows the test
+          // banner from it; the catalog enforces what it means server-side (yourphr#919).
+          test_account: ctx.isTest,
           last_login: null, login_count: 0,
         }});
         return;
@@ -1008,7 +1011,7 @@ export function createYourPhrServer(options: ServerOptions) {
       }
 
       // --- the Users page (yourphr#604): the admin's list, create, and password reset ---
-      if (url.pathname === '/api/secure/users' || /^\/api\/secure\/users\/[^/]+\/password$/.test(url.pathname)) {
+      if (url.pathname === '/api/secure/users' || /^\/api\/secure\/users\/[^/]+\/(password|test)$/.test(url.pathname)) {
         // Go answers a non-admin here with 401 "Unauthorized"; the page treats both as "not for you".
         // The permission is the one the Users manager requires behind this wall (yourphr#620), so
         // the outer gate and the real one cannot drift apart.
@@ -1017,7 +1020,7 @@ export function createYourPhrServer(options: ServerOptions) {
           return;
         }
         if (url.pathname === '/api/secure/users' && req.method === 'GET') {
-          send(res, 200, {success: true, data: (await engine.managers.users.listUsers(ctx)).map((u) => ({id: u.username, username: u.username, role: u.role, created_at: u.created_at, has_email: u.has_email, login_count: 0}))});
+          send(res, 200, {success: true, data: (await engine.managers.users.listUsers(ctx)).map((u) => ({id: u.username, username: u.username, role: u.role, created_at: u.created_at, has_email: u.has_email, is_test: u.is_test, login_count: 0}))});
           return;
         }
         if (url.pathname === '/api/secure/users' && req.method === 'POST') {
@@ -1032,16 +1035,30 @@ export function createYourPhrServer(options: ServerOptions) {
             send(res, 400, {success: false, error: 'username and password are required'});
             return;
           }
-          await engine.managers.users.createUser(ctx, username, password, role); // ApiError (400) -> the error boundary
+          const isTest = body['is_test'] === true;
+          await engine.managers.users.createUser(ctx, username, password, role, {isTest}); // ApiError (400) -> the error boundary
           // Go echoes the user it made. This stack stores no full_name or email — they are absent,
           // not invented; id is the username, as /account/me already says.
-          send(res, 200, {success: true, data: {id: username, username, role}});
+          send(res, 200, {success: true, data: {id: username, username, role, is_test: isTest}});
           return;
         }
         const resetMatch = url.pathname.match(/^\/api\/secure\/users\/([^/]+)\/password$/);
         if (resetMatch && req.method === 'POST') {
           const username = decodeURIComponent(resetMatch[1]!);
           send(res, 200, {success: true, data: {username, password: await engine.managers.users.adminResetPassword(ctx, username)}});
+          return;
+        }
+        // yourphr#919: mark or unmark a test account.
+        const testMatch = url.pathname.match(/^\/api\/secure\/users\/([^/]+)\/test$/);
+        if (testMatch && req.method === 'PUT') {
+          const body = await readJsonBody(req);
+          if (!body || typeof body['is_test'] !== 'boolean') {
+            send(res, 400, {success: false, error: 'is_test (true or false) is required'});
+            return;
+          }
+          const username = decodeURIComponent(testMatch[1]!);
+          await engine.managers.users.setTest(ctx, username, body['is_test'] as boolean);
+          send(res, 200, {success: true, data: {username, is_test: body['is_test']}});
           return;
         }
       }
@@ -1053,10 +1070,6 @@ export function createYourPhrServer(options: ServerOptions) {
           const e = err as Error & { status?: number; extra?: Record<string, unknown> };
           send(res, e.status ?? 400, {success: false, error: e.message, ...(e.extra ?? {})});
         };
-        if (url.pathname === '/api/secure/provider-catalog/sandbox' && req.method === 'GET') {
-          send(res, 200, {success: true, data: await cat.sandbox(ctx)});
-          return;
-        }
         const connectMatch = url.pathname.match(/^\/api\/secure\/provider-catalog\/([^/]+)\/(authorize|connect)$/);
         if (connectMatch && req.method === 'POST') {
           const body = (await readJsonBody(req)) ?? {};
@@ -1545,7 +1558,7 @@ export function createYourPhrServer(options: ServerOptions) {
           // (yourphr#648). This one used to ignore `role` entirely, which meant an operator could
           // ask for an admin here and silently get a member.
           const role = typeof body?.['role'] === 'string' && (body['role'] as string).trim() !== '' ? (body['role'] as string).trim() : 'user';
-          await engine.managers.users.createUser(ctx, username, password, role);
+          await engine.managers.users.createUser(ctx, username, password, role, {isTest: body?.['is_test'] === true});
           send(res, 200, {success: true});
           return;
         }

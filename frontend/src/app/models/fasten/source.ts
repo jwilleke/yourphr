@@ -7,7 +7,7 @@ export class Source {
   user_id?: number
 
   display?: string
-  // "sandbox" (admin testing) or "production" (real patient data); used to split /sandbox vs /sources (#331)
+  // "sandbox" (a test account's, #919) or "production" (real patient data)
   environment?: string
   brand_id?: string
   portal_id?: string

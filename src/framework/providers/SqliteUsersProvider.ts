@@ -15,10 +15,11 @@ export const AUTH_USERS_SCHEMA = `CREATE TABLE IF NOT EXISTS auth_users (
   token_generation INTEGER NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL,
   role TEXT NOT NULL DEFAULT 'user',
-  email TEXT NOT NULL DEFAULT ''
+  email TEXT NOT NULL DEFAULT '',
+  is_test INTEGER NOT NULL DEFAULT 0
 )`;
 
-interface Row { username: string; password_hash: string; token_generation: number; created_at: string; role: string; email?: string }
+interface Row { username: string; password_hash: string; token_generation: number; created_at: string; role: string; email?: string; is_test?: number }
 
 export class SqliteUsersProvider extends BaseUsersProvider {
   constructor(private readonly db: InstanceType<typeof Database>) {
@@ -36,12 +37,12 @@ export class SqliteUsersProvider extends BaseUsersProvider {
     // The STORED name, unresolved. Storage is not where a role is interpreted (yourphr#648): the
     // provider cannot see the configured roles, and resolving here without them would demote every
     // admin to `user` on read. UsersManager.roleOf does the resolving, against the policy.
-    return { username: r.username, passwordHash: r.password_hash, tokenGeneration: r.token_generation, role: String(r.role ?? ''), createdAt: r.created_at, email: String(r.email ?? '') };
+    return { username: r.username, passwordHash: r.password_hash, tokenGeneration: r.token_generation, role: String(r.role ?? ''), createdAt: r.created_at, email: String(r.email ?? ''), isTest: r.is_test === 1 };
   }
 
-  async create(record: Omit<UserRecord, 'createdAt' | 'email'> & { createdAt?: string; email?: string }): Promise<void> {
-    this.db.prepare('INSERT INTO auth_users (username, password_hash, token_generation, created_at, role, email) VALUES (?, ?, ?, ?, ?, ?)')
-      .run(record.username, record.passwordHash, record.tokenGeneration, record.createdAt ?? new Date().toISOString(), record.role, record.email ?? '');
+  async create(record: Omit<UserRecord, 'createdAt' | 'email' | 'isTest'> & { createdAt?: string; email?: string; isTest?: boolean }): Promise<void> {
+    this.db.prepare('INSERT INTO auth_users (username, password_hash, token_generation, created_at, role, email, is_test) VALUES (?, ?, ?, ?, ?, ?, ?)')
+      .run(record.username, record.passwordHash, record.tokenGeneration, record.createdAt ?? new Date().toISOString(), record.role, record.email ?? '', record.isTest === true ? 1 : 0);
   }
 
   async get(username: string): Promise<UserRecord | undefined> {
@@ -74,6 +75,10 @@ export class SqliteUsersProvider extends BaseUsersProvider {
 
   async setEmail(username: string, email: string): Promise<boolean> {
     return this.db.prepare('UPDATE auth_users SET email = ? WHERE username = ?').run(email, username).changes === 1;
+  }
+
+  async setTest(username: string, isTest: boolean): Promise<boolean> {
+    return this.db.prepare('UPDATE auth_users SET is_test = ? WHERE username = ?').run(isTest ? 1 : 0, username).changes === 1;
   }
 
   async consentAcceptedAt(username: string): Promise<string> {

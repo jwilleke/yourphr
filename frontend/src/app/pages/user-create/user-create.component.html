@@ -36,6 +36,12 @@
             </div>
           }
         </div>
+        <!-- yourphr#919: an attribute, not a role — it grants nothing. -->
+        <div class="mb-3 form-check">
+          <input type="checkbox" id="is_test" formControlName="is_test" class="form-check-input">
+          <label for="is_test" class="form-check-label">Test account</label>
+          <div class="form-text">For test or sample data only, never real data. The account connects sandbox providers only, and shows a banner saying so.</div>
+        </div>
         <div class="mb-3">
           <label for="email">Email</label>
           <input type="email" id="email" formControlName="email" class="form-control">

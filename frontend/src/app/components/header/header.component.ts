@@ -47,6 +47,8 @@ export class HeaderComponent implements OnInit, OnDestroy {
   is_environment_desktop: boolean = environment.environment_desktop
 
   isAdmin = false;
+  /** yourphr#919: shown on every screen, so nobody mistakes test data for a real record. */
+  isTestAccount = false;
 
   // True only for the public demo's read-only admin (#516). Drives the banner below the header.
   isReadOnlyDemoAdmin = false;
@@ -63,7 +65,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
   ngOnInit() {
     // current-user + admin now resolve from the server (#103 Phase 2a); handle async.
     this.authService.GetCurrentUser()
-      .then((claims) => this.current_user_claims = claims)
+      .then((claims) => { this.current_user_claims = claims; this.isTestAccount = claims?.test_account === true })
       .catch(() => this.current_user_claims = new UserRegisteredClaims())
 
     this.authService.IsAdmin().then((isAdmin) => this.isAdmin = isAdmin);

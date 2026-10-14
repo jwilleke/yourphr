@@ -4,7 +4,7 @@ import { Engine } from '../../../framework/Engine.js';
 import { ApiContext } from '../../../framework/ApiContext.js';
 import { RecordsManager } from '../RecordsManager.js';
 import { JobsManager } from '../../../framework/managers/JobsManager.js';
-import { MANUAL_PLATFORM_TYPE, MANUAL_SOURCE_DISPLAY, SourcesManager, cleanFilename, isDisconnected, sourceShape, type NewSource } from '../SourcesManager.js';
+import { MANUAL_PLATFORM_TYPE, MANUAL_SOURCE_DISPLAY, SourcesManager, TEST_ACCOUNT_MISMATCH_NOTICE, cleanFilename, isDisconnected, sourceShape, type NewSource } from '../SourcesManager.js';
 import { BaseDocumentConverterProvider, type ConverterStatus } from '../../providers/BaseDocumentConverterProvider.js';
 import { ApiError } from '../../../framework/ApiContext.js';
 import { EventBus, type SourceEvent } from '../../../events/index.js';
@@ -19,6 +19,10 @@ import { ConfigurationManager } from '../../../framework/ConfigurationManager.js
 import { FhirHttpError } from '../../../sources/index.js';
 import { PolicyManager } from '../../../framework/managers/PolicyManager.js';
 import { FakeConfigProvider } from '../../../framework/providers/__tests__/FakeConfigProvider.js';
+import { NotificationManager } from '../../../framework/managers/NotificationManager.js';
+import { UsersManager } from '../../../framework/managers/UsersManager.js';
+import { FakeUsersProvider } from '../../../framework/providers/__tests__/FakeUsersProvider.js';
+import { PasswordAuthProvider } from '../../../framework/providers/PasswordAuthProvider.js';
 
 /** A scripted source client: refresh rotates tokens (or fails), fetch writes N records (or fails). */
 class ScriptedClient extends BaseSourceClientProvider {
@@ -683,5 +687,55 @@ describe('SourcesManager — upload (yourphr#736) and C-CDA (yourphr#735)', () =
     expect(cleanFilename('C:\\Users\\me\\Downloads\\export.json')).toBe('export.json');
     expect(cleanFilename('../../etc/x\u0000\u001b.xml')).toBe('x.xml');
     expect(cleanFilename('a'.repeat(300))).toHaveLength(120);
+  });
+});
+
+describe('SourcesManager — a source in the wrong kind of account (yourphr#919)', () => {
+  it('a test account labels what it adds sandbox; a real account production', async () => {
+    const tester = ApiContext.from({ username: 'tess', role: 'user', isTest: true }, engine);
+    expect((await sources.manualSource(tester)).environment).toBe('sandbox');
+    expect((await sources.manualSource(alice)).environment).toBe('production');
+  });
+
+  it('at boot, names each mismatch to the admins once, and resolves the notice when none is left', async () => {
+    const e2 = new Engine();
+    const provider = new FakeSourcesProvider();
+    const notes = new NotificationManager(e2);
+    const log: string[] = [];
+    const users = new UsersManager(e2, new FakeUsersProvider(), new PasswordAuthProvider());
+    const s2 = new SourcesManager(e2, provider, client, { maxPages: 1, log: (l) => log.push(l) });
+    e2.register('configuration', new ConfigurationManager(e2, new FakeConfigProvider(), { env: {} })).register('policy', new PolicyManager(e2))
+      .register('notifications', notes).register('users', users)
+      .register('records', new RecordsManager(e2, new FakeRecordsProvider())).register('jobs', new JobsManager(e2, new FakeJobsProvider()))
+      .register('sources', s2);
+    await e2.initialize();
+    const sys = ApiContext.system('test', 'test', e2);
+    await users.createUser(sys, 'root', 'a-long-enough-password', 'admin');
+    await users.createUser(sys, 'jim', 'a-long-enough-password');
+    await users.createUser(sys, 'tess', 'a-long-enough-password', 'user', { isTest: true });
+    const base = { fhirBaseUrl: 'https://f', tokenUrl: '', clientId: 'c', patient: 'p', resourceTypes: [], accessToken: '', refreshToken: '', expiresAt: 0 };
+    await provider.add({ ...base, userId: 'jim', display: 'Epic sandbox', environment: 'sandbox' });
+    await provider.add({ ...base, userId: 'jim', display: 'Real clinic', environment: 'production' });
+    await provider.add({ ...base, userId: 'tess', display: 'Real clinic', environment: 'production' });
+    await provider.add({ ...base, userId: 'tess', display: 'Epic sandbox', environment: 'sandbox' });
+    await provider.add({ ...base, userId: 'jim', display: 'Old', environment: '' }); // unknown: never guessed
+
+    const found = await s2.noticeTestAccountMismatches();
+    expect(found).toEqual([
+      { username: 'jim', display: 'Epic sandbox', environment: 'sandbox' },
+      { username: 'tess', display: 'Real clinic', environment: 'production' },
+    ]);
+    expect(log).toContain('sources: jim holds a sandbox source "Epic sandbox" but is not a test account');
+    const notice = notes.getUserNotifications('root').filter((n) => n.key === TEST_ACCOUNT_MISMATCH_NOTICE);
+    expect(notice).toHaveLength(1);
+    expect(notice[0]!.message).toContain('jim, tess');
+    expect(notes.getUserNotifications('jim').some((n) => n.key === TEST_ACCOUNT_MISMATCH_NOTICE)).toBe(false);
+
+    await s2.noticeTestAccountMismatches(); // a restart replaces, never stacks
+    expect(notes.getUserNotifications('root').filter((n) => n.key === TEST_ACCOUNT_MISMATCH_NOTICE)).toHaveLength(1);
+
+    for (const row of await provider.list()) if (row.display !== 'Old' && ((row.environment === 'sandbox') !== (row.userId === 'tess'))) await provider.remove(row.id);
+    expect(await s2.noticeTestAccountMismatches()).toEqual([]);
+    expect(notes.getUserNotifications('root').filter((n) => n.key === TEST_ACCOUNT_MISMATCH_NOTICE)).toHaveLength(0);
   });
 });

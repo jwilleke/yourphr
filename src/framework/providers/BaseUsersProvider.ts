@@ -47,11 +47,16 @@ export interface UserRecord {
   createdAt: string;
   /** The person's own email address (yourphr#792), '' when they have not given one. Optional to keep. */
   email: string;
+  /**
+   * A test account (yourphr#919, ngdpbase#1805): it holds test or sandbox data, never real data.
+   * An attribute, not a role — it grants nothing. False for every account made before the flag.
+   */
+  isTest: boolean;
 }
 
 export abstract class BaseUsersProvider {
   abstract initialize(): Promise<void>;
-  abstract create(record: Omit<UserRecord, 'createdAt' | 'email'> & { createdAt?: string; email?: string }): Promise<void>;
+  abstract create(record: Omit<UserRecord, 'createdAt' | 'email' | 'isTest'> & { createdAt?: string; email?: string; isTest?: boolean }): Promise<void>;
   abstract get(username: string): Promise<UserRecord | undefined>;
   abstract list(): Promise<UserRecord[]>;
   abstract count(): Promise<number>;
@@ -61,6 +66,8 @@ export abstract class BaseUsersProvider {
   abstract delete(username: string): Promise<boolean>;
   /** Set or clear ('') the account's email address (yourphr#792). False when there is no such account. */
   abstract setEmail(username: string, email: string): Promise<boolean>;
+  /** Mark or unmark a test account (yourphr#919). False when there is no such account. */
+  abstract setTest(username: string, isTest: boolean): Promise<boolean>;
   /** The legal consent (yourphr#614): when the person accepted the Privacy Policy and Terms, RFC3339 UTC; '' = revoked or never. */
   abstract consentAcceptedAt(username: string): Promise<string>;
   abstract setConsentAcceptedAt(username: string, acceptedAt: string): Promise<void>;
