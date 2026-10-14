@@ -40,6 +40,6 @@ Same substance, that version's wording: individual/independent developer · __no
 ## Remaining before production distribution
 
 1. ~~[#563](https://github.com/jwilleke/yourphr/issues/563) lands → flip both access-log answers to "complete record".~~ __Done 2026-08-19__ (v2.10.0 deployed, answers flipped and re-verified).
-2. ~~Refresh-token proof on the confidential client.~~ __Done 2026-08-19__ — pod log shows `refreshed == attempted`, the half-hourly warning ended (see [`epic-sandbox.md`](../epic-sandbox.md)).
+2. ~~Refresh-token proof on the confidential client.~~ __Done 2026-08-19__ — pod log shows `refreshed == attempted`, the half-hourly warning ended (see [`epic.md`](./epic.md)).
 3. Operator accepts the open.epic terms of use checkbox (legal agreement — the operator clicks it personally).
 4. __Save & Ready for Production__ — permanently locks the app and these answers; production client_id `dbef27b9-d302-4ed9-bea0-f933ef326be3` then distributes via Automatic Client ID Distribution (USCDI v3).

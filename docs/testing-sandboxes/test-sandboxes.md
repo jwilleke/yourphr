@@ -14,7 +14,7 @@ Every FHIR sandbox / test server YourPHR can connect to, in one place — with t
 |---|---|---|---|---|---|
 | __SMART Health IT__ | public (no secret) | __none__ | `$everything` | 📄 documented, not yet run live | [`vendors/smart-health-it.md`](../vendors/smart-health-it.md) |
 | __CMS Blue Button 2.0__ | __confidential__ (secret) | sandbox app | per-resource (no `$everything`) | ✅ __verified working__ (2026-06-14) | [`medicare-bluebutton.md`](../medicare-bluebutton.md) |
-| __Epic__ | public (PKCE) | BYO `client_id` | `$everything` | 🧪 used earlier | [`vendors/epic-sandbox.md`](../vendors/epic-sandbox.md) |
+| __Epic__ | public (PKCE) | BYO `client_id` | `$everything` | 🧪 used earlier | [`vendors/epic/epic.md`](../vendors/epic/epic.md) |
 | __Veradigm / FollowMyHealth (test)__ | public (PKCE) | Veradigm app | per-resource | ⛔ __blocked__ (`unauthorized_client`, ticket #17849) | [`FHIR/fhir-testing.md`](../FHIR/fhir-testing.md) |
 | __Oracle Health (Cerner)__ | public (PKCE) | code Console app (issues client_id) | per-resource search | ✅ __works__ — imports records (pinned patient-authorize override + enumerated v2 `.rs` + Offline app) | [`vendors/oracle-cerner.md`](../vendors/oracle-cerner.md) |
 | __athenahealth__ | __confidential__ (secret) | Developer Portal app (gated) | per-resource | 🟡 registered; creds obtained | [`vendors/athenahealth.md`](../vendors/athenahealth.md) |
@@ -84,7 +84,7 @@ Standard SMART-on-FHIR; bring your own `client_id` (register a free patient-faci
 | __Client Secret__ | *(blank — public/PKCE)* |
 | __Scopes__ | `launch/patient patient/*.read openid fhirUser offline_access` |
 
-Epic supports the wildcard, `fhirUser`, `offline_access`, and `$everything`. Test patients (e.g. Camila Lopez) — see Epic's docs. __Setup guide: [`vendors/epic-sandbox.md`](../vendors/epic-sandbox.md).__
+Epic supports the wildcard, `fhirUser`, `offline_access`, and `$everything`. Test patients (e.g. Camila Lopez) — see Epic's docs. __Setup guide: [`vendors/epic/epic.md`](../vendors/epic/epic.md).__
 
 __✅ Discovery pre-flight (2026-06-15, no relay needed):__ `…/FHIR/R4/.well-known/smart-configuration` → __200__, PKCE `S256`, capabilities include `launch-standalone` + `client-public` + `context-standalone-patient` + `permission-offline`. Epic's `scopes_supported` lists only a few entries (it doesn't advertise the full resource-scope set — normal for Epic; `patient/*.read` still works).
 
@@ -219,5 +219,5 @@ Keep the `SANDBOXES` catalog in that spec in sync with the list above whenever a
 
 - [`FHIR/fhir-testing.md`](../FHIR/fhir-testing.md) — step-by-step connect + the relay/poll issues log
 - [`medicare-bluebutton.md`](../medicare-bluebutton.md) — the verified Blue Button walkthrough
-- [`vendors/epic-sandbox.md`](../vendors/epic-sandbox.md) · [`vendors/followmyhealth.md`](../vendors/followmyhealth.md)
+- [`vendors/epic/epic.md`](../vendors/epic/epic.md) · [`vendors/followmyhealth.md`](../vendors/followmyhealth.md)
 - [`planning/smart-on-fhir/smart-on-fhir.md`](../planning/smart-on-fhir/smart-on-fhir.md) — the SMART design

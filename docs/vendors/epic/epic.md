@@ -55,7 +55,7 @@ Everything yourPHR syncs from Epic qualifies in R4 except `MedicationStatement` 
   token-refresh: source bb1dbc09-…: access token expired and no refresh token is available; reconnect the source
   ```
 
-  Access token dies; __no `refresh_token` stored__. Other sources on the same host still refresh (`attempted N, refreshed M` with M≥1). Ensure the Epic app grants __offline__ / `offline_access` (scopes table below already request it) and reconnect once so a refresh token is issued — otherwise re-sync / scheduled refresh will fail until the user reconnects. Contrast Oracle Challenge 4 / Offline app type in [`oracle-cerner.md`](./oracle-cerner.md).
+  Access token dies; __no `refresh_token` stored__. Other sources on the same host still refresh (`attempted N, refreshed M` with M≥1). Ensure the Epic app grants __offline__ / `offline_access` (scopes table below already request it) and reconnect once so a refresh token is issued — otherwise re-sync / scheduled refresh will fail until the user reconnects. Contrast Oracle Challenge 4 / Offline app type in [`oracle-cerner.md`](../oracle-cerner.md).
 
 - __Not the multi-hour hang:__ wall clock for Epic was minutes; the long 2026-07-31 download was __Oracle__ ([#439](https://github.com/jwilleke/yourphr/issues/439)).
 
@@ -67,8 +67,8 @@ Everything yourPHR syncs from Epic qualifies in R4 except `MedicationStatement` 
   requires registration __and vendor approval__ before issuing a `client_id`,
   which is why it is `blocked`. Epic is therefore the better *first* live target,
   even though Veradigm is the primary real-world dataset YourPHR is hardened
-  against (see [`followmyhealth.md`](./followmyhealth.md)).
-- Broader friction context: [`clientid-friction.md`](./clientid-friction.md).
+  against (see [`followmyhealth.md`](../followmyhealth.md)).
+- Broader friction context: [`clientid-friction.md`](../clientid-friction.md).
 
 ## How the pieces fit
 
@@ -80,7 +80,7 @@ Everything yourPHR syncs from Epic qualifies in R4 except `MedicationStatement` 
   `https://relay.nerdsbythehour.com`; override with `YOURPHR_RELAY_PUBLIC_URL`
   (the origin the provider redirects to) plus `YOURPHR_RELAY_URL` /
   `YOURPHR_RELAY_SECRET` (where the backend polls). No frontend rebuild is
-  needed — see [`../../relay/README.md`](../../relay/README.md).
+  needed — see [`../../relay/README.md`](../../../relay/README.md).
 - The redirect URI registered with Epic must __exactly__ match the relay
   callback: `https://relay.nerdsbythehour.com/callback` (or your own relay's
   `/callback`).
@@ -103,7 +103,7 @@ Everything yourPHR syncs from Epic qualifies in R4 except `MedicationStatement` 
 - Select the FHIR R4 APIs you want (e.g. Patient, AllergyIntolerance,
   Condition, MedicationRequest, Observation, DocumentReference). Sticking to
   US Core resources keeps you eligible for Automatic Client ID Distribution
-  later (see [`clientid-friction.md`](./clientid-friction.md)).
+  later (see [`clientid-friction.md`](../clientid-friction.md)).
 - Save. Epic issues a __Non-Production Client ID__ immediately — copy it.
 
 ### Step 2 — Connect from YourPHR
@@ -188,7 +188,7 @@ is the supported verification path.
 - Mission: [#15](https://github.com/jwilleke/yourphr/issues/15) (21st Century Cures Act — immediate patient access).
 - This feature: [#257](https://github.com/jwilleke/yourphr/issues/257); PR [#260](https://github.com/jwilleke/yourphr/pull/260).
 - SMART on FHIR umbrella: [EPIC #20](https://github.com/jwilleke/yourphr/issues/20) — children [#48](https://github.com/jwilleke/yourphr/issues/48), [#49](https://github.com/jwilleke/yourphr/issues/49), [#50](https://github.com/jwilleke/yourphr/issues/50), [#51](https://github.com/jwilleke/yourphr/issues/51), [#52](https://github.com/jwilleke/yourphr/issues/52), [#53](https://github.com/jwilleke/yourphr/issues/53), [#54](https://github.com/jwilleke/yourphr/issues/54).
-- Design: [`../planning/smart-on-fhir/smart-on-fhir.md`](../planning/smart-on-fhir/smart-on-fhir.md), [`../planning/smart-on-fhir/oauth-gateway.md`](../planning/smart-on-fhir/oauth-gateway.md).
-- Friction notes: [`clientid-friction.md`](./clientid-friction.md).
+- Design: [`../planning/smart-on-fhir/smart-on-fhir.md`](../../planning/smart-on-fhir/smart-on-fhir.md), [`../planning/smart-on-fhir/oauth-gateway.md`](../../planning/smart-on-fhir/oauth-gateway.md).
+- Friction notes: [`clientid-friction.md`](../clientid-friction.md).
 - Epic docs: SMART test patients <https://fhir.epic.com/Documentation?docId=testpatients>; OAuth2 <https://fhir.epic.com/Documentation?docId=oauth2>.
 - [Epic Developer Docs](https://fhir.epic.com/Documentation?docId=developerguidelines)

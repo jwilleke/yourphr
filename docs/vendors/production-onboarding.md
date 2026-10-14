@@ -1,6 +1,6 @@
 # Production onboarding log
 
-What it took, vendor by vendor, to get yourPHR from a working sandbox to __real patients at real organizations__. The sandbox guides (`epic-sandbox.md`, `oracle-cerner.md` and the rest) explain how to connect; this file records the production process itself: each step, when it happened, what blocked it, and what we would do differently. Add to it as things happen, newest last within each vendor, with the date and the issue.
+What it took, vendor by vendor, to get yourPHR from a working sandbox to __real patients at real organizations__. The sandbox guides (`epic/epic.md`, `oracle-cerner.md` and the rest) explain how to connect; this file records the production process itself: each step, when it happened, what blocked it, and what we would do differently. Add to it as things happen, newest last within each vendor, with the date and the issue.
 
 Why it matters: getting a production client ID is the project's biggest blocker ([`clientid-friction.md`](./clientid-friction.md)), and each vendor's process is learned the hard way once. Writing it down is how the second time is quick.
 
@@ -31,7 +31,7 @@ Why it matters: getting a production client ID is the project's biggest blocker 
 
 | Date | What happened |
 |---|---|
-| 2026-06-15 → 2026-08-01 | Sandbox: discovery, then end-to-end connect and import verified on production hosts ([`epic-sandbox.md`](./epic-sandbox.md#live-connect-log-dated)). |
+| 2026-06-15 → 2026-08-01 | Sandbox: discovery, then end-to-end connect and import verified on production hosts ([`epic/epic.md`](./epic/epic.md#live-connect-log-dated)). |
 | 2026-08-19 | App made a __confidential client with persistent access__ (Epic issues no refresh tokens to public standalone clients); refresh tokens proven in sandbox. Marked __Ready for Production__ with Automatic Client Distribution = USCDI v3. |
 | by 2026-09-27 | __519 organizations__ requested the app through automatic distribution; every one shows "Syncing to Production has been temporarily disabled for this customer by Epic while your app is modified". Client ID downloads: 0. |
 | 2026-09-27 | Asked <open@epic.com> what modification Epic is waiting on, and whether per-organization activation with a client secret is the next step. |
