@@ -11,7 +11,7 @@ Why it matters: getting a production client ID is the project's biggest blocker 
 | __Epic__ | Replacement app __62263__ built with only qualifying APIs (Test stage); 56252 paused at 521 organizations | Sandbox test of 62263, then Ready for Production; deactivate 56252 | [#863](https://github.com/jwilleke/yourphr/issues/863), [#408](https://github.com/jwilleke/yourphr/issues/408) |
 | __CMS Blue Button__ | Runbook written; see it for the current step | CMS production access process | [`../cms-bluebutton-production-access.md`](../cms-bluebutton-production-access.md), [#433](https://github.com/jwilleke/yourphr/issues/433) |
 | __athenahealth__ | Sandbox only; record sharing gated on portal onboarding | Developer Portal approval | [#339](https://github.com/jwilleke/yourphr/issues/339) |
-| __Oracle Health (Cerner)__ | Sandbox only (partial) | not started | [`oracle-cerner.md`](./oracle-cerner.md) |
+| __Oracle Health (Cerner)__ | __Recognised at real hospitals with no activation__ (2026-10-14): the self-service Patient app reaches the patient login at real Oracle hospitals | A real patient connect, and loading Oracle's 1,319-endpoint list into the catalog ([#925](https://github.com/jwilleke/yourphr/issues/925)) | [`oracle-cerner.md`](./oracle-cerner.md) |
 | __Veradigm / FollowMyHealth__ | Sandbox `unauthorized_client` until Veradigm provisions the app | Veradigm | [#53](https://github.com/jwilleke/yourphr/issues/53) |
 
 ## Epic — app 56252, replaced by app 62263 (YourPHR)
