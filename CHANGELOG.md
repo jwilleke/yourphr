@@ -1,5 +1,18 @@
 # Changelog
 
+## [3.20.1](https://github.com/jwilleke/yourphr/compare/v3.20.0...v3.20.1) (2026-10-14)
+
+__Save Report is quick again, and so is every list of one kind of record.__
+
+### Bug Fixes
+
+- __Save Report no longer freezes the server__ ([#915](https://github.com/jwilleke/yourphr/issues/915)): building your health summary searched each kind of record (medications, allergies, results…) through all of your records, about 0.4 s each even for a kind you have none of, and held the server for the whole report: over 4 seconds on a large record, far longer on a small server. Each search now goes straight to that kind of record, and the report takes a fraction of a second.
+- This also fixes a slowdown introduced in 3.19.2: any list of one kind of record, newest first, had become a walk through your whole record.
+
+### Internal
+
+- One more index on the records table, added by a one-time migration at startup (under a second).
+
 ## [3.20.0](https://github.com/jwilleke/yourphr/compare/v3.19.3...v3.20.0) (2026-10-14)
 
 __Upload a file or restore a backup, and walk away.__
