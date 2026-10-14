@@ -179,3 +179,10 @@ e2e/.admin-pass
 
 # Credentials kept beside the docs for convenience; never committed.
 docs/creds/
+
+# ngdpbase add-on (#920): compiled in place from .ts inside an ngdpbase tree; the Angular build is copied to addons/yourphr/web when packaged
+addons/*/**/*.js
+addons/*/**/*.js.map
+addons/*/.tsbuildinfo
+addons/*/node_modules/
+addons/yourphr/web/

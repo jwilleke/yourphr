@@ -1,0 +1,8 @@
+{
+  "_comment_yourphr": "YourPHR add-on defaults (first test, jwilleke/yourphr#920). Merged into the site's configuration only while ngdpbase.addons.yourphr.enabled is true; the site's app-custom-config.json overrides any entry. No permissions yet: the first test only proves the shared session, and holds no records.",
+  "ngdpbase.addons.yourphr.enabled": false,
+  "_comment_mount_path": "Where the Angular app is served. The add-on rewrites the base href in index.html to this path.",
+  "ngdpbase.addons.yourphr.mount-path": "/phr",
+  "_comment_web_root": "Directory holding the built Angular app (frontend: yarn build -c prod, output dist/web). Empty means <add-on dir>/web, where a packaged image would copy it.",
+  "ngdpbase.addons.yourphr.web-root": ""
+}
