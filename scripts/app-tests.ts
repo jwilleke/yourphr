@@ -268,6 +268,16 @@ async function main(): Promise<void> {
   }
   const newConditions = (await (await fetch(`${base}/api/secure/resource/fhir?sourceResourceType=Condition&sourceID=${newSourceId}`, authed(carolToken))).json()) as { data: unknown[] };
   check('the initial import ran in the background: a job for the new source, its records attributed to it', importedJob?.job_status === 'STATUS_DONE' && newConditions.data.length === 3);
+  // yourphr#919: carol holds a sandbox source. Unmarking her makes it a mismatch, named to the admin at
+  // once; marking her again clears the notice without a restart.
+  const mismatchNotices = async () => (((await (await fetch(`${base}/api/secure/notifications`, authed(adminToken))).json()) as { data: { title: string; link?: string }[] }).data ?? [])
+    .filter((n) => /wrong kind of account/.test(n.title));
+  await catJson('/api/secure/users/carol/test', adminToken, { method: 'PUT', body: JSON.stringify({ is_test: false }) });
+  const whileReal = await mismatchNotices();
+  await catJson('/api/secure/users/carol/test', adminToken, { method: 'PUT', body: JSON.stringify({ is_test: true }) });
+  const afterFix = await mismatchNotices();
+  check('a sandbox source in a real account is a notice for the admin, linked to Users, raised and cleared as the flag changes — no restart (yourphr#919)',
+    whileReal.length === 1 && whileReal[0]?.link === '/admin/users' && afterFix.length === 0);
 
   // --- demo mode (yourphr#643): the one-click entrance, and the restriction that makes it safe ---
   //

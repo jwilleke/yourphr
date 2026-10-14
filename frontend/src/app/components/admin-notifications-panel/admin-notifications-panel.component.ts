@@ -2,15 +2,8 @@ import {Component, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {RouterModule} from '@angular/router';
 import {FastenApiService} from '../../services/fasten-api.service';
-import {AppNotification} from '../../models/fasten/app-notification';
+import {AppNotification, NOTIFICATION_PLACES} from '../../models/fasten/app-notification';
 
-/** Plain words for where a link goes, so the button says it instead of showing a path. */
-const PLACES: Record<string, string> = {
-  '/admin/database': 'Admin → Database',
-  '/admin/config': 'Admin → Configuration',
-  '/admin/logs': 'Admin → Server logs',
-  '/admin/provider-catalog': 'Admin → Provider catalog',
-};
 
 // The admin home's Notifications panel (#854), modelled on ngdpbase's System Notifications card:
 // count, newest first, coloured by level, dismiss each or all. Unlike ngdpbase's, every notice that
@@ -54,7 +47,7 @@ export class AdminNotificationsPanelComponent implements OnInit {
   }
 
   place(link: string): string {
-    return PLACES[link] ?? 'Open';
+    return NOTIFICATION_PLACES[link] ?? 'Open';
   }
 
   dismiss(n: AppNotification): void {

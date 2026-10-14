@@ -3,7 +3,7 @@ import {NavigationEnd, Router, RouterModule} from '@angular/router';
 import {Subscription} from 'rxjs';
 import {filter} from 'rxjs/operators';
 import {FastenApiService} from '../../services/fasten-api.service';
-import {AppNotification} from '../../models/fasten/app-notification';
+import {AppNotification, notificationLinkLabel} from '../../models/fasten/app-notification';
 import {AuthService} from '../../services/auth.service';
 
 /** How often, at most, a navigation re-asks the server. A banner a minute late is fine; a request per click is not. */
@@ -71,6 +71,10 @@ export class NotificationBannerComponent implements OnInit, OnDestroy {
   linkFor(n: AppNotification): string | undefined {
     if (!n.link) return undefined;
     return n.link.startsWith('/admin') && !this.isAdmin ? undefined : n.link;
+  }
+
+  linkLabel(link: string): string {
+    return notificationLinkLabel(link);
   }
 
   dismiss(n: AppNotification) {

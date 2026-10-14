@@ -1058,6 +1058,9 @@ export function createYourPhrServer(options: ServerOptions) {
           }
           const username = decodeURIComponent(testMatch[1]!);
           await engine.managers.users.setTest(ctx, username, body['is_test'] as boolean);
+          // Re-judged at once, not at the next restart: marking the account is how the admin answers
+          // the mismatch notice, and a notice that outlives its fix reads as the fix not working.
+          if (engine.has('sources')) await engine.managers.sources.noticeTestAccountMismatches();
           send(res, 200, {success: true, data: {username, is_test: body['is_test']}});
           return;
         }
