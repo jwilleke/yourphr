@@ -8,7 +8,51 @@
 >
 > __Re-verified 2026-09-25__ against ngdpbase `2f02a12f` and YourPHR `4dc9ac26a`. Four days of shipping moved YourPHR under the document: two rows of the overlap table below describe gaps that have since been filled, and two capabilities the table never listed turned out to be the ones the current design work needed. Counts re-measured. Jim's framing, recorded here because it changes what this document is for: __YourPHR is eventually expected to be a set of addons within an ngdpbase implementation__ — so the question is no longer "should we adopt it" but "which of these do we build twice".
 >
+> __Re-checked 2026-10-14__ against ngdpbase `v5.8.0-7-g32faa26c` and YourPHR `v3.21.0`. [#697](https://github.com/jwilleke/yourphr/issues/697) closed 2026-10-13 with the "default to ngdpbase" rule and left the add-on question open. The question this document posed on 2026-09-25 — *which of these do we build twice* — has been answered by default: most of them. See *Where it stands, 2026-10-14*, and the measurement now under way in [#920](https://github.com/jwilleke/yourphr/issues/920). The sections below it are not re-verified this round.
+>
 > Read with [`architecture-principles-typescript.md`](https://github.com/jwilleke/ngdpbase/blob/master/docs/planning/architecture-principles-typescript.md), which now lives in ngdpbase. That document is the governing one and already answers part of this.
+
+## Where it stands, 2026-10-14
+
+### The overlap table was closed by copying
+
+Every row answered since 2026-09-25 was answered by porting ngdpbase's code into `src/framework/`, not by adopting it:
+
+| Issue | Closed by |
+|---|---|
+| [#536](https://github.com/jwilleke/yourphr/issues/536) outbound mail | Port of `EmailManager` |
+| Token-expiry notice (deferred on [#695](https://github.com/jwilleke/yourphr/issues/695)) | Port of `NotificationManager` |
+| [#775](https://github.com/jwilleke/yourphr/issues/775) one markdown module | Port of `FilterManager` / `SecurityFilter` |
+| [#714](https://github.com/jwilleke/yourphr/issues/714) maintenance mode | Rebuilt here from ngdpbase's design |
+| [#631](https://github.com/jwilleke/yourphr/issues/631) backups restore the instance | Our own `BackupManager` |
+| [#856](https://github.com/jwilleke/yourphr/issues/856) background jobs | Port of `BackgroundJobManager` |
+
+`src/framework/managers/` now holds 13 managers; 37 files under `src/framework/` name ngdpbase as their source. The backend grew from 16,802 to 22,697 lines, and `src/server.ts` from 1,345 to 1,844 lines (103 route matches).
+
+Still open and next in line to be copied: help ([#632](https://github.com/jwilleke/yourphr/issues/632), [#633](https://github.com/jwilleke/yourphr/issues/633)), themes ([#436](https://github.com/jwilleke/yourphr/issues/436), [#499](https://github.com/jwilleke/yourphr/issues/499), [#502](https://github.com/jwilleke/yourphr/issues/502)), per-user settings ([#709](https://github.com/jwilleke/yourphr/issues/709)), patient notes on records ([#353](https://github.com/jwilleke/yourphr/issues/353)).
+
+### The copies drift, in both directions
+
+A port is a snapshot. ngdpbase moved 717 commits in the same window, and kept changing the very managers that had been copied:
+
+- __Jobs.__ After the `BackgroundJobManager` port, ngdpbase added a scheduler (RRULE), resume after restart, retry with backoff and checkpoints, an admin page, and automatic backups as a scheduled job. None of it is in the copy.
+- __Markdown.__ After the 2026-09-30 filter port, ngdpbase fixed CommonMark code spans and brackets inside link text, and moved to one HTML policy for save and render (`3070db12`).
+- __Notifications.__ The copy has been fixed twice here ([#869](https://github.com/jwilleke/yourphr/issues/869), [#919](https://github.com/jwilleke/yourphr/issues/919)); neither fix exists upstream.
+- __Auth.__ Being designed in both repos at once.
+
+This is the cost the "copy the shape" rule does not show when it is adopted: every later fix is made twice or the copies diverge. The operator's description of it on 2026-10-14 was *fighting two battles at once*.
+
+### A constraint on every option
+
+__The project stays at yourphr.org and in `jwilleke/yourphr`__ (Jim, 2026-10-14: the domain is paid for and the GitHub name is owned). That rules out nothing above. The add-on route is the geohazardwatch shape: its own repo and domain, a Dockerfile `FROM ghcr.io/jwilleke/ngdpbase:<version>`, the domain shipped as `@jwilleke/yourphr-addon`. What it does rule out is folding YourPHR into the ngdpbase repo or serving it from an ngdpbase-branded host.
+
+### The options, and the measurement
+
+1. __Keep copying.__ The cost grows with each port and needs a standing upstream-diff sync per copied manager.
+2. __Pull the framework out of ngdpbase into a package__ YourPHR depends on — the governing document's own *"extract the package second"*. It ends the copying for back-end services, but not for required-pages help or the admin screens.
+3. __YourPHR as an ngdpbase add-on.__ It ends the double work. The cost is the `src/server.ts` rewrite, which has grown by a third since this document sized it.
+
+Option 3 is now being measured instead of argued: [#920](https://github.com/jwilleke/yourphr/issues/920) runs the Sources slice (mapped below under *One vertical slice*) as an add-on on the branch `yourphr-addon`, time-boxed to one week. Until it reports, no further ngdpbase manager is ported into `src/framework/`. If it says no, option 2 is the fallback.
 
 ## The question, stated properly
 
@@ -525,7 +569,7 @@ Recorded because each was asserted confidently before being checked, and the pat
 
 ## Open, not decided
 
-- The deciding question above.
+- The deciding question above — now being measured in [#920](https://github.com/jwilleke/yourphr/issues/920) rather than argued.
 - Whether the six audit gaps (see the session that produced this) are filed against YourPHR's own `AuditManager` or become *"adopt ngdpbase's"* — they are written differently depending on this document's outcome, so they are held. One of them, agent-token lifecycle audit, closed in `927110700`.
 - ~~Repointing the six dangling references to the governing document.~~ Done — none remain (2026-09-21).
 - ~~__Whether YourPHR's demo admin can read Admin -> Configuration__, which D18 of the security-posture record says it must not. Cheap to establish, and a defect if it is true.~~ It can, on the live demo — [#751](https://github.com/jwilleke/yourphr/issues/751).
