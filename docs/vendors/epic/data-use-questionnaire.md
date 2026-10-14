@@ -1,6 +1,6 @@
 # Epic Data Use Questionnaire — answers of record
 
-The answers filed for the __YourPHR__ app (appId 56252) at [fhir.epic.com](https://fhir.epic.com/Developer/DataUseQuestionnaire?appId=56252), completed __2026-08-19__. Epic shows these answers to patients inside the OAuth approval screen, and requires them to be accurate and truthful — false answers can suspend the app. Both questionnaire versions (5/28/2021 and 12/27/2018) are answered; older Epic orgs only present the 2018 one.
+The answers filed for the __YourPHR__ app (appId 56252, and since 2026-10-14 its replacement appId __62263__, filed with the same answers: 13 on the 2021 questionnaire, 12 on the 2018 one) at [fhir.epic.com](https://fhir.epic.com/Developer/DataUseQuestionnaire?appId=56252), completed __2026-08-19__. Epic shows these answers to patients inside the OAuth approval screen, and requires them to be accurate and truthful — false answers can suspend the app. Both questionnaire versions (5/28/2021 and 12/27/2018) are answered; older Epic orgs only present the 2018 one.
 
 __Answers freeze permanently when the app is marked Save & Ready for Production.__ Until then they are editable. One answer is deliberately provisional — see the access-log row.
 
