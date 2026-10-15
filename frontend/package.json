@@ -64,7 +64,7 @@
   "devDependencies": {
     "@angular-devkit/build-angular": "^22.2.0",
     "@angular-eslint/builder": "22.5.0",
-    "@angular/cli": "^22.2.0",
+    "@angular/cli": "^22.2.2",
     "@angular/compiler-cli": "^22.2.1",
     "@angular/language-service": "^22.2.1",
     "@compodoc/compodoc": "^2.0.0",
