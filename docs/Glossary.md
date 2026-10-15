@@ -38,6 +38,30 @@ __BAA (business associate agreement)__: a contract a covered entity signs with a
 
 __PHI (protected health information)__: health information that identifies a person. Your records are PHI; this page contains none.
 
+## Health information networks
+
+Instead of an app connecting to every hospital one by one, hospitals join a network once, and the network finds and fetches a patient's records from everywhere they've been seen. More detail: [`health-Interoperability-Frameworks.md`](./health-Interoperability-Frameworks.md) and [`TEFCA.md`](./TEFCA.md).
+
+__Health information network__ (or __HIN__, or __HIE__ for health information exchange): an organization that connects many hospitals and clinics so they can exchange records.
+
+__TEFCA (Trusted Exchange Framework and Common Agreement)__: the US government's national "network of networks", required by the 21st Century Cures Act. One set of rules (the Common Agreement) lets records flow between all networks that sign it. It's run for the government by The Sequoia Project.
+
+__QHIN (Qualified Health Information Network)__: a network the government has approved to be a hub of TEFCA. Hospitals, clinics and apps join TEFCA through one QHIN, and every QHIN connects to every other. Examples: eHealth Exchange, Epic Nexus, Health Gorilla, CommonWell, Kno2.
+
+__Individual Access Services (IAS)__: the part of TEFCA that lets *you*, the patient, get your own records through an app of your choice. The app checks that you're really you, then asks the network for your records.
+
+__Identity proofing__ (__IAL2__): checking that you are who you say you are, to a high standard, for example with a government ID and a selfie, or a mobile driver's licence. Networks require it before they hand records to a patient's app.
+
+__Record locator__: a network service that finds which hospitals and clinics hold records about you.
+
+__Carequality__: an older rulebook that lets existing networks (Epic's Care Everywhere and others) query each other, mostly for document summaries.
+
+__CommonWell Health Alliance__: a network founded by EHR vendors, with a record locator. It's now also a TEFCA QHIN.
+
+__CMS Aligned Networks__: networks that meet the criteria of CMS's voluntary Interoperability Framework (2025). Patients can use apps of their choice, commercial or not, through them, after proving who they are once. Records come as FHIR.
+
+__C-CDA__ in networks: the networks were built before FHIR, to send whole summary documents. That's why records from a network often arrive as a C-CDA rather than as FHIR. FHIR is being added.
+
 ## How the connection works
 
 __FHIR__ (say "fire"): the common language health systems use to send records between computers. When YourPHR fetches your records, they arrive as FHIR.
