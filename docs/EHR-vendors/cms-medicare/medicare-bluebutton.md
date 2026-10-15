@@ -2,7 +2,7 @@
 
 How to connect __CMS Blue Button 2.0__ (Medicare claims data) to YourPHR as a SMART-on-FHIR source — __sandbox__ (verified) and __production__ (after CMS credentials).
 
-__Related:__ [provider catalog](../../provider-catalog/README.md) · [connection policy](../../connection-policy.md) · [attributions](../../Attributions.md) · __[CMS production access runbook](./cms-bluebutton-production-access.md)__ ([#433](https://github.com/jwilleke/yourphr/issues/433)) · [#432](https://github.com/jwilleke/yourphr/issues/432) · [#408](https://github.com/jwilleke/yourphr/issues/408)
+__Related:__ [provider catalog](../../architecture/provider-catalog.md) · [connection policy](../../architecture/connection-policy.md) · [attributions](../../Attributions.md) · __[CMS production access runbook](./cms-bluebutton-production-access.md)__ ([#433](https://github.com/jwilleke/yourphr/issues/433)) · [#432](https://github.com/jwilleke/yourphr/issues/432) · [#408](https://github.com/jwilleke/yourphr/issues/408)
 
 ## Patient-facing name: “Medicare” (#429)
 
@@ -110,7 +110,7 @@ __Goal:__ After CMS issues production credentials, enable patient __Medicare__ o
 1. As admin, open __Admin Dashboard → SMART OAuth Relay__ (or `GET /api/secure/source/relay-config`).
 2. Copy __`callback_url`__ (public origin + `/callback`).
 3. Register that __exact__ string with CMS (sandbox app and/or production app).
-4. Ensure `YOURPHR_RELAY_PUBLIC_URL` (and `YOURPHR_RELAY_URL` / `YOURPHR_RELAY_SECRET` as needed) match how you deploy the relay. See [`deployment/README.md`](../../deployment/README.md) and [`SMART-flow-map.md`](../../SMART-flow-map.md).
+4. Ensure `YOURPHR_RELAY_PUBLIC_URL` (and `YOURPHR_RELAY_URL` / `YOURPHR_RELAY_SECRET` as needed) match how you deploy the relay. See [`deployment/README.md`](../../deployment/README.md) and [`SMART-flow-map.md`](../../architecture/SMART-flow-map.md).
 
 ### C. Production catalog entry (no code change)
 
@@ -165,7 +165,7 @@ Admin → __Instance__ card: operator name / contact email / help URL for this d
 - __Confidential client__ — [#286](https://github.com/jwilleke/yourphr/issues/286).
 - __No `$everything`__ — per-resource fetch ([#250](https://github.com/jwilleke/yourphr/issues/250)).
 - __Patient id__ — may come from Coverage/EOB when token omits `patient` ([#293](https://github.com/jwilleke/yourphr/issues/293)).
-- __Connection policy__ — PP/ToS + pre-connect modal ([connection-policy.md](../../connection-policy.md)).
+- __Connection policy__ — PP/ToS + pre-connect modal ([connection-policy.md](../../architecture/connection-policy.md)).
 
 ## Related code / constants
 

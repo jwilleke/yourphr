@@ -39,6 +39,6 @@ Nothing to register â€” just connect. Prefer this sandbox over Blue Button for â
 
 ## See also
 
-- Index + status: [`../testing-sandboxes/test-sandboxes.md`](../../testing-sandboxes/test-sandboxes.md)
+- Index + status: [`../testing-sandboxes/test-sandboxes.md`](../../development/test-sandboxes.md)
 - Vendor matrix: [`README.md`](../README.md)
 - Step-by-step (Option A): [`../FHIR/fhir-testing.md`](../../FHIR/fhir-testing.md)

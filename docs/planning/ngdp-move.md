@@ -28,7 +28,7 @@ Until #920 reports, the standing rule from [#697](https://github.com/jwilleke/yo
 | 2026-10-14 | Angular keeps the patient record screens. ngdpbase takes sign-in and MFA, OIDC consent, `/profile`, `/admin`, help and notifications. Our ~15 chrome components and `UsersManager`, `SessionsManager`, `AgentTokensManager`, `SettingsManager` are deleted at cutover. | [#920](https://github.com/jwilleke/yourphr/issues/920#issuecomment-6174353470) |
 | 2026-10-14 | Auth and chrome issues on our side are parked until #920 reports; [#814](https://github.com/jwilleke/yourphr/issues/814) is judged on its own as a possible live exposure. Patient-domain work continues. | [#920](https://github.com/jwilleke/yourphr/issues/920#issuecomment-6174353470) |
 | 2026-10-14 | A "go" requires ngdpbase [#1723](https://github.com/jwilleke/ngdpbase/issues/1723) (database backup), ported from current yourphr `main`. | blocked-by on [#920](https://github.com/jwilleke/yourphr/issues/920) |
-| 2026-10-14 | Cutover follows the Go move's rules: rehearse the swap, not only the code; household instance first, demo second; migration tooling in the image; stop rule — copied and add-on code coexist one release cycle at most. | [#920](https://github.com/jwilleke/yourphr/issues/920#issuecomment-6174419416), [`getting-off-go.md`](getting-off-go.md) |
+| 2026-10-14 | Cutover follows the Go move's rules: rehearse the swap, not only the code; household instance first, demo second; migration tooling in the image; stop rule — copied and add-on code coexist one release cycle at most. | [#920](https://github.com/jwilleke/yourphr/issues/920#issuecomment-6174419416), [`getting-off-go.md`](../archive/getting-off-go.md) |
 
 ## Plan
 
@@ -54,7 +54,7 @@ Until #920 reports, the standing rule from [#697](https://github.com/jwilleke/yo
 |---|---|
 | [`architecture-principles-typescript.md`](https://github.com/jwilleke/ngdpbase/blob/master/docs/planning/architecture-principles-typescript.md) (ngdpbase) | Governing architecture; names the legitimate divergences |
 | [#920](https://github.com/jwilleke/yourphr/issues/920), branch `yourphr-addon` | The measurement this direction waits on |
-| [`getting-off-go.md`](getting-off-go.md) | Complete; its cutover rules are reused here |
+| [`getting-off-go.md`](../archive/getting-off-go.md) | Complete; its cutover rules are reused here |
 | [ngdp-accounting-addons](https://github.com/jwilleke/ngdp-accounting-addons) | Reference shape for a complex, optional add-on |
 | [#591](https://github.com/jwilleke/yourphr/issues/591), [#608](https://github.com/jwilleke/yourphr/issues/608) | Parity epic; the ngdpbase-model architecture already applied |
 

@@ -2,7 +2,7 @@
 
 Standalone, community-maintained continuation of [Fasten OnPrem](https://github.com/fastenhealth/fasten-onprem) (GPL v3, attribution retained). Project home: [yourphr.org](https://yourphr.org).
 
-Canonical agent/product brief: [`AGENTS.md`](../AGENTS.md). As-built SMART connect map: [`SMART-flow-map.md`](SMART-flow-map.md). Live priorities: GitHub labels / [`TODO.md`](../TODO.md).
+Canonical agent/product brief: [`AGENTS.md`](../AGENTS.md). As-built SMART connect map: [`SMART-flow-map.md`](./architecture/SMART-flow-map.md). Live priorities: GitHub labels / [`TODO.md`](../TODO.md).
 
 ## Mission and branding
 
@@ -26,7 +26,7 @@ These are __done in main / released__ — not open planning items. Details in `C
 | Non-US-Core display fallbacks (e.g. Encounter) | ✅ Done | Prefer `class.code` / location when `type[]` absent (Veradigm-oriented) |
 | `sort_title` / `sort_date` generation | ✅ Done | Across major clinical resource types |
 | `fasten-sources` local stub | ✅ Done | Replaces private upstream package; vendor committed |
-| Generic SMART R4 client + store-and-poll __Go__ OAuth relay | ✅ Done | EPIC [#20](https://github.com/jwilleke/yourphr/issues/20) plumbing: client, `backend/cmd/relay`, `backend/pkg/relay`. __Not__ Fasten Lighthouse; __not__ a Cloudflare Worker as the primary design. Map: [`SMART-flow-map.md`](SMART-flow-map.md) |
+| Generic SMART R4 client + store-and-poll __Go__ OAuth relay | ✅ Done | EPIC [#20](https://github.com/jwilleke/yourphr/issues/20) plumbing: client, `backend/cmd/relay`, `backend/pkg/relay`. __Not__ Fasten Lighthouse; __not__ a Cloudflare Worker as the primary design. Map: [`SMART-flow-map.md`](./architecture/SMART-flow-map.md) |
 | Provider catalog connect UI | ✅ Done | Patient picker + admin sandbox; credentials stay server-side |
 | C-CDA / CCD XML import out of the box | ✅ Done | v1.15.0+; converter sidecar default-on in compose; multi-arch converter image v1.15.1 |
 | SQLCipher fail-closed at startup | ✅ Done | v1.13.4 — encryption cannot silently drop on a dep bump |
@@ -142,4 +142,4 @@ Large feature PRs (#594, #613, #614, #609) are not merged directly because they 
 
 - __Images__ publish only on semver release tags `vX.Y.Z` (not on every `main` push).
 - Contract: [`deployment/deployment-contract.md`](deployment/deployment-contract.md).
-- Cutting a release: [`releasing.md`](releasing.md).
+- Cutting a release: [`releasing.md`](./development/releasing.md).

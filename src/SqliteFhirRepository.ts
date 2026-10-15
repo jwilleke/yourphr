@@ -390,7 +390,7 @@ export class SqliteFhirRepository extends FhirRepository {
    * arrive from three providers and each keeps its own id. Two providers can therefore hand us the
    * same `id` for different resources.
    *
-   * This is open question 1 in docs/planning/typescript-stack-evaluation.md, and the spike's job is
+   * This is open question 1 in docs/archive/typescript-stack-evaluation.md, and the spike's job is
    * to find out whether it bites in practice. So a duplicate id is COUNTED and REJECTED here rather
    * than silently upserted — an overwrite would destroy one record and report success, which is
    * precisely the class of bug this exercise is meant to avoid repeating.

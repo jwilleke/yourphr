@@ -112,7 +112,7 @@ When touching provider connection, source authorisation, or the catalog: route t
 
 | | |
 |---|---|
-| Live SMART sync | Generic SMART client + store-and-poll relay + provider catalog — map: [`docs/SMART-flow-map.md`](docs/SMART-flow-map.md) |
+| Live SMART sync | Generic SMART client + store-and-poll relay + provider catalog — map: [`docs/architecture/SMART-flow-map.md`](./docs/architecture/SMART-flow-map.md) |
 | Import without SMART | Manual FHIR R4 JSON + C-CDA/XML (converter sidecar) |
 | Deploy | Release-gated images on `vX.Y.Z` only — [`docs/deployment/deployment-contract.md`](docs/deployment/deployment-contract.md) |
 
@@ -194,7 +194,7 @@ defaults in `config/app-default-config.json`. `ConfigurationManager` is the only
 `config.yaml` and no `--config` flag ([#470](https://github.com/jwilleke/yourphr/issues/470),
 [#474](https://github.com/jwilleke/yourphr/issues/474)). Bootstrap and secrets come from
 `<YOURPHR_FAST_STORAGE>/.env` or the ambient environment; everything else is Admin → Configuration.
-See [`docs/configuration-system.md`](docs/configuration-system.md).
+See [`docs/architecture/configuration-system.md`](./docs/architecture/configuration-system.md).
 
 `yourphr.config.env-keys` names the handful of keys the environment OWNS — read-only on the settings
 screen whether or not the variable is set. Every other key still honours its `YOURPHR_*` variable
@@ -237,7 +237,7 @@ So: do not add yarn scripts, yarn-only syntax, or new `resolutions` entries. `re
 - __Project site:__ `https://yourphr.org` — the public landing/docs site, served by __GitHub Pages__ from this repo's `gh-pages` branch (CNAME=yourphr.org). It is *not* the app.
 - __Running instance:__ the app is deployed (internal/LAN, behind Authentik forward-auth) at __`yourphr.nerdsbythehour.com`__.
 - __Delivery is RELEASE-GATED (GitOps via Flux).__ [`.github/workflows/release-image.yaml`](.github/workflows/release-image.yaml) builds + pushes __`ghcr.io/jwilleke/yourphr`__ (tags `:X.Y.Z`, `:X.Y`, `:latest`) __only on a `vX.Y.Z` release tag__, or when the GitHub Release is published — a second trigger added because a tag push once produced no run at all ([#658](https://github.com/jwilleke/yourphr/issues/658)). Pushes to `main` are CI-tested but build NO image and do NOT deploy. __Use this filename when checking that a release built__ (`gh run list --workflow=release-image.yaml`): the old name `docker-jwilleke.yaml` no longer exists, and asking for it returns an empty list that is indistinguishable from the [#658](https://github.com/jwilleke/yourphr/issues/658) symptom. Flux (repo `jwilleke/mj-infra-flux`, `apps/production/image-automation/yourphr-policy.yaml`) has a __semver `ImagePolicy`__ that deploys the highest released `:X.Y.Z`. So __to ship anything to the live instance you must cut a release__ (a `patch` release for hotfixes). The k8s app dir is `apps/production/yourphr` and the __namespace is `yourphr`__. The serving Deployment is `yourphr-ts`, whose database is on the `local-path` PVC `yourphr-ts-data` mounted at `/opt/yourphr/data`; the frozen Go Deployment beside it still holds `yourphr-data` at `/opt/fasten/db` as the rollback, which is why both PVCs exist.
-- The full contract is in [`docs/deployment/deployment-contract.md`](docs/deployment/deployment-contract.md); cutting a release is in [`docs/releasing.md`](docs/releasing.md).
+- The full contract is in [`docs/deployment/deployment-contract.md`](docs/deployment/deployment-contract.md); cutting a release is in [`docs/development/releasing.md`](./docs/development/releasing.md).
 - The image name follows `${{ github.repository }}`, so it tracks the repo name automatically.
 
 ### Conventions

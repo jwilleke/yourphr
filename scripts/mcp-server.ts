@@ -388,7 +388,7 @@ async function handle(msg: Rpc): Promise<void> {
 function main(): void {
   if (BASE === '' || TOKEN === '') {
     note('set YOURPHR_URL and YOURPHR_AGENT_TOKEN. Mint a token at Account Profile → Agent tokens,');
-    note('with the "Record search" scope. See docs/agent-access-policy.md.');
+    note('with the "Record search" scope. See docs/architecture/agent-access-policy.md.');
     process.exit(1);
   }
 

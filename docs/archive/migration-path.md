@@ -1,10 +1,10 @@
 # Migration path: Go to the TypeScript stack
 
-A working checklist for the cut-over decided in [strategy-typescript-transition.md](planning/strategy-typescript-transition.md) and tracked on the Phase-5 ladder ([#583](https://github.com/jwilleke/yourphr/issues/583) – [#588](https://github.com/jwilleke/yourphr/issues/588), decision [#543](https://github.com/jwilleke/yourphr/issues/543)). It is for our own use: what moves by tool, what moves by hand, what does not move at all, and the order things happen in. Tick items as they land; the runbook proper is [#588](https://github.com/jwilleke/yourphr/issues/588) and will be cut from this page once the rollback has been rehearsed.
+A working checklist for the cut-over decided in [strategy-typescript-transition.md](./strategy-typescript-transition.md) and tracked on the Phase-5 ladder ([#583](https://github.com/jwilleke/yourphr/issues/583) – [#588](https://github.com/jwilleke/yourphr/issues/588), decision [#543](https://github.com/jwilleke/yourphr/issues/543)). It is for our own use: what moves by tool, what moves by hand, what does not move at all, and the order things happen in. Tick items as they land; the runbook proper is [#588](https://github.com/jwilleke/yourphr/issues/588) and will be cut from this page once the rollback has been rehearsed.
 
-> __The order both instances move in__ is [`planning/getting-off-go.md`](planning/getting-off-go.md): `yourphr` first because downtime is acceptable there, `demo-yourphr` second because demo mode did not exist in the TypeScript stack yet. (It does now: [`guides/demo-mode.md`](guides/demo-mode.md).)
+> __The order both instances move in__ is [`planning/getting-off-go.md`](./getting-off-go.md): `yourphr` first because downtime is acceptable there, `demo-yourphr` second because demo mode did not exist in the TypeScript stack yet. (It does now: [`guides/demo-mode.md`](../guides/demo-mode.md).)
 >
-> __Two documents carry this out.__ [`deployment/cutover-runbook.md`](deployment/cutover-runbook.md) is *this* instance — kubectl, PVCs, the Ingress line — and now records the 2026-08-24 rehearsal: 20,068 records migrated and verified in 87 seconds, 53/53 id lists agreeing. [`deployment/upgrading-v2-to-v3.md`](deployment/upgrading-v2-to-v3.md) is everyone else, on Docker or bare metal, and is the one that decides whether v3 can ship to anybody but us.
+> __Two documents carry this out.__ [`deployment/cutover-runbook.md`](./cutover-runbook.md) is *this* instance — kubectl, PVCs, the Ingress line — and now records the 2026-08-24 rehearsal: 20,068 records migrated and verified in 87 seconds, 53/53 id lists agreeing. [`deployment/upgrading-v2-to-v3.md`](../deployment/upgrading-v2-to-v3.md) is everyone else, on Docker or bare metal, and is the one that decides whether v3 can ship to anybody but us.
 
 Go is frozen (ratified 2026-08-20): patches only for security, data correctness and misrepresentation. Every new capability goes to [yourphr-ts-spike](https://github.com/jwilleke/yourphr-ts-spike).
 
@@ -76,7 +76,7 @@ Each of these is reported by name in the tool's output; none is silent. Tick whe
 
 ### Platform
 
-- [ ] Image and release tagging — [#587](https://github.com/jwilleke/yourphr/issues/587). The spike has no entrypoint, Dockerfile or release workflow yet. Plan: Node 24 runtime, frontend copied from the released `ghcr.io/jwilleke/yourphr` image so Angular is built once, semver tags only (same contract as [deployment-contract.md](deployment/deployment-contract.md)).
+- [ ] Image and release tagging — [#587](https://github.com/jwilleke/yourphr/issues/587). The spike has no entrypoint, Dockerfile or release workflow yet. Plan: Node 24 runtime, frontend copied from the released `ghcr.io/jwilleke/yourphr` image so Angular is built once, semver tags only (same contract as [deployment-contract.md](../deployment/deployment-contract.md)).
 - [ ] Flux entry — a second Deployment (`yourphr-ts`) in the `yourphr` namespace with its own PVC, no Ingress change until the swap. Environment carries bootstrap and secrets only; everything else in the config store ([#472](https://github.com/jwilleke/yourphr/issues/472)).
 - [ ] Probes: the spike needs `/healthz` for the liveness and readiness probes the existing Deployment uses.
 - [ ] NAS backup mount (`/nas-backup`) and the backup CronJob — carry the mount to the new Deployment; `backup.destination` already migrates as `/nas-backup`.

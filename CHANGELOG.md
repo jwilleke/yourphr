@@ -633,7 +633,7 @@ Your data is __not__ rewritten in place: the migration reads the v2 database and
 
 ### Note
 
-The 0.x releases of this stack were published from `jwilleke/yourphr-ts-spike` while it was a separate experiment; that history is kept in [`docs/typescript-0.x-changelog.md`](https://github.com/jwilleke/yourphr/blob/main/docs/typescript-0.x-changelog.md).
+The 0.x releases of this stack were published from `jwilleke/yourphr-ts-spike` while it was a separate experiment; that history is kept in [`docs/archive/typescript-0.x-changelog.md`](https://github.com/jwilleke/yourphr/blob/main/docs/archive/typescript-0.x-changelog.md).
 
 ## [2.10.3](https://github.com/jwilleke/yourphr/compare/v2.10.2...v2.10.3) (2026-08-22)
 
@@ -1143,7 +1143,7 @@ __Turning encryption on for an existing plaintext database still does not work__
 
 __Bare metal must set `YOURPHR_WEB_SRC_FRONTEND_PATH`.__ The default points inside the container image, and without it the backend starts and serves no interface with nothing in the log explaining why. `.env.baremetal.example` documents it.
 
-See [`docs/configuration-system.md`](https://github.com/jwilleke/yourphr/blob/main/docs/configuration-system.md) for the whole model.
+See [`docs/architecture/configuration-system.md`](https://github.com/jwilleke/yourphr/blob/main/docs/architecture/configuration-system.md) for the whole model.
 
 ## [1.23.1](https://github.com/jwilleke/yourphr/compare/v1.23.0...v1.23.1) (2026-08-03)
 
@@ -1428,7 +1428,7 @@ CMS Blue Button production-access UX and catalog path: legal consent, attributio
 - __ui:__ third-party attributions registry, `/attributions` page, CMS Blue Button non-endorsement notice on Medicare path ([#428](https://github.com/jwilleke/yourphr/issues/428))
 - __catalog:__ patient-facing production label forced to __Medicare__ for Blue Button-class sources ([#429](https://github.com/jwilleke/yourphr/issues/429))
 - __sources:__ pre-connect informed modal (Cancel / Continue) before OAuth; modular generic vs Medicare copy ([#430](https://github.com/jwilleke/yourphr/issues/430))
-- __connect:__ modular connection policy for all catalog medical sources (`consent_policy`, `pre_connect_profile`); defaults require consent + pre-connect ([docs/connection-policy.md](docs/connection-policy.md))
+- __connect:__ modular connection policy for all catalog medical sources (`consent_policy`, `pre_connect_profile`); defaults require consent + pre-connect ([docs/architecture/connection-policy.md](./docs/architecture/connection-policy.md))
 - __sources / account:__ enrollee data controls — Disconnect & remove data, Account Profile data-controls card pointing at `/sources`, PP source aligned with delete-source behavior ([#431](https://github.com/jwilleke/yourphr/issues/431))
 - __catalog:__ production Medicare template (no secrets) + `YOURPHR_PROD_BLUEBUTTON_*` env seed; full operator docs in `docs/EHR-vendors/cms-medicare/medicare-bluebutton.md` and provider-catalog README ([#432](https://github.com/jwilleke/yourphr/issues/432))
 - __admin:__ Instance card for operator name / contact email / help URL (deploy-local, not hardcoded)
@@ -1561,7 +1561,7 @@ The app now __refuses to start__ if `database.encryption.enabled` is true but SQ
 
 ### Documentation
 
-- `docs/devserver.md` — troubleshooting for local-only frontend build failures
+- `docs/development/devserver.md` — troubleshooting for local-only frontend build failures
 - `docs/import/c-cda.md` and `.env.example` — corrected; they previously described `.env` behaviour that only held for non-Docker installs
 
 ### Known issues
@@ -1586,7 +1586,7 @@ The app now __refuses to start__ if `database.encryption.enabled` is true but SQ
 
 - new [`docs/import/c-cda.md`](docs/import/c-cda.md) — enabling C-CDA import, a config-key → environment-variable table, and troubleshooting
 - `.env.example` gains a C-CDA section (it previously had no CDA entries at all)
-- `docs/devserver.md` gains a troubleshooting section for local-only frontend build failures — clear `.angular/cache` first when a module path contains a nested `node_modules`; the cache stores absolute paths, survives reinstalling `node_modules`, and does not self-prune
+- `docs/development/devserver.md` gains a troubleshooting section for local-only frontend build failures — clear `.angular/cache` first when a module path contains a nested `node_modules`; the cache stores absolute paths, survives reinstalling `node_modules`, and does not self-prune
 
 ### Known issues
 
@@ -1648,7 +1648,7 @@ Dependency and security maintenance. No functional changes.
 
 ### Documentation
 
-- add `docs/devserver.md` — how to run + check the local dev servers, plus the dev test accounts
+- add `docs/development/devserver.md` — how to run + check the local dev servers, plus the dev test accounts
 
 ## [1.12.0](https://github.com/jwilleke/yourphr/compare/v1.11.2...v1.12.0) (2026-06-25)
 

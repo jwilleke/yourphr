@@ -4,7 +4,7 @@ This is the __published contract__ for deploying YourPHR. If you run your own in
 Argo CD, plain Kubernetes, Docker Compose, Watchtower, or anything else — key your automation off the
 rules here and it will behave predictably across upgrades.
 
-See also: [`docs/releasing.md`](../releasing.md) (how releases are cut) and the project `AGENTS.md`
+See also: [`docs/development/releasing.md`](../development/releasing.md) (how releases are cut) and the project `AGENTS.md`
 (deployment overview).
 
 ## What is published, and where
@@ -148,7 +148,7 @@ Apply the same "highest `:X.Y.Z`" rule:
 ## To ship a change to a running instance
 
 Cut a release. There is no "merge to deploy" path — including for hotfixes, which ship as a __patch__
-release. See [`docs/releasing.md`](../releasing.md) for the steps.
+release. See [`docs/development/releasing.md`](../development/releasing.md) for the steps.
 
 ### Cutting one is not finished until you have checked it happened
 

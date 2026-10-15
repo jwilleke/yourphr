@@ -1,6 +1,6 @@
 # Epic on FHIR — handling notes
 
-Our-words notes on how Epic's FHIR R4 output behaves and how YourPHR handles it. Derived from Epic's public [on-FHIR specifications](https://fhir.epic.com/Specifications) and observed in the synthetic Camila Lopez sandbox export. See the data-quality doctrine in [`../../testing-sandboxes/data-quality-framework.md`](../../testing-sandboxes/data-quality-framework.md).
+Our-words notes on how Epic's FHIR R4 output behaves and how YourPHR handles it. Derived from Epic's public [on-FHIR specifications](https://fhir.epic.com/Specifications) and observed in the synthetic Camila Lopez sandbox export. See the data-quality doctrine in [`../../testing-sandboxes/data-quality-framework.md`](../../development/data-quality-framework.md).
 
 > The verbatim Epic spec pages (`Binary.html`, `Encounter.md`, …) are Epic's copyrighted documentation — keep them out of the committed repo (gitignored `sample-data/` or `private/`); this file is our own summary.
 

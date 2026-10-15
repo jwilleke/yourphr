@@ -31,7 +31,7 @@ The earlier upstream "Example Dashboard" (which led with fake "Records Summary"/
 
 A __generic `profile-summary-widget`__ (config row per profile group, #245) covers list-style profiles, reusing the #136 `fhir-card`s for detail — plus a few __bespoke__ widgets where a summary line isn't enough (vitals trends, blood pressure). Future long-tail categories can go in a separate "All categories" dashboard (just add another `dashboard/*.json`), per #244.
 
-Full rationale and decisions: [`docs/your-phr-dashboard/per-profile-dashboards-brainstorm.md`](./per-profile-dashboards-brainstorm.md) and epic #244.
+Full rationale and decisions: `docs/your-phr-dashboard/per-profile-dashboards-brainstorm.md` and epic #244.
 
 ## Widget catalog (current)
 
@@ -59,6 +59,6 @@ This is the difference between "MedicationStatement / unknown / active" and "Lis
 ## Canonical sources
 
 - North star: [`docs/your-phr-dashboard/patient-legible-display.md`](./patient-legible-display.md) (#262)
-- Dashboard design + decisions: [`docs/your-phr-dashboard/per-profile-dashboards-brainstorm.md`](./per-profile-dashboards-brainstorm.md) (#244)
+- Dashboard design + decisions: `docs/your-phr-dashboard/per-profile-dashboards-brainstorm.md` (#244)
 - Profile-summary widget: #245
 - US Core display: #136 / #249

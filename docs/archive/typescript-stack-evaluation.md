@@ -6,7 +6,7 @@
 
 __Runtime and stack only__ — whether YourPHR's backend stays Go or moves to TypeScript/Node, and what open-source FHIR work already exists in that ecosystem to adopt rather than rebuild.
 
-__Explicitly out of scope: the rendering model.__ Whether the admin surfaces should be server-rendered rather than an SPA is a separate decision, argued in [`authorization-framework.md`](authorization-framework.md), and it can be taken independently and later. Conflating the two makes both harder.
+__Explicitly out of scope: the rendering model.__ Whether the admin surfaces should be server-rendered rather than an SPA is a separate decision, argued in [`authorization-framework.md`](../planning/authorization-framework.md), and it can be taken independently and later. Conflating the two makes both harder.
 
 __Explicitly out of scope: the delivery unit.__ Container for self-hosters, desktop app, or hosted service — that question constrains the design more than the language does, and it is unresolved. Noted in the open questions below.
 
@@ -93,7 +93,7 @@ Three reuse shapes, none chosen:
 
 ## What this does not force
 
-__A backend rewrite does not force a frontend rewrite.__ The Angular app talks to an HTTP contract that a TypeScript backend can serve unchanged, leaving 76.8k lines in place. Server-rendering — the thing that would actually remove the authorization-projection problem described in [`authorization-framework.md`](authorization-framework.md) — is a separate decision that could be taken later, incrementally, or never.
+__A backend rewrite does not force a frontend rewrite.__ The Angular app talks to an HTTP contract that a TypeScript backend can serve unchanged, leaving 76.8k lines in place. Server-rendering — the thing that would actually remove the authorization-projection problem described in [`authorization-framework.md`](../planning/authorization-framework.md) — is a separate decision that could be taken later, incrementally, or never.
 
 ## Angular vs React vs something else — deliberately deferred
 
@@ -110,7 +110,7 @@ Dependency coupling, measured from `frontend/package.json`:
 
 So a React move is cheaper than the raw line count implies — the hard widgets survive — but it is still tens of thousands of lines of components and templates for no user-visible gain.
 
-__The real fork is SPA vs server-rendered, not Angular vs React.__ That is the decision [`authorization-framework.md`](authorization-framework.md) identifies as the source of the permission-projection problem, and it is why the demo's dead admin buttons are structural rather than a bug. If server-rendering wins for the admin surfaces, the framework question is moot for those screens.
+__The real fork is SPA vs server-rendered, not Angular vs React.__ That is the decision [`authorization-framework.md`](../planning/authorization-framework.md) identifies as the source of the permission-projection problem, and it is why the demo's dead admin buttons are structural rather than a bug. If server-rendering wins for the admin surfaces, the framework question is moot for those screens.
 
 __Where React genuinely pulls:__ `@medplum/react` ships prebuilt FHIR UI — resource tables, search controls, questionnaire forms. If Medplum is adopted on the backend, adopting their components too has real coherence. That is an argument about batteries, not about React being a better framework, and it should be weighed as such.
 

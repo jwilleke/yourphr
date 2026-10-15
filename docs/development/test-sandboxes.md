@@ -172,7 +172,7 @@ Because base URLs are site-specific and access is approval-gated, treat this as 
 
 - __Status:__ 🔴 Not started — tracking [#370](https://github.com/jwilleke/yourphr/issues/370).
 - __What:__ VA Lighthouse __Clinical Health API__ — FHIR R4, US-Core-aligned, SMART-on-FHIR, with a self-service sandbox of __synthetic__ test patients over a real EHR (VistA + Oracle/Cerner). <https://developer.va.gov/explore/api/clinical-health>
-- __Why:__ veterans mission; a __self-serve__ sandbox (like Blue Button) → a candidate to prove a first end-to-end provider sync *without* the vendor-app-approval wall (vs Veradigm / athenahealth). Also yields a VA-shaped fixture for the test-data corpus ([`testing-and-data.md`](testing-and-data.md)).
+- __Why:__ veterans mission; a __self-serve__ sandbox (like Blue Button) → a candidate to prove a first end-to-end provider sync *without* the vendor-app-approval wall (vs Veradigm / athenahealth). Also yields a VA-shaped fixture for the test-data corpus ([`testing-and-data.md`](./testing-and-data.md)).
 - __Verify first:__ sandbox onboarding (self-serve key vs approval), client type (public/PKCE vs confidential), resource types exposed, and downloadable test bundles vs API-only.
 - __Next:__ register a sandbox `client_id`; connect via the BYO-`client_id` SMART flow; verify a synthetic-patient sync end-to-end; capture a fixture slice. See [#370](https://github.com/jwilleke/yourphr/issues/370).
 

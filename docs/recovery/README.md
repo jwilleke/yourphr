@@ -12,7 +12,7 @@ Three pages, and it matters which one you need:
 
 How YourPHR backs up and restores — the whole data root, i.e. *every user's* complete medical records (PHI) plus the instance's own configuration. All of it is __admin-only__ (gated by the admin role). Implemented under [#361](https://github.com/jwilleke/yourphr/issues/361) (backup), [#362](https://github.com/jwilleke/yourphr/issues/362) (restore) and [#467](https://github.com/jwilleke/yourphr/issues/467) (whole data root).
 
-See also: [`docs/deployment/README.md`](../deployment/README.md), [`docs/deployment/deployment-contract.md`](../deployment/deployment-contract.md) and [`docs/releasing.md`](../releasing.md).
+See also: [`docs/deployment/README.md`](../deployment/README.md), [`docs/deployment/deployment-contract.md`](../deployment/deployment-contract.md) and [`docs/development/releasing.md`](../development/releasing.md).
 
 > ⚠️ A backup is every user's PHI, __plus live provider refresh tokens__ that grant ongoing access at Epic or CMS until revoked. At-rest encryption is __on by default__ since v2.0.0 — and while it is on, backup and restore are both refused ([#367](https://github.com/jwilleke/yourphr/issues/367)). So every backup that exists is __plaintext__, on an instance that explicitly turned encryption off. Treat the file exactly as you would treat the database. Encrypting the artifact itself is [#461](https://github.com/jwilleke/yourphr/issues/461).
 

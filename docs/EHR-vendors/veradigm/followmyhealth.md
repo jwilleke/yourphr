@@ -33,7 +33,7 @@ FollowMyHealth is itself a suite (patient web portal, mobile apps, and the provi
 
 ## API & Integration
 
-- __FHIR base / discovery:__ FollowMyHealth advertises SMART endpoints under `fhir.followmyhealth.com` with authorization at `muauthentication.followmyhealth.com` (`/api/access` token endpoint, `/api/jwks`). A captured discovery document is in [`../FHIR/fhir-test-discovery-example.md`](../../FHIR/fhir-test-discovery-example.md).
+- __FHIR base / discovery:__ FollowMyHealth advertises SMART endpoints under `fhir.followmyhealth.com` with authorization at `muauthentication.followmyhealth.com` (`/api/access` token endpoint, `/api/jwks`). A captured discovery document is in `../FHIR/fhir-test-discovery-example.md`.
 - __Access model:__ a registered app is __"Test Only"__ by default and reaches only Veradigm __test__ organizations (synthetic patients, no PHI). Reaching real patient data requires Veradigm to grant __production__ access — a partner request with a multi-day review. See the test-vs-real matrix in [`../FHIR/fhir-testing.md`](../../FHIR/fhir-testing.md).
 - __Auth:__ authorization-code + PKCE. The discovery is internally __contradictory__ — it advertises a `client-public` capability *and* confidential-only token-endpoint auth methods (`client-confidential-symmetric`/`-asymmetric`), which is part of why the connect flow stalls (see below).
 
@@ -73,6 +73,6 @@ FollowMyHealth is the __reference non-US-Core dataset__ for this fork. The proje
 
 ## References / Related issues
 
-- Internal: [`../FHIR/fhir-testing.md`](../../FHIR/fhir-testing.md), [`../FHIR/fhir-test-discovery-example.md`](../../FHIR/fhir-test-discovery-example.md), [`veradigm-allscripts.md`](./veradigm-allscripts.md), [`../Roadmap.md`](../../Roadmap.md)
+- Internal: [`../FHIR/fhir-testing.md`](../../FHIR/fhir-testing.md), `../FHIR/fhir-test-discovery-example.md`, [`veradigm-allscripts.md`](./veradigm-allscripts.md), [`../Roadmap.md`](../../Roadmap.md)
 - Issues: [#2](https://github.com/jwilleke/yourphr/issues/2) (standalone EPIC), [#53](https://github.com/jwilleke/yourphr/issues/53) (SMART sync, blocked), [#54](https://github.com/jwilleke/yourphr/issues/54) (display), [#171](https://github.com/jwilleke/yourphr/issues/171) (search extraction), [#196](https://github.com/jwilleke/yourphr/issues/196) (compound refs), [#198](https://github.com/jwilleke/yourphr/issues/198) / [#201](https://github.com/jwilleke/yourphr/issues/201) (document titles)
 - External: `https://www.followmyhealth.com`, `https://developer.veradigm.com`

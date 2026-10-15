@@ -69,5 +69,5 @@ __Operator runbook (email → form → Zoom → post-approval → enable catalog
 
 - __Full connect guide + troubleshooting:__ [`../medicare-bluebutton.md`](./medicare-bluebutton.md)
 - __Production access runbook:__ [`../cms-bluebutton-production-access.md`](./cms-bluebutton-production-access.md)
-- Index: [`../testing-sandboxes/test-sandboxes.md`](../../testing-sandboxes/test-sandboxes.md)
+- Index: [`../testing-sandboxes/test-sandboxes.md`](../../development/test-sandboxes.md)
 - Vendor matrix: [`README.md`](../README.md)

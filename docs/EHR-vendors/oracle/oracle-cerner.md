@@ -175,7 +175,7 @@ Read-only probes that established the working path (a bare HTTP `200` is __not__
 
 ## See also
 
-- Sandbox index: [`../testing-sandboxes/test-sandboxes.md`](../../testing-sandboxes/test-sandboxes.md)
+- Sandbox index: [`../testing-sandboxes/test-sandboxes.md`](../../development/test-sandboxes.md)
 - Cerner discovery document (scopes + endpoints): [`oracle-cerner.json`](./oracle-cerner.json)
 - Open: page-cap abort / missing Patient UI fail — [#439](https://github.com/jwilleke/yourphr/issues/439)
 - Resilience / long-import survival — [#341](https://github.com/jwilleke/yourphr/issues/341); Binary attachments — [#342](https://github.com/jwilleke/yourphr/issues/342)

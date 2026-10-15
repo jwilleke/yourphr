@@ -55,6 +55,6 @@ Veradigm is the __external dependency__ standing between YourPHR and live Follow
 
 ## References / Related issues
 
-- Internal: [`followmyhealth.md`](./followmyhealth.md), [`../FHIR/fhir-testing.md`](../../FHIR/fhir-testing.md), [`../FHIR/fhir-test-discovery-example.md`](../../FHIR/fhir-test-discovery-example.md), [`../Roadmap.md`](../../Roadmap.md)
+- Internal: [`followmyhealth.md`](./followmyhealth.md), [`../FHIR/fhir-testing.md`](../../FHIR/fhir-testing.md), `../FHIR/fhir-test-discovery-example.md`, [`../Roadmap.md`](../../Roadmap.md)
 - Issues: [#2](https://github.com/jwilleke/yourphr/issues/2) (standalone EPIC), [#53](https://github.com/jwilleke/yourphr/issues/53) (SMART sync, blocked), [#54](https://github.com/jwilleke/yourphr/issues/54) (display)
 - External: `https://veradigm.com`, `https://developer.veradigm.com`, `https://developer.veradigm.com/Account/PartnerRequest`

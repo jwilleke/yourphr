@@ -42,7 +42,7 @@ async function main(): Promise<void> {
     } catch (err) {
       // Worth reading carefully rather than ignoring: rejections here are where Medplum's identity
       // and validation model disagrees with what YourPHR stored. That seam is open question 1 in
-      // docs/planning/typescript-stack-evaluation.md.
+      // docs/archive/typescript-stack-evaluation.md.
       rejected.push({ line: index + 1, reason: `${resource.resourceType}: ${(err as Error).message}` });
     }
   }

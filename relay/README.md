@@ -4,7 +4,7 @@ The YourPHR SMART on FHIR OAuth __store-and-poll relay__ — EPIC #20, issue #50
 
 A small, stateless public bouncer for the SMART authorization `code`. The provider redirects the user's browser to `/callback?code&state`; the relay stores `{state -> code}` in memory with a short TTL; the (possibly non-public) YourPHR instance polls `/pending?state=` (gated by a shared secret) to retrieve the `code` and completes the token exchange itself. The relay __never sees access/refresh tokens__ and holds __no provider app registration__ — it is provider-agnostic and client-agnostic (per-user / BYO model).
 
-See [`docs/planning/smart-on-fhir/oauth-gateway.md`](../../../docs/planning/smart-on-fhir/oauth-gateway.md).
+See [`docs/planning/smart-on-fhir/oauth-gateway.md`](../docs/planning/smart-on-fhir/oauth-gateway.md).
 
 ## Endpoints
 
@@ -49,7 +49,7 @@ Configure the __app__ (not the relay) with two URLs — they are reached by diff
 
 If your relay is a single publicly-reachable `https` origin, set only `YOURPHR_RELAY_URL` — `relay.public_url` defaults to it. Set `YOURPHR_RELAY_PUBLIC_URL` when the poll URL is internal or non-https. With neither set, the project dev/demo relay is used.
 
-These are ordinary config keys, so they can come from `.env` / `.env_custom`, real environment variables, or Admin → Configuration (see [`docs/configuration-system.md`](../../../docs/configuration-system.md)). __No frontend rebuild is needed__ — `redirect_uri` is derived by the backend at request time, not compiled into the Angular bundle.
+These are ordinary config keys, so they can come from `.env` / `.env_custom`, real environment variables, or Admin → Configuration (see [`docs/architecture/configuration-system.md`](../docs/architecture/configuration-system.md)). __No frontend rebuild is needed__ — `redirect_uri` is derived by the backend at request time, not compiled into the Angular bundle.
 
 Check what your instance actually resolved to:
 

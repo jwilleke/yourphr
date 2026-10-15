@@ -19,7 +19,7 @@ External equipment a patient reads by hand, such as a hearing aid, a CGM or a CP
 - [Device write scope inside a patient consent grant](../planning/2026-09-30-device-write-scope-and-consent-grant.md) ([#807](https://github.com/jwilleke/yourphr/issues/807)): the design behind connected devices. Part of it was superseded on 2026-10-02.
 - [Auth framework: RFC 8628 device authorization](../planning/authorization-framework.md#rfc-8628-device-authorization): how a device will be approved, and where its scope names come from.
 - [Review of the #314 contribution](../planning/2026-09-30-yourphr-314-device-review.md): the outside Apple Health branch, and the decisions made on it (`HealthManager`, `phd-samples.db`, intake adapters).
-- [Agent access policy](../agent-access-policy.md): what any delegated credential, a device's included, may do.
+- [Agent access policy](../architecture/agent-access-policy.md): what any delegated credential, a device's included, may do.
 
 ## Related
 

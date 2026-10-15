@@ -279,7 +279,7 @@ That promise is honest about today’s ecosystem while still supporting the long
 
 - YourPHR repository: <https://github.com/jwilleke/yourphr>
 - Roadmap: <https://github.com/jwilleke/yourphr/blob/main/docs/Roadmap.md>
-- SMART on FHIR flow map: <https://github.com/jwilleke/yourphr/blob/main/docs/SMART-flow-map.md>
+- SMART on FHIR flow map: <https://github.com/jwilleke/yourphr/blob/main/docs/architecture/SMART-flow-map.md>
 - Production SMART provider issue: <https://github.com/jwilleke/yourphr/issues/408>
 - Dynamic Client Registration issue: <https://github.com/jwilleke/yourphr/issues/355>
 - Apple Health institution-list exploration: <https://github.com/jwilleke/yourphr/issues/251>

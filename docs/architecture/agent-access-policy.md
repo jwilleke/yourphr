@@ -4,7 +4,7 @@ __Status: proposed with the first slice (yourphr#657), for review before merge._
 
 __Code:__ `scripts/mcp-server.ts` (the bridge), `src/framework/managers/AgentTokensManager.ts` (the credential), `src/account/index.ts` (`accessCategoryFor`, the scope and log vocabulary), `src/server.ts` (the gate)
 __Harnesses:__ `npm run mcp-tests`, `npm run agent-tokens`
-__Companion to:__ [`connection-policy.md`](connection-policy.md), which answers the same shape of question for medical sources — what leaves, on whose decision, and what is refused.
+__Companion to:__ [`connection-policy.md`](./connection-policy.md), which answers the same shape of question for medical sources — what leaves, on whose decision, and what is refused.
 
 This is the written policy [yourphr#599](https://github.com/jwilleke/yourphr/issues/599) asked for before any LLM touched a record: *"records must not leave the machine without an explicit, per-conversation statement."*
 

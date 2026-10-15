@@ -10,7 +10,7 @@ __Contact:__ [BlueButtonAPI@cms.hhs.gov](mailto:BlueButtonAPI@cms.hhs.gov)
 |---|---|
 | Sandbox credentials + live login status | [`EHR-vendors/medicare.md`](./medicare.md) |
 | Connect walkthrough (scopes, catalog, env) | [`medicare-bluebutton.md`](./medicare-bluebutton.md) |
-| Connection policy (PP/ToS, pre-connect) | [`connection-policy.md`](../../connection-policy.md) |
+| Connection policy (PP/ToS, pre-connect) | [`connection-policy.md`](../../architecture/connection-policy.md) |
 | Privacy Policy (source) | [`backend/pkg/legal/privacy-policy.md`](../../../src/legal/shipped.ts) → public [yourphr.org/privacy.html](https://yourphr.org/privacy.html) |
 | Terms of Service (source) | [`backend/pkg/legal/terms-of-service.md`](../../../src/legal/shipped.ts) → public [yourphr.org/terms.html](https://yourphr.org/terms.html) |
 | CMS attribution | [`Attributions.md`](../../Attributions.md) |
@@ -64,7 +64,7 @@ These ship targets map to closed CMS prep issues. Re-check on the __demo host__ 
 | CMS non-endorsement | `/attributions` + Medicare connect (#428) | Required sentence visible |
 | Enrollee controls | Sources Actions (#431 / #437) | Disconnect; Remove data; combined teardown |
 | Revoke product consent | Account Profile revoke | Blocks new Medicare connects; disconnects Medicare-class tokens (records stay until Remove data) |
-| Secure tokens / no project PHI | Architecture | Tokens on instance; relay never sees tokens ([SMART-flow-map.md](../../SMART-flow-map.md)) |
+| Secure tokens / no project PHI | Architecture | Tokens on instance; relay never sees tokens ([SMART-flow-map.md](../../architecture/SMART-flow-map.md)) |
 
 __Demo host checklist (day-of):__
 
@@ -291,4 +291,4 @@ YOURPHR_PROD_BLUEBUTTON_CLIENT_SECRET=…
 - Developer docs: <https://bluebutton.cms.gov/api-documentation/>  
 - Google Group: [Developer-group-for-cms-blue-button-api](https://groups.google.com/g/Developer-group-for-cms-blue-button-api)  
 - YourPHR deployment: [`deployment/README.md`](../../deployment/README.md)  
-- Releasing (demo image is release-gated): [`releasing.md`](../../releasing.md)  
+- Releasing (demo image is release-gated): [`releasing.md`](../../development/releasing.md)  

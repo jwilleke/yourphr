@@ -141,7 +141,7 @@ __Rollback = point the Ingress back__: revert the one-line commit. Nothing else.
 
 ## The stop rule
 
-From the swap, the strategy doc's rule applies ([strategy, "Stop rules"](../planning/strategy-typescript-transition.md)): __two stacks serving production for more than one release cycle means pick one.__ Concretely: on the first release of `jwilleke/yourphr-ts-spike` after the swap, either delete the Go Deployment from Flux (keeping the NAS archive copy) or roll back for good and record why on [#543](https://github.com/jwilleke/yourphr/issues/543). Not both, not later.
+From the swap, the strategy doc's rule applies ([strategy, "Stop rules"](./strategy-typescript-transition.md)): __two stacks serving production for more than one release cycle means pick one.__ Concretely: on the first release of `jwilleke/yourphr-ts-spike` after the swap, either delete the Go Deployment from Flux (keeping the NAS archive copy) or roll back for good and record why on [#543](https://github.com/jwilleke/yourphr/issues/543). Not both, not later.
 
 ## Rehearsal (required before the real run)
 

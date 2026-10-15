@@ -4,7 +4,7 @@ __The rule: defaults ship in the binary, an instance overrides them in one file,
 
 Everything below is either that rule, or a gap between it and what exists today. Gaps are marked __GAP__ and each names its issue.
 
-This page describes the mechanism. For *how to configure a deployment*, see [`deployment/README.md`](deployment/README.md).
+This page describes the mechanism. For *how to configure a deployment*, see [`deployment/README.md`](../deployment/README.md).
 
 ## Layers
 
@@ -77,7 +77,7 @@ Sandbox and production Blue Button credentials are *provisioned* from `YOURPHR_S
 
 __Those variables are deliberately NOT configuration keys__, and must not be added to the catalogue. They are provisioning inputs, consumed once and then ignored — the value in effect afterwards is the one in the catalog row, which an admin may have edited. Cataloguing them would put them on the Admin Configuration screen showing the environment's value while the row held a different one, so the screen would state something untrue. The unknown-key check allowlists them instead, and their provisioning status belongs on Admin → Provider Catalog, beside the row they created ([#471](https://github.com/jwilleke/yourphr/issues/471)).
 
-__Backup state__ — `.backup_settings.json`, `.backup_dest`, `.backup_health.json` — still has its own readers. All three live in the data root, so they are covered by a backup ([`recovery/backup-model.md`](recovery/backup-model.md)).
+__Backup state__ — `.backup_settings.json`, `.backup_dest`, `.backup_health.json` — still has its own readers. All three live in the data root, so they are covered by a backup ([`recovery/backup-model.md`](../recovery/backup-model.md)).
 
 > __GAP: backup state should fold into the config store__ — [#455](https://github.com/jwilleke/yourphr/issues/455). Deferred because it touches backup and restore, where a mistake loses data.
 
@@ -156,7 +156,7 @@ Only two variables genuinely need to live in the environment, and they are exact
 - __`YOURPHR_STORAGE_DATA_DIR`__ — changing it does not move the data. The next start looks in a different directory, finds nothing, and shows the first-run wizard. The records are still on disk, but the instance behaves like a fresh install.
 - __`YOURPHR_DATABASE_ENCRYPTION_KEY`__ — writing it to a plaintext file on the same volume as the encrypted database defeats the encryption. The point of that key being external is that it is not beside the thing it locks.
 
-  __Superseded for the key's storage, 2026-09-29 ([#796](https://github.com/jwilleke/yourphr/issues/796), option A):__ the reference instance now keeps both keys in `<data>/.env`, accepting that at-rest encryption no longer protects against a copied volume, with an off-instance copy of the backup key as the condition. What is still rejected is a UI that edits `.env`: the keys are placed there by the operator, never from a screen. See [Encryption keys](deployment/README.md#encryption-keys).
+  __Superseded for the key's storage, 2026-09-29 ([#796](https://github.com/jwilleke/yourphr/issues/796), option A):__ the reference instance now keeps both keys in `<data>/.env`, accepting that at-rest encryption no longer protects against a copied volume, with an off-instance copy of the backup key as the condition. What is still rejected is a UI that edits `.env`: the keys are placed there by the operator, never from a screen. See [Encryption keys](../deployment/README.md#encryption-keys).
 
 Everything else is already editable in-app, so there is nothing left for such an editor to usefully write.
 
@@ -200,4 +200,4 @@ On the last one, the win is smaller than it first appears. Of the five non-secre
 
 That blocker is now cleared: [#467](https://github.com/jwilleke/yourphr/issues/467) shipped in v2.1.0, so `app-custom-config.json` __is__ covered by backups. Moving a value out of a versioned Git repo and into the config store no longer trades *recoverable* for *lost with the disk*.
 
-It does change what recovery depends on, though. A value in Git is recovered by cloning the repo; a value in the config store is recovered only by a backup that was taken and can actually be restored — see [`recovery/data-recovery.md`](recovery/data-recovery.md).
+It does change what recovery depends on, though. A value in Git is recovered by cloning the repo; a value in the config store is recovered only by a backup that was taken and can actually be restored — see [`recovery/data-recovery.md`](../recovery/data-recovery.md).

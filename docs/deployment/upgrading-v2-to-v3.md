@@ -1,6 +1,6 @@
 # Upgrading YourPHR v2 (Go) to v3 (TypeScript)
 
-For anyone self-hosting YourPHR who is not running Kubernetes. If you are, the operator runbook is [`cutover-runbook.md`](cutover-runbook.md) — this page is the general path.
+For anyone self-hosting YourPHR who is not running Kubernetes. If you are, the operator runbook is [`cutover-runbook.md`](../archive/cutover-runbook.md) — this page is the general path.
 
 > __Requires 3.2.0 or newer__, which is released. The migration has been rehearsed against a real 20,068-record instance and verified record for record, and since [#654](https://github.com/jwilleke/yourphr/issues/654) it ships inside the image — so nothing on this page needs a source checkout. It is `3.2.0` that carries it: `3.0.x` and `3.1.0` have no `migrate` command, and asking one of them for it fails rather than doing something surprising. Check with `docker run --rm ghcr.io/jwilleke/yourphr:<tag> version`. The one thing still missing is a ready-made compose file ([#641](https://github.com/jwilleke/yourphr/issues/641)); until it lands, step 4 below is the `docker run` that replaces it.
 

@@ -2,7 +2,7 @@
 
 __Status:__ live for patient connect and admin management (foundation [#304](https://github.com/jwilleke/yourphr/issues/304) / picker [#306](https://github.com/jwilleke/yourphr/issues/306) / sandbox env split [#291](https://github.com/jwilleke/yourphr/issues/291)).
 
-__Related:__ as-built SMART map [`docs/SMART-flow-map.md`](../SMART-flow-map.md) · connection policy [`docs/connection-policy.md`](../connection-policy.md) · Medicare / Blue Button [`docs/EHR-vendors/cms-medicare/medicare-bluebutton.md`](../EHR-vendors/cms-medicare/medicare-bluebutton.md) · production catalog path [#432](https://github.com/jwilleke/yourphr/issues/432)
+__Related:__ as-built SMART map [`docs/architecture/SMART-flow-map.md`](./SMART-flow-map.md) · connection policy [`docs/architecture/connection-policy.md`](./connection-policy.md) · Medicare / Blue Button [`docs/EHR-vendors/cms-medicare/medicare-bluebutton.md`](../EHR-vendors/cms-medicare/medicare-bluebutton.md) · production catalog path [#432](https://github.com/jwilleke/yourphr/issues/432)
 
 ## Why this exists
 
@@ -21,7 +21,7 @@ This catalog is the __self-hosted replacement__: the __instance admin__ register
 
 On a single-user self-hosted instance admin and patient may be the same person; credentials still must not appear in the normal connect flow.
 
-__Connected sources__ (sync, download, disconnect) also live on __`/sources`__. Account-wide controls (PP/ToS, delete account) live on __`/account-profile`__. See [`connection-policy.md`](../connection-policy.md).
+__Connected sources__ (sync, download, disconnect) also live on __`/sources`__. Account-wide controls (PP/ToS, delete account) live on __`/account-profile`__. See [`connection-policy.md`](./connection-policy.md).
 
 ## Environments: production vs sandbox
 
@@ -79,7 +79,7 @@ Admin responses include `has_client_secret` (bool), never the secret value.
 
 __Patient-facing display:__ production Blue Button-class sources are forced to the label __`Medicare`__ ([#429](https://github.com/jwilleke/yourphr/issues/429)), even if the admin stored a longer name. Sandbox keeps operator-explicit names (e.g. `Medicare — Blue Button 2.0 (Sandbox)`).
 
-Policy resolution and overrides: [`docs/connection-policy.md`](../connection-policy.md).
+Policy resolution and overrides: [`docs/architecture/connection-policy.md`](./connection-policy.md).
 
 ## Endpoints
 

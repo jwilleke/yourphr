@@ -21,7 +21,7 @@ The instinct is to move the demo first because its data is worthless. That is wr
 
 ## What is proven, and what is not
 
-__Proven (2026-08-24 rehearsal, recorded in [`../deployment/cutover-runbook.md`](../deployment/cutover-runbook.md)):__ the migration. Against the real 111 MB `fasten.db` from that morning's backup, into scratch — 20,068 records, 3 accounts, 8 sources, __exit 0__, `53/53 (user, resource type) id lists agree`. __87 seconds.__
+__Proven (2026-08-24 rehearsal, recorded in [`../deployment/cutover-runbook.md`](./cutover-runbook.md)):__ the migration. Against the real 111 MB `fasten.db` from that morning's backup, into scratch — 20,068 records, 3 accounts, 8 sources, __exit 0__, `53/53 (user, resource type) id lists agree`. __87 seconds.__
 
 __Not proven:__ the swap. Nobody has pointed a hostname at the TypeScript stack and watched it serve. That is the half that must not be met for the first time during a maintenance window — and on `yourphr`, where downtime is acceptable, it costs almost nothing to find out.
 

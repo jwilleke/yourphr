@@ -32,7 +32,7 @@ Integration / topic notes (not vendor profiles): [`epic/epic.md`](./epic/epic.md
 
 ## Sandbox registration guides — where to register & what you need
 
-How to obtain credentials for each test sandbox. The index with connect values + status is [`../testing-sandboxes/test-sandboxes.md`](../testing-sandboxes/test-sandboxes.md); actual credential values live in `private/secrets.md` (gitignored).
+How to obtain credentials for each test sandbox. The index with connect values + status is [`../testing-sandboxes/test-sandboxes.md`](../development/test-sandboxes.md); actual credential values live in `private/secrets.md` (gitignored).
 
 | Sandbox | Register at | What you get | Guide |
 |---|---|---|---|
@@ -43,9 +43,9 @@ How to obtain credentials for each test sandbox. The index with connect values +
 | __Oracle Health (Cerner)__ | <https://code-console.cerner.com/> | `client_id` (public/PKCE), console-issued | [`oracle/oracle-cerner.md`](./oracle/oracle-cerner.md) |
 | __athenahealth__ | <https://mydata.athenahealth.com/access-the-apis> | `client_id` + `client_secret` (confidential / Web app) — approval-gated | [`athenahealth.md`](./athenahealth/athenahealth.md) |
 
-See also: [`../FHIR/fhir-testing.md`](../FHIR/fhir-testing.md) (test-vs-real environments) and [`../FHIR/fhir-test-discovery-example.md`](../FHIR/fhir-test-discovery-example.md) (a captured FollowMyHealth discovery document).
+See also: [`../FHIR/fhir-testing.md`](../FHIR/fhir-testing.md) (test-vs-real environments) and `../FHIR/fhir-test-discovery-example.md` (a captured FollowMyHealth discovery document).
 
-__Ask the community first:__ the [SMART on FHIR mailing list](https://groups.google.com/g/smart-on-fhir) is where the SMART team (Boston Children's) and vendor engineers answer questions about vendor behaviour, SMART auth and FHIR sync. Search it before re-deriving an answer. On 2026-09-27 it showed that the SMART team works around Epic's missing `meta.lastUpdated` the same way we do (see [version signals](../testing-sandboxes/data-quality-framework.md#version-signals--did-this-record-change)).
+__Ask the community first:__ the [SMART on FHIR mailing list](https://groups.google.com/g/smart-on-fhir) is where the SMART team (Boston Children's) and vendor engineers answer questions about vendor behaviour, SMART auth and FHIR sync. Search it before re-deriving an answer. On 2026-09-27 it showed that the SMART team works around Epic's missing `meta.lastUpdated` the same way we do (see [version signals](../development/data-quality-framework.md#version-signals--did-this-record-change)).
 
 ## ⚠️ Everything below is SANDBOX
 
