@@ -16,7 +16,7 @@ Every FHIR sandbox / test server YourPHR can connect to, in one place — with t
 | __CMS Blue Button 2.0__ | __confidential__ (secret) | sandbox app | per-resource (no `$everything`) | ✅ __verified working__ (2026-06-14) | [`medicare-bluebutton.md`](../medicare-bluebutton.md) |
 | __Epic__ | public (PKCE) | BYO `client_id` | `$everything` | 🧪 used earlier | [`vendors/epic/epic.md`](../vendors/epic/epic.md) |
 | __Veradigm / FollowMyHealth (test)__ | public (PKCE) | Veradigm app | per-resource | ⛔ __blocked__ (`unauthorized_client`, ticket #17849) | [`FHIR/fhir-testing.md`](../FHIR/fhir-testing.md) |
-| __Oracle Health (Cerner)__ | public (PKCE) | code Console app (issues client_id) | per-resource search | ✅ __works__ — imports records (pinned patient-authorize override + enumerated v2 `.rs` + Offline app) | [`vendors/oracle-cerner.md`](../vendors/oracle-cerner.md) |
+| __Oracle Health (Cerner)__ | public (PKCE) | code Console app (issues client_id) | per-resource search | ✅ __works__ — imports records (pinned patient-authorize override + enumerated v2 `.rs` + Offline app) | [`vendors/oracle-cerner.md`](../vendors/oracle/oracle-cerner.md) |
 | __athenahealth__ | __confidential__ (secret) | Developer Portal app (gated) | per-resource | 🟡 registered; creds obtained | [`vendors/athenahealth.md`](../vendors/athenahealth.md) |
 | __VA Clinical Health__ | TBD (likely public/PKCE) | self-serve sandbox app | TBD | 🔴 not started — [#370](https://github.com/jwilleke/yourphr/issues/370) | §7 below |
 | __Raw FHIR servers__ (HAPI, etc.) | — (no SMART login) | none | — | reference only (no connect flow) | this doc |
@@ -110,7 +110,7 @@ __Status:__ discovery + authorize work (Client ID recognized, redirect accepted)
 
 - __Status:__ ✅ __Works__ — connects and imports records ([#338](https://github.com/jwilleke/yourphr/issues/338), verified 2026-06-20). The hardest sandbox; see the full guide below.
 - __Credentials:__ CernerCare account + the registered app's __Application ID__ and __`client_id`__ (public/PKCE) in `private/secrets.md`. The code Console *issued* the client_id; no "Oracle CID" was supplied.
-- __The four obstacles (all solved):__ (1) patient authorize endpoint is __not discoverable__ → pinned per-entry override; (2) app is SMART v2 but only __smart-v1__ endpoints exist; (3) scopes must be __enumerated v2 `.rs`__ (Cerner drops `.read` and the wildcard); (4) app must be __Offline__ for a refresh token. __Full writeup, registration steps, conformance + data-shape notes: [`vendors/oracle-cerner.md`](../vendors/oracle-cerner.md).__
+- __The four obstacles (all solved):__ (1) patient authorize endpoint is __not discoverable__ → pinned per-entry override; (2) app is SMART v2 but only __smart-v1__ endpoints exist; (3) scopes must be __enumerated v2 `.rs`__ (Cerner drops `.read` and the wildcard); (4) app must be __Offline__ for a refresh token. __Full writeup, registration steps, conformance + data-shape notes: [`vendors/oracle-cerner.md`](../vendors/oracle/oracle-cerner.md).__
 
 Cerner Millennium's public sandbox; YourPHR connects as a __patient-access__ SMART app.
 

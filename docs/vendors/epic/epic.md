@@ -55,7 +55,7 @@ Everything yourPHR syncs from Epic qualifies in R4 except `MedicationStatement` 
   token-refresh: source bb1dbc09-…: access token expired and no refresh token is available; reconnect the source
   ```
 
-  Access token dies; __no `refresh_token` stored__. Other sources on the same host still refresh (`attempted N, refreshed M` with M≥1). Ensure the Epic app grants __offline__ / `offline_access` (scopes table below already request it) and reconnect once so a refresh token is issued — otherwise re-sync / scheduled refresh will fail until the user reconnects. Contrast Oracle Challenge 4 / Offline app type in [`oracle-cerner.md`](../oracle-cerner.md).
+  Access token dies; __no `refresh_token` stored__. Other sources on the same host still refresh (`attempted N, refreshed M` with M≥1). Ensure the Epic app grants __offline__ / `offline_access` (scopes table below already request it) and reconnect once so a refresh token is issued — otherwise re-sync / scheduled refresh will fail until the user reconnects. Contrast Oracle Challenge 4 / Offline app type in [`oracle-cerner.md`](../oracle/oracle-cerner.md).
 
 - __Not the multi-hour hang:__ wall clock for Epic was minutes; the long 2026-07-31 download was __Oracle__ ([#439](https://github.com/jwilleke/yourphr/issues/439)).
 
