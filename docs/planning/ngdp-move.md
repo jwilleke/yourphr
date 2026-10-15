@@ -10,6 +10,40 @@ __YourPHR becomes an ngdpbase add-on — `@jwilleke/yourphr-addon` on an ngdpbas
 
 Until #920 reports, the standing rule from [#697](https://github.com/jwilleke/yourphr/issues/697) applies: __default to ngdpbase__ (AGENTS.md § *TypeScript stack: DEFAULT TO ngdpbase*).
 
+## Product direction (proposed 2026-10-15)
+
+> __Status: proposed, awaiting Jim's acceptance.__ This section is about *what yourPHR is for*. The sections around it are about *how it's built* (on ngdpbase). The two are independent.
+
+__yourPHR makes sense of the records you already have.__ Its main promise becomes *"give it whatever records you have, and get one understandable picture of your health back."* That works on day one, with no vendor's cooperation. Live connections (Epic, Oracle, NextGen and others) become one more source feeding the same picture, not the foundation.
+
+Why, from the operator's own records (2026-10-14/15, structure only, no contents read):
+
+- __A personal archive kept over years:__ 646 files, of which about 2 are in an exchange format. The rest are PDFs (1,107 pages, 34 scanned), a hospital CD of DICOM images, an old CCR, and hand-kept notes and spreadsheets.
+- __The hospital group's EHI Export__ ("Export All My Data", FollowMyHealth): 6,634 FHIR records, 84% of them document entries, covering about the last 8 years from one organization. Some dates are unusable (a 2019 migration date on 5,893 records; year 0001 on 4).
+- __A 76-year lifetime across several places__, while portals and networks reach about the last 10 years. Dentists and some specialists hardly take part. Old records are destroyed once retention runs out.
+
+For most people, the only lifetime health record is the one they keep themselves. A week of vendor-by-vendor registration work (Epic's 522 per-organization activations, FollowMyHealth's `unauthorized_client`, MEDITECH's per-hospital vetting) only confirms it: connections can't be the foundation.
+
+__Four inputs, one timeline:__
+
+| Source | Covers |
+|---|---|
+| Your memory: a guided lifetime history, patient-reported | The whole lifetime, roughly |
+| Your folder: PDFs, scans, CDs, portal exports | The years you kept, in detail |
+| Live connections and network access | The last ~10 years, structured |
+| Requests to past providers | Whatever still exists |
+
+__Principles:__
+
+- __Nothing guessed:__ facts only where they're stated, each linked to its file and page.
+- __Nothing silently merged:__ duplicates are grouped, originals kept, near-matches confirmed by the patient.
+- __Extracted facts are labelled as extracted__ (FHIR Provenance).
+- __Shared the standard ways:__ FHIR export, IPS, SMART Health Links, print.
+
+Tracked as epic [#935](https://github.com/jwilleke/yourphr/issues/935): [#737](https://github.com/jwilleke/yourphr/issues/737) (PDF/DICOM/image upload), [#936](https://github.com/jwilleke/yourphr/issues/936) (OCR), [#937](https://github.com/jwilleke/yourphr/issues/937) (fact extraction), [#938](https://github.com/jwilleke/yourphr/issues/938) (duplicates), [#939](https://github.com/jwilleke/yourphr/issues/939) (refreshable folder source), [#940](https://github.com/jwilleke/yourphr/issues/940) (trends), [#941](https://github.com/jwilleke/yourphr/issues/941) (CCR), [#942](https://github.com/jwilleke/yourphr/issues/942) (imaging studies), [#943](https://github.com/jwilleke/yourphr/issues/943) (lifetime history), [#944](https://github.com/jwilleke/yourphr/issues/944) (records request kit), [#945](https://github.com/jwilleke/yourphr/issues/945) (sharing).
+
+Reaching providers at scale is still worth doing, but behind this. See [`../EHR-vendors/registration-comparison.md`](../EHR-vendors/registration-comparison.md) for the vendor-by-vendor routes, and [`../health-Interoperability-Frameworks.md`](../health-Interoperability-Frameworks.md) and [`../TEFCA.md`](../TEFCA.md) for networks.
+
 ## Constraints
 
 - __The project stays at yourphr.org and in `jwilleke/yourphr`.__ The domain is paid for and the GitHub name is owned. The add-on follows the geohazardwatch shape: its own repo and domain, a Dockerfile `FROM ghcr.io/jwilleke/ngdpbase:<version>`. Never fold YourPHR into the ngdpbase repo or serve it from an ngdpbase-branded host.
@@ -29,6 +63,7 @@ Until #920 reports, the standing rule from [#697](https://github.com/jwilleke/yo
 | 2026-10-14 | Auth and chrome issues on our side are parked until #920 reports; [#814](https://github.com/jwilleke/yourphr/issues/814) is judged on its own as a possible live exposure. Patient-domain work continues. | [#920](https://github.com/jwilleke/yourphr/issues/920#issuecomment-6174353470) |
 | 2026-10-14 | A "go" requires ngdpbase [#1723](https://github.com/jwilleke/ngdpbase/issues/1723) (database backup), ported from current yourphr `main`. | blocked-by on [#920](https://github.com/jwilleke/yourphr/issues/920) |
 | 2026-10-14 | Cutover follows the Go move's rules: rehearse the swap, not only the code; household instance first, demo second; migration tooling in the image; stop rule — copied and add-on code coexist one release cycle at most. | [#920](https://github.com/jwilleke/yourphr/issues/920#issuecomment-6174419416), [`getting-off-go.md`](../archive/getting-off-go.md) |
+| 2026-10-15 | __Proposed, not yet accepted:__ yourPHR's main promise becomes making sense of the records you already have; connections become one source among four. See *Product direction*. | epic [#935](https://github.com/jwilleke/yourphr/issues/935) |
 
 ## Plan
 
