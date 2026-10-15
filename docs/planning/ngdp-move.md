@@ -79,6 +79,8 @@ Reaching providers at scale is still worth doing, but behind this. See [`../EHR-
 
 ## Open — blockers and questions
 
+- __Blocks building `phr`:__ ngdpbase's one add-on model ([ngdpbase#1810](https://github.com/jwilleke/ngdpbase/issues/1810)) must settle where add-ons are published, and the host SDK ([ngdpbase#1813](https://github.com/jwilleke/ngdpbase/issues/1813)) must settle how an installed add-on reaches core code, since `../../dist` only works inside ngdpbase's own `addons/`. `phr`'s list of needs is recorded on #1813. Until both land, `phr` is written against a local stand-in of the same shape.
+
 - __Blocker for go:__ ngdpbase [#1723](https://github.com/jwilleke/ngdpbase/issues/1723) — no database is in ngdpbase's backups.
 - __Data migration:__ none of our 26 tables carries the `yourphr_` prefix that add-on databases and #1723's backup split rely on. Users, credentials, sessions, agent tokens and device grants move to ngdpbase's user store — compatible password hashes or a reset, and a decision about tokens already issued.
 - __Keys:__ one key covers every ngdpbase database; YourPHR holds a separate backup key (#1723 proposes one).
