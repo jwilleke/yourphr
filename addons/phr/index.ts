@@ -10,15 +10,14 @@
  * No records, no PHI, no database yet.
  *
  * ngdpbase hands the add-on its tools as the third argument of register()
- * (ngdpbase#1813). Until core does, host.ts builds the same object from the
- * running core. The add-on never imports ngdpbase.
+ * (ngdpbase#1813, v5.10.0). The add-on never imports ngdpbase.
  *
  * Configuration keys:
  *   ngdpbase.addons.phr.enabled — true/false (defaults to false)
  *
  * The exported `name` MUST equal `ngdpbase.slug` in package.json (#927).
  */
-import { standInHost, type AddonHost } from './host.js';
+import type { AddonHost } from './host.js';
 import { mountApi } from './routes/api.js';
 import PhrWelcomePlugin from './plugins/PhrWelcomePlugin.js';
 
@@ -41,7 +40,12 @@ const PhrAddon = {
   dependencies: [] as string[],
 
   async register(engine: Engine, _config: Record<string, unknown> = {}, host?: AddonHost): Promise<void> {
-    const tools = host ?? await standInHost();
+    if (!host) {
+      // Core before v5.10.0 passes no host; package.json's minVersion should stop that load first.
+      unavailable = 'ngdpbase passed no host tools (needs ngdpbase 5.10.0 or later)';
+      return;
+    }
+    const tools = host;
 
     if (!engine.app) {
       unavailable = 'the engine has no web app to mount on';
@@ -59,7 +63,7 @@ const PhrAddon = {
     });
 
     unavailable = null;
-    tools.logger.info(`[phr] Ready (${host ? "core's host" : 'development stand-in host'})`);
+    tools.logger.info('[phr] Ready');
   },
 
   /** Shown on Admin → Add-ons. */
