@@ -1271,7 +1271,7 @@ Session reliability, enrollee data controls, admin logs, CMS prod-access runbook
 
 ### Notes for operators
 
-- After Flux picks `1.20.3` on demo: long sessions should not kick at 1h if active; Connected Sources Actions show Disconnect / Remove data; Medical History __Add record__ saves a home vital; CMS application path is in `docs/cms-bluebutton-production-access.md`.
+- After Flux picks `1.20.3` on demo: long sessions should not kick at 1h if active; Connected Sources Actions show Disconnect / Remove data; Medical History __Add record__ saves a home vital; CMS application path is in `docs/EHR-vendors/cms-medicare/cms-bluebutton-production-access.md`.
 - Config (optional): `jwt.session_ttl_minutes`, `jwt.session_absolute_hours`, `jwt.session_renew_if_remaining_minutes` (env `YOURPHR_JWT_SESSION_*`).
 
 ## [1.20.2](https://github.com/jwilleke/yourphr/compare/v1.20.1...v1.20.2) (2026-08-01)
@@ -1430,7 +1430,7 @@ CMS Blue Button production-access UX and catalog path: legal consent, attributio
 - __sources:__ pre-connect informed modal (Cancel / Continue) before OAuth; modular generic vs Medicare copy ([#430](https://github.com/jwilleke/yourphr/issues/430))
 - __connect:__ modular connection policy for all catalog medical sources (`consent_policy`, `pre_connect_profile`); defaults require consent + pre-connect ([docs/connection-policy.md](docs/connection-policy.md))
 - __sources / account:__ enrollee data controls — Disconnect & remove data, Account Profile data-controls card pointing at `/sources`, PP source aligned with delete-source behavior ([#431](https://github.com/jwilleke/yourphr/issues/431))
-- __catalog:__ production Medicare template (no secrets) + `YOURPHR_PROD_BLUEBUTTON_*` env seed; full operator docs in `docs/medicare-bluebutton.md` and provider-catalog README ([#432](https://github.com/jwilleke/yourphr/issues/432))
+- __catalog:__ production Medicare template (no secrets) + `YOURPHR_PROD_BLUEBUTTON_*` env seed; full operator docs in `docs/EHR-vendors/cms-medicare/medicare-bluebutton.md` and provider-catalog README ([#432](https://github.com/jwilleke/yourphr/issues/432))
 - __admin:__ Instance card for operator name / contact email / help URL (deploy-local, not hardcoded)
 - __legal:__ slim public Privacy Policy + Terms of Service sources (`docs/legal/`)
 
@@ -1441,7 +1441,7 @@ CMS Blue Button production-access UX and catalog path: legal consent, attributio
 
 ### Notes for operators
 
-- Production Medicare on `/sources`: enable the seeded __Medicare__ catalog entry (or set `YOURPHR_PROD_BLUEBUTTON_CLIENT_ID` / `_SECRET`) after CMS production credentials; register the relay `callback_url` with CMS. See [docs/medicare-bluebutton.md](docs/medicare-bluebutton.md).
+- Production Medicare on `/sources`: enable the seeded __Medicare__ catalog entry (or set `YOURPHR_PROD_BLUEBUTTON_CLIENT_ID` / `_SECRET`) after CMS production credentials; register the relay `callback_url` with CMS. See [docs/EHR-vendors/cms-medicare/medicare-bluebutton.md](./docs/EHR-vendors/cms-medicare/medicare-bluebutton.md).
 - Disconnect removes the source __and__ imported records for that source on this instance (matches updated Privacy Policy source text).
 - Live `yourphr.org` privacy.html may need a gh-pages republish if you want public PP to match `docs/legal/privacy-policy.md`.
 

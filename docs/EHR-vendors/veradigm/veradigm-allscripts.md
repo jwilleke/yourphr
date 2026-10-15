@@ -34,12 +34,12 @@ Relevant to YourPHR:
 | Developer program / API support | `VeradigmConnect@veradigm.com` |
 | Developer portal | `https://developer.veradigm.com` |
 | Partner / production-access request | `https://developer.veradigm.com/Account/PartnerRequest` |
-| This project's open ticket | __#17849__ (`unauthorized_client` on connect) — see [`../FHIR/fhir-testing.md`](../FHIR/fhir-testing.md) and [#53](https://github.com/jwilleke/yourphr/issues/53) |
+| This project's open ticket | __#17849__ (`unauthorized_client` on connect) — see [`../FHIR/fhir-testing.md`](../../FHIR/fhir-testing.md) and [#53](https://github.com/jwilleke/yourphr/issues/53) |
 
 ## API & Integration
 
 - __SMART on FHIR:__ Veradigm exposes SMART-on-FHIR endpoints (FollowMyHealth's are under `fhir.followmyhealth.com` with auth at `muauthentication.followmyhealth.com`). Authorization is authorization-code + PKCE.
-- __Test vs. production:__ registered apps start __Test Only__ and can reach only Veradigm __test__ organizations (synthetic patients, no PHI). Production access is granted per-app via a __partner request__ with a multi-day review. The full test-vs-real breakdown is in [`../FHIR/fhir-testing.md`](../FHIR/fhir-testing.md).
+- __Test vs. production:__ registered apps start __Test Only__ and can reach only Veradigm __test__ organizations (synthetic patients, no PHI). Production access is granted per-app via a __partner request__ with a multi-day review. The full test-vs-real breakdown is in [`../FHIR/fhir-testing.md`](../../FHIR/fhir-testing.md).
 - __App types:__ Veradigm's discovery advertises both public and confidential client capabilities; in practice the published metadata is __inconsistent__ (see Known API Issues).
 
 ## Known API Issues
@@ -55,6 +55,6 @@ Veradigm is the __external dependency__ standing between YourPHR and live Follow
 
 ## References / Related issues
 
-- Internal: [`followmyhealth.md`](./followmyhealth.md), [`../FHIR/fhir-testing.md`](../FHIR/fhir-testing.md), [`../FHIR/fhir-test-discovery-example.md`](../FHIR/fhir-test-discovery-example.md), [`../Roadmap.md`](../Roadmap.md)
+- Internal: [`followmyhealth.md`](./followmyhealth.md), [`../FHIR/fhir-testing.md`](../../FHIR/fhir-testing.md), [`../FHIR/fhir-test-discovery-example.md`](../../FHIR/fhir-test-discovery-example.md), [`../Roadmap.md`](../../Roadmap.md)
 - Issues: [#2](https://github.com/jwilleke/yourphr/issues/2) (standalone EPIC), [#53](https://github.com/jwilleke/yourphr/issues/53) (SMART sync, blocked), [#54](https://github.com/jwilleke/yourphr/issues/54) (display)
 - External: `https://veradigm.com`, `https://developer.veradigm.com`, `https://developer.veradigm.com/Account/PartnerRequest`

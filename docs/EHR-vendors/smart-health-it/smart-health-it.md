@@ -33,12 +33,12 @@ There is no real account. After __Connect__, the launcher shows a __patient pick
 |---|---|---|
 | __2026-06-15__ | discovery only (no relay) | ✅ `.well-known/smart-configuration` __200__, PKCE `S256`, capabilities include `launch-standalone` + `client-public` + `context-standalone-patient`, scopes include `patient/*.*` |
 | __2026-06-18__ | vendor matrix | ✅ open launcher — connects without approval (matrix row) |
-| __2026-07-31__ | __demo.yourphr.org__ (`demo-relay.yourphr.org`) | ✅ __full E2E__ — account login → Sandbox/Sources connect → launcher patient pick → callback success → import (~__455 KB__ export). Preferred smoke test while CMS Blue Button sandbox login is broken ([`medicare.md`](./medicare.md)). |
+| __2026-07-31__ | __demo.yourphr.org__ (`demo-relay.yourphr.org`) | ✅ __full E2E__ — account login → Sandbox/Sources connect → launcher patient pick → callback success → import (~__455 KB__ export). Preferred smoke test while CMS Blue Button sandbox login is broken ([`medicare.md`](../cms-medicare/medicare.md)). |
 
 Nothing to register — just connect. Prefer this sandbox over Blue Button for “does YourPHR’s SMART path still work?” checks until CMS restores synthetic beneficiary login.
 
 ## See also
 
-- Index + status: [`../testing-sandboxes/test-sandboxes.md`](../testing-sandboxes/test-sandboxes.md)
-- Vendor matrix: [`README.md`](./README.md)
-- Step-by-step (Option A): [`../FHIR/fhir-testing.md`](../FHIR/fhir-testing.md)
+- Index + status: [`../testing-sandboxes/test-sandboxes.md`](../../testing-sandboxes/test-sandboxes.md)
+- Vendor matrix: [`README.md`](../README.md)
+- Step-by-step (Option A): [`../FHIR/fhir-testing.md`](../../FHIR/fhir-testing.md)

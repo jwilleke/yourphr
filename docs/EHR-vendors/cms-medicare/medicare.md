@@ -1,6 +1,6 @@
 # CMS Blue Button 2.0 — sandbox registration
 
-How to get sandbox credentials for __CMS Blue Button 2.0__ (Medicare claims). This is the __registration / credentials__ guide; the full connect walkthrough, quirks, and troubleshooting live in [`../medicare-bluebutton.md`](../medicare-bluebutton.md).
+How to get sandbox credentials for __CMS Blue Button 2.0__ (Medicare claims). This is the __registration / credentials__ guide; the full connect walkthrough, quirks, and troubleshooting live in [`../medicare-bluebutton.md`](./medicare-bluebutton.md).
 
 __Register at:__ <https://bluebutton.cms.gov/developers/> → __Sandbox__ (free developer account; register a confidential app for a `client_id` + `client_secret`).
 
@@ -24,7 +24,7 @@ Retested the __sandbox__ Blue Button catalog entry. Same CMS-side symptoms on de
 | Alternate path (ID.me / medicare.gov chooser) | Fails with __patient data not found__ (synthetic sandbox has no real Medicare identity) |
 | After connect wait | Connect times out / no auth code; relay has nothing to deliver |
 
-__Interpretation:__ Our client_id, scopes, and relay callback are fine enough to reach CMS login. The __CMS sandbox synthetic login path itself is failing__ (or has changed in a way that breaks the published `BBUser`/`PW…!` credentials). Until CMS restores sandbox login (or documents a new synthetic path), use __SMART Health IT__ for E2E smoke tests ([`smart-health-it.md`](./smart-health-it.md)). Production Medicare still needs CMS production credentials ([#433](https://github.com/jwilleke/yourphr/issues/433), [#408](https://github.com/jwilleke/yourphr/issues/408)).
+__Interpretation:__ Our client_id, scopes, and relay callback are fine enough to reach CMS login. The __CMS sandbox synthetic login path itself is failing__ (or has changed in a way that breaks the published `BBUser`/`PW…!` credentials). Until CMS restores sandbox login (or documents a new synthetic path), use __SMART Health IT__ for E2E smoke tests ([`smart-health-it.md`](../smart-health-it/smart-health-it.md)). Production Medicare still needs CMS production credentials ([#433](https://github.com/jwilleke/yourphr/issues/433), [#408](https://github.com/jwilleke/yourphr/issues/408)).
 
 ## What you need
 
@@ -63,11 +63,11 @@ Blue Button is a __confidential__ client (unlike the others here) — you get *a
 A separate CMS __production__ app-review (no cost); the base becomes `https://api.bluebutton.cms.gov/v2/fhir` and you use the Production `client_id` / `client_secret`.
 
 __Operator runbook (email → form → Zoom → post-approval → enable catalog):__  
-[`../cms-bluebutton-production-access.md`](../cms-bluebutton-production-access.md) ([#433](https://github.com/jwilleke/yourphr/issues/433)).
+[`../cms-bluebutton-production-access.md`](./cms-bluebutton-production-access.md) ([#433](https://github.com/jwilleke/yourphr/issues/433)).
 
 ## See also
 
-- __Full connect guide + troubleshooting:__ [`../medicare-bluebutton.md`](../medicare-bluebutton.md)
-- __Production access runbook:__ [`../cms-bluebutton-production-access.md`](../cms-bluebutton-production-access.md)
-- Index: [`../testing-sandboxes/test-sandboxes.md`](../testing-sandboxes/test-sandboxes.md)
-- Vendor matrix: [`README.md`](./README.md)
+- __Full connect guide + troubleshooting:__ [`../medicare-bluebutton.md`](./medicare-bluebutton.md)
+- __Production access runbook:__ [`../cms-bluebutton-production-access.md`](./cms-bluebutton-production-access.md)
+- Index: [`../testing-sandboxes/test-sandboxes.md`](../../testing-sandboxes/test-sandboxes.md)
+- Vendor matrix: [`README.md`](../README.md)

@@ -11,4 +11,4 @@ They live beside the Go package because they are __embedded into the binary__ wi
 | Operator override | `<data>/config/privacy-policy.md`, `<data>/config/terms-of-service.md` |
 | Public copies | `yourphr.org/privacy.html`, `/terms.html` (gh-pages) — for people evaluating before installing |
 
-See [`docs/deployment/README.md`](../deployment/README.md) for the operator override, and [`docs/cms-bluebutton-production-access.md`](../cms-bluebutton-production-access.md) for the CMS pre-approval rule that applies after production approval.
+See [`docs/deployment/README.md`](../deployment/README.md) for the operator override, and [`docs/EHR-vendors/cms-medicare/cms-bluebutton-production-access.md`](../EHR-vendors/cms-medicare/cms-bluebutton-production-access.md) for the CMS pre-approval rule that applies after production approval.

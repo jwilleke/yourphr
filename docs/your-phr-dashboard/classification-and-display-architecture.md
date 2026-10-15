@@ -203,7 +203,7 @@ __No-guessing guardrail on value mapping:__ when remodeling, the source-text →
 
 | Phase | What | Fixes |
 |---|---|---|
-| __0__ | Capture the FollowMyHealth EHI mapping in `docs/vendors/` (findings + documented mappings + attribution; PDF stays in `private/phi/`) | knowledge loss |
+| __0__ | Capture the FollowMyHealth EHI mapping in `docs/EHR-vendors/` (findings + documented mappings + attribution; PDF stays in `private/phi/`) | knowledge loss |
 | __1__ | Condition classifier + synthesized category; "Current Medical Concerns" shows only active `problem-list-item`; Profile items move to __Patient Profile__ | the polluted Concerns list (top complaint) |
 | __2__ | Generic provenance + reference resolvers; "who said this" on cards and dashboard | unanswered provenance; unblocks #264 |
 | __3__ | Detail-card legibility: plain name, surfaced notes, standard codes underneath, distinct onset/recorded/ended dates, suppressed empty fields | uninformative detail pages |
@@ -217,7 +217,7 @@ Build a __synthetic FollowMyHealth-shaped fixture__ — real *structure* (vendor
 
 ## Source documents
 
-- Veradigm / FollowMyHealth EHI Export Data Guide (v2): linked from the export bundle's `service-doc` link, and published at `veradigm.com` under `/legal/onc/` (ONC-mandated EHI disclosure). The PDF is kept in `private/phi/` (not committed — its footer marks it Veradigm-proprietary). Mappings we rely on are summarized, with attribution, in `docs/vendors/` (Phase 0).
+- Veradigm / FollowMyHealth EHI Export Data Guide (v2): linked from the export bundle's `service-doc` link, and published at `veradigm.com` under `/legal/onc/` (ONC-mandated EHI disclosure). The PDF is kept in `private/phi/` (not committed — its footer marks it Veradigm-proprietary). Mappings we rely on are summarized, with attribution, in `docs/EHR-vendors/` (Phase 0).
 - FHIR R4: Condition, Observation, Provenance, Encounter (`hl7.org/fhir/R4/`).
 - US Core: Condition Problems and Health Concerns; Smoking Status Observation; SDOH categories.
 

@@ -4,7 +4,7 @@ A plain-language map of the networks and frameworks that move health records bet
 
 ## Two ways a patient app gets records
 
-1. __Directly from each hospital's system__ (FHIR + SMART App Launch). The app registers with each EHR vendor and the patient signs in at each hospital's portal. This is how yourPHR connects today. Registration ranges from self-service (Oracle) to per-organization activation (Epic): see [`vendors/registration-comparison.md`](./vendors/registration-comparison.md).
+1. __Directly from each hospital's system__ (FHIR + SMART App Launch). The app registers with each EHR vendor and the patient signs in at each hospital's portal. This is how yourPHR connects today. Registration ranges from self-service (Oracle) to per-organization activation (Epic): see [`EHR-vendors/registration-comparison.md`](./EHR-vendors/registration-comparison.md).
 2. __Through a network.__ Hospitals join a network once, and the network finds and fetches a person's records from everywhere they've been seen. The app joins the network, not each vendor.
 
 The standards for the data itself (FHIR, US Core, USCDI) are settled and required by law. What varies is the __business process__ around them: who registers, who approves, and who pays. The frameworks below are attempts to standardize that part.

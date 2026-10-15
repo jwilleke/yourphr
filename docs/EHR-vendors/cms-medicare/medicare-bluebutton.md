@@ -2,7 +2,7 @@
 
 How to connect __CMS Blue Button 2.0__ (Medicare claims data) to YourPHR as a SMART-on-FHIR source — __sandbox__ (verified) and __production__ (after CMS credentials).
 
-__Related:__ [provider catalog](provider-catalog/README.md) · [connection policy](connection-policy.md) · [attributions](Attributions.md) · __[CMS production access runbook](cms-bluebutton-production-access.md)__ ([#433](https://github.com/jwilleke/yourphr/issues/433)) · [#432](https://github.com/jwilleke/yourphr/issues/432) · [#408](https://github.com/jwilleke/yourphr/issues/408)
+__Related:__ [provider catalog](../../provider-catalog/README.md) · [connection policy](../../connection-policy.md) · [attributions](../../Attributions.md) · __[CMS production access runbook](./cms-bluebutton-production-access.md)__ ([#433](https://github.com/jwilleke/yourphr/issues/433)) · [#432](https://github.com/jwilleke/yourphr/issues/432) · [#408](https://github.com/jwilleke/yourphr/issues/408)
 
 ## Patient-facing name: “Medicare” (#429)
 
@@ -21,7 +21,7 @@ A national __FHIR R4__ API for Medicare beneficiaries. Claims/insurance data: __
 | Credentials | Self-serve developer portal | CMS production-access review ([#433](https://github.com/jwilleke/yourphr/issues/433)) |
 | YourPHR path | Admin `/sandbox` (env-seeded) | Patient `/sources` (catalog `environment=production`) |
 
-> __Sandbox status:__ ✅ E2E verified __2026-06-14__ (login → token → sync). ⛔ __Regressed 2026-07-31__, __reconfirmed 2026-08-01__ on demo.yourphr.org v1.19.1 — CMS synthetic beneficiary login (`BBUser00000` / `PW00000!`) shows *"We can't process your request at this time"*; no auth code reaches the relay (not a YourPHR callback bug). Details: [`vendors/medicare.md`](vendors/medicare.md). Use SMART Health IT for smoke tests until CMS restores sandbox login.
+> __Sandbox status:__ ✅ E2E verified __2026-06-14__ (login → token → sync). ⛔ __Regressed 2026-07-31__, __reconfirmed 2026-08-01__ on demo.yourphr.org v1.19.1 — CMS synthetic beneficiary login (`BBUser00000` / `PW00000!`) shows *"We can't process your request at this time"*; no auth code reaches the relay (not a YourPHR callback bug). Details: [`EHR-vendors/medicare.md`](./medicare.md). Use SMART Health IT for smoke tests until CMS restores sandbox login.
 
 ---
 
@@ -87,7 +87,7 @@ CMS portal may show `client_id/client_secret` as one string. Put __only__ the id
 | `invalid_scope` | Wildcard / `fhirUser` / `offline_access` | Use exact scopes above |
 | Relay timeout + popup “Connected” | Login longer than connect wait | Raise `YOURPHR_WEB_SMART_CONNECT_LOGIN_WAIT_SECONDS` (default 240); or pre-login at CMS |
 | Relay timeout, no “Connected” | Redirect URI mismatch or incomplete login | Callback must match [Relay callback](#b-relay-callback-uri) exactly |
-| CMS “We can't process your request at this time” on `BBUser…` login (__2026-07-31__, __2026-08-01__ demo) | CMS sandbox synthetic login broken/changed; authorize never yields a code | Vendor-side — not a YourPHR callback bug. See [`vendors/medicare.md`](vendors/medicare.md); use SMART Health IT for E2E; watch CMS sandbox docs / [BlueButtonAPI@cms.hhs.gov](mailto:BlueButtonAPI@cms.hhs.gov) |
+| CMS “We can't process your request at this time” on `BBUser…` login (__2026-07-31__, __2026-08-01__ demo) | CMS sandbox synthetic login broken/changed; authorize never yields a code | Vendor-side — not a YourPHR callback bug. See [`EHR-vendors/medicare.md`](./medicare.md); use SMART Health IT for E2E; watch CMS sandbox docs / [BlueButtonAPI@cms.hhs.gov](mailto:BlueButtonAPI@cms.hhs.gov) |
 | ID.me / medicare.gov “patient data not found” (sandbox) | Sandbox has no real Medicare identity | Expected for synthetic path; do not use ID.me for BB sandbox |
 
 ---
@@ -98,7 +98,7 @@ __Goal:__ After CMS issues production credentials, enable patient __Medicare__ o
 
 ### A. CMS production app
 
-1. Complete the full operator runbook: __[cms-bluebutton-production-access.md](cms-bluebutton-production-access.md)__ (email, form, Zoom script, PP/ToS gates — [#433](https://github.com/jwilleke/yourphr/issues/433)). CMS process: [production access](https://bluebutton.cms.gov/production-access/).
+1. Complete the full operator runbook: __[cms-bluebutton-production-access.md](./cms-bluebutton-production-access.md)__ (email, form, Zoom script, PP/ToS gates — [#433](https://github.com/jwilleke/yourphr/issues/433)). CMS process: [production access](https://bluebutton.cms.gov/production-access/).
 2. Register __production__ app with:
    - Confidential client, authorization-code
    - __Callback URL__ = this instance’s relay callback ([below](#b-relay-callback-uri)) — __exact match__
@@ -110,7 +110,7 @@ __Goal:__ After CMS issues production credentials, enable patient __Medicare__ o
 1. As admin, open __Admin Dashboard → SMART OAuth Relay__ (or `GET /api/secure/source/relay-config`).
 2. Copy __`callback_url`__ (public origin + `/callback`).
 3. Register that __exact__ string with CMS (sandbox app and/or production app).
-4. Ensure `YOURPHR_RELAY_PUBLIC_URL` (and `YOURPHR_RELAY_URL` / `YOURPHR_RELAY_SECRET` as needed) match how you deploy the relay. See [`deployment/README.md`](deployment/README.md) and [`SMART-flow-map.md`](SMART-flow-map.md).
+4. Ensure `YOURPHR_RELAY_PUBLIC_URL` (and `YOURPHR_RELAY_URL` / `YOURPHR_RELAY_SECRET` as needed) match how you deploy the relay. See [`deployment/README.md`](../../deployment/README.md) and [`SMART-flow-map.md`](../../SMART-flow-map.md).
 
 ### C. Production catalog entry (no code change)
 
@@ -165,7 +165,7 @@ Admin → __Instance__ card: operator name / contact email / help URL for this d
 - __Confidential client__ — [#286](https://github.com/jwilleke/yourphr/issues/286).
 - __No `$everything`__ — per-resource fetch ([#250](https://github.com/jwilleke/yourphr/issues/250)).
 - __Patient id__ — may come from Coverage/EOB when token omits `patient` ([#293](https://github.com/jwilleke/yourphr/issues/293)).
-- __Connection policy__ — PP/ToS + pre-connect modal ([connection-policy.md](connection-policy.md)).
+- __Connection policy__ — PP/ToS + pre-connect modal ([connection-policy.md](../../connection-policy.md)).
 
 ## Related code / constants
 

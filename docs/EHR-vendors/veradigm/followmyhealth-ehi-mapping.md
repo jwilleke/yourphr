@@ -1,6 +1,6 @@
 # FollowMyHealth / Veradigm EHI export — mapping notes
 
-Practical notes for handling FollowMyHealth (Veradigm, formerly Allscripts) __EHI export__ bundles in YourPHR. These are the source-specific facts the [classification & display architecture](../your-phr-dashboard/classification-and-display-architecture.md) Layer 1 adapter relies on.
+Practical notes for handling FollowMyHealth (Veradigm, formerly Allscripts) __EHI export__ bundles in YourPHR. These are the source-specific facts the [classification & display architecture](../../your-phr-dashboard/classification-and-display-architecture.md) Layer 1 adapter relies on.
 
 > __Attribution.__ Mappings below are derived from Veradigm's *FollowMyHealth EHI Export Data Guide* (v2, Feb 2024) plus analysis of a real export. The guide is published at `veradigm.com` under `/img/legal/onc/VeradigmFMH_EHI_Export_Data_Guide_v2.pdf` (an ONC-mandated EHI disclosure) and is also linked from each export bundle's `link` with relation `service-doc`. The PDF is __not committed__ (its footer marks it Veradigm-proprietary); it is kept under `private/phi/` for reference. This file paraphrases only the interoperability facts we implement.
 
@@ -35,7 +35,7 @@ The guide provides __no__ `Condition.category` and no standard mapping for the d
 | `code.coding[]` | standard terminology (ICD‑9/ICD‑10/SNOMED) present | __none__ — `code.text` only |
 | `recorder` / `asserter` | often a `Practitioner` (sometimes `Patient` = self-reported) | absent |
 
-Presence of a __coded diagnosis__ is the most reliable separator (it also catches patient self-reported items the interface tell misses); the interface tell is a strong secondary confirmation. Synthesis rule (see the [Phase 1 spec](../your-phr-dashboard/phase-1-condition-classifier-spec.md) for the exact decision table):
+Presence of a __coded diagnosis__ is the most reliable separator (it also catches patient self-reported items the interface tell misses); the interface tell is a strong secondary confirmation. Synthesis rule (see the [Phase 1 spec](../../your-phr-dashboard/phase-1-condition-classifier-spec.md) for the exact decision table):
 
 - standard code or `HealthCondition` tell → `category = problem-list-item` (tier clinician)
 - coded but patient-asserted, no standard code → `problem-list-item` (tier self-reported)
@@ -71,7 +71,7 @@ __Conformance-remodel boundary__ (the rule for transforming activity/vitals towa
 
 US Core does __not__ profile step counts; the standard home for physical-activity data is the HL7 __Physical Activity IG__ (`build.fhir.org/ig/HL7/physical-activity/`), still __draft__ (STU/ballot). So activity data is routed by the `category = activity` FMH already provides now, with PA IG conformance as a deliberate later opt-in (per the architecture doc's gated conformance test).
 
-__Usability gate (why FMH activity is consolidated, not shown as a daily chart):__ the observed step series is stale (its activity ends years before the import) and zero-inflated (most days `0` = device not worn). Shown as a daily chart it would mislead, and a naive "average steps per 24h" would mislead worse — averaging over all calendar days buries the no-wear zeros (observed: a year whose all-days average is an *order of magnitude below* its average on worn days — the device was barely worn, not the patient barely moving). Per the architecture doc's [surfacing gate for low-value series](../your-phr-dashboard/classification-and-display-architecture.md#surfacing-gate-for-low-value-series-activity--tracker-data): the step series clears floor __A__ (structured, LOINC-coded, numeric `valueInteger`) but fails __recency (C)__, so it is __retained (no-discard) and collapsed to an honest per-year rollup__ — `{active days, avg on active days, peak}`, explicitly labeled, __never a bare calendar average__. The `text/plain` "Exercise" `DocumentReference`s fail floor __A__ outright (no numeric value). The gate is __source-agnostic__ — a live, current tracker feed would pass B/C and get the daily view automatically, with no FMH-specific code.
+__Usability gate (why FMH activity is consolidated, not shown as a daily chart):__ the observed step series is stale (its activity ends years before the import) and zero-inflated (most days `0` = device not worn). Shown as a daily chart it would mislead, and a naive "average steps per 24h" would mislead worse — averaging over all calendar days buries the no-wear zeros (observed: a year whose all-days average is an *order of magnitude below* its average on worn days — the device was barely worn, not the patient barely moving). Per the architecture doc's [surfacing gate for low-value series](../../your-phr-dashboard/classification-and-display-architecture.md#surfacing-gate-for-low-value-series-activity--tracker-data): the step series clears floor __A__ (structured, LOINC-coded, numeric `valueInteger`) but fails __recency (C)__, so it is __retained (no-discard) and collapsed to an honest per-year rollup__ — `{active days, avg on active days, peak}`, explicitly labeled, __never a bare calendar average__. The `text/plain` "Exercise" `DocumentReference`s fail floor __A__ outright (no numeric value). The gate is __source-agnostic__ — a live, current tracker feed would pass B/C and get the daily view automatically, with no FMH-specific code.
 
 ## DocumentReference — the volume problem (clinical docs buried under wearable "Notes")
 
@@ -115,6 +115,6 @@ Naive resolution searches for the whole `patientId_encounterId` blob as an id an
 
 ## See also
 
-- Architecture: [`docs/your-phr-dashboard/classification-and-display-architecture.md`](../your-phr-dashboard/classification-and-display-architecture.md)
-- Phase 1 spec: [`docs/your-phr-dashboard/phase-1-condition-classifier-spec.md`](../your-phr-dashboard/phase-1-condition-classifier-spec.md)
+- Architecture: [`docs/your-phr-dashboard/classification-and-display-architecture.md`](../../your-phr-dashboard/classification-and-display-architecture.md)
+- Phase 1 spec: [`docs/your-phr-dashboard/phase-1-condition-classifier-spec.md`](../../your-phr-dashboard/phase-1-condition-classifier-spec.md)
 - Related issues: #262 (legible display), #264 (reference resolution), #53 (Veradigm/FollowMyHealth), #254 (C-CDA import)

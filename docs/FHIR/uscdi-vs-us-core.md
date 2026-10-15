@@ -41,5 +41,5 @@ USCDI = the government's list of *what* health data must flow; US Core = HL7's F
 ## See also
 
 - [`dstu2-vs-r4.md`](dstu2-vs-r4.md) — the FHIR-version axis (a different distinction)
-- [`../vendors/athenahealth.md`](../vendors/athenahealth.md) — where "Certified APIs (USCDI / US Core)" is selected
+- [`../vendors/athenahealth.md`](../EHR-vendors/athenahealth/athenahealth.md) — where "Certified APIs (USCDI / US Core)" is selected
 - `AGENTS.md` — the non-US-Core fallback principle

@@ -6,6 +6,8 @@ Endpoint counts come from each vendor's own published list. ONC's Lantern counts
 
 ## Summary
 
+Per-vendor detail is in each vendor's folder: [`nextgen/`](./nextgen/nextgen.md), [`eclinicalworks/`](./eclinicalworks/eclinicalworks.md), [`greenway/`](./greenway/greenway.md), [`meditech/`](./meditech/meditech.md), [`altera/`](./altera/altera.md), [`practice-fusion/`](./practice-fusion/practice-fusion.md), [`oracle/`](./oracle/oracle-application.md), [`epic/`](./epic/epic.md).
+
 | Vendor | Model | Customers (own list) | Refresh tokens for a public client | Tracking |
 |---|---|---|---|---|
 | __Oracle Health (Cerner)__ | Self-service, auto-provisioned, no review. __Confirmed working__ at real hospitals 2026-10-14 | 1,319 organizations | Yes (offline access) | [#926](https://github.com/jwilleke/yourphr/issues/926), [#925](https://github.com/jwilleke/yourphr/issues/925) |

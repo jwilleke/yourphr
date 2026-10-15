@@ -8,12 +8,12 @@ __Contact:__ [BlueButtonAPI@cms.hhs.gov](mailto:BlueButtonAPI@cms.hhs.gov)
 
 | Related | Doc / issue |
 |---|---|
-| Sandbox credentials + live login status | [`vendors/medicare.md`](vendors/medicare.md) |
-| Connect walkthrough (scopes, catalog, env) | [`medicare-bluebutton.md`](medicare-bluebutton.md) |
-| Connection policy (PP/ToS, pre-connect) | [`connection-policy.md`](connection-policy.md) |
-| Privacy Policy (source) | [`backend/pkg/legal/privacy-policy.md`](../src/legal/shipped.ts) → public [yourphr.org/privacy.html](https://yourphr.org/privacy.html) |
-| Terms of Service (source) | [`backend/pkg/legal/terms-of-service.md`](../src/legal/shipped.ts) → public [yourphr.org/terms.html](https://yourphr.org/terms.html) |
-| CMS attribution | [`Attributions.md`](Attributions.md) |
+| Sandbox credentials + live login status | [`EHR-vendors/medicare.md`](./medicare.md) |
+| Connect walkthrough (scopes, catalog, env) | [`medicare-bluebutton.md`](./medicare-bluebutton.md) |
+| Connection policy (PP/ToS, pre-connect) | [`connection-policy.md`](../../connection-policy.md) |
+| Privacy Policy (source) | [`backend/pkg/legal/privacy-policy.md`](../../../src/legal/shipped.ts) → public [yourphr.org/privacy.html](https://yourphr.org/privacy.html) |
+| Terms of Service (source) | [`backend/pkg/legal/terms-of-service.md`](../../../src/legal/shipped.ts) → public [yourphr.org/terms.html](https://yourphr.org/terms.html) |
+| CMS attribution | [`Attributions.md`](../../Attributions.md) |
 | Production E2E proof after credentials | [#408](https://github.com/jwilleke/yourphr/issues/408) |
 | This runbook | [#433](https://github.com/jwilleke/yourphr/issues/433) |
 | Demo host epic | [#438](https://github.com/jwilleke/yourphr/issues/438) |
@@ -29,7 +29,7 @@ __Contact:__ [BlueButtonAPI@cms.hhs.gov](mailto:BlueButtonAPI@cms.hhs.gov)
 | Credentials | Self-serve developer portal | Issued only after CMS form + Zoom demo + post-approval form |
 | YourPHR UI | Admin __`/sandbox`__ | Patient __`/sources`__ → __Medicare__ |
 
-YourPHR already has a production catalog template and operator wiring; you do __not__ need a code change after CMS issues credentials — see [`medicare-bluebutton.md`](medicare-bluebutton.md) § Production.
+YourPHR already has a production catalog template and operator wiring; you do __not__ need a code change after CMS issues credentials — see [`medicare-bluebutton.md`](./medicare-bluebutton.md) § Production.
 
 ---
 
@@ -64,7 +64,7 @@ These ship targets map to closed CMS prep issues. Re-check on the __demo host__ 
 | CMS non-endorsement | `/attributions` + Medicare connect (#428) | Required sentence visible |
 | Enrollee controls | Sources Actions (#431 / #437) | Disconnect; Remove data; combined teardown |
 | Revoke product consent | Account Profile revoke | Blocks new Medicare connects; disconnects Medicare-class tokens (records stay until Remove data) |
-| Secure tokens / no project PHI | Architecture | Tokens on instance; relay never sees tokens ([SMART-flow-map.md](SMART-flow-map.md)) |
+| Secure tokens / no project PHI | Architecture | Tokens on instance; relay never sees tokens ([SMART-flow-map.md](../../SMART-flow-map.md)) |
 
 __Demo host checklist (day-of):__
 
@@ -87,7 +87,7 @@ __Demo host checklist (day-of):__
 
 Source of truth in-repo: `backend/pkg/legal/privacy-policy.md`, `backend/pkg/legal/terms-of-service.md` (moved there in [#463](https://github.com/jwilleke/yourphr/issues/463) so they can be embedded and served by the instance at `/privacy` and `/terms`). After editing source, republish `gh-pages` (`privacy.html` / `terms.html`) before attaching PDFs.
 
-__Which URL to submit.__ CMS asks for a public URL, so submit the `yourphr.org` pages — an instance URL may sit behind auth or be unreachable from outside. The instance serves the same text unless its operator has published their own; see the operator override in [`deployment/README.md`](deployment/README.md).
+__Which URL to submit.__ CMS asks for a public URL, so submit the `yourphr.org` pages — an instance URL may sit behind auth or be unreachable from outside. The instance serves the same text unless its operator has published their own; see the operator override in [`deployment/README.md`](../../deployment/README.md).
 
 ### PDF for CMS form
 
@@ -179,7 +179,7 @@ Keep answers in `private/cms-application/form-answers.md` (gitignored) so they a
 | Redirect / callback | Instance OAuth relay callback (e.g. `https://demo-relay.yourphr.org/callback`) — exact match |
 | Client type | Confidential |
 | Grant | Authorization code |
-| Scopes | See [`medicare-bluebutton.md`](medicare-bluebutton.md) (exact list; no wildcards / no offline_access in sandbox) |
+| Scopes | See [`medicare-bluebutton.md`](./medicare-bluebutton.md) (exact list; no wildcards / no offline_access in sandbox) |
 
 ---
 
@@ -196,7 +196,7 @@ CMS asks for a __substantially complete__ enrollee journey. Script for <https://
 
 | Path | When to use | Notes |
 |---|---|---|
-| __A1 — Blue Button sandbox__ | CMS synthetic login works | Preferred for “authorize Medicare” authenticity. __As of 2026-07-31 / 2026-08-01, CMS sandbox login is failing__ for `BBUser…` ([`vendors/medicare.md`](vendors/medicare.md)). |
+| __A1 — Blue Button sandbox__ | CMS synthetic login works | Preferred for “authorize Medicare” authenticity. __As of 2026-07-31 / 2026-08-01, CMS sandbox login is failing__ for `BBUser…` ([`EHR-vendors/medicare.md`](./medicare.md)). |
 | __A2 — SMART Health IT__ | Sandbox BB broken | Proves YourPHR OAuth + import + Explore end-to-end; tell CMS BB sandbox is currently unavailable vendor-side. |
 | __A3 — Manual FHIR / prior import__ | Last resort | Show Explore + controls only; be explicit that live CMS authorize will be shown when sandbox or prod credentials allow. |
 
@@ -290,5 +290,5 @@ YOURPHR_PROD_BLUEBUTTON_CLIENT_SECRET=…
 - CMS developer sandbox: <https://sandbox.bluebutton.cms.gov/>  
 - Developer docs: <https://bluebutton.cms.gov/api-documentation/>  
 - Google Group: [Developer-group-for-cms-blue-button-api](https://groups.google.com/g/Developer-group-for-cms-blue-button-api)  
-- YourPHR deployment: [`deployment/README.md`](deployment/README.md)  
-- Releasing (demo image is release-gated): [`releasing.md`](releasing.md)  
+- YourPHR deployment: [`deployment/README.md`](../../deployment/README.md)  
+- Releasing (demo image is release-gated): [`releasing.md`](../../releasing.md)  

@@ -1,13 +1,30 @@
-# Vendors
+# EHR vendors
 
-Vendor-by-vendor comparison of how a patient app reaches production (registration, approval, refresh tokens, reach): [`registration-comparison.md`](./registration-comparison.md).
+Public information on each EHR vendor (and the other data sources) yourPHR connects to: one folder per vendor. Vendor friction records are kept privately, not here.
+
+| Folder | What's there |
+|---|---|
+| [`epic/`](./epic/epic.md) | Epic: sandbox guide, data notes, data use questionnaire, apps 56252 / 62263 |
+| [`oracle/`](./oracle/oracle-cerner.md) | Oracle Health (Cerner): sandbox guide, discovery document, the code Console app record |
+| [`nextgen/`](./nextgen/nextgen.md) | NextGen Enterprise: patient-access registration facts |
+| [`eclinicalworks/`](./eclinicalworks/eclinicalworks.md) | eClinicalWorks / healow: patient-app registration facts |
+| [`greenway/`](./greenway/greenway.md) | Greenway Health: patient-app registration facts |
+| [`athenahealth/`](./athenahealth/athenahealth.md) | athenahealth: developer portal registration |
+| [`veradigm/`](./veradigm/veradigm-allscripts.md) | Veradigm (Allscripts) and FollowMyHealth, including the FHIR export mapping |
+| [`altera/`](./altera/altera.md) | Altera Digital Health: registration facts |
+| [`practice-fusion/`](./practice-fusion/practice-fusion.md) | Practice Fusion: registration facts |
+| [`meditech/`](./meditech/meditech.md) | MEDITECH: registration facts |
+| [`cms-medicare/`](./cms-medicare/medicare.md) | CMS Blue Button 2.0 (Medicare): connection guide and production-access runbook |
+| [`smart-health-it/`](./smart-health-it/smart-health-it.md) | SMART Health IT: the open reference sandbox |
+
+Across vendors: [`registration-comparison.md`](./registration-comparison.md), [`production-onboarding.md`](./production-onboarding.md), [`clientid-friction.md`](./clientid-friction.md). Networks that reach many vendors at once: [`../health-Interoperability-Frameworks.md`](../health-Interoperability-Frameworks.md), [`../TEFCA.md`](../TEFCA.md).
 
 Reference notes on the external health-IT vendors whose data and APIs YourPHR interoperates with. Each doc follows the same shape: __Overview · Ownership & History · Products · Contact · API & Integration · Known API Issues · Relevance to YourPHR · References__.
 
 | Vendor | Doc | Why it matters to YourPHR |
 |---|---|---|
-| __FollowMyHealth__ | [`followmyhealth.md`](./followmyhealth.md) | Patient portal; its FHIR R4 export is the primary real-world (non-US-Core) dataset YourPHR is hardened against. |
-| __Veradigm__ (formerly __Allscripts__) | [`veradigm-allscripts.md`](./veradigm-allscripts.md) | Owns FollowMyHealth and the SMART/FHIR developer program; the external gatekeeper for live sync ([#53](https://github.com/jwilleke/yourphr/issues/53)). |
+| __FollowMyHealth__ | [`followmyhealth.md`](./veradigm/followmyhealth.md) | Patient portal; its FHIR R4 export is the primary real-world (non-US-Core) dataset YourPHR is hardened against. |
+| __Veradigm__ (formerly __Allscripts__) | [`veradigm-allscripts.md`](./veradigm/veradigm-allscripts.md) | Owns FollowMyHealth and the SMART/FHIR developer program; the external gatekeeper for live sync ([#53](https://github.com/jwilleke/yourphr/issues/53)). |
 
 __Production onboarding:__ [`production-onboarding.md`](./production-onboarding.md) — what each vendor's production process took, dated, with lessons (start with Epic, [#863](https://github.com/jwilleke/yourphr/issues/863)).
 
@@ -19,12 +36,12 @@ How to obtain credentials for each test sandbox. The index with connect values +
 
 | Sandbox | Register at | What you get | Guide |
 |---|---|---|---|
-| __SMART Health IT__ | *nothing — open sandbox* | any `client_id`, no secret | [`smart-health-it.md`](./smart-health-it.md) |
-| __CMS Blue Button 2.0__ | <https://bluebutton.cms.gov/developers/> | `client_id` + `client_secret` (confidential) | [`medicare.md`](./medicare.md) · __prod access:__ [`../cms-bluebutton-production-access.md`](../cms-bluebutton-production-access.md) |
+| __SMART Health IT__ | *nothing — open sandbox* | any `client_id`, no secret | [`smart-health-it.md`](./smart-health-it/smart-health-it.md) |
+| __CMS Blue Button 2.0__ | <https://bluebutton.cms.gov/developers/> | `client_id` + `client_secret` (confidential) | [`medicare.md`](./cms-medicare/medicare.md) · __prod access:__ [`../cms-bluebutton-production-access.md`](./cms-medicare/cms-bluebutton-production-access.md) |
 | __Epic__ | <https://fhir.epic.com> | `client_id` (public/PKCE) | [`epic/epic.md`](./epic/epic.md) |
-| __FollowMyHealth / Veradigm__ | <https://developer.veradigm.com> | `client_id` (public/PKCE) — ⛔ provisioning-gated | [`followmyhealth.md`](./followmyhealth.md) |
+| __FollowMyHealth / Veradigm__ | <https://developer.veradigm.com> | `client_id` (public/PKCE) — ⛔ provisioning-gated | [`followmyhealth.md`](./veradigm/followmyhealth.md) |
 | __Oracle Health (Cerner)__ | <https://code-console.cerner.com/> | `client_id` (public/PKCE), console-issued | [`oracle/oracle-cerner.md`](./oracle/oracle-cerner.md) |
-| __athenahealth__ | <https://mydata.athenahealth.com/access-the-apis> | `client_id` + `client_secret` (confidential / Web app) — approval-gated | [`athenahealth.md`](./athenahealth.md) |
+| __athenahealth__ | <https://mydata.athenahealth.com/access-the-apis> | `client_id` + `client_secret` (confidential / Web app) — approval-gated | [`athenahealth.md`](./athenahealth/athenahealth.md) |
 
 See also: [`../FHIR/fhir-testing.md`](../FHIR/fhir-testing.md) (test-vs-real environments) and [`../FHIR/fhir-test-discovery-example.md`](../FHIR/fhir-test-discovery-example.md) (a captured FollowMyHealth discovery document).
 
@@ -42,7 +59,7 @@ YourPHR connects to all of these the same way: a one-click button on __`/sandbox
 
 | Sandbox | Auth model | Test patient | Live status |
 |---|---|---|---|
-| __CMS Blue Button 2.0__ | confidential (id+secret) | synthetic Medicare beneficiary (`BBUser00000` / `PW00000!`) | ⛔ __sandbox login broken (2026-07-31, reconfirmed 2026-08-01 on demo)__ — OAuth authorize reaches CMS; synthetic login: *"We can't process your request at this time"*; no auth code (see [`medicare.md`](./medicare.md)). Was ✅ E2E 2026-06-14. |
+| __CMS Blue Button 2.0__ | confidential (id+secret) | synthetic Medicare beneficiary (`BBUser00000` / `PW00000!`) | ⛔ __sandbox login broken (2026-07-31, reconfirmed 2026-08-01 on demo)__ — OAuth authorize reaches CMS; synthetic login: *"We can't process your request at this time"*; no auth code (see [`medicare.md`](./cms-medicare/medicare.md)). Was ✅ E2E 2026-06-14. |
 | __Epic__ | public / PKCE | sandbox test patients (e.g. Camila Lopez) | ✅ __E2E verified 2026-07-31__ on production (also 2026-06-18); skips some 403/400 types; watch __offline refresh token__ after connect ([`epic/epic.md`](./epic/epic.md)) |
 | __SMART Health IT__ | open (any `client_id`, no secret) | pick at launcher | ✅ __E2E verified 2026-07-31__ on demo.yourphr.org (~455 KB export) |
 | __athenahealth__ | confidential (id+secret) | `phrtest_preview@mailinator.com` / `Password1` (also `athenainterop@aol.com`) | 🟡 __auth works__ (2026-06-18); patient login works; record-sharing __gated__ on app onboarding/provisioning in the Developer Portal |
@@ -51,9 +68,9 @@ YourPHR connects to all of these the same way: a one-click button on __`/sandbox
 
 ### Per-vendor operating notes
 
-- __Blue Button__ — pure OAuth2; confidential client; restricted scopes (no wildcard / `offline_access`). __Do not treat as the reliable smoke test right now:__ as of __2026-07-31__ (reconfirmed __2026-08-01__ on demo.yourphr.org v1.19.1 during [#438](https://github.com/jwilleke/yourphr/issues/438)) the CMS sandbox beneficiary login fails on CMS's side before any auth code. Full connect guide: [`../medicare-bluebutton.md`](../medicare-bluebutton.md); registration + dated log: [`medicare.md`](./medicare.md).
+- __Blue Button__ — pure OAuth2; confidential client; restricted scopes (no wildcard / `offline_access`). __Do not treat as the reliable smoke test right now:__ as of __2026-07-31__ (reconfirmed __2026-08-01__ on demo.yourphr.org v1.19.1 during [#438](https://github.com/jwilleke/yourphr/issues/438)) the CMS sandbox beneficiary login fails on CMS's side before any auth code. Full connect guide: [`../medicare-bluebutton.md`](./cms-medicare/medicare-bluebutton.md); registration + dated log: [`medicare.md`](./cms-medicare/medicare.md).
 - __Epic__ — public/PKCE patient app; advertises ~100 resource types but __403/400s__ several (AdverseEvent 403, CarePlan "requires category" 400). YourPHR skips inaccessible types so the rest import. ([`epic/epic.md`](./epic/epic.md))
-- __SMART Health IT__ — open reference launcher; needs the long `/sim/<base64>/fhir` base; accepts any `client_id`; lets you pick a synthetic patient. __Best smoke test while Blue Button sandbox login is broken.__ Live E2E on demo 2026-07-31. ([`smart-health-it.md`](./smart-health-it.md))
-- __athenahealth__ — confidential ("Web") app; __approval-gated__. OAuth + patient login succeed, but the patient record-sharing step ("Could not confirm access to additional health records") needs the app fully onboarded in the Developer Portal. Not a YourPHR bug. Live note dated __2026-06-18__. ([`athenahealth.md`](./athenahealth.md))
+- __SMART Health IT__ — open reference launcher; needs the long `/sim/<base64>/fhir` base; accepts any `client_id`; lets you pick a synthetic patient. __Best smoke test while Blue Button sandbox login is broken.__ Live E2E on demo 2026-07-31. ([`smart-health-it.md`](./smart-health-it/smart-health-it.md))
+- __athenahealth__ — confidential ("Web") app; __approval-gated__. OAuth + patient login succeed, but the patient record-sharing step ("Could not confirm access to additional health records") needs the app fully onboarded in the Developer Portal. Not a YourPHR bug. Live note dated __2026-06-18__. ([`athenahealth.md`](./athenahealth/athenahealth.md))
 - __Oracle/Cerner__ — public/PKCE, __hardest sandbox__. Four auth obstacles solved ([#338](https://github.com/jwilleke/yourphr/issues/338)): (1) patient authorize not discoverable → pin override; (2) SMART v2 app / smart-v1 endpoints only; (3) enumerate v2 `.rs` scopes; (4) Offline for refresh. Base/`aud` = `fhir-ehr.cerner.com`. Slow/flaky (~57 s 504s). __Open:__ global 1000-page fetch cap aborts remaining types (incl. Patient) on large sandbox patients — UI Failed (__2026-07-31__, [#439](https://github.com/jwilleke/yourphr/issues/439)). Full guide: ([`oracle/oracle-cerner.md`](./oracle/oracle-cerner.md)).
-- __Veradigm / FollowMyHealth__ — discovery + authorize start; login returns `unauthorized_client` until Veradigm provisions the app. Manual FHIR/EHI upload remains the import path. ([`followmyhealth.md`](./followmyhealth.md), [`veradigm-allscripts.md`](./veradigm-allscripts.md))
+- __Veradigm / FollowMyHealth__ — discovery + authorize start; login returns `unauthorized_client` until Veradigm provisions the app. Manual FHIR/EHI upload remains the import path. ([`followmyhealth.md`](./veradigm/followmyhealth.md), [`veradigm-allscripts.md`](./veradigm/veradigm-allscripts.md))

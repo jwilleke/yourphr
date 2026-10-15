@@ -184,7 +184,7 @@ __Full assessment + prioritized backlog:__ [Architecture & security review](./pl
 | __Standards conformance__ | [`planning/Standards-Conformance.md`](./planning/Standards-Conformance.md) · [CSP](./planning/enforcing-CSP-issue.md) |
 | __US Core support & coverage__ | [`us-core/README.md`](./us-core/README.md) · [`us-core/conformance-coverage.md`](./us-core/conformance-coverage.md) |
 | __SMART on FHIR / live sync__ | [`planning/smart-on-fhir/smart-on-fhir.md`](./planning/smart-on-fhir/smart-on-fhir.md) · [`planning/smart-on-fhir/oauth-gateway.md`](./planning/smart-on-fhir/oauth-gateway.md) · [relay README](../relay/README.md) |
-| __Vendor specifics (FollowMyHealth/Veradigm/Epic)__ | [`vendors/README.md`](./vendors/README.md) |
+| __Vendor specifics (FollowMyHealth/Veradigm/Epic)__ | [`EHR-vendors/README.md`](./EHR-vendors/README.md) |
 | __FHIR handling notes__ | [`FHIR/fhir-testing.md`](./FHIR/fhir-testing.md) · [`FHIR/fhir-converter-local.md`](./FHIR/fhir-converter-local.md) · [`FHIR/fractional-quantity-values.md`](./FHIR/fractional-quantity-values.md) · [`FHIR/uncoded-questionnaires.md`](./FHIR/uncoded-questionnaires.md) |
 | __Health-record ecosystem background__ | [`planning/personal-health/health-record-aggregation.md`](./planning/personal-health/health-record-aggregation.md) · [`planning/personal-health/fastenhealth-ecosystem.md`](./planning/personal-health/fastenhealth-ecosystem.md) |
 

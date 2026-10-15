@@ -67,7 +67,7 @@ Everything yourPHR syncs from Epic qualifies in R4 except `MedicationStatement` 
   requires registration __and vendor approval__ before issuing a `client_id`,
   which is why it is `blocked`. Epic is therefore the better *first* live target,
   even though Veradigm is the primary real-world dataset YourPHR is hardened
-  against (see [`followmyhealth.md`](../followmyhealth.md)).
+  against (see [`followmyhealth.md`](../veradigm/followmyhealth.md)).
 - Broader friction context: [`clientid-friction.md`](../clientid-friction.md).
 
 ## How the pieces fit

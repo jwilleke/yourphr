@@ -2,7 +2,7 @@
 
 __Status:__ live for patient connect and admin management (foundation [#304](https://github.com/jwilleke/yourphr/issues/304) / picker [#306](https://github.com/jwilleke/yourphr/issues/306) / sandbox env split [#291](https://github.com/jwilleke/yourphr/issues/291)).
 
-__Related:__ as-built SMART map [`docs/SMART-flow-map.md`](../SMART-flow-map.md) · connection policy [`docs/connection-policy.md`](../connection-policy.md) · Medicare / Blue Button [`docs/medicare-bluebutton.md`](../medicare-bluebutton.md) · production catalog path [#432](https://github.com/jwilleke/yourphr/issues/432)
+__Related:__ as-built SMART map [`docs/SMART-flow-map.md`](../SMART-flow-map.md) · connection policy [`docs/connection-policy.md`](../connection-policy.md) · Medicare / Blue Button [`docs/EHR-vendors/cms-medicare/medicare-bluebutton.md`](../EHR-vendors/cms-medicare/medicare-bluebutton.md) · production catalog path [#432](https://github.com/jwilleke/yourphr/issues/432)
 
 ## Why this exists
 
@@ -138,7 +138,7 @@ __Enable without code change:__
 
 Register the instance __relay callback__ (`Admin → SMART OAuth Relay` or `GET /api/secure/source/relay-config` → `callback_url`) with the CMS production app.
 
-Patient button label is __Medicare__. Full checklist: [`docs/medicare-bluebutton.md`](../medicare-bluebutton.md) (Production section).
+Patient button label is __Medicare__. Full checklist: [`docs/EHR-vendors/cms-medicare/medicare-bluebutton.md`](../EHR-vendors/cms-medicare/medicare-bluebutton.md) (Production section).
 
 ## Patient connect UX (catalog path)
 

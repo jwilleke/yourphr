@@ -12,12 +12,12 @@ Every FHIR sandbox / test server YourPHR can connect to, in one place — with t
 
 | Sandbox | Client | Registration | Bulk fetch | Status | Deep-dive |
 |---|---|---|---|---|---|
-| __SMART Health IT__ | public (no secret) | __none__ | `$everything` | 📄 documented, not yet run live | [`vendors/smart-health-it.md`](../vendors/smart-health-it.md) |
-| __CMS Blue Button 2.0__ | __confidential__ (secret) | sandbox app | per-resource (no `$everything`) | ✅ __verified working__ (2026-06-14) | [`medicare-bluebutton.md`](../medicare-bluebutton.md) |
-| __Epic__ | public (PKCE) | BYO `client_id` | `$everything` | 🧪 used earlier | [`vendors/epic/epic.md`](../vendors/epic/epic.md) |
+| __SMART Health IT__ | public (no secret) | __none__ | `$everything` | 📄 documented, not yet run live | [`EHR-vendors/smart-health-it.md`](../EHR-vendors/smart-health-it/smart-health-it.md) |
+| __CMS Blue Button 2.0__ | __confidential__ (secret) | sandbox app | per-resource (no `$everything`) | ✅ __verified working__ (2026-06-14) | [`medicare-bluebutton.md`](../EHR-vendors/cms-medicare/medicare-bluebutton.md) |
+| __Epic__ | public (PKCE) | BYO `client_id` | `$everything` | 🧪 used earlier | [`EHR-vendors/epic/epic.md`](../EHR-vendors/epic/epic.md) |
 | __Veradigm / FollowMyHealth (test)__ | public (PKCE) | Veradigm app | per-resource | ⛔ __blocked__ (`unauthorized_client`, ticket #17849) | [`FHIR/fhir-testing.md`](../FHIR/fhir-testing.md) |
-| __Oracle Health (Cerner)__ | public (PKCE) | code Console app (issues client_id) | per-resource search | ✅ __works__ — imports records (pinned patient-authorize override + enumerated v2 `.rs` + Offline app) | [`vendors/oracle-cerner.md`](../vendors/oracle/oracle-cerner.md) |
-| __athenahealth__ | __confidential__ (secret) | Developer Portal app (gated) | per-resource | 🟡 registered; creds obtained | [`vendors/athenahealth.md`](../vendors/athenahealth.md) |
+| __Oracle Health (Cerner)__ | public (PKCE) | code Console app (issues client_id) | per-resource search | ✅ __works__ — imports records (pinned patient-authorize override + enumerated v2 `.rs` + Offline app) | [`EHR-vendors/oracle-cerner.md`](../EHR-vendors/oracle/oracle-cerner.md) |
+| __athenahealth__ | __confidential__ (secret) | Developer Portal app (gated) | per-resource | 🟡 registered; creds obtained | [`EHR-vendors/athenahealth.md`](../EHR-vendors/athenahealth/athenahealth.md) |
 | __VA Clinical Health__ | TBD (likely public/PKCE) | self-serve sandbox app | TBD | 🔴 not started — [#370](https://github.com/jwilleke/yourphr/issues/370) | §7 below |
 | __Raw FHIR servers__ (HAPI, etc.) | — (no SMART login) | none | — | reference only (no connect flow) | this doc |
 
@@ -66,7 +66,7 @@ Synthetic Medicare beneficiaries; __claims/insurance__ data (ExplanationOfBenefi
 | __Scopes__ | `openid profile launch/patient patient/Patient.read patient/Coverage.read patient/ExplanationOfBenefit.read` |
 | __Login (synthetic beneficiary)__ | `BBUser00000` / `PW00000!` (range `BBUser00000`–`BBUser29999`, password `PW<digits>!`) |
 
-Blue Button quirks (all handled in code now): __no wildcard / `fhirUser` / `offline_access`__ scopes (→ `invalid_scope`); the __initial token omits `patient`__ so the id is read from Coverage/EOB ([#293](https://github.com/jwilleke/yourphr/issues/293)); `GET /Patient` returns __401__ unless the app collects demographic data; no `$everything` (per-resource fetch, [#250](https://github.com/jwilleke/yourphr/issues/250)). __Full guide + troubleshooting: [`medicare-bluebutton.md`](../medicare-bluebutton.md).__
+Blue Button quirks (all handled in code now): __no wildcard / `fhirUser` / `offline_access`__ scopes (→ `invalid_scope`); the __initial token omits `patient`__ so the id is read from Coverage/EOB ([#293](https://github.com/jwilleke/yourphr/issues/293)); `GET /Patient` returns __401__ unless the app collects demographic data; no `$everything` (per-resource fetch, [#250](https://github.com/jwilleke/yourphr/issues/250)). __Full guide + troubleshooting: [`medicare-bluebutton.md`](../EHR-vendors/cms-medicare/medicare-bluebutton.md).__
 
 ## 3. Epic sandbox — synthetic clinical data
 
@@ -84,7 +84,7 @@ Standard SMART-on-FHIR; bring your own `client_id` (register a free patient-faci
 | __Client Secret__ | *(blank — public/PKCE)* |
 | __Scopes__ | `launch/patient patient/*.read openid fhirUser offline_access` |
 
-Epic supports the wildcard, `fhirUser`, `offline_access`, and `$everything`. Test patients (e.g. Camila Lopez) — see Epic's docs. __Setup guide: [`vendors/epic/epic.md`](../vendors/epic/epic.md).__
+Epic supports the wildcard, `fhirUser`, `offline_access`, and `$everything`. Test patients (e.g. Camila Lopez) — see Epic's docs. __Setup guide: [`EHR-vendors/epic/epic.md`](../EHR-vendors/epic/epic.md).__
 
 __✅ Discovery pre-flight (2026-06-15, no relay needed):__ `…/FHIR/R4/.well-known/smart-configuration` → __200__, PKCE `S256`, capabilities include `launch-standalone` + `client-public` + `context-standalone-patient` + `permission-offline`. Epic's `scopes_supported` lists only a few entries (it doesn't advertise the full resource-scope set — normal for Epic; `patient/*.read` still works).
 
@@ -104,13 +104,13 @@ The near-term primary target ([#53](https://github.com/jwilleke/yourphr/issues/5
 | __Client Secret__ | *(blank — public PKCE)* |
 | __Scopes__ | SMART __v1__ only (`.read`, not `.rs`); identity scope is lowercase __`fhiruser`__. Use the explicit read-scope list in [`FHIR/fhir-testing.md`](../FHIR/fhir-testing.md) if the `patient/*.read` wildcard is rejected. |
 
-__Status:__ discovery + authorize work (Client ID recognized, redirect accepted), but after login Veradigm returns __`unauthorized_client`__ — an app-level provisioning gate, __not a YourPHR bug__. Veradigm support ticket __#17849__. Don't mix v1/v2 scopes (rejects the app). __Details + reproduction: [`FHIR/fhir-testing.md`](../FHIR/fhir-testing.md), [`vendors/followmyhealth.md`](../vendors/followmyhealth.md).__
+__Status:__ discovery + authorize work (Client ID recognized, redirect accepted), but after login Veradigm returns __`unauthorized_client`__ — an app-level provisioning gate, __not a YourPHR bug__. Veradigm support ticket __#17849__. Don't mix v1/v2 scopes (rejects the app). __Details + reproduction: [`FHIR/fhir-testing.md`](../FHIR/fhir-testing.md), [`EHR-vendors/followmyhealth.md`](../EHR-vendors/veradigm/followmyhealth.md).__
 
 ## 5. Oracle Health (Cerner) — Millennium sandbox
 
 - __Status:__ ✅ __Works__ — connects and imports records ([#338](https://github.com/jwilleke/yourphr/issues/338), verified 2026-06-20). The hardest sandbox; see the full guide below.
 - __Credentials:__ CernerCare account + the registered app's __Application ID__ and __`client_id`__ (public/PKCE) in `private/secrets.md`. The code Console *issued* the client_id; no "Oracle CID" was supplied.
-- __The four obstacles (all solved):__ (1) patient authorize endpoint is __not discoverable__ → pinned per-entry override; (2) app is SMART v2 but only __smart-v1__ endpoints exist; (3) scopes must be __enumerated v2 `.rs`__ (Cerner drops `.read` and the wildcard); (4) app must be __Offline__ for a refresh token. __Full writeup, registration steps, conformance + data-shape notes: [`vendors/oracle-cerner.md`](../vendors/oracle/oracle-cerner.md).__
+- __The four obstacles (all solved):__ (1) patient authorize endpoint is __not discoverable__ → pinned per-entry override; (2) app is SMART v2 but only __smart-v1__ endpoints exist; (3) scopes must be __enumerated v2 `.rs`__ (Cerner drops `.read` and the wildcard); (4) app must be __Offline__ for a refresh token. __Full writeup, registration steps, conformance + data-shape notes: [`EHR-vendors/oracle-cerner.md`](../EHR-vendors/oracle/oracle-cerner.md).__
 
 Cerner Millennium's public sandbox; YourPHR connects as a __patient-access__ SMART app.
 
@@ -153,7 +153,7 @@ curl -s "https://fhir-myrecord.sandboxcerner.com/r4/ec2458f2-1e24-41c8-b71b-0e70
 ## 6. athenahealth — Developer Portal
 
 - __Status:__ 🟡 Registered — `client_id` + `client_secret` obtained 2026-06-15 (in `private/secrets.md`); still need the site-specific FHIR base URL (+ any approval) before connecting.
-- __Credentials:__ ✅ __have__ `client_id` + `client_secret` (confidential / Web app) in `private/secrets.md`. App-creation choices: API Access = __Certified APIs ONLY__, App Category = __3-Legged OAuth for Patients__, Application Type = __Web__, Auth = __Secret__ (see [`vendors/athenahealth.md`](../vendors/athenahealth.md)). ❌ still need the __site-specific FHIR base URL__ from the portal.
+- __Credentials:__ ✅ __have__ `client_id` + `client_secret` (confidential / Web app) in `private/secrets.md`. App-creation choices: API Access = __Certified APIs ONLY__, App Category = __3-Legged OAuth for Patients__, Application Type = __Web__, Auth = __Secret__ (see [`EHR-vendors/athenahealth.md`](../EHR-vendors/athenahealth/athenahealth.md)). ❌ still need the __site-specific FHIR base URL__ from the portal.
 - __Tracking issue:__ *none yet*
 - __Next:__ apply for athenahealth Developer Portal access
 
@@ -218,6 +218,6 @@ Keep the `SANDBOXES` catalog in that spec in sync with the list above whenever a
 ## See also
 
 - [`FHIR/fhir-testing.md`](../FHIR/fhir-testing.md) — step-by-step connect + the relay/poll issues log
-- [`medicare-bluebutton.md`](../medicare-bluebutton.md) — the verified Blue Button walkthrough
-- [`vendors/epic/epic.md`](../vendors/epic/epic.md) · [`vendors/followmyhealth.md`](../vendors/followmyhealth.md)
+- [`medicare-bluebutton.md`](../EHR-vendors/cms-medicare/medicare-bluebutton.md) — the verified Blue Button walkthrough
+- [`EHR-vendors/epic/epic.md`](../EHR-vendors/epic/epic.md) · [`EHR-vendors/followmyhealth.md`](../EHR-vendors/veradigm/followmyhealth.md)
 - [`planning/smart-on-fhir/smart-on-fhir.md`](../planning/smart-on-fhir/smart-on-fhir.md) — the SMART design
