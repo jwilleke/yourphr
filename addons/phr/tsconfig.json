@@ -9,7 +9,6 @@
     "sourceMap": true,
     "declaration": false,
     "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
     "strict": true,
     "noImplicitReturns": true,
@@ -19,6 +18,6 @@
     "types": ["node"],
     "tsBuildInfoFile": "./.tsbuildinfo"
   },
-  "include": ["index.ts", "routes/**/*.ts"],
-  "exclude": ["node_modules", "web", "**/*.test.ts", "**/__tests__/**"]
+  "include": ["index.ts", "host.ts", "routes/**/*.ts", "plugins/**/*.ts"],
+  "exclude": ["node_modules", "**/*.test.ts", "**/__tests__/**"]
 }
