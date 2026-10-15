@@ -78,6 +78,7 @@ __Before any work on the TypeScript stack, read [`architecture-principles-typesc
 - __Improvements are FILED, not built in flight.__ A better idea found mid-implementation becomes an issue against the adopted shape, never a structure invented on the spot.
 - __A divergence is legitimate only if that document names it.__ The test before writing code: *does the document name this divergence, or am I about to create one?*
 - __Nothing says "spike".__ That word was scaffolding for the transition, never the product. This stack becomes YourPHR; the Go stack goes silent.
+- __Direction lives in [`docs/planning/ngdp-move.md`](docs/planning/ngdp-move.md)__ — the lead document for YourPHR relative to ngdpbase: direction, constraints, decisions, plan and blockers. Read it before work that touches the ngdpbase relationship. Other documents and issues link to it rather than restate it, and a changed decision changes there first.
 
 ## Project Context
 
@@ -89,7 +90,7 @@ __Mission: Your medical records, immediately and in your hands — for free.__ (
 
 __YourPHR__ is a self-hosted personal/family electronic medical record viewer — a community continuation of Fasten OnPrem. It imports FHIR R4 bundles (manual upload or provider SMART sync) and displays them. A __TypeScript backend__ (`src/`, Node 24, SQLite via better-sqlite3-multiple-ciphers) serves a JSON API and the compiled __Angular 22 frontend__, both built from this repository into one image.
 
-__The Go stack is gone.__ It served the product to v2.10.3 and was deleted on 2026-08-27 ([#677](https://github.com/jwilleke/yourphr/issues/677)) once both instances ran TypeScript. Its history is preserved by the `v1.0.0`…`v2.10.3` tags and the frozen image `ghcr.io/jwilleke/yourphr-go:2.10.3`. The ONLY Go left in the tree is `relay/` — a pure-stdlib SMART store-and-poll OAuth relay with no dependencies, kept because it is deployed and has no TypeScript replacement. Documents under `docs/planning/` and `docs/vendors/` that describe Go internals are history; read them as such.
+__The Go stack is gone.__ It served the product to v2.10.3 and was deleted on 2026-08-27 ([#677](https://github.com/jwilleke/yourphr/issues/677)) once both instances ran TypeScript. Its history is preserved by the `v1.0.0`…`v2.10.3` tags and the frozen image `ghcr.io/jwilleke/yourphr-go:2.10.3`. The ONLY Go left in the tree is `relay/` — a pure-stdlib SMART store-and-poll OAuth relay with no dependencies, kept because it is deployed and has no TypeScript replacement. Documents under `docs/planning/` and `docs/EHR-vendors/` that describe Go internals are history; read them as such.
 
 __YourPHR is a standalone, community-maintained continuation__ of `fastenhealth/fasten-onprem` (original by Jason Kulatunga / @AnalogJ and Alex Szilagyi, GPL v3 — attribution retained). It carries the project forward as a fully open-source build after upstream's hosted sync relay (Lighthouse) moved into the commercial Fasten Connect product (breaking OSS provider sync), and is going standalone (see [EPIC #2](https://github.com/jwilleke/yourphr/issues/2)). Near-term focus: improve display compatibility with __non-US-Core FHIR R4 exports__, specifically Veradigm/FollowMyHealth patient portal data. See [`docs/Roadmap.md`](docs/Roadmap.md) and [`README.md`](README.md). When fixing display issues, prefer fallbacks for missing US-Core fields (e.g. `class.code` when `type[]` is absent) rather than assuming strict US-Core conformance.
 
@@ -111,7 +112,7 @@ When touching provider connection, source authorisation, or the catalog: route t
 
 | | |
 |---|---|
-| Live SMART sync | Generic SMART client + store-and-poll relay + provider catalog — map: [`docs/SMART-flow-map.md`](docs/SMART-flow-map.md) |
+| Live SMART sync | Generic SMART client + store-and-poll relay + provider catalog — map: [`docs/architecture/SMART-flow-map.md`](./docs/architecture/SMART-flow-map.md) |
 | Import without SMART | Manual FHIR R4 JSON + C-CDA/XML (converter sidecar) |
 | Deploy | Release-gated images on `vX.Y.Z` only — [`docs/deployment/deployment-contract.md`](docs/deployment/deployment-contract.md) |
 
@@ -193,7 +194,7 @@ defaults in `config/app-default-config.json`. `ConfigurationManager` is the only
 `config.yaml` and no `--config` flag ([#470](https://github.com/jwilleke/yourphr/issues/470),
 [#474](https://github.com/jwilleke/yourphr/issues/474)). Bootstrap and secrets come from
 `<YOURPHR_FAST_STORAGE>/.env` or the ambient environment; everything else is Admin → Configuration.
-See [`docs/configuration-system.md`](docs/configuration-system.md).
+See [`docs/architecture/configuration-system.md`](./docs/architecture/configuration-system.md).
 
 `yourphr.config.env-keys` names the handful of keys the environment OWNS — read-only on the settings
 screen whether or not the variable is set. Every other key still honours its `YOURPHR_*` variable
@@ -236,7 +237,7 @@ So: do not add yarn scripts, yarn-only syntax, or new `resolutions` entries. `re
 - __Project site:__ `https://yourphr.org` — the public landing/docs site, served by __GitHub Pages__ from this repo's `gh-pages` branch (CNAME=yourphr.org). It is *not* the app.
 - __Running instance:__ the app is deployed (internal/LAN, behind Authentik forward-auth) at __`yourphr.nerdsbythehour.com`__.
 - __Delivery is RELEASE-GATED (GitOps via Flux).__ [`.github/workflows/release-image.yaml`](.github/workflows/release-image.yaml) builds + pushes __`ghcr.io/jwilleke/yourphr`__ (tags `:X.Y.Z`, `:X.Y`, `:latest`) __only on a `vX.Y.Z` release tag__, or when the GitHub Release is published — a second trigger added because a tag push once produced no run at all ([#658](https://github.com/jwilleke/yourphr/issues/658)). Pushes to `main` are CI-tested but build NO image and do NOT deploy. __Use this filename when checking that a release built__ (`gh run list --workflow=release-image.yaml`): the old name `docker-jwilleke.yaml` no longer exists, and asking for it returns an empty list that is indistinguishable from the [#658](https://github.com/jwilleke/yourphr/issues/658) symptom. Flux (repo `jwilleke/mj-infra-flux`, `apps/production/image-automation/yourphr-policy.yaml`) has a __semver `ImagePolicy`__ that deploys the highest released `:X.Y.Z`. So __to ship anything to the live instance you must cut a release__ (a `patch` release for hotfixes). The k8s app dir is `apps/production/yourphr` and the __namespace is `yourphr`__. The serving Deployment is `yourphr-ts`, whose database is on the `local-path` PVC `yourphr-ts-data` mounted at `/opt/yourphr/data`; the frozen Go Deployment beside it still holds `yourphr-data` at `/opt/fasten/db` as the rollback, which is why both PVCs exist.
-- The full contract is in [`docs/deployment/deployment-contract.md`](docs/deployment/deployment-contract.md); cutting a release is in [`docs/releasing.md`](docs/releasing.md).
+- The full contract is in [`docs/deployment/deployment-contract.md`](docs/deployment/deployment-contract.md); cutting a release is in [`docs/development/releasing.md`](./docs/development/releasing.md).
 - The image name follows `${{ github.repository }}`, so it tracks the repo name automatically.
 
 ### Conventions

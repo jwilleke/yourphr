@@ -2,7 +2,7 @@
 
 How YourPHR turns messy, vendor-specific FHIR into a patient-legible display — *regardless of source*. This is the design that underpins the dashboard's "Current Medical Concerns", the new "Patient Profile" section, and the per-resource detail cards.
 
-> Driving north star: the [patient-legible display principle](./patient-legible-display.md) (#262) — show what each thing *is* and *why it matters*, in plain words. This doc is the structural plan for delivering that across data from any source. The data-quality *doctrine* behind it — why we tolerate, flag, and never reject the patient's own data — plus per-source quality profiles, lives in [`../testing-sandboxes/data-quality-framework.md`](../testing-sandboxes/data-quality-framework.md).
+> Driving north star: the [patient-legible display principle](./patient-legible-display.md) (#262) — show what each thing *is* and *why it matters*, in plain words. This doc is the structural plan for delivering that across data from any source. The data-quality *doctrine* behind it — why we tolerate, flag, and never reject the patient's own data — plus per-source quality profiles, lives in [`../testing-sandboxes/data-quality-framework.md`](../development/data-quality-framework.md).
 
 ## The problem (what real data exposed)
 
@@ -203,7 +203,7 @@ __No-guessing guardrail on value mapping:__ when remodeling, the source-text →
 
 | Phase | What | Fixes |
 |---|---|---|
-| __0__ | Capture the FollowMyHealth EHI mapping in `docs/vendors/` (findings + documented mappings + attribution; PDF stays in `private/phi/`) | knowledge loss |
+| __0__ | Capture the FollowMyHealth EHI mapping in `docs/EHR-vendors/` (findings + documented mappings + attribution; PDF stays in `private/phi/`) | knowledge loss |
 | __1__ | Condition classifier + synthesized category; "Current Medical Concerns" shows only active `problem-list-item`; Profile items move to __Patient Profile__ | the polluted Concerns list (top complaint) |
 | __2__ | Generic provenance + reference resolvers; "who said this" on cards and dashboard | unanswered provenance; unblocks #264 |
 | __3__ | Detail-card legibility: plain name, surfaced notes, standard codes underneath, distinct onset/recorded/ended dates, suppressed empty fields | uninformative detail pages |
@@ -217,7 +217,7 @@ Build a __synthetic FollowMyHealth-shaped fixture__ — real *structure* (vendor
 
 ## Source documents
 
-- Veradigm / FollowMyHealth EHI Export Data Guide (v2): linked from the export bundle's `service-doc` link, and published at `veradigm.com` under `/legal/onc/` (ONC-mandated EHI disclosure). The PDF is kept in `private/phi/` (not committed — its footer marks it Veradigm-proprietary). Mappings we rely on are summarized, with attribution, in `docs/vendors/` (Phase 0).
+- Veradigm / FollowMyHealth EHI Export Data Guide (v2): linked from the export bundle's `service-doc` link, and published at `veradigm.com` under `/legal/onc/` (ONC-mandated EHI disclosure). The PDF is kept in `private/phi/` (not committed — its footer marks it Veradigm-proprietary). Mappings we rely on are summarized, with attribution, in `docs/EHR-vendors/` (Phase 0).
 - FHIR R4: Condition, Observation, Provenance, Encounter (`hl7.org/fhir/R4/`).
 - US Core: Condition Problems and Health Concerns; Smoking Status Observation; SDOH categories.
 

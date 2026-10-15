@@ -25,7 +25,7 @@ data until Veradigm grants production. So all routine testing touches __zero PHI
 ```
 
 The browser never handles tokens; the relay never sees tokens (it only bounces the short-lived
-`code`). Full as-built map (sequence, timeouts, config, failure modes): [`../SMART-flow-map.md`](../SMART-flow-map.md). Design history: [`../planning/smart-on-fhir/oauth-gateway.md`](../planning/smart-on-fhir/oauth-gateway.md).
+`code`). Full as-built map (sequence, timeouts, config, failure modes): [`../SMART-flow-map.md`](../architecture/SMART-flow-map.md). Design history: [`../planning/smart-on-fhir/oauth-gateway.md`](../planning/smart-on-fhir/oauth-gateway.md).
 
 ## Option A — SMART Health IT sandbox (fastest; no registration)
 

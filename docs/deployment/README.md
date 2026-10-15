@@ -27,15 +27,15 @@ This page covers running and configuring an instance. The rest of the deployment
 | [Sandbox provider credentials](#sandbox-provider-credentials) (this page) | The optional `YOURPHR_SANDBOX_*` one-click sandbox catalog ([#291](https://github.com/jwilleke/yourphr/issues/291)) — env-only, works on any deployment. |
 | [OAuth relay (self-hosting)](#oauth-relay-self-hosting) (this page) | Self-host the public SMART redirect relay ([#20](https://github.com/jwilleke/yourphr/issues/20)) — Docker or k8s; only needed for live provider sync. |
 | [`upgrading-v2-to-v3.md`](upgrading-v2-to-v3.md) | Go (v2) → TypeScript (v3) for anyone self-hosting who is __not__ on Kubernetes: stop v2, migrate a read-only copy, start v3, and how to go back. The rollback works because v2's data is never written to. |
-| [`cutover-runbook.md`](cutover-runbook.md) | The Go → TypeScript cut-over ([#588](https://github.com/jwilleke/yourphr/issues/588)): freeze, copy, migrate, verify, swap the Ingress, Go kept warm as the rollback, the stop rule, and the rehearsal the runbook is not done without. |
-| [`../testing-sandboxes/test-sandboxes.md`](../testing-sandboxes/test-sandboxes.md) | The test sandboxes themselves (Blue Button, Epic, SMART Health IT, …) and how to exercise them. |
-| [`../vendors/README.md`](../vendors/README.md) | Per-vendor connection notes, onboarding gates, and registration friction. |
+| [`cutover-runbook.md`](../archive/cutover-runbook.md) | The Go → TypeScript cut-over ([#588](https://github.com/jwilleke/yourphr/issues/588)): freeze, copy, migrate, verify, swap the Ingress, Go kept warm as the rollback, the stop rule, and the rehearsal the runbook is not done without. |
+| [`../testing-sandboxes/test-sandboxes.md`](../development/test-sandboxes.md) | The test sandboxes themselves (Blue Button, Epic, SMART Health IT, …) and how to exercise them. |
+| [`../vendors/README.md`](../EHR-vendors/README.md) | Per-vendor connection notes, onboarding gates, and registration friction. |
 | [`../provider-catalog/`](../provider-catalog/) | The admin-configured provider catalog model (server-held creds; patients never see `client_id`/`client_secret`). |
-| [`../medicare-bluebutton.md`](../medicare-bluebutton.md) | A full worked SMART-on-FHIR connect example with exact settings. |
-| [`../cms-bluebutton-production-access.md`](../cms-bluebutton-production-access.md) | CMS production access: form, Zoom demo script, PP/ToS gates (#433). |
+| [`../medicare-bluebutton.md`](../EHR-vendors/cms-medicare/medicare-bluebutton.md) | A full worked SMART-on-FHIR connect example with exact settings. |
+| [`../cms-bluebutton-production-access.md`](../EHR-vendors/cms-medicare/cms-bluebutton-production-access.md) | CMS production access: form, Zoom demo script, PP/ToS gates (#433). |
 | [`../FHIR/fhir-converter-local.md`](../FHIR/fhir-converter-local.md) | The optional C-CDA/CCD converter sidecar. |
 | [`../guides/demo-mode.md`](../guides/demo-mode.md) | Running a public demo (demo.yourphr.org): the shared account, the read-only admin tour, the baked-in baseline and the reset, and what a developer must do when adding a feature. |
-| [`../agent-access-policy.md`](../agent-access-policy.md) | Letting a patient point their own AI client at their own records ([#657](https://github.com/jwilleke/yourphr/issues/657)): the default posture, what is logged and under whose name, what the product refuses, and how to connect a client. Off unless `yourphr.auth.agent-token.enabled` is set. |
+| [`../agent-access-policy.md`](../architecture/agent-access-policy.md) | Letting a patient point their own AI client at their own records ([#657](https://github.com/jwilleke/yourphr/issues/657)): the default posture, what is logged and under whose name, what the product refuses, and how to connect a client. Off unless `yourphr.auth.agent-token.enabled` is set. |
 | [`../recovery/`](../recovery/) | Backup, restore, and the __restore drill__ — what a backup contains, and how to prove your instance can come back. |
 
 > __Deployment-agnostic by rule.__ Every option below is driven by the same `YOURPHR_*` environment contract and a SQLite file — nothing requires Kubernetes, Flux, SOPS, or any specific orchestrator. The maintainer's production instance uses Flux/GitOps in a separate repo (`mj-infra-flux`); that repo's only job is to *populate the same env vars* a `docker run` would. If a feature can only be configured one way, that is a bug — file it.
@@ -231,7 +231,7 @@ Rules that follow, for every implementation:
 - __The ambient environment beats the file.__ Set a variable in one place only; a value in the Deployment cannot be changed by editing `.env`.
 - __Names are exact.__ A misnamed variable is silently unused; check it against the shipped configuration and `config/app-default-config.json`'s environment-owned key list.
 
-`config.yaml` was removed in [#470](https://github.com/jwilleke/yourphr/issues/470) — it was a committed file baked into the image, shadowed by a ConfigMap in the reference deployment, and the binary read it implicitly from its working directory. See [`docs/configuration-system.md`](../configuration-system.md).
+`config.yaml` was removed in [#470](https://github.com/jwilleke/yourphr/issues/470) — it was a committed file baked into the image, shadowed by a ConfigMap in the reference deployment, and the binary read it implicitly from its working directory. See [`docs/architecture/configuration-system.md`](../architecture/configuration-system.md).
 
 ### The `YOURPHR_*` env mapping
 
@@ -356,7 +356,7 @@ An __empty or unreadable__ override is an error, not a silent fallback: serving 
 
 Every served document carries a digest (`sha256:…` over the Markdown) shown at the foot of the page. It identifies precisely which text a reader saw — computed over the source rather than the rendered HTML, so upgrading the renderer does not make an old version look like a new one.
 
-__If you have CMS Blue Button production approval, PP/ToS changes need CMS pre-approval first__ ([#367](https://github.com/jwilleke/yourphr/issues/367) context in [`../cms-bluebutton-production-access.md`](../cms-bluebutton-production-access.md)). That applies to an override on an approved instance as much as to the shipped text.
+__If you have CMS Blue Button production approval, PP/ToS changes need CMS pre-approval first__ ([#367](https://github.com/jwilleke/yourphr/issues/367) context in [`../cms-bluebutton-production-access.md`](../EHR-vendors/cms-medicare/cms-bluebutton-production-access.md)). That applies to an override on an approved instance as much as to the shipped text.
 
 ### Should a production instance enable `database.encryption.enabled`?
 
@@ -393,7 +393,7 @@ This is __env-only and deployment-agnostic__ — populate it however your deploy
 
 __Behaviour:__ a provider whose `client_id` env value is __empty is skipped__ — that provider just doesn't appear under `/sandbox` on that instance; nothing errors and the open SMART Health IT sandbox is unaffected. Seeding is idempotent and re-runs on every startup, so updating an env value and restarting refreshes the stored creds. These are __operator/sandbox config__, not per-user data — production patient connects use the admin-configured provider catalog ([`../provider-catalog/`](../provider-catalog/)), not these env vars.
 
-For the sandboxes themselves and how to exercise them, see [`../testing-sandboxes/test-sandboxes.md`](../testing-sandboxes/test-sandboxes.md) and the per-vendor notes in [`../vendors/README.md`](../vendors/README.md).
+For the sandboxes themselves and how to exercise them, see [`../testing-sandboxes/test-sandboxes.md`](../development/test-sandboxes.md) and the per-vendor notes in [`../vendors/README.md`](../EHR-vendors/README.md).
 
 ## OAuth relay (self-hosting)
 
@@ -464,16 +464,16 @@ If `YOURPHR_RELAY_SECRET` is unset, the app simply doesn't use a relay (it falls
 - __FHIR JSON / NDJSON__ — uploaded directly, no extra services.
 - __PDF / DICOM / image__ — uploaded as viewable documents, no extra services ([#255](https://github.com/jwilleke/yourphr/issues/255)).
 - __C-CDA / CCD__ — requires the optional __Metriport fhir-converter sidecar__ (`cda_converter.*`); see [`FHIR/fhir-converter-local.md`](../FHIR/fhir-converter-local.md).
-- __Live provider sync (SMART on FHIR)__ — connect a provider with your own `client_id` (bring-your-own). This is the one feature with an external touch point: an __OAuth relay__ catches the provider's redirect. The default is the project's demo relay (`relay.nerdsbythehour.com`); a self-hoster can point at their own with `YOURPHR_RELAY_URL`. __Manual upload needs no relay.__ Worked example with exact settings: [`medicare-bluebutton.md`](../medicare-bluebutton.md).
+- __Live provider sync (SMART on FHIR)__ — connect a provider with your own `client_id` (bring-your-own). This is the one feature with an external touch point: an __OAuth relay__ catches the provider's redirect. The default is the project's demo relay (`relay.nerdsbythehour.com`); a self-hoster can point at their own with `YOURPHR_RELAY_URL`. __Manual upload needs no relay.__ Worked example with exact settings: [`medicare-bluebutton.md`](../EHR-vendors/cms-medicare/medicare-bluebutton.md).
 
 ## See also
 
 - [README — Launch / HTTPS / Develop](../../README.md#instructions)
 - [`../recovery/data-recovery.md`](../recovery/data-recovery.md) — __the restore drill.__ A backup you have never restored is not a backup; test recovery, not backup
-- [`../testing-sandboxes/test-sandboxes.md`](../testing-sandboxes/test-sandboxes.md) — the test sandboxes and how to exercise them
-- [`../vendors/README.md`](../vendors/README.md) — per-vendor connection notes and onboarding gates
+- [`../testing-sandboxes/test-sandboxes.md`](../development/test-sandboxes.md) — the test sandboxes and how to exercise them
+- [`../vendors/README.md`](../EHR-vendors/README.md) — per-vendor connection notes and onboarding gates
 - [`../provider-catalog/`](../provider-catalog/) — admin-configured production provider catalog
-- [`../medicare-bluebutton.md`](../medicare-bluebutton.md) — a full worked SMART-on-FHIR connect example
+- [`../medicare-bluebutton.md`](../EHR-vendors/cms-medicare/medicare-bluebutton.md) — a full worked SMART-on-FHIR connect example
 - [`../../relay/deploy/yourphr-relay.example.yaml`](../../relay/deploy/yourphr-relay.example.yaml) — example k8s manifest for the OAuth relay
 - [`FHIR/fhir-converter-local.md`](../FHIR/fhir-converter-local.md) — running the C-CDA converter sidecar
-- [`architecture.md`](../architecture.md) — system overview
+- [`architecture.md`](../architecture/architecture.md) — system overview

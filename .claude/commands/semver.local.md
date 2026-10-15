@@ -1,6 +1,6 @@
 # /semver — YourPHR additions
 
-`semver.md` is written for ngdpbase. In this repo the release procedure is [`docs/releasing.md`](../../docs/releasing.md): follow it, and read the kit's steps through this mapping.
+`semver.md` is written for ngdpbase. In this repo the release procedure is [`docs/development/releasing.md`](../../docs/development/releasing.md): follow it, and read the kit's steps through this mapping.
 
 - __Step 1:__ the branch is `main`, not `master`.
 - __Step 4 (tests):__ `npm run build`, `npm run typecheck`, `npm test`, `make test-e2e`. There is no `./server.sh`; the E2E harness boots its own server.

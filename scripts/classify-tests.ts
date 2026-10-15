@@ -1,7 +1,7 @@
 /**
  * Classifier harness (yourphr#578). Synthetic records only, no PHI.
  *
- * The living regression is the Epic HOV case (docs/vendors/epic/notes.md): a vendor-local
+ * The living regression is the Epic HOV case (docs/EHR-vendors/epic/notes.md): a vendor-local
  * Encounter.class must never surface its cryptic display as the category while the record carries
  * its own human text.
  *

@@ -132,7 +132,7 @@ Next, open a browser to `http://localhost:9090`
 
 ### Other deployment options & configuration
 
-The docker-compose flow above is the easy path, but __YourPHR is deployment-agnostic__ — it is a single Go binary with an embedded SQLite database and __no required external services__, so it does not depend on any particular orchestrator. You can also run it via plain `docker run`, on bare metal, or in Kubernetes, and configure it via `.env`/`.env_custom`, `YOURPHR_*` environment variables, or the Admin → Configuration screen (layered, lowest → highest: shipped defaults < instance overrides in `<data>/config/app-custom-config.json` < `YOURPHR_*` env). See [`docs/configuration-system.md`](docs/configuration-system.md).
+The docker-compose flow above is the easy path, but __YourPHR is deployment-agnostic__ — it is a single Go binary with an embedded SQLite database and __no required external services__, so it does not depend on any particular orchestrator. You can also run it via plain `docker run`, on bare metal, or in Kubernetes, and configure it via `.env`/`.env_custom`, `YOURPHR_*` environment variables, or the Admin → Configuration screen (layered, lowest → highest: shipped defaults < instance overrides in `<data>/config/app-custom-config.json` < `YOURPHR_*` env). See [`docs/architecture/configuration-system.md`](./docs/architecture/configuration-system.md).
 
 ➡️ See __[`docs/deployment/README.md`](docs/deployment/README.md)__ for every deployment option (docker-compose / `docker run` / bare metal / Kubernetes), the configuration model + precedence, the full config-key reference, and how secrets are handled (the DB encryption key, the auto-generated JWT key, and per-source OAuth `client_secret`s stored in the DB).
 

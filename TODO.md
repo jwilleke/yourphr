@@ -17,6 +17,7 @@ Open work in [jwilleke/yourphr](https://github.com/jwilleke/yourphr), ranked. Ge
 
 ## 🟠 P1
 
+- [#920](https://github.com/jwilleke/yourphr/issues/920) — [ARCH] YourPHR as an ngdpbase add-on: one Sources-page slice, measured (branch `yourphr-addon`, 1-week time-box; no new ngdpbase ports until it reports)
 - [#899](https://github.com/jwilleke/yourphr/issues/899) — [SECURITY] Tests reach fake servers through an injected transport, as ngdpbase does
 - [#898](https://github.com/jwilleke/yourphr/issues/898) — [SECURITY] Retire SPIKE_TEST_ALLOW_INTERNAL: no switch turns the outbound guard off
 - [#897](https://github.com/jwilleke/yourphr/issues/897) — [SECURITY] Adopt ngdpbase's egress policy as the outbound guard

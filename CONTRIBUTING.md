@@ -20,14 +20,14 @@ This is real-world health-data engineering, not CRUD. A few of the juicy ones:
 - __US Core 9.0.0 Must-Support display conformance__ — a CI gate checks our display against the IG's own example resources ([docs/us-core/](docs/us-core/README.md)).
 - __Importing the formats portals actually give patients__ — C-CDA/CCD XML ([#254](https://github.com/jwilleke/yourphr/issues/254)), PDFs ([#255](https://github.com/jwilleke/yourphr/issues/255)).
 
-Start with the [architecture overview](docs/architecture.md) for the whole map, then the [roadmap](docs/Roadmap.md) for where it's headed.
+Start with the [architecture overview](./docs/architecture/architecture.md) for the whole map, then the [roadmap](docs/Roadmap.md) for where it's headed.
 
 ## Ways to contribute — by what you're good at
 
 | If you are a… | You can help with… | Start here |
 |---|---|---|
 | __Developer__ (Go / Angular) | Backend FHIR handling, display models, the API, frontend cards & dashboards | [`good first issue`](https://github.com/jwilleke/yourphr/labels/good%20first%20issue) · [`help wanted`](https://github.com/jwilleke/yourphr/labels/help%20wanted) · the [dev setup](#development-environment) below |
-| __FHIR / health-IT / standards__ person | US Core conformance, vendor-quirk mappings, value-set translation, SMART-on-FHIR | [docs/us-core/](docs/us-core/README.md), [docs/vendors/](docs/vendors/README.md), [#136](https://github.com/jwilleke/yourphr/issues/136) |
+| __FHIR / health-IT / standards__ person | US Core conformance, vendor-quirk mappings, value-set translation, SMART-on-FHIR | [docs/us-core/](docs/us-core/README.md), [docs/EHR-vendors/](./docs/EHR-vendors/README.md), [#136](https://github.com/jwilleke/yourphr/issues/136) |
 | __Clinician / health professional__ | Sanity-check that displays are *correct* and *legible*, validate medication/condition reconciliation | open a [feature/bug issue](https://github.com/jwilleke/yourphr/issues/new/choose) describing what's wrong or misleading |
 | __Designer / UX__ | Make the dashboard and cards genuinely legible — the [patient-legible](docs/your-phr-dashboard/patient-legible-display.md) bar | [#262](https://github.com/jwilleke/yourphr/issues/262), [#244](https://github.com/jwilleke/yourphr/issues/244), the BS5 migration [#209](https://github.com/jwilleke/yourphr/issues/209) |
 | __Writer / plain-language__ | Docs, the glossary that translates codes to words, READMEs, onboarding | the `documentation` label; the `glossary-lookup` component |
@@ -75,7 +75,7 @@ YourPHR handles __Personal Health Information__. __Never__ attach real patient d
 
 ## Versioning
 
-YourPHR follows [SemVer](https://semver.org/). Releases are cut by a maintainer pushing an annotated `vX.Y.Z` tag — no release bot, no release PR ([#241](https://github.com/jwilleke/yourphr/issues/241) removed release-please, whose bot PR could not pass `main`'s required checks without a privileged token). Write commits as [Conventional Commits](https://www.conventionalcommits.org/); `CHANGELOG.md` is written by hand at release time in that format. The steps are in [`docs/releasing.md`](docs/releasing.md). The version lives in `package.json` and nowhere else — a v3 instance reads it there and serves it on `/api/version`.
+YourPHR follows [SemVer](https://semver.org/). Releases are cut by a maintainer pushing an annotated `vX.Y.Z` tag — no release bot, no release PR ([#241](https://github.com/jwilleke/yourphr/issues/241) removed release-please, whose bot PR could not pass `main`'s required checks without a privileged token). Write commits as [Conventional Commits](https://www.conventionalcommits.org/); `CHANGELOG.md` is written by hand at release time in that format. The steps are in [`docs/development/releasing.md`](./docs/development/releasing.md). The version lives in `package.json` and nowhere else — a v3 instance reads it there and serves it on `/api/version`.
 
 ## Setup
 
@@ -156,7 +156,7 @@ All user data is stored locally, including your account. On first start, registe
 
 ## Source code layout
 
-See the [architecture overview](docs/architecture.md) for the high-level map and diagrams. In short:
+See the [architecture overview](./docs/architecture/architecture.md) for the high-level map and diagrams. In short:
 
 __Frontend__ (`frontend/src/app/`)
 
