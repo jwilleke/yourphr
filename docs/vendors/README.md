@@ -1,5 +1,7 @@
 # Vendors
 
+Vendor-by-vendor comparison of how a patient app reaches production (registration, approval, refresh tokens, reach): [`registration-comparison.md`](./registration-comparison.md).
+
 Reference notes on the external health-IT vendors whose data and APIs YourPHR interoperates with. Each doc follows the same shape: __Overview · Ownership & History · Products · Contact · API & Integration · Known API Issues · Relevance to YourPHR · References__.
 
 | Vendor | Doc | Why it matters to YourPHR |
