@@ -9,6 +9,7 @@ Open work in [jwilleke/yourphr](https://github.com/jwilleke/yourphr), ranked. Ge
 
 ## 🟣 Epics
 
+- [#935](https://github.com/jwilleke/yourphr/issues/935) — [EPIC] Make sense of the records you already have — one lifetime record from any file
 - [#676](https://github.com/jwilleke/yourphr/issues/676) — [EPIC] The word "fasten" stops appearing in anything we ship
 - [#591](https://github.com/jwilleke/yourphr/issues/591) — [EPIC] Parity: what the TypeScript stack must do before it replaces yourPHR
 - [#385](https://github.com/jwilleke/yourphr/issues/385) — [EPIC] Realistic test-data corpus + golden-test harness
@@ -17,7 +18,6 @@ Open work in [jwilleke/yourphr](https://github.com/jwilleke/yourphr), ranked. Ge
 
 ## 🟠 P1
 
-- [#920](https://github.com/jwilleke/yourphr/issues/920) — [ARCH] YourPHR as an ngdpbase add-on: one Sources-page slice, measured (branch `yourphr-addon`, 1-week time-box; no new ngdpbase ports until it reports)
 - [#899](https://github.com/jwilleke/yourphr/issues/899) — [SECURITY] Tests reach fake servers through an injected transport, as ngdpbase does
 - [#898](https://github.com/jwilleke/yourphr/issues/898) — [SECURITY] Retire SPIKE_TEST_ALLOW_INTERNAL: no switch turns the outbound guard off
 - [#897](https://github.com/jwilleke/yourphr/issues/897) — [SECURITY] Adopt ngdpbase's egress policy as the outbound guard
@@ -29,6 +29,13 @@ Open work in [jwilleke/yourphr](https://github.com/jwilleke/yourphr), ranked. Ge
 - [#817](https://github.com/jwilleke/yourphr/issues/817) — [BUG] SSRF guard misses NAT64, 6to4 and two IPv4 special ranges; LAN access switches the guard off entirely
 - [#814](https://github.com/jwilleke/yourphr/issues/814) — [BUG] Sign-out does not end the session: the token stays valid until it expires
 - [#804](https://github.com/jwilleke/yourphr/issues/804) — [FEATURE] Adopt OIDC UserInfo in place of /api/secure/account/me; the UI draws from permission claims
+- [#925](https://github.com/jwilleke/yourphr/issues/925) — [FEATURE] Oracle Health in production: load the 1,319 patient-access endpoints into the catalog — our app already works there, no activation
+- [#924](https://github.com/jwilleke/yourphr/issues/924) — [FEATURE] Epic at scale: confirm the intended way an auto-distributed refresh-token app goes live at all organizations (no per-org activation)
+- [#920](https://github.com/jwilleke/yourphr/issues/920) — [ARCH] YourPHR as an ngdpbase add-on: one Sources-page slice, measured
+- [#916](https://github.com/jwilleke/yourphr/issues/916) — [FEATURE] 'Sync now' makes the person wait for the whole sync: start it, return, notify
+- [#912](https://github.com/jwilleke/yourphr/issues/912) — [BUG] Text search slows down with other people's records: FTS matches every account, then filters by user
+- [#909](https://github.com/jwilleke/yourphr/issues/909) — [FEATURE] Request log: one line per request with status and duration; warn on slow requests and event-loop stalls
+- [#893](https://github.com/jwilleke/yourphr/issues/893) — [FEATURE] Adopt ngdpbase's file logging provider: rotating logs on the data volume
 - [#870](https://github.com/jwilleke/yourphr/issues/870) — [BUG] Every provider connect on prod fails — yourPHR was never pointed at the SMART relay
 - [#862](https://github.com/jwilleke/yourphr/issues/862) — [FEATURE] Device-grant scopes use SMART on FHIR v2 names: patient/Observation.c for connected devices
 - [#860](https://github.com/jwilleke/yourphr/issues/860) — [FEATURE] A connected device's grant lasts until revoked: drop the 30-day term and its reminders
@@ -48,11 +55,28 @@ Open work in [jwilleke/yourphr](https://github.com/jwilleke/yourphr), ranked. Ge
 ## 🟡 P2
 
 - [#896](https://github.com/jwilleke/yourphr/issues/896) — [security] katex — 1 open advisory in the root lockfile (low)
+- [#945](https://github.com/jwilleke/yourphr/issues/945) — [FEATURE] Share the consolidated record: FHIR export, IPS, SMART Health Links, printed summary
+- [#944](https://github.com/jwilleke/yourphr/issues/944) — [FEATURE] Records request kit: right-of-access / EHI Export letters and a provider checklist
+- [#943](https://github.com/jwilleke/yourphr/issues/943) — [FEATURE] Lifetime health history: a guided, patient-reported questionnaire
+- [#942](https://github.com/jwilleke/yourphr/issues/942) — [FEATURE] List imaging studies from DICOM files (date, modality, body part)
+- [#941](https://github.com/jwilleke/yourphr/issues/941) — [FEATURE] Import CCR (Continuity of Care Record) documents
+- [#940](https://github.com/jwilleke/yourphr/issues/940) — [FEATURE] Trends across all sources and years: one chart per lab or vital
+- [#939](https://github.com/jwilleke/yourphr/issues/939) — [FEATURE] My records folder: a refreshable source (idempotent re-upload; watched folder later)
+- [#938](https://github.com/jwilleke/yourphr/issues/938) — [FEATURE] Duplicates across sources: identical files once, identical facts grouped, near-matches confirmed
+- [#937](https://github.com/jwilleke/yourphr/issues/937) — [FEATURE] Extract facts from documents into FHIR, each linked to its file and page
+- [#936](https://github.com/jwilleke/yourphr/issues/936) — [FEATURE] OCR for scanned pages and phone photos, on the instance
+- [#934](https://github.com/jwilleke/yourphr/issues/934) — [FEATURE] Greenway Health: register the patient app — self-service, free, one review, ~1,400 practices
+- [#933](https://github.com/jwilleke/yourphr/issues/933) — [FEATURE] eClinicalWorks (healow): register the patient app — self-service, ~17k practices; needs private_key_jwt for refresh tokens
+- [#932](https://github.com/jwilleke/yourphr/issues/932) — [FEATURE] NextGen Enterprise: register the patient-access app — one shared endpoint, ~4,820 practices, no gate
+- [#923](https://github.com/jwilleke/yourphr/issues/923) — [FEATURE] Patient identifiers: show one in plain words, hide the MyChart login, keep login IDs out of exports
+- [#922](https://github.com/jwilleke/yourphr/issues/922) — [FEATURE] An admin can delete a user (parked under #920)
+- [#921](https://github.com/jwilleke/yourphr/issues/921) — [BUG] Admin → Configuration says 'no restart' but password min-length and permissions only apply after a restart
+- [#918](https://github.com/jwilleke/yourphr/issues/918) — [FEATURE] Deleting an account makes the person wait for every removal (33 s): start it, sign out, finish in the background
+- [#917](https://github.com/jwilleke/yourphr/issues/917) — [FEATURE] 'Back up now' makes the admin wait ~10 s or more: start it, return, notify
 - [#902](https://github.com/jwilleke/yourphr/issues/902) — [FEATURE] My medical record numbers: each MRN with the organization that issued it
 - [#901](https://github.com/jwilleke/yourphr/issues/901) — [FEATURE] Show NPI registry facts beside records that state an NPI (type 1 and type 2)
 - [#900](https://github.com/jwilleke/yourphr/issues/900) — [FEATURE] NPI organization lookup (type 2) beside the clinician lookup
 - [#894](https://github.com/jwilleke/yourphr/issues/894) — [FEATURE] Wire Dynamic Client Registration (src/dcr) into provider connect
-- [#893](https://github.com/jwilleke/yourphr/issues/893) — [FEATURE] Adopt ngdpbase's file logging provider: rotating logs on the data volume
 - [#884](https://github.com/jwilleke/yourphr/issues/884) — [FEATURE] Restart the server from the admin UI, without depending on PM2
 - [#833](https://github.com/jwilleke/yourphr/issues/833) — [FEATURE] Per-person notification channels: each person chooses where notices reach them
 - [#803](https://github.com/jwilleke/yourphr/issues/803) — [FEATURE] "spike" in test/CI variable names, temp prefixes, comments and docs — rename to yourPHR
@@ -97,6 +121,17 @@ Open work in [jwilleke/yourphr](https://github.com/jwilleke/yourphr), ranked. Ge
 
 ## 🔵 In review
 
+- [#919](https://github.com/jwilleke/yourphr/issues/919) — [FEATURE] Test accounts hold sandbox data only, real accounts never: adopt ngdpbase's isTest flag
+- [#915](https://github.com/jwilleke/yourphr/issues/915) — [BUG] Save Report / IPS builds on the main thread: 4.3 s of frozen server on a large record
+- [#914](https://github.com/jwilleke/yourphr/issues/914) — [BUG] Staging a restore freezes the server for the whole copy (22 s for a 555 MB backup)
+- [#913](https://github.com/jwilleke/yourphr/issues/913) — [BUG] Uploading a records file freezes the server for the whole import (26 s for 5,900 records)
+- [#911](https://github.com/jwilleke/yourphr/issues/911) — [BUG] Sign-in says 'username or password is incorrect' when the server is down
+- [#910](https://github.com/jwilleke/yourphr/issues/910) — [BUG] Medical History hangs the server: the encounter graph walks the whole chart through the Patient, each step a full index scan
+- [#908](https://github.com/jwilleke/yourphr/issues/908) — [BUG] Dashboard summary scans the whole records table; froze production after a large removal (pod killed)
+- [#907](https://github.com/jwilleke/yourphr/issues/907) — [FEATURE] Audit long operations against the set-and-walk-away rule: sync, import, export, backup, restore, reindex
+- [#906](https://github.com/jwilleke/yourphr/issues/906) — [FEATURE] Scale test in CI: a real-sized synthetic account; fail on event-loop blocking or quadratic growth
+- [#905](https://github.com/jwilleke/yourphr/issues/905) — [BUG] Disconnecting a source freezes the server until Kubernetes kills it (liveness probe, exit 137)
+- [#904](https://github.com/jwilleke/yourphr/issues/904) — [FEATURE] Admin-only UI lives under /admin: Users moves to /admin/users; Explore loses the sandbox switch
 - [#888](https://github.com/jwilleke/yourphr/issues/888) — [BUG] /patient-profile shows another person's Patient for the logged-in user
 - [#861](https://github.com/jwilleke/yourphr/issues/861) — [FEATURE] Pause a connected device after 90 days without an upload, not 14
 - [#778](https://github.com/jwilleke/yourphr/issues/778) — [BUG] Bare-metal setup serves no interface — the example sets YOURPHR_WEB_SRC_FRONTEND_PATH, the server reads YOURPHR_WEB_STATIC_DIR
@@ -113,4 +148,9 @@ Open work in [jwilleke/yourphr](https://github.com/jwilleke/yourphr), ranked. Ge
 
 ## ❓ Needs triage
 
-*None.*
+- [#931](https://github.com/jwilleke/yourphr/pull/931) — chore(deps): bump @angular/cli from 22.2.0 to 22.2.2 in /frontend *(PR · ready)* — no linked issue
+- [#930](https://github.com/jwilleke/yourphr/pull/930) — chore(deps): bump @ng-select/ng-select from 24.1.1 to 24.2.1 in /frontend *(PR · ready)* — no linked issue
+- [#929](https://github.com/jwilleke/yourphr/pull/929) — chore(deps): bump chromatic from 18.2.0 to 18.12.0 in /frontend *(PR · ready)* — no linked issue
+- [#928](https://github.com/jwilleke/yourphr/pull/928) — chore(deps): bump humanize-duration from 3.28.0 to 3.35.0 in /frontend *(PR · ready)* — no linked issue
+- [#927](https://github.com/jwilleke/yourphr/pull/927) — chore(deps): bump zone.js from 0.15.1 to 0.16.3 in /frontend *(PR · ready)* — no linked issue
+- [#926](https://github.com/jwilleke/yourphr/issues/926) — Register yourPHR as a patient-access SMART on FHIR app with Oracle Health (Cerner Millennium)
