@@ -16,7 +16,7 @@ __TEFCA__ (Trusted Exchange Framework and Common Agreement) is the "network of n
 |---|---|
 | Sets policy | ASTP/ONC, part of HHS |
 | Runs it day to day (the *Recognized Coordinating Entity*, RCE) | The Sequoia Project: <https://rce.sequoiaproject.org> |
-| The hubs: __QHINs__ (Qualified Health Information Networks) | Approved networks, for example eHealth Exchange, Epic Nexus, Health Gorilla, CommonWell, Kno2, MedAllies and KONZA. The official current list is on the RCE site. |
+| The hubs: __QHINs__ (Qualified Health Information Networks) | About __11__ designated as of 2026, including eHealth Exchange, Epic Nexus, Health Gorilla, KONZA, MedAllies, CommonWell, Kno2, Oracle Health and Surescripts. The official current list is on the RCE site. |
 | Everyone else | Hospitals, clinics, health systems and apps join as *Participants* or *Subparticipants* of one QHIN |
 
 Every QHIN connects to every other. Joining one QHIN reaches the whole network.
@@ -51,7 +51,17 @@ Epic describes an IAS app joining by contracting with a QHIN, getting an entry i
 
 ## Costs and catches
 
-- __Fees:__ not published. TEFCA itself sets no price for patients, and federal rules don't allow charging patients for electronic access to their own records. But each QHIN sets its own commercial terms for the apps and organizations that join through it. A third-party review of Health Gorilla describes a "negotiated paid contract". __Unknown for yourPHR until we ask.__
+- __Fees:__ who can charge whom.
+
+  | Who | Charges? |
+  |---|---|
+  | The patient | Nothing: federal rules don't allow charging for electronic access to one's own records |
+  | Organizations answering an IAS or treatment query | Can't charge: the Common Agreement forbids fees for those queries |
+  | One QHIN to another | Forbidden by the Common Agreement |
+  | The RCE (Sequoia) | Nothing today; it has said it may add application, annual and testing fees later |
+  | __A QHIN to its own participants__ (yourPHR) | __Set by each QHIN, not published, usually negotiated.__ eHealth Exchange says TEFCA connectivity costs its existing participants nothing extra |
+
+  The only fee that matters for yourPHR is the joining QHIN's. It's unknown until we ask.
 - __Identity proofing__ is required for every patient, and usually costs money per check through the credential service.
 - __Format:__ much of what comes back is __C-CDA__ (summary documents), because the networks were built before FHIR. yourPHR already imports C-CDA. FHIR over TEFCA is on its roadmap.
 - __Self-hosting is new territory.__ TEFCA expects an IAS Provider to be one accountable organization. yourPHR is many self-hosted installs. The likely shape is one yourPHR IAS registration run centrally, with records delivered to each patient's own install. That needs confirming with a QHIN before anything else.
@@ -69,3 +79,6 @@ An investigation, not a build: ask two QHINs (for example Epic Nexus and Health 
 - ASTP/ONC, the history and growth of TEFCA: <https://healthit.gov/resources/data-liquidity-affordability-and-access-the-history-growth-of-tefca/>
 - Epic, TEFCA for Individual Access Services: <https://open.epic.com/Home/Interoperate/TEFCA/IAS>
 - Health Gorilla, TEFCA for Individual Access Services: <https://www.healthgorilla.com/home/use-cases/ias>
+- RCE, 11th QHIN designated (Oracle Health): <https://rce.sequoiaproject.org/new-designated-qhin-new-sops-and-more/>
+- RCE, frequently asked questions: <https://rce.sequoiaproject.org/rce/faqs/>
+- eHealth Exchange, TEFCA FAQs: <https://ehealthexchange.org/tefca-faqs/>
