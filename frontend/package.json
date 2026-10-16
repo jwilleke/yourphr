@@ -47,7 +47,7 @@
     "dwv": "^0.31.0",
     "fhirpath": "^3.3.0",
     "gridstack": "14.0.0",
-    "humanize-duration": "^3.27.3",
+    "humanize-duration": "^3.35.0",
     "idb": "^8.0.3",
     "jose": "6.2.12",
     "moment": "^2.31.0",

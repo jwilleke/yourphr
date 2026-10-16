@@ -6614,10 +6614,10 @@ https-proxy-agent@9.1.0:
     debug "^4.3.4"
     proxy-agent-negotiate "1.1.0"
 
-humanize-duration@^3.27.3:
-  version "3.28.0"
-  resolved "https://registry.npmjs.org/humanize-duration/-/humanize-duration-3.28.0.tgz#f79770c0bec34d3bfd4899338cc40643bc04df72"
-  integrity sha512-jMAxraOOmHuPbffLVDKkEKi/NeG8dMqP8lGRd6Tbf7JgAeG33jjgPWDbXXU7ypCI0o+oNKJFgbSB9FKVdWNI2A==
+humanize-duration@^3.35.0:
+  version "3.35.0"
+  resolved "https://registry.yarnpkg.com/humanize-duration/-/humanize-duration-3.35.0.tgz#716f60c036a39b9b070a92b49739d52593464967"
+  integrity sha512-+KYh+R85n1yadHHwy/QXF0JgPq5NPPBNrvigA5aAKrlKFd0bJpMx7wE3Xd6rM0kEaBQMCFrdMihkaDSgWERNvQ==
 
 hyperdyperid@^1.2.0:
   version "1.2.0"
