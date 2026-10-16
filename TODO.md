@@ -122,20 +122,7 @@ Open work in [jwilleke/yourphr](https://github.com/jwilleke/yourphr), ranked. Ge
 
 ## 🔵 In review
 
-- [#919](https://github.com/jwilleke/yourphr/issues/919) — [FEATURE] Test accounts hold sandbox data only, real accounts never: adopt ngdpbase's isTest flag
-- [#915](https://github.com/jwilleke/yourphr/issues/915) — [BUG] Save Report / IPS builds on the main thread: 4.3 s of frozen server on a large record
-- [#914](https://github.com/jwilleke/yourphr/issues/914) — [BUG] Staging a restore freezes the server for the whole copy (22 s for a 555 MB backup)
-- [#913](https://github.com/jwilleke/yourphr/issues/913) — [BUG] Uploading a records file freezes the server for the whole import (26 s for 5,900 records)
-- [#911](https://github.com/jwilleke/yourphr/issues/911) — [BUG] Sign-in says 'username or password is incorrect' when the server is down
-- [#910](https://github.com/jwilleke/yourphr/issues/910) — [BUG] Medical History hangs the server: the encounter graph walks the whole chart through the Patient, each step a full index scan
-- [#908](https://github.com/jwilleke/yourphr/issues/908) — [BUG] Dashboard summary scans the whole records table; froze production after a large removal (pod killed)
-- [#907](https://github.com/jwilleke/yourphr/issues/907) — [FEATURE] Audit long operations against the set-and-walk-away rule: sync, import, export, backup, restore, reindex
-- [#906](https://github.com/jwilleke/yourphr/issues/906) — [FEATURE] Scale test in CI: a real-sized synthetic account; fail on event-loop blocking or quadratic growth
-- [#905](https://github.com/jwilleke/yourphr/issues/905) — [BUG] Disconnecting a source freezes the server until Kubernetes kills it (liveness probe, exit 137)
-- [#904](https://github.com/jwilleke/yourphr/issues/904) — [FEATURE] Admin-only UI lives under /admin: Users moves to /admin/users; Explore loses the sandbox switch
-- [#888](https://github.com/jwilleke/yourphr/issues/888) — [BUG] /patient-profile shows another person's Patient for the logged-in user
-- [#861](https://github.com/jwilleke/yourphr/issues/861) — [FEATURE] Pause a connected device after 90 days without an upload, not 14
-- [#778](https://github.com/jwilleke/yourphr/issues/778) — [BUG] Bare-metal setup serves no interface — the example sets YOURPHR_WEB_SRC_FRONTEND_PATH, the server reads YOURPHR_WEB_STATIC_DIR
+*None.*
 
 ## ⏸ Deferred
 
