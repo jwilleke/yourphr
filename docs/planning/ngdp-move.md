@@ -2,13 +2,15 @@
 
 > __Lead document: the source of truth for YourPHR's direction relative to ngdpbase.__ The direction, the decisions, the constraints and the plan live here. Issues, other planning documents and AGENTS.md link here rather than restate it; a document covering one part links back until that part is finished. When a decision changes, it changes here first.
 >
-> __Last updated 2026-10-14.__ Below the direction sections is the analysis record (2026-08-30 onward) that the direction rests on. Its superseded claims are struck through with dated notes, not deleted.
+> __Last updated 2026-10-16.__ Below the direction sections is the analysis record (2026-08-30 onward) that the direction rests on. Its superseded claims are struck through with dated notes, not deleted.
 
 ## Direction
 
-__YourPHR becomes an ngdpbase add-on — `@jwilleke/yourphr-addon` on an ngdpbase base image — if the measurement in [#920](https://github.com/jwilleke/yourphr/issues/920) says go.__ If it says no, the fallback is pulling ngdpbase's framework out as a package YourPHR depends on. Either way, YourPHR stops copying ngdpbase managers by hand. Copying is what makes every fix land twice: the overlap table was closed by six ports in three weeks, and each copy has drifted since (*Where it stands, 2026-10-14*).
+__YourPHR is built as ngdpbase add-ons, under ngdpbase's one add-on model__ ([ngdpbase#1810](https://github.com/jwilleke/ngdpbase/issues/1810)), decided 2026-10-15. The first add-on is `phr` (npm `@yourphr/phr-addon`). Its code lives in this repo under `addons/`, it's published compiled to npm from GitHub Actions, and a plain ngdpbase site turns it on by config. YourPHR stops copying ngdpbase managers by hand. Copying is what makes every fix land twice: the overlap table was closed by six ports in three weeks, and each copy has drifted since (*Where it stands, 2026-10-14*). Anything phr needs that core doesn't offer is a PR to ngdpbase.
 
-Until #920 reports, the standing rule from [#697](https://github.com/jwilleke/yourphr/issues/697) applies: __default to ngdpbase__ (AGENTS.md § *TypeScript stack: DEFAULT TO ngdpbase*).
+[#920](https://github.com/jwilleke/yourphr/issues/920) now measures the cost and the order of the move, not whether to make it. Going live with real records is still gated (*Open*). Until cutover, the standing rule from [#697](https://github.com/jwilleke/yourphr/issues/697) applies: __default to ngdpbase__ (AGENTS.md § *TypeScript stack: DEFAULT TO ngdpbase*).
+
+__Where it stands, 2026-10-16:__ the `phr` skeleton runs inside a plain ngdpbase v5.10.0 on localhost, with test data only. It takes core's tools through `register(engine, config, host)` ([ngdpbase#1813](https://github.com/jwilleke/ngdpbase/issues/1813)), has one page showing who is signed in, and holds no records yet (branch `yourphr-addon`).
 
 ## Product direction (proposed 2026-10-15)
 
@@ -47,8 +49,8 @@ Reaching providers at scale is still worth doing, but behind this. See [`../EHR-
 ## Constraints
 
 - __The project stays at yourphr.org and in `jwilleke/yourphr`.__ The domain is paid for and the GitHub name is owned. The add-ons follow ngdpbase's one add-on model ([ngdpbase#1810](https://github.com/jwilleke/ngdpbase/issues/1810)): their code lives in this repo under `addons/` and is published compiled; yourphr.org runs a plain ngdpbase clone or image whose config names the yourPHR add-ons with a version range. There's no yourPHR Dockerfile and no site image (this supersedes the earlier geohazardwatch-style Dockerfile). Never fold YourPHR into the ngdpbase repo or serve it from an ngdpbase-branded host.
-- __Add-ons are optional, by configuration.__ `ngdpbase.addons.yourphr.enabled` defaults to false; yourphr.org's own configuration turns it on. The add-on fails soft when a dependency is missing, so each deploy needs a smoke check proving it is on.
-- __PHI stays in the add-on's encrypted database__, behind its own managers. Never in ngdpbase pages. A missing database key must refuse to start, not open unencrypted.
+- __Add-ons are optional, by configuration.__ `ngdpbase.addons.phr.enabled` defaults to false; yourphr.org's own configuration turns it on. The add-on fails soft when a dependency is missing, so each deploy needs a smoke check proving it is on.
+- __PHI stays in the add-on's encrypted database__ (`phr.db`), behind `PhrManager`, and never in ngdpbase pages. PHR files (PDFs, DICOM, scans) live in one PHR vault per person (2026-10-15). A missing database key must refuse to start, not open unencrypted.
 - __Nothing new is named "spike".__
 
 ## Decisions
@@ -74,24 +76,40 @@ Reaching providers at scale is still worth doing, but behind this. See [`../EHR-
 | 2026-10-15 | __Add-ons get core's tools from core__ ([ngdpbase#1813](https://github.com/jwilleke/ngdpbase/issues/1813)): ngdpbase imports the add-on package and hands it what core offers, `register(engine, config, host)`. The add-on never imports ngdpbase, and anything core doesn't offer is a PR to ngdpbase. `phr` is written against a local stand-in of that shape. | [ngdpbase#1813](https://github.com/jwilleke/ngdpbase/issues/1813) |
 | 2026-10-15 | __A registry outage never stops a site.__ A restart uses the pinned installed copy and doesn't touch npm. An Update with npm down stays on the current version and tells the admin. A first install with npm down starts the site without that add-on and tells the admin. Installed add-on copies are part of the site backup, so a restore needs no registry. | [ngdpbase#1810](https://github.com/jwilleke/ngdpbase/issues/1810) |
 | 2026-10-15 | __Access to records goes through one door, and core decides.__ `PhrManager` is the only PEP (policy enforcement point) for records: routes, page plugins, sync jobs, imports, search and export all go through it, and nothing else in `phr` opens `phr.db` (opened by core's `DatabaseManager.openAddonDatabase('phr')`) or writes SQL; a lint keeps it that way. Every table has a required `owner` column. For each request `PhrManager` reads the owner from storage itself, never from the caller, URL or browser, and sends owner plus the request context (who is asking, acting for whom by proxy grant or job) to core's PIP/PDP. Core decides: the owner rule first ("the owner or their delegate, never a role"), then policy (`phr-read`, `phr-write`, …). `PhrManager` enforces and logs every read and write, allowed or refused. Lists and searches are decided once per owner, then queried with that owner filled in by the door. Needs from core: extend the owner rule (today private pages and files only) to any resource whose request carries an owner; the parallel write-side fix for pages is [ngdpbase#1815](https://github.com/jwilleke/ngdpbase/issues/1815). | operator, 2026-10-15 |
+| 2026-10-15 | __Owner vs custodian.__ The owner of a record is the person it is about (Alice owns her PHR records). The owner is read from the stored row, never from the request. `phr` is the custodian: it stores and guards (it's the PEP), holds no rights of its own, and never decides. The default is deny. | [ngdpbase#1431](https://github.com/jwilleke/ngdpbase/issues/1431#issuecomment-6193262203) |
+| 2026-10-15 | __PHR files live in one PHR vault per person.__ PDFs, DICOM images and scans are files, not attachments and not database rows. Everything in the vault is sensitive, with no separate vaults by sensitivity. Vault access is core's existing vault sharing and access control, with nothing PHR-specific. The `phr-record` describing a document (FHIR `DocumentReference`) points at its file. | [ngdpbase#1431](https://github.com/jwilleke/ngdpbase/issues/1431#issuecomment-6193262203) |
+| 2026-10-15 | __Core's decisions are explicit.__ The PDP answers `allow` (with a list filter as structured data, never SQL) or `deny` (with a reason), never empty. An undecidable request throws and fails closed. A refused list is a refusal, not zero rows. Conditions (subject vs resource) and obligations (e.g. emergency access: a stated reason, notify the owner) are defined in policy or configuration, read through `ConfigurationManager`, never in code. Every decision, allow and deny, is audited. | [ngdpbase#1431](https://github.com/jwilleke/ngdpbase/issues/1431#issuecomment-6193262203) |
+| 2026-10-15 | __Declared through existing keys.__ `phr` declares its resource type `phr-record` in its `config/default-config.json` under `ngdpbase.access.resource-types`, with `attributes` (`owner` is reserved; `category` and others as needed). Its actions are permissions (`ngdpbase.permissions.definitions`); its rules are policies (`ngdpbase.access.policies`). No new keys. | [ngdpbase#1431](https://github.com/jwilleke/ngdpbase/issues/1431#issuecomment-6193262203) |
+| 2026-10-15 | __Alice sees who accessed her PHR:__ a PHR access log covering her `phr-record`s and her PHR vault files, listing everyone allowed access (herself, proxies, shares, jobs, emergency access). Denials are audited but not shown to her. | [ngdpbase#1431](https://github.com/jwilleke/ngdpbase/issues/1431#issuecomment-6193262203) |
+| 2026-10-15 | __Anyone with records has an account.__ There are no dependent or managed accounts: a parent with records has their own account and shares it by proxy access. Sharing and survivorship are covered by earlier work ([ngdpbase#1762](https://github.com/jwilleke/ngdpbase/issues/1762), [ngdpbase#1545](https://github.com/jwilleke/ngdpbase/issues/1545)). | [ngdpbase#1431](https://github.com/jwilleke/ngdpbase/issues/1431#issuecomment-6193262203) |
+| 2026-10-15 | __Thresholds and other values used in conditions are configuration keys__, merged and read by `ConfigurationManager`, so each site chooses its own. | operator, 2026-10-16 |
 
 ## Plan
 
-1. __First test on `yourphr-addon`:__ the add-on serves the Angular bundle, and after sign-in on ngdpbase's login page, the app's API calls ride the same session (`ApiContext.from(req)`). This is the riskiest unknown, so it goes first.
-2. __The Sources slice:__ `SourcesManager` unchanged, its 12 routes as Express routes (SSE and the export download included), and the gate layer as middleware.
-3. __Measure__ (the list is on [#920](https://github.com/jwilleke/yourphr/issues/920)): hours for the gate layer and the slice, upstream changes needed, isolation and the encrypted store staying in the add-on, SSE, theme parity ([#502](https://github.com/jwilleke/yourphr/issues/502)), the deploy smoke check, and the size of the two migrations below.
-4. __Decide__, and write the result here.
-   - __On go:__ build the v3-to-v4 migration tool, rehearse the swap on yourphr.org, move section by section on main, then the demo, then delete the copies under the stop rule.
-   - __On no-go:__ delete the branch and start the framework-package extraction.
+1. __Done (2026-10-15):__ the `phr` skeleton runs inside a plain ngdpbase v5.10.0 on localhost, using core's host tools. It has one page and the `whoami` route, and no records.
+2. __Core work phr waits on__, filed with ngdpbase:
+   - __Access control for add-on records__ (from the [ngdpbase#1431](https://github.com/jwilleke/ngdpbase/issues/1431#issuecomment-6193262203) decisions): add-ons ask the PDP through `host`; resource types with attributes and the `owner` rule; list filters; conditions and obligations. Blocks `PhrManager`.
+   - __`openAddonDatabase` as a host tool.__ It isn't among the ten tools, and it blocks `phr.db`.
+   - __Creating a person's PHR vault from an add-on__ (related: [ngdpbase#1559](https://github.com/jwilleke/ngdpbase/issues/1559)). Blocks storing documents.
+3. __`PhrManager` and `phr.db`:__ port today's FHIR store with a required `owner` column on every table, the one door with its lint, and tests proving A can't read B.
+4. __The Sources slice as ngdpbase pages in `phr`__ (no Angular): the hospital directory, connecting a hospital through the SMART relay, sync as a background job, and secrets through Admin → Configuration.
+5. __Measure__ (the list is on [#920](https://github.com/jwilleke/yourphr/issues/920)): hours, upstream changes needed, SSE under ngdpbase, the deploy smoke check, and the size of the data move.
+6. __The data move:__ `records.db` into `phr.db`; accounts, credentials and sessions into ngdpbase's user store (compatible password hashes or a reset); a decision about agent tokens and device grants already issued.
+7. __Publishing:__ phr's GitHub Actions publish workflow, and installing it from npm on a site ([ngdpbase#1810](https://github.com/jwilleke/ngdpbase/issues/1810)).
+8. __Cutover__ under the 2026-10-14 rules: rehearse the swap on yourphr.org, household instance first, then the demo, then delete the copies under the stop rule.
 
 ## Open — blockers and questions
 
-- __Blocks building `phr`:__ ngdpbase's one add-on model ([ngdpbase#1810](https://github.com/jwilleke/ngdpbase/issues/1810)) must settle where add-ons are published, and the host SDK ([ngdpbase#1813](https://github.com/jwilleke/ngdpbase/issues/1813)) must settle how an installed add-on reaches core code, since `../../dist` only works inside ngdpbase's own `addons/`. `phr`'s list of needs is recorded on #1813. Until both land, `phr` is written against a local stand-in of the same shape.
-
-- __Blocker for go:__ ngdpbase [#1723](https://github.com/jwilleke/ngdpbase/issues/1723) — no database is in ngdpbase's backups.
-- __Data migration:__ none of our 26 tables carries the `yourphr_` prefix that add-on databases and #1723's backup split rely on. Users, credentials, sessions, agent tokens and device grants move to ngdpbase's user store — compatible password hashes or a reset, and a decision about tokens already issued.
+- __Blocks `PhrManager`:__ the three core items in *Plan* step 2. None is filed yet.
+- __Blocks going live with real records:__ ngdpbase [#1723](https://github.com/jwilleke/ngdpbase/issues/1723), since no database is in ngdpbase's backups yet.
+- __Blocks deploying `phr` beyond a dev machine:__ installing add-ons from npm ([ngdpbase#1810](https://github.com/jwilleke/ngdpbase/issues/1810)). Until then, drop-in from a folder is the only way to load an add-on, and it needs `tsc` run first.
+- __Raised with the operator, undecided:__
+  - Whether the owner rule ("the owner or their delegate, never a role") stays fixed in core beneath policy, or becomes a policy condition. If it's a condition, a policy that omits it gives a role everyone's records. A startup check refusing such policies is one mitigation; how strict it is would be an implementation choice.
+  - Whether Alice should see refusals of other people trying to reach her records.
+- __Proxy access to encrypted vaults__ waits on slice 5 of [ngdpbase#1762](https://github.com/jwilleke/ngdpbase/issues/1762). Until then, a proxy can't open an encrypted PHR vault.
+- __Data migration:__ none of our 26 tables carries an add-on prefix; `phr` tables are `phr_…`. Users, credentials, sessions, agent tokens and device grants move to ngdpbase's user store, needing compatible password hashes or a reset, and a decision about tokens already issued.
 - __Keys:__ one key covers every ngdpbase database; YourPHR holds a separate backup key (#1723 proposes one).
-- __Hosting:__ no add-on hosts an SPA yet; SSE under ngdpbase's process model is untested.
+- __SSE__ under ngdpbase's process model is untested.
 - __Self-hosters:__ an upgrade page like `upgrading-v2-to-v3.md`. Deployment follows ngdpbase's targets ([#641](https://github.com/jwilleke/yourphr/issues/641), on hold).
 - __Carried from the record:__ whether the access log's day-folding is the granularity [#614](https://github.com/jwilleke/yourphr/issues/614) wants.
 
@@ -100,7 +118,9 @@ Reaching providers at scale is still worth doing, but behind this. See [`../EHR-
 | What | Role |
 |---|---|
 | [`architecture-principles-typescript.md`](https://github.com/jwilleke/ngdpbase/blob/master/docs/planning/architecture-principles-typescript.md) (ngdpbase) | Governing architecture; names the legitimate divergences |
-| [#920](https://github.com/jwilleke/yourphr/issues/920), branch `yourphr-addon` | The measurement this direction waits on |
+| [#920](https://github.com/jwilleke/yourphr/issues/920), branch `yourphr-addon` | The `phr` add-on work and its measurement |
+| [ngdpbase#1431](https://github.com/jwilleke/ngdpbase/issues/1431#issuecomment-6193262203) | Access-control decisions for add-on records (2026-10-15) |
+| [ngdpbase#1813](https://github.com/jwilleke/ngdpbase/issues/1813) | Host tools for add-ons, shipped in v5.10.0 |
 | [`getting-off-go.md`](../archive/getting-off-go.md) | Complete; its cutover rules are reused here |
 | [ngdp-accounting-addons](https://github.com/jwilleke/ngdp-accounting-addons) | Reference shape for a complex, optional add-on |
 | [#591](https://github.com/jwilleke/yourphr/issues/591), [#608](https://github.com/jwilleke/yourphr/issues/608) | Parity epic; the ngdpbase-model architecture already applied |
