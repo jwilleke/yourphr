@@ -4788,10 +4788,10 @@ chokidar@^4.0.1:
   dependencies:
     readdirp "^4.0.1"
 
-chromatic@^18.2.0:
-  version "18.2.0"
-  resolved "https://registry.yarnpkg.com/chromatic/-/chromatic-18.2.0.tgz#c5ba7b6dc03f9c5e1e331b93c634e2a1cefbe5bd"
-  integrity sha512-xyTKDhBQPDd4qrsXhJK7GAJyIStpRoSTs4b7EtPyliSL0luej3DcqkeCZ9osHxbiLXiViNyWfMxo5Xgzejex8A==
+chromatic@^18.12.1:
+  version "18.12.1"
+  resolved "https://registry.yarnpkg.com/chromatic/-/chromatic-18.12.1.tgz#ae9a3d02a1b252afb4342c582704c680ba9d5a36"
+  integrity sha512-EtRUQ8lJ+I+WS6SPQZkf6ab19rGzqqvL4uX7uy6Ams2gHCi7Lx4qus0SeoTJ7k8kIQmnSRhVZgqRw2/xjD+1CA==
   dependencies:
     semver "^7.3.5"
 
