@@ -83,6 +83,7 @@ Reaching providers at scale is still worth doing, but behind this. See [`../EHR-
 | 2026-10-15 | __Alice sees who accessed her PHR:__ a PHR access log covering her `phr-record`s and her PHR vault files, listing everyone allowed access (herself, proxies, shares, jobs, emergency access). Denials are audited but not shown to her. | [ngdpbase#1431](https://github.com/jwilleke/ngdpbase/issues/1431#issuecomment-6193262203) |
 | 2026-10-15 | __Anyone with records has an account.__ There are no dependent or managed accounts: a parent with records has their own account and shares it by proxy access. Sharing and survivorship are covered by earlier work ([ngdpbase#1762](https://github.com/jwilleke/ngdpbase/issues/1762), [ngdpbase#1545](https://github.com/jwilleke/ngdpbase/issues/1545)). | [ngdpbase#1431](https://github.com/jwilleke/ngdpbase/issues/1431#issuecomment-6193262203) |
 | 2026-10-15 | __Thresholds and other values used in conditions are configuration keys__, merged and read by `ConfigurationManager`, so each site chooses its own. | operator, 2026-10-16 |
+| 2026-10-16 | __For the move to ngdpbase: vendor APIs paused, patient downloads first.__ `phr`'s first record source is the files a patient downloads themselves: FHIR zips (EHI Export, "Export All My Data"), C-CDA documents, and Medicare/plan Blue Button text and PDF reports, dropped into a refreshable "my records folder" ([#939](https://github.com/jwilleke/yourphr/issues/939)). That route needs no vendor's approval. Live connections (Epic, Oracle, Medicare Blue Button API and others) wait until after it, and the CMS production demo is on hold. Why: every API route ran into a gate this week (Epic's per-organization activation, CMS's review, Medicare Advantage claims held by the plan), while the operator's own downloads have worked for years. | operator, 2026-10-16 |
 
 ## Plan
 
@@ -92,11 +93,12 @@ Reaching providers at scale is still worth doing, but behind this. See [`../EHR-
    - __`openAddonDatabase` as a host tool.__ It isn't among the ten tools, and it blocks `phr.db`.
    - __Creating a person's PHR vault from an add-on__ (related: [ngdpbase#1559](https://github.com/jwilleke/ngdpbase/issues/1559)). Blocks storing documents.
 3. __`PhrManager` and `phr.db`:__ port today's FHIR store with a required `owner` column on every table, the one door with its lint, and tests proving A can't read B.
-4. __The Sources slice as ngdpbase pages in `phr`__ (no Angular): the hospital directory, connecting a hospital through the SMART relay, sync as a background job, and secrets through Admin → Configuration.
-5. __Measure__ (the list is on [#920](https://github.com/jwilleke/yourphr/issues/920)): hours, upstream changes needed, SSE under ngdpbase, the deploy smoke check, and the size of the data move.
-6. __The data move:__ `records.db` into `phr.db`; accounts, credentials and sessions into ngdpbase's user store (compatible password hashes or a reset); a decision about agent tokens and device grants already issued.
-7. __Publishing:__ phr's GitHub Actions publish workflow, and installing it from npm on a site ([ngdpbase#1810](https://github.com/jwilleke/ngdpbase/issues/1810)).
-8. __Cutover__ under the 2026-10-14 rules: rehearse the swap on yourphr.org, household instance first, then the demo, then delete the copies under the stop rule.
+4. __The first slice: patient downloads, as ngdpbase pages in `phr`__ (no Angular). A "my records folder" source ([#939](https://github.com/jwilleke/yourphr/issues/939)) with importers for the formats the operator actually has: FHIR zips, C-CDA, and Blue Button text and PDF reports. Files go into the person's PHR vault, records into `phr.db`, and import runs as a background job.
+5. __Later: live connections__ (vendor APIs paused, 2026-10-16): the hospital directory, connecting through the SMART relay, sync as a background job, and secrets through Admin → Configuration.
+6. __Measure__ (the list is on [#920](https://github.com/jwilleke/yourphr/issues/920)): hours, upstream changes needed, SSE under ngdpbase, the deploy smoke check, and the size of the data move.
+7. __The data move:__ `records.db` into `phr.db`; accounts, credentials and sessions into ngdpbase's user store (compatible password hashes or a reset); a decision about agent tokens and device grants already issued.
+8. __Publishing:__ phr's GitHub Actions publish workflow, and installing it from npm on a site ([ngdpbase#1810](https://github.com/jwilleke/ngdpbase/issues/1810)).
+9. __Cutover__ under the 2026-10-14 rules: rehearse the swap on yourphr.org, household instance first, then the demo, then delete the copies under the stop rule.
 
 ## Open — blockers and questions
 
