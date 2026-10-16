@@ -12,7 +12,7 @@
   "ngdpbase": {
     "slug": "phr",
     "type": "additive",
-    "minVersion": "5.10.0"
+    "minVersion": "5.13.0"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json"

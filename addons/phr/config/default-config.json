@@ -1,7 +1,27 @@
 {
   "_comment_phr": "yourPHR's phr add-on (jwilleke/yourphr#920). Merged into the site's configuration only while ngdpbase.addons.phr.enabled is true; the site's app-custom-config.json overrides any entry.",
   "ngdpbase.addons.phr.enabled": false,
-
+  "_comment_phr_vault": "One PHR vault per person (operator, 2026-10-15; ngdpbase#1559). owner, encrypt, defaultPrivate and shareMaxDays are phr's own and a site can't override them. encrypt is fixed when each person's vault is created. Booleans must be booleans: core refuses to load phr otherwise.",
+  "ngdpbase.system-category": {
+    "phr": {
+      "label": "PHR",
+      "description": "Personal health records and files",
+      "enabled": true,
+      "owner": "phr",
+      "storageLocation": {
+        "defaultstore": "pages/",
+        "privatestore": "pages/vaults/{user}/phr/"
+      },
+      "defaultPrivate": true,
+      "encrypt": true,
+      "shareMaxDays": 15,
+      "page-badge": {
+        "color": "bg-info",
+        "label": "PHR",
+        "title": "PHR entry"
+      }
+    }
+  },
   "ngdpbase.permissions.definitions": {
     "phr-read": {
       "description": "Read one's own health records in the phr add-on",
@@ -10,23 +30,44 @@
       "color": "#0d6efd"
     }
   },
-
   "ngdpbase.access.policies": [
     {
       "id": "phr-access",
       "name": "Health records",
-      "description": "Every signed-in person may see their own health records. Whose records they are is decided inside the phr managers, never here.",
+      "description": "Who may use phr at all: every signed-in person. Whose records a person may see is not decided here: phr reads each record's owner from storage and core decides (owner rule, then policy). The resource type becomes phr-record once phr declares it (ngdpbase#1823).",
       "priority": 90,
       "effect": "allow",
       "subjects": [
-        { "type": "role", "value": "reader" },
-        { "type": "role", "value": "contributor" },
-        { "type": "role", "value": "editor" },
-        { "type": "role", "value": "user-admin" },
-        { "type": "role", "value": "admin" }
+        {
+          "type": "role",
+          "value": "reader"
+        },
+        {
+          "type": "role",
+          "value": "contributor"
+        },
+        {
+          "type": "role",
+          "value": "editor"
+        },
+        {
+          "type": "role",
+          "value": "user-admin"
+        },
+        {
+          "type": "role",
+          "value": "admin"
+        }
       ],
-      "resources": [{ "type": "page", "pattern": "*" }],
-      "actions": ["phr-read"]
+      "resources": [
+        {
+          "type": "page",
+          "pattern": "*"
+        }
+      ],
+      "actions": [
+        "phr-read"
+      ]
     }
   ]
 }
