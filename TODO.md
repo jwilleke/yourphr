@@ -55,6 +55,7 @@ Open work in [jwilleke/yourphr](https://github.com/jwilleke/yourphr), ranked. Ge
 ## 🟡 P2
 
 - [#896](https://github.com/jwilleke/yourphr/issues/896) — [security] katex — 1 open advisory in the root lockfile (low)
+- [#946](https://github.com/jwilleke/yourphr/issues/946) — [BUG] The CMS Blue Button production-access runbook still describes the Go stack
 - [#945](https://github.com/jwilleke/yourphr/issues/945) — [FEATURE] Share the consolidated record: FHIR export, IPS, SMART Health Links, printed summary
 - [#944](https://github.com/jwilleke/yourphr/issues/944) — [FEATURE] Records request kit: right-of-access / EHI Export letters and a provider checklist
 - [#943](https://github.com/jwilleke/yourphr/issues/943) — [FEATURE] Lifetime health history: a guided, patient-reported questionnaire
