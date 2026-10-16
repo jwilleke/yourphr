@@ -2561,10 +2561,10 @@
   dependencies:
     tslib "^2.3.0"
 
-"@ng-select/ng-select@^24.1.1":
-  version "24.1.1"
-  resolved "https://registry.yarnpkg.com/@ng-select/ng-select/-/ng-select-24.1.1.tgz#f69dd8d7566f7f0d29280bd07ffa12fbe7b522fa"
-  integrity sha512-wPUupPK5TUiSnf7FNrw2FgqKY7B/BcOp+Dkp5dygbJ5zJhB0MSSdeN2TnIi5y0klelLU4KICBTpOZuH4ZbqQRw==
+"@ng-select/ng-select@^24.2.1":
+  version "24.2.1"
+  resolved "https://registry.yarnpkg.com/@ng-select/ng-select/-/ng-select-24.2.1.tgz#afecd6ab4755c39d348ca7d4e4cdbea28eb4b223"
+  integrity sha512-eMXGIgFQMHuUrR2jwNeUtiwcW+KvjGyPoq5p1iomDwIm0DXvm2rWi2i2E8aXdG6tU24FKIqiGJNXjFQCpS3YBQ==
   dependencies:
     tslib "^2.8.1"
 
