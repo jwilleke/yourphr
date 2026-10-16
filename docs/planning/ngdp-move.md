@@ -90,10 +90,10 @@ Reaching providers at scale is still worth doing, but behind this. See [`../EHR-
 
 1. __Done (2026-10-15):__ the `phr` skeleton runs inside a plain ngdpbase v5.10.0 on localhost, using core's host tools. It has one page and the `whoami` route, and no records.
 2. __Core work phr waits on__, filed with ngdpbase:
-   - __Access control for add-on records__ (from the [ngdpbase#1431](https://github.com/jwilleke/ngdpbase/issues/1431#issuecomment-6193262203) decisions): add-ons ask the PDP through `host`; resource types with attributes and the `owner` rule; list filters; conditions and obligations. Blocks `PhrManager`.
-   - __`openAddonDatabase` as a host tool.__ It isn't among the ten tools, and it blocks `phr.db`.
-   - __A person's access view in core__ (decided 2026-10-16): rendered from the audit log, which needs the owner indexed; read through the PDP; each add-on describing its own resources; Normal and All views.
-   - __Creating a person's PHR vault from an add-on__ (related: [ngdpbase#1559](https://github.com/jwilleke/ngdpbase/issues/1559)). Blocks storing documents.
+   - __Access control for add-on records__ ([ngdpbase#1823](https://github.com/jwilleke/ngdpbase/issues/1823), from the [ngdpbase#1431](https://github.com/jwilleke/ngdpbase/issues/1431#issuecomment-6193262203) decisions): add-ons ask the PDP through `host`; resource types with attributes and the `owner` rule; list filters; conditions and obligations. Blocks `PhrManager`.
+   - __`openAddonDatabase` as a host tool__ ([ngdpbase#1824](https://github.com/jwilleke/ngdpbase/issues/1824)). It isn't among the ten tools, and it blocks `phr.db`.
+   - __A person's access view in core__ ([ngdpbase#1825](https://github.com/jwilleke/ngdpbase/issues/1825), decided 2026-10-16): rendered from the audit log, which needs the owner indexed; read through the PDP; each add-on describing its own resources; Normal and All views.
+   - __Creating a person's PHR vault from an add-on__: [ngdpbase#1559](https://github.com/jwilleke/ngdpbase/issues/1559), add-ons declare their own category and vault in their manifest (open). Accounting has no vault. Blocks storing documents.
 3. __`PhrManager` and `phr.db`:__ port today's FHIR store with a required `owner` column on every table, the one door with its lint, and tests proving A can't read B.
 4. __The first slice: patient downloads, as ngdpbase pages in `phr`__ (no Angular). A "my records folder" source ([#939](https://github.com/jwilleke/yourphr/issues/939)) with importers for the formats the operator actually has: FHIR zips, C-CDA, and Blue Button text and PDF reports. Files go into the person's PHR vault, records into `phr.db`, and import runs as a background job.
 5. __Later: live connections__ (vendor APIs paused, 2026-10-16): the hospital directory, connecting through the SMART relay, sync as a background job, and secrets through Admin → Configuration.
@@ -104,7 +104,7 @@ Reaching providers at scale is still worth doing, but behind this. See [`../EHR-
 
 ## Open — blockers and questions
 
-- __Blocks `PhrManager`:__ the core items in *Plan* step 2. None is filed yet.
+- __Blocks `PhrManager`:__ the core items in *Plan* step 2: [ngdpbase#1823](https://github.com/jwilleke/ngdpbase/issues/1823), [#1824](https://github.com/jwilleke/ngdpbase/issues/1824), [#1825](https://github.com/jwilleke/ngdpbase/issues/1825), [#1559](https://github.com/jwilleke/ngdpbase/issues/1559).
 - __Blocks going live with real records:__ ngdpbase [#1723](https://github.com/jwilleke/ngdpbase/issues/1723), since no database is in ngdpbase's backups yet.
 - __Blocks deploying `phr` beyond a dev machine:__ installing add-ons from npm ([ngdpbase#1810](https://github.com/jwilleke/ngdpbase/issues/1810)). Until then, drop-in from a folder is the only way to load an add-on, and it needs `tsc` run first.
 - __Raised with the operator, undecided:__
