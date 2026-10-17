@@ -2,7 +2,7 @@
   "name": "@yourphr/phr-addon",
   "version": "0.0.1",
   "description": "yourPHR as an ngdpbase add-on: your health records, in your hands",
-  "license": "Apache-2.0",
+  "license": "GPL-3.0-only",
   "private": true,
   "type": "module",
   "main": "index.js",
