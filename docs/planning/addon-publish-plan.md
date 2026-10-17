@@ -1,6 +1,6 @@
 # Publishing jwilleke's add-ons — plan for review
 
-> __Status: draft for the operator's review, 2026-10-17. Nothing is published.__ Agreed by the yourPHR, ngdpbase and accounting sessions. The workflow itself is ngdpbase PR #1864, not merged yet. Once accepted, the decisions move into [`ngdp-move.md`](ngdp-move.md).
+> __Status: approved by the operator, 2026-10-17__ (recorded on [ngdpbase#1863](https://github.com/jwilleke/ngdpbase/issues/1863)). The workflow ships in ngdpbase v5.16.0 (PR #1864): `create:addon --repo` writes it, `create:addon --update-publish` refreshes it. The types package is `@jwilleke/ngdpbase-types`, with a `/testing` export for add-on tests ([ngdpbase#1865](https://github.com/jwilleke/ngdpbase/issues/1865), not built yet). Nothing is published yet.
 
 ## What's decided already
 
@@ -74,6 +74,6 @@ Anything that breaks is cheap to fix at this stage.
 
 ## Open for the operator
 
-1. __Accept this plan?__
+1. ~~__Accept this plan?__~~ Approved 2026-10-17.
 2. ~~__Accounting's types__~~ Decided 2026-10-17: ngdpbase publishes a types package, and both phr and accounting use it instead of their own copies (see [`ngdp-move.md`](ngdp-move.md)).
 3. __When to do the bootstrap__ for `@yourphr/phr-addon` and run the dry run.
