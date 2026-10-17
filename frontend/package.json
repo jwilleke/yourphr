@@ -1,6 +1,7 @@
 {
   "name": "fasten",
   "version": "0.0.0",
+  "license": "GPL-3.0-only",
   "packageManager": "yarn@1.22.22",
   "engines": {
     "node": "^20.19.0 || ^22.12.0 || >=24.0.0",
