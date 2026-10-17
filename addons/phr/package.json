@@ -3,11 +3,23 @@
   "version": "0.0.1",
   "description": "yourPHR as an ngdpbase add-on: your health records, in your hands",
   "license": "GPL-3.0-only",
-  "private": true,
   "type": "module",
   "main": "index.js",
+  "files": [
+    "*.js",
+    "routes/**/*.js",
+    "plugins/**/*.js",
+    "config/",
+    "pages/",
+    "README.md"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jwilleke/yourphr.git",
+    "directory": "addons/phr"
+  },
   "engines": {
-    "node": ">=24"
+    "node": ">=24.15.0"
   },
   "ngdpbase": {
     "slug": "phr",
