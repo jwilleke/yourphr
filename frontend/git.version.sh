@@ -5,7 +5,9 @@
 # `v1.1.3-469-g3fffeaa1` between releases. `--always` falls back to a short SHA if there are no
 # tags. Requires tags in the checkout — CI must use fetch-depth: 0 (or fetch-tags) so they exist.
 # (Previously CI emitted "main#<sha>", a git ref rather than a version.)
-VERSION_INFO=`git describe --tags --always 2>/dev/null`
+# --match: only yourPHR's own vX.Y.Z tags count. Add-on release tags such as phr-v0.0.1
+# (published to npm from this repo) must never become the app's version.
+VERSION_INFO=`git describe --tags --match 'v[0-9]*' --always 2>/dev/null`
 if [[ -z "${VERSION_INFO}" ]]; then
     VERSION_INFO="dev"
 fi
