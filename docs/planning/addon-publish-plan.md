@@ -75,5 +75,5 @@ Anything that breaks is cheap to fix at this stage.
 ## Open for the operator
 
 1. __Accept this plan?__
-2. __Accounting's types:__ its code needs ngdpbase's type definitions to compile in CI. Either ngdpbase publishes a small types package, which is the ngdpbase session's recommendation, or accounting declares the few shapes it uses locally, as phr does.
+2. ~~__Accounting's types__~~ Decided 2026-10-17: ngdpbase publishes a types package, and both phr and accounting use it instead of their own copies (see [`ngdp-move.md`](ngdp-move.md)).
 3. __When to do the bootstrap__ for `@yourphr/phr-addon` and run the dry run.
