@@ -1,0 +1,45 @@
+# gitleaks configuration — the default secret rules, plus two for internal hosts.
+#
+# Seeded by mjs-project-template's agent kit (#96) and then owned by this repo:
+# the kit never overwrites it, so add allowlists here freely.
+#
+# mjs-project-template#83: the kit boilerplate linked a wiki on the operator's
+# private network by its real hostname and port, and every synced repo copied
+# it. No default rule looks for hostnames, so nothing caught it. These two rules
+# cover the shapes that actually leaked, WITHOUT naming any host: a rule listing
+# the hostname would publish it again in a public file.
+# https://github.com/jwilleke/mjs-project-template/issues/83
+#
+# Run by the pre-commit hook (staged changes) and by
+# .github/workflows/secret-scan.yml (the whole tree).
+# A false positive belongs in an allowlist below, with a comment saying why.
+
+title = "gitleaks"
+
+[extend]
+useDefault = true
+
+# A URL with an explicit port is almost always a service on somebody's own
+# network — public sites sit on 80/443 and do not print a port. The leaked link
+# had this shape.
+[[rules]]
+id = "internal-host-url"
+description = "URL with an explicit port: likely an internal service address"
+regex = '''(?i)\b(?:https?|wss?)://[a-z0-9][a-z0-9.-]*:[0-9]{2,5}\b'''
+keywords = ["://"]
+
+# Loopback and reserved example hosts name nothing real.
+[[rules.allowlists]]
+regexTarget = "match"
+regexes = [
+  '''(?i)://(?:localhost|127\.0\.0\.1|0\.0\.0\.0):''',
+  '''(?i)://(?:[a-z0-9-]+\.)*example\.(?:com|org|net):''',
+]
+
+# A file-share URL names a host on a private network by construction. This
+# repo's history carried one (a NAS path) before any scan existed.
+[[rules]]
+id = "file-share-url"
+description = "SMB/NFS/AFP/CIFS URL: names a host on a private network"
+regex = '''(?i)\b(?:smb|nfs|afp|cifs)://[^\s'"<>)]+'''
+keywords = ["smb://", "nfs://", "afp://", "cifs://"]
