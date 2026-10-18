@@ -22,6 +22,7 @@
       }
     }
   },
+  "_comment_step_up": "No phr permission is marked \"step-up\": true (operator decision 2026-10-18): add-ons keep step-up off for now, because a form loses its fields across the fresh sign-in. Core's own step-up window is 60 minutes.",
   "ngdpbase.permissions.definitions": {
     "phr-read": {
       "description": "Read one's own health records in the phr add-on",
