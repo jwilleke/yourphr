@@ -8,6 +8,9 @@
  * bound to. A caller can't name another owner per call.
  */
 
+import type { DatabaseManager } from '@jwilleke/ngdpbase-types';
+import { PHR_LEDGER_TABLE, PHR_MIGRATIONS } from './migrations.js';
+
 /** The driver calls the store uses (better-sqlite3, as core's DatabaseManager hands it). */
 export interface Db {
   prepare(sql: string): Statement;
@@ -52,6 +55,22 @@ export interface OwnerHandle {
   history(resourceType: string, id: string): StoredRecord[];
   put(resource: Record<string, unknown>, sourceId: string): StoredRecord;
   remove(resourceType: string, id: string): boolean;
+}
+
+/**
+ * Open phr.db through core: the declared database (ngdpbase.addons.phr.database,
+ * encrypt "required"), its migrations run under phr's own ledger. Core refuses
+ * an undeclared database, and one that needs a key the site doesn't have; the
+ * error goes up to register(), and phr being site-critical puts the site in
+ * maintenance rather than running without its records.
+ */
+export function openPhrStore(databases: DatabaseManager | undefined): PhrRecordStore {
+  if (!databases) throw new StoreError(500, "ngdpbase's DatabaseManager is not available");
+  if (!databases.isEnabled()) {
+    throw new StoreError(500, "the site's database is off: set ngdpbase.database.provider to \"sqlite\" and NGDPBASE_DATABASE_KEY, then restart");
+  }
+  const db = databases.openAddonDatabase<Db>('phr', { migrations: PHR_MIGRATIONS, ledgerTable: PHR_LEDGER_TABLE });
+  return new PhrRecordStore(db);
 }
 
 export class PhrRecordStore {

@@ -19,7 +19,7 @@
  * makes the subject the person represented, so "owner = subject" lets Jim
  * act for Mom within her grant, and the audit names Jim as the actor.
  */
-import type { AddonHost, Decision, PermissionSubject } from '@jwilleke/ngdpbase-types';
+import type { AddonHost, AuditEvent, Decision, PermissionSubject } from '@jwilleke/ngdpbase-types';
 import { PhrRecordStore, type OwnerHandle, type StoredRecord } from './PhrRecordStore.js';
 
 /** The caller, as core's ApiContext gives it (only what the door uses). */
@@ -34,7 +34,7 @@ export interface PhrCaller {
 export type PhrAction = 'phr-read' | 'phr-write' | 'phr-delete';
 
 export type Decide = (subject: PermissionSubject | null, request: { action: string }) => Promise<Decision>;
-export type RecordAudit = (event: Record<string, unknown>) => Promise<unknown>;
+export type RecordAudit = (event: AuditEvent) => Promise<unknown>;
 
 export interface PhrManagerDeps {
   store: PhrRecordStore;
@@ -90,7 +90,7 @@ export class PhrManager {
       ? this.deps.host.actorOf(caller.subject)
       : { user: 'unknown', ipAddress: caller.ipAddress, metadata: { actorMissing: true } };
     const { metadata, ...fields } = who as { user: string; actor?: string; ipAddress?: string; metadata?: Record<string, unknown> };
-    await this.deps.recordAudit({
+    const event: AuditEvent = {
       eventType: this.deps.host.addonAuditEventName(action),
       action,
       result,
@@ -100,8 +100,10 @@ export class PhrManager {
       ...(reason ? { reason } : {}),
       ...fields,
       // Never record content: the owner, the kind and the id only.
+      ipAddress: fields.ipAddress,
       metadata: { ...(metadata ?? {}), owner: target.owner }
-    });
+    };
+    await this.deps.recordAudit(event);
   }
 
   /** One record. Undefined when it doesn't exist (or was removed). */

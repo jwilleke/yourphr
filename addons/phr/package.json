@@ -25,7 +25,7 @@
   "ngdpbase": {
     "slug": "phr",
     "type": "additive",
-    "minVersion": "5.18.0"
+    "minVersion": "5.20.0"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
@@ -33,7 +33,7 @@
     "typecheck": "tsc -p tsconfig.test.json"
   },
   "devDependencies": {
-    "@jwilleke/ngdpbase-types": "5.18.0",
+    "@jwilleke/ngdpbase-types": "5.20.0",
     "@types/node": "^24.19.1",
     "typescript": "^6.0.3",
     "vitest": "5.0.5"

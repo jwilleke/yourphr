@@ -21,7 +21,9 @@
  *
  * The exported `name` MUST equal `ngdpbase.slug` in package.json (#927).
  */
-import type { AddonHost, WikiEngine } from '@jwilleke/ngdpbase-types';
+import type { AddonHost, PolicyDecisionPoint, WikiEngine } from '@jwilleke/ngdpbase-types';
+import { openPhrStore } from './managers/PhrRecordStore.js';
+import { PhrManager } from './managers/PhrManager.js';
 import { mountApi } from './routes/api.js';
 import { createPhrWelcomePlugin } from './plugins/PhrWelcomePlugin.js';
 import { profileSectionHtml, saveProfileSection } from './profile.js';
@@ -35,6 +37,12 @@ interface AddonsManagerLike {
 
 let unavailable: string | null = 'not registered yet';
 let engineRef: WikiEngine | null = null;
+let records: PhrManager | null = null;
+
+/** The one door to health records, for phr's routes, plugins and jobs. Null until phr has started. */
+export function phrRecords(): PhrManager | null {
+  return records;
+}
 const users = (): UserManagerLike | null | undefined => engineRef?.getManager<UserManagerLike>('UserManager');
 
 const PhrAddon = {
@@ -45,19 +53,24 @@ const PhrAddon = {
   dependencies: [] as string[],
 
   async register(engine: WikiEngine, _config: Record<string, unknown> = {}, host?: AddonHost): Promise<void> {
-    if (!host) {
-      // Core before v5.10.0 passes no host; package.json's minVersion should stop that load first.
-      unavailable = 'ngdpbase passed no host tools (needs ngdpbase 5.10.0 or later)';
-      return;
-    }
+    // phr is site-critical (config/default-config.json): anything that stops it
+    // starting is thrown, so core puts the site in maintenance and tells admins
+    // why, instead of a yourPHR running without its records.
+    if (!host) throw new Error('ngdpbase passed no host tools (phr needs ngdpbase 5.20.0 or later)');
     const tools = host;
     engineRef = engine;
+    if (!engine.app) throw new Error('the engine has no web app to mount on');
 
-    if (!engine.app) {
-      unavailable = 'the engine has no web app to mount on';
-      tools.logger.warn(`[phr] Not started: ${unavailable}`);
-      return;
-    }
+    const store = openPhrStore(engine.getManager('DatabaseManager'));
+    const pdp = engine.getManager<PolicyDecisionPoint>('PolicyDecisionPoint');
+    if (!pdp) throw new Error("ngdpbase's PolicyDecisionPoint is not available");
+    const auditSink = engine.getManager<Parameters<AddonHost['recordAuditEvent']>[0]>('AuditManager');
+    records = new PhrManager({
+      store,
+      decide: (subject, request) => pdp.decide(subject, request),
+      recordAudit: (event) => tools.recordAuditEvent(auditSink, event),
+      host: tools
+    });
 
     mountApi(engine.app, engine, tools, users);
     await engine.getManager<PluginManagerLike>('PluginManager')?.registerPlugin('PhrWelcome', createPhrWelcomePlugin(users));

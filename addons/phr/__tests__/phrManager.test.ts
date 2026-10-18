@@ -38,7 +38,8 @@ describe('PhrManager', () => {
   let make: (decide?: typeof allowAll) => PhrManager;
 
   beforeEach(() => {
-    db = openAddonTestDatabase<Db & { close(): void }>('phr', { migrations: PHR_MIGRATIONS, ledgerTable: PHR_LEDGER_TABLE });
+    // declaredBy: the test database must match phr's own declaration, as a site would require.
+    db = openAddonTestDatabase<Db & { close(): void }>('phr', { migrations: PHR_MIGRATIONS, ledgerTable: PHR_LEDGER_TABLE }, { slug: 'phr', defaults });
     audit = [];
     const host = buildAddonHost('phr', defaults);
     // A durable sink, as core's AuditManager is: phr's events are on-failure "refuse", so core
@@ -47,7 +48,7 @@ describe('PhrManager', () => {
     make = (decide = allowAll) => new PhrManager({
       store: new PhrRecordStore(db),
       decide,
-      recordAudit: (event) => host.recordAuditEvent(sink, event as never),
+      recordAudit: (event) => host.recordAuditEvent(sink, event),
       host
     });
   });
@@ -141,7 +142,7 @@ describe('PhrManager', () => {
   it('refuses the action when its audit record can\'t be written', async () => {
     const host = buildAddonHost('phr', defaults);
     const broken = { logAuditEvent: async () => { throw new Error('disk full'); }, flushAuditQueue: async () => {} };
-    const phr = new PhrManager({ store: new PhrRecordStore(db), decide: allowAll, recordAudit: (e) => host.recordAuditEvent(broken, e as never), host });
+    const phr = new PhrManager({ store: new PhrRecordStore(db), decide: allowAll, recordAudit: (e) => host.recordAuditEvent(broken, e), host });
     await expect(phr.write(caller('alice'), observation('o1', 'x'), 'folder')).rejects.toThrow();
     expect(db.prepare('SELECT COUNT(*) AS n FROM phr_resources').get()).toEqual({ n: 0 });
   });

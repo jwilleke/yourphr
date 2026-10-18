@@ -60,6 +60,16 @@ describe('the PHR vault declaration', () => {
   });
 });
 
+describe('phr is site-critical and its database must be encrypted', () => {
+  it('declares site-critical as a real boolean', () => {
+    expect(defaults['ngdpbase.addons.phr.site-critical']).toBe(true);
+  });
+
+  it('declares phr.db with encryption required', () => {
+    expect(defaults['ngdpbase.addons.phr.database']).toEqual({ owner: 'phr', ledgerTable: 'phr_migrations', encrypt: 'required' });
+  });
+});
+
 describe('core accepts phr\'s declarations', () => {
   it('builds phr\'s host from its own defaults', () => {
     const host = buildAddonHost('phr', defaults);

@@ -1,6 +1,14 @@
 {
   "_comment_phr": "yourPHR's phr add-on (jwilleke/yourphr#920). Merged into the site's configuration only while ngdpbase.addons.phr.enabled is true; the site's app-custom-config.json overrides any entry.",
   "ngdpbase.addons.phr.enabled": false,
+  "_comment_phr_site_critical": "yourPHR can't work without phr: any failure to load puts the whole site in maintenance mode, and admins get the reason (operator decision 2026-10-18, ngdpbase#1883). A site may turn this off in its own configuration; it then owns that risk.",
+  "ngdpbase.addons.phr.site-critical": true,
+  "_comment_phr_database": "phr.db: health records under the site's database key (D2). encrypt \"required\": core never opens it without NGDPBASE_DATABASE_KEY (D3), and with site-critical the site goes into maintenance instead (ngdpbase#1860, #1883).",
+  "ngdpbase.addons.phr.database": {
+    "owner": "phr",
+    "ledgerTable": "phr_migrations",
+    "encrypt": "required"
+  },
   "_comment_phr_vault": "One PHR vault per person (operator, 2026-10-15; ngdpbase#1559). owner, encrypt, defaultPrivate and shareMaxDays are phr's own and a site can't override them. encrypt is fixed when each person's vault is created. Booleans must be booleans: core refuses to load phr otherwise.",
   "ngdpbase.system-category": {
     "phr": {
