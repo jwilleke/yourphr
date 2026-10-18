@@ -71,6 +71,12 @@ Adding a newly-found quirk later = drop a fixture + its expected output. That is
 - __Human-authored expected outputs__ — the assertions are our spec, not derived from the input.
 - __Pair vendor with the US-Core-IG baseline__ — so we can tell a *vendor quirk* from *spec*.
 
+## Credentials in tests
+
+- __Test credentials are generated at run time, never written as literals__ (for example `` `pw-${randomUUID()}` `` from `node:crypto`). A password, token, key or client secret in a test is a throwaway made by the test itself.
+- __No real secret is ever committed, tests included.__ Real values live in the instance's `.env` or the operator's secret store, never in the repo.
+- __Why it matters:__ GitGuardian doesn't scan test code (`.gitguardian.yaml`: `**/__tests__/**`, `e2e/**`, `**/*.spec.ts`, `scripts/*-tests.ts`), so it no longer raises alerts for test credentials. It also wouldn't catch a real secret pasted into a test by mistake. This rule is the only guard there.
+
 ## Issue map
 
 - [#354](https://github.com/jwilleke/yourphr/issues/354) — integrate __fhir-test-cases__ (one source: spec validity + malformed corpus).

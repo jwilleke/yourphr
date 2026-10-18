@@ -1,0 +1,11 @@
+# GitGuardian reads this from the default branch. Test code is not scanned for
+# secrets, because test credentials are throwaway values generated at run time
+# (see docs/development/testing-and-data.md, "Credentials in tests"). That rule
+# is what makes this safe: no real secret is ever committed, tests included.
+version: 2
+secret:
+  ignored_paths:
+    - "**/__tests__/**"
+    - "e2e/**"
+    - "**/*.spec.ts"
+    - "scripts/*-tests.ts"
