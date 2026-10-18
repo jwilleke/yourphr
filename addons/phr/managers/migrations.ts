@@ -1,0 +1,80 @@
+/**
+ * phr.db's schema, as dated migrations for core's DatabaseManager
+ * (openAddonDatabase, ngdpbase#1860). Ported from yourPHR's FHIR store
+ * (src/SqliteFhirRepository.ts) with one change everywhere: every table is
+ * keyed by `owner` first.
+ *
+ * - `owner` is the person the record is about, by username, and is required:
+ *   NOT NULL with no default, and never ''. yourPHR's old store let
+ *   `user_id` default to '' (yourphr#812), which left rows nobody owned.
+ * - Every primary key and every index starts with `owner`, so one person's
+ *   reads never scan another person's rows (yourphr#537, #908, #915).
+ * - Tables are prefixed `phr_`, as core requires of an add-on database.
+ */
+import type { Migration } from '@jwilleke/ngdpbase-types';
+
+export const PHR_LEDGER_TABLE = 'phr_migrations';
+
+export const PHR_MIGRATIONS: Migration[] = [
+  {
+    id: '20261018000000',
+    description: 'phr records, history, search index and text index, keyed by owner',
+    up(db) {
+      db.exec(`
+        CREATE TABLE phr_resources (
+          owner         TEXT NOT NULL CHECK (owner <> ''),
+          resource_type TEXT NOT NULL,
+          id            TEXT NOT NULL,
+          -- Which source a record came from. Not part of the key: FHIR identity is
+          -- (resourceType, id). Recorded so a second source writing the same id is
+          -- refused rather than silently overwriting the first.
+          source_id     TEXT NOT NULL DEFAULT '',
+          version_id    TEXT NOT NULL,
+          last_updated  TEXT NOT NULL,
+          deleted       INTEGER NOT NULL DEFAULT 0,
+          content       TEXT NOT NULL,
+          PRIMARY KEY (owner, resource_type, id)
+        );
+        CREATE INDEX phr_resources_owner_type_updated ON phr_resources (owner, resource_type, deleted, last_updated);
+        CREATE INDEX phr_resources_owner_source ON phr_resources (owner, source_id, deleted, resource_type);
+        CREATE INDEX phr_resources_owner_updated ON phr_resources (owner, deleted, last_updated);
+
+        CREATE TABLE phr_resource_history (
+          owner         TEXT NOT NULL CHECK (owner <> ''),
+          resource_type TEXT NOT NULL,
+          id            TEXT NOT NULL,
+          version_id    TEXT NOT NULL,
+          last_updated  TEXT NOT NULL,
+          content       TEXT NOT NULL,
+          PRIMARY KEY (owner, resource_type, id, version_id)
+        );
+
+        CREATE TABLE phr_search_index (
+          owner         TEXT NOT NULL CHECK (owner <> ''),
+          resource_type TEXT NOT NULL,
+          resource_id   TEXT NOT NULL,
+          code          TEXT NOT NULL,
+          value         TEXT NOT NULL,
+          PRIMARY KEY (owner, resource_type, resource_id, code, value)
+        );
+        CREATE INDEX phr_search_owner_lookup ON phr_search_index (owner, resource_type, code, value);
+        CREATE INDEX phr_search_owner_value ON phr_search_index (owner, value);
+
+        -- Words in a record's human-readable text, never its raw JSON (yourphr#599).
+        CREATE VIRTUAL TABLE phr_search_text USING fts5(
+          owner UNINDEXED, resource_type UNINDEXED, resource_id UNINDEXED, body,
+          tokenize = 'porter unicode61'
+        );
+        -- Which text row holds which record's text, so a record's text is found by
+        -- rowid, never by scanning the FTS table (yourphr#905).
+        CREATE TABLE phr_text_rowids (
+          owner         TEXT NOT NULL CHECK (owner <> ''),
+          resource_type TEXT NOT NULL,
+          resource_id   TEXT NOT NULL,
+          text_rowid    INTEGER NOT NULL,
+          PRIMARY KEY (owner, resource_type, resource_id)
+        );
+      `);
+    }
+  }
+];

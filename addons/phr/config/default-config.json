@@ -25,10 +25,37 @@
   "_comment_step_up": "No phr permission is marked \"step-up\": true (operator decision 2026-10-18): add-ons keep step-up off for now, because a form loses its fields across the fresh sign-in. Core's own step-up window is 60 minutes.",
   "ngdpbase.permissions.definitions": {
     "phr-read": {
-      "description": "Read one's own health records in the phr add-on",
+      "description": "Read one's own health records in the phr add-on (or a represented person's, under a proxy grant)",
       "label": "See my health records",
       "icon": "notes-medical",
-      "color": "#0d6efd"
+      "color": "#0d6efd",
+      "audit": {
+        "enabled": true,
+        "on-failure": "refuse",
+        "description": "Health records read: who, whose (owner), which kind and id; never content"
+      }
+    },
+    "phr-write": {
+      "description": "Add or update one's own health records in the phr add-on",
+      "label": "Add to my health records",
+      "icon": "notes-medical",
+      "color": "#0d6efd",
+      "audit": {
+        "enabled": true,
+        "on-failure": "refuse",
+        "description": "Health record added or updated: who, whose (owner), which kind and id; never content"
+      }
+    },
+    "phr-delete": {
+      "description": "Remove one's own health records in the phr add-on",
+      "label": "Remove from my health records",
+      "icon": "notes-medical",
+      "color": "#dc3545",
+      "audit": {
+        "enabled": true,
+        "on-failure": "refuse",
+        "description": "Health record removed: who, whose (owner), which kind and id"
+      }
     }
   },
   "ngdpbase.access.policies": [
@@ -67,7 +94,9 @@
         }
       ],
       "actions": [
-        "phr-read"
+        "phr-read",
+        "phr-write",
+        "phr-delete"
       ]
     }
   ]

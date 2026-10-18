@@ -9,6 +9,7 @@
     "*.js",
     "routes/**/*.js",
     "plugins/**/*.js",
+    "managers/**/*.js",
     "config/",
     "pages/",
     "README.md"
@@ -28,7 +29,8 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "test": "vitest run"
+    "test": "tsc -p tsconfig.test.json && vitest run",
+    "typecheck": "tsc -p tsconfig.test.json"
   },
   "devDependencies": {
     "@jwilleke/ngdpbase-types": "5.18.0",
