@@ -12,7 +12,8 @@
  * No records, no PHI, no database yet.
  *
  * ngdpbase hands the add-on its tools as the third argument of register()
- * (ngdpbase#1813, v5.10.0). The add-on never imports ngdpbase.
+ * (ngdpbase#1813, v5.10.0). The add-on never imports ngdpbase's code; its
+ * types come from @jwilleke/ngdpbase-types, a development dependency.
  *
  * Configuration keys:
  *   ngdpbase.addons.phr.enabled — true/false (defaults to false)
@@ -20,23 +21,20 @@
  *
  * The exported `name` MUST equal `ngdpbase.slug` in package.json (#927).
  */
-import type { AddonHost } from './host.js';
+import type { AddonHost, WikiEngine } from '@jwilleke/ngdpbase-types';
 import { mountApi } from './routes/api.js';
 import { createPhrWelcomePlugin } from './plugins/PhrWelcomePlugin.js';
 import { profileSectionHtml, saveProfileSection } from './profile.js';
 import type { UserLike, UserManagerLike } from './preferences.js';
 
-interface Engine {
-  getManager<T = unknown>(name: string): T | null | undefined;
-  app?: { get(path: string, handler: (req: unknown, res: never) => void): void };
-}
+// PluginManager and AddonsManager aren't in core's public types yet (asked of ngdpbase); only the calls phr makes.
 interface PluginManagerLike { registerPlugin(name: string, plugin: unknown): Promise<void> }
 interface AddonsManagerLike {
   registerDashboardCard?(card: { addonName: string; title: string; icon: string; adminUrl: string }): void;
 }
 
 let unavailable: string | null = 'not registered yet';
-let engineRef: Engine | null = null;
+let engineRef: WikiEngine | null = null;
 const users = (): UserManagerLike | null | undefined => engineRef?.getManager<UserManagerLike>('UserManager');
 
 const PhrAddon = {
@@ -46,7 +44,7 @@ const PhrAddon = {
   author: 'jwilleke',
   dependencies: [] as string[],
 
-  async register(engine: Engine, _config: Record<string, unknown> = {}, host?: AddonHost): Promise<void> {
+  async register(engine: WikiEngine, _config: Record<string, unknown> = {}, host?: AddonHost): Promise<void> {
     if (!host) {
       // Core before v5.10.0 passes no host; package.json's minVersion should stop that load first.
       unavailable = 'ngdpbase passed no host tools (needs ngdpbase 5.10.0 or later)';
@@ -61,7 +59,7 @@ const PhrAddon = {
       return;
     }
 
-    mountApi(engine.app as never, engine, tools, users);
+    mountApi(engine.app, engine, tools, users);
     await engine.getManager<PluginManagerLike>('PluginManager')?.registerPlugin('PhrWelcome', createPhrWelcomePlugin(users));
     engine.getManager<AddonsManagerLike>('AddonsManager')?.registerDashboardCard?.({
       addonName: 'phr',

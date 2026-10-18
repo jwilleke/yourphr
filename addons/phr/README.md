@@ -19,7 +19,7 @@ Name it in the site's configuration. ngdpbase installs it pinned to the exact ve
 }
 ```
 
-Needs ngdpbase 5.13.3 or later and Node 24.15 or later.
+Needs ngdpbase 5.18.0 or later and Node 24.15 or later.
 
 ## Source
 

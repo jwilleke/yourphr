@@ -8,6 +8,7 @@ export const PHR_ENABLED = 'phr.enabled';
 /** Hidden marker the profile section emits, so a save can tell "unchecked" from "not shown". */
 export const PHR_RENDERED = 'phr._rendered';
 
+// UserManager isn't in core's public types yet (asked of ngdpbase); only the calls phr makes.
 export interface UserLike { preferences?: Record<string, unknown> }
 export interface UserManagerLike {
   getUser(username: string): Promise<UserLike | null | undefined>;
