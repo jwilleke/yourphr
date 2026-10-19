@@ -84,6 +84,37 @@ fi
 git commit -q -m "chore(kit): sync to $version"
 git push -q -f -u origin "$branch"
 
+# #92: GITHUB_TOKEN may not START runs by opening a PR, but it may dispatch
+# them — workflow_dispatch is the documented exception. A run dispatched on the
+# sync branch reports on its head SHA, which is the PR head, so the PR gets real
+# checks. Only check workflows: those triggered by pull_request AND accepting
+# workflow_dispatch. A deploy or release workflow has no pull_request trigger
+# and is never touched. A workflow without workflow_dispatch (a consumer not yet
+# re-installed) is skipped quietly. Needs `actions: write` in kit-sync.yml; an
+# older kit-sync.yml without it gets a warning, not a failure.
+dispatchable=""
+for wf in .github/workflows/*.yml .github/workflows/*.yaml; do
+  [ -f "$wf" ] || continue
+  [ "$(basename "$wf")" = "kit-sync.yml" ] && continue
+  # Comments stripped first: a deploy workflow that merely mentions
+  # pull_request in a comment must never be dispatched.
+  triggers="$(sed 's/#.*//' "$wf")"
+  grep -Eq '(^|[^[:alnum:]_-])pull_request([^[:alnum:]_-]|$)' <<<"$triggers" || continue
+  grep -Eq '(^|[^[:alnum:]_-])workflow_dispatch([^[:alnum:]_-]|$)' <<<"$triggers" || continue
+  dispatchable="$dispatchable $(basename "$wf")"
+done
+
+dispatch_checks() {
+  local wf
+  for wf in $dispatchable; do
+    if gh workflow run "$wf" --ref "$branch" >/dev/null 2>&1; then
+      echo "Dispatched $wf on $branch."
+    else
+      echo "::warning::Could not dispatch $wf on $branch (kit-sync.yml may lack actions: write)."
+    fi
+  done
+}
+
 # Only an OPEN PR counts. `gh pr view "$branch"` also finds a closed or merged PR
 # for the same head, and the branch name is `chore/kit-sync-<installed version>`,
 # so a later sync at the same version (a new ref on master, e.g. v1.13.0-6-g…)
@@ -91,6 +122,7 @@ git push -q -f -u origin "$branch"
 # stopped — its branch pushed with no PR (jwilleke/ngdpbase#1308).
 if [ -n "$(gh pr list --head "$branch" --state open --json number --jq '.[].number')" ]; then
   echo "PR already open for $branch."
+  dispatch_checks
   exit 0
 fi
 
@@ -121,6 +153,13 @@ upstream in the template — the next sync would overwrite a local fix.
 
 Changes under \`.github/workflows/\` are not included: \`GITHUB_TOKEN\` may not push them."
 
+if [ -n "$dispatchable" ]; then
+  body="$body
+
+The sync dispatches these check workflows on this branch itself, so their checks do report here:
+$(for wf in $dispatchable; do printf -- '\n- `%s`' "$wf"; done)"
+fi
+
 if [ -n "$required" ]; then
   body="$body
 
@@ -147,6 +186,7 @@ fi
 # one lands in Needs triage in every repo on every release.
 if gh pr create --base "$BASE" --head "$branch" \
      --label P2 --title "chore(kit): sync to $version" --body "$body" 2>kit-pr-error.txt; then
+  dispatch_checks
   exit 0
 fi
 

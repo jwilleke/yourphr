@@ -1,4 +1,4 @@
-<!-- KIT:START v1.13.0-8-g7a6fe0a — managed by mjs-project-template; edit below the KIT:END marker -->
+<!-- KIT:START v1.14.0-0-g282c9b7 — managed by mjs-project-template; edit below the KIT:END marker -->
 ## Agent Kit Protocols
 
 This section is __managed by the kit__ (`install-kit.sh`) — it is identical across repos. Put repo-specific context __below the `KIT:END` marker__; do not edit here.
@@ -36,7 +36,7 @@ Priority labels are mutually exclusive and mean:
 
 Then:
 
-- Security comes first. Scanner alerts (Dependabot / code-scanning / GitGuardian) become issues labeled `security` + a graded priority: critical/high → `P0`, medium → `P1`, low → `P2`.
+- Security comes first. Scanner alerts (Dependabot / code-scanning / GitGuardian / the ecosystem audit, e.g. `npm audit`) become issues labeled `security` + a graded priority: critical/high → `P0`, medium → `P1`, low → `P2`.
 - `TODO.md` = a `▶ Resume here` block (maintained by `/wrap`) on top, then priority bands that `/pstatus` regenerates from the labels. Do not hand-edit the bands.
 - The two halves have one writer each and a deliberate handover: `/wrap` writes the resume pointer at session end, `/context` reads it at session open, and the first `/pstatus` of the session __removes__ it — by then you have already resumed, so it has served its purpose. A bands-only `TODO.md` mid-session is expected, not a loss.
 - Kit files are overwritten wholesale on every sync — `.claude/commands/*.md`, `utility/sync-labels.sh`, `.markdownlint-cli2.jsonc`. Never add a rule to one of them: it is destroyed at the next sync (the installer now warns, but the rule still goes). A __generic__ rule belongs upstream in [mjs-project-template](https://github.com/jwilleke/mjs-project-template) so every repo gets it. A __repo-specific__ note about a command — a package manager the kit does not name, a scanner only this repo has — goes in `.claude/commands/<command>.local.md`, which the kit never writes, reads, or deletes. Read that file, if present, as part of the command; commit it, so it travels with the repo.

@@ -42,7 +42,7 @@ recommends what to do next. It does not start work.
 
 ### Step 2: Bridge scanner alerts â†’ issues (idempotent)
 
-For each open Dependabot / code-scanning / GitGuardian alert:
+For each open Dependabot / code-scanning / GitGuardian alert or ecosystem-audit finding:
 
 - Look for an existing tracking issue (search issue bodies for the marker
   `scanner-alert:<source>:<id>`).
@@ -77,8 +77,7 @@ __`TODO.md` carries no history.__ It is a snapshot of what is open *right now* â
 happened this session, no dated changelog, and no section for work in other repos. If an item is
 closed or merged, it simply stops appearing; that disappearance is the only record `TODO.md` keeps.
 
-Session history belongs in `docs/project_log.md` (or `private/project_log.md` where the repo keeps
-it there), written by `/session-commit` and `/wrap`. Never in `TODO.md`. Two files recording the
+Session history belongs in `private/project_log.md` (gitignored), written by `/session-commit` and `/wrap`. Never in `TODO.md`. Two files recording the
 same events drift apart, and the drift is silent: the ranked backlog starts reading as a status
 report and the operator has to work out which half is current.
 
@@ -105,7 +104,7 @@ placement signals goes in the band of the __first__ that applies, highest first:
    that carries it alongside any signal above goes where that signal says.
 
 __An item is an epic if it is labeled `epic` or its title starts `[EPIC]`__ (case-insensitive).
-The title is enough on its own: the kit's `epic.md` issue template sets the prefix but not the label,
+The title is enough on its own: `epic.md` as earlier kits seeded it set the prefix but not the label,
 and older repos have epics filed before the label existed. Do not wait for a relabel to place them.
 
 __An epic goes in the Epics band, whatever its priority label.__ An epic is a container for
