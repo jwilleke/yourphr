@@ -11,6 +11,17 @@
 #
 # Change this file only for triggers, permissions or the checkout steps.
 #
+# KNOWN LIMIT — a base branch with REQUIRED STATUS CHECKS can never merge this
+# PR on its own. GITHUB_TOKEN does not start workflow runs for events it creates,
+# so the required checks never run and the PR sits MERGEABLE but BLOCKED, with no
+# failure to notice: the checks that do appear (CodeQL, GitGuardian) trigger
+# independently and go green. utility/kit-sync.sh detects this and says so in the
+# PR body. To unblock, make the checks fire under a user token — close and reopen
+# the PR if those workflows list `reopened`, otherwise push any commit to the
+# branch. No admin bypass needed. utility/kit-sync.sh now dispatches every check
+# workflow that accepts workflow_dispatch (#92), which clears this wherever the
+# required checks come from such workflows.
+#
 # No cron. A schedule fires while nobody is looking, and GitHub disables
 # scheduled workflows after 60 days of repository inactivity — so it stops firing
 # in exactly the dormant repos that drift furthest. This runs on push, which is
@@ -33,10 +44,12 @@ on:
     branches: [master, main]
   workflow_dispatch:
 
+# actions: write lets the sync dispatch the PR's check workflows (#92).
 permissions:
   contents: write
   pull-requests: write
   issues: write
+  actions: write
 
 concurrency:
   group: kit-sync
@@ -47,7 +60,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out this repo
-        uses: actions/checkout@v7
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -55,7 +68,7 @@ jobs:
       # C++, Go, Python or Shell repo pays nothing to run the checker. Full
       # history because the kit's version comes from `git describe --tags`.
       - name: Check out the kit
-        uses: actions/checkout@v7
+        uses: actions/checkout@v4
         with:
           repository: jwilleke/mjs-project-template
           path: .kit-sync
