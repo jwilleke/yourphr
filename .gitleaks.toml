@@ -36,6 +36,25 @@ regexes = [
   '''(?i)://(?:[a-z0-9-]+\.)*example\.(?:com|org|net):''',
 ]
 
+# yourPHR's own false positives (2026-10-19, first scan): named one by one, never
+# as a class, so an address on the operator's network is still caught.
+# - local.fhir.org: HL7's public FHIR test server, quoted in the FHIR docs.
+# - Kubernetes in-cluster service names (<service>.<namespace>.svc[.cluster.local]):
+#   resolvable only inside a cluster.
+# - docker-compose service names of yourPHR's own containers.
+# - 172.17.0.2 (Docker's default bridge) and 10.43.0.17 (a made-up address in
+#   CdaSidecarConverterProvider.test.ts, which checks errors don't leak it).
+# - ehr.example: a reserved example name (.example).
+[[rules.allowlists]]
+regexTarget = "match"
+regexes = [
+  '''(?i)://local\.fhir\.org:''',
+  '''(?i)://[a-z0-9-]+\.[a-z0-9-]+\.svc(?:\.cluster\.local)?:''',
+  '''(?i)://(?:yourphr-cda-converter|cda-converter|converter-a|converter-b)(?:\.internal)?:''',
+  '''://(?:172\.17\.0\.2|10\.43\.0\.17):''',
+  '''(?i)://[a-z0-9-]+\.example:''',
+]
+
 # A file-share URL names a host on a private network by construction. This
 # repo's history carried one (a NAS path) before any scan existed.
 [[rules]]
