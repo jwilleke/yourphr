@@ -10,6 +10,7 @@
     "routes/**/*.js",
     "plugins/**/*.js",
     "managers/**/*.js",
+    "importers/**/*.js",
     "config/",
     "pages/",
     "README.md"
@@ -29,7 +30,7 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "test": "tsc -p tsconfig.test.json && vitest run",
+    "test": "tsc -p tsconfig.json && tsc -p tsconfig.test.json && vitest run",
     "typecheck": "tsc -p tsconfig.test.json"
   },
   "devDependencies": {
@@ -37,5 +38,11 @@
     "@types/node": "^24.19.1",
     "typescript": "^6.0.3",
     "vitest": "5.0.5"
-  }
+  },
+  "dependencies": {
+    "fflate": "0.8.3"
+  },
+  "bundleDependencies": [
+    "fflate"
+  ]
 }

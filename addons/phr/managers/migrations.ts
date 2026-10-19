@@ -76,5 +76,27 @@ export const PHR_MIGRATIONS: Migration[] = [
         );
       `);
     }
+  },
+  {
+    id: '20261019000000',
+    description: 'files imported from a person\'s records folder, by fingerprint',
+    up(db) {
+      db.exec(`
+        -- One row per file a person imported from a source (e.g. their records
+        -- folder). Re-importing skips a file whose fingerprint hasn't changed, and
+        -- a file missing from a later import is flagged, never deleted (yourphr#939).
+        CREATE TABLE phr_source_files (
+          owner        TEXT NOT NULL CHECK (owner <> ''),
+          source_id    TEXT NOT NULL,
+          path         TEXT NOT NULL,
+          sha256       TEXT NOT NULL,
+          status       TEXT NOT NULL CHECK (status IN ('imported', 'unsupported', 'unreadable', 'missing')),
+          records      INTEGER NOT NULL DEFAULT 0,
+          first_seen   TEXT NOT NULL,
+          last_seen    TEXT NOT NULL,
+          PRIMARY KEY (owner, source_id, path)
+        );
+      `);
+    }
   }
 ];

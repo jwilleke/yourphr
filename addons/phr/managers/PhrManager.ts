@@ -20,7 +20,15 @@
  * act for Mom within her grant, and the audit names Jim as the actor.
  */
 import type { AddonHost, AuditEvent, Decision, PermissionSubject } from '@jwilleke/ngdpbase-types';
-import { PhrRecordStore, type OwnerHandle, type StoredRecord } from './PhrRecordStore.js';
+import { PhrRecordStore, StoreError, type OwnerHandle, type StoredRecord } from './PhrRecordStore.js';
+import type { FolderFile } from '../importers/recordsFolder.js';
+
+/** What an import did, in counts and per file. Never record content. */
+export interface ImportReport {
+  files: { imported: number; unchanged: number; unsupported: number; unreadable: number; missing: number };
+  records: { created: number; updated: number; unchanged: number; skipped: number; conflicts: number };
+  perFile: { path: string; status: 'imported' | 'unchanged' | 'unsupported' | 'unreadable'; records: number; reason?: string }[];
+}
 
 /** The caller, as core's ApiContext gives it (only what the door uses). */
 export interface PhrCaller {
@@ -129,6 +137,57 @@ export class PhrManager {
     const id = typeof resource.id === 'string' ? resource.id : undefined;
     const target = { owner: this.ownerFor(caller, owner), resourceType, id };
     return this.access(caller, 'phr-write', target, (h) => h.put(resource, sourceId));
+  }
+
+  /**
+   * Import a records folder (yourphr#939): one door call and one audit event
+   * for the whole import, not one per record. Idempotent: a file whose
+   * fingerprint hasn't changed is skipped, the same record content makes no
+   * new version, and a file missing from this import is flagged, never deleted.
+   */
+  async importFolder(caller: PhrCaller, files: readonly FolderFile[], sourceId = 'folder', owner?: string): Promise<ImportReport> {
+    const target = { owner: this.ownerFor(caller, owner), resourceType: 'records-folder-import' };
+    return this.access(caller, 'phr-write', target, (h) => h.inTransaction(() => {
+      const report: ImportReport = {
+        files: { imported: 0, unchanged: 0, unsupported: 0, unreadable: 0, missing: 0 },
+        records: { created: 0, updated: 0, unchanged: 0, skipped: 0, conflicts: 0 },
+        perFile: []
+      };
+      const before = new Map(h.sourceFiles(sourceId).map((f) => [f.path, f]));
+      for (const file of files) {
+        const prior = before.get(file.path);
+        if (prior && prior.sha256 === file.sha256 && prior.status !== 'missing') {
+          h.noteSourceFile(sourceId, { path: file.path, sha256: file.sha256, status: prior.status, records: prior.records });
+          report.files.unchanged++;
+          report.perFile.push({ path: file.path, status: 'unchanged', records: prior.records });
+          continue;
+        }
+        if (file.kind !== 'fhir') {
+          h.noteSourceFile(sourceId, { path: file.path, sha256: file.sha256, status: file.kind, records: 0 });
+          report.files[file.kind]++;
+          report.perFile.push({ path: file.path, status: file.kind, records: 0, reason: file.reason });
+          continue;
+        }
+        let written = 0;
+        report.records.skipped += file.skippedEntries;
+        for (const resource of file.resources) {
+          if (typeof resource.id !== 'string' || resource.id === '') { report.records.skipped++; continue; }
+          try {
+            const r = h.put(resource, sourceId);
+            report.records[r.outcome]++;
+            written++;
+          } catch (err) {
+            if (err instanceof StoreError && err.status === 409) { report.records.conflicts++; continue; }
+            throw err;
+          }
+        }
+        h.noteSourceFile(sourceId, { path: file.path, sha256: file.sha256, status: 'imported', records: written });
+        report.files.imported++;
+        report.perFile.push({ path: file.path, status: 'imported', records: written });
+      }
+      report.files.missing = h.markMissing(sourceId, files.map((f) => f.path));
+      return report;
+    }));
   }
 
   async remove(caller: PhrCaller, resourceType: string, id: string, owner?: string): Promise<boolean> {
