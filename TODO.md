@@ -55,6 +55,7 @@ Open work in [jwilleke/yourphr](https://github.com/jwilleke/yourphr), ranked. Ge
 ## 🟡 P2
 
 - [#896](https://github.com/jwilleke/yourphr/issues/896) — [security] katex — 1 open advisory in the root lockfile (low)
+- [#947](https://github.com/jwilleke/yourphr/pull/947) — chore(kit): sync to v1.14.0 *(PR · ready)* — no linked issue
 - [#946](https://github.com/jwilleke/yourphr/issues/946) — [BUG] The CMS Blue Button production-access runbook still describes the Go stack
 - [#945](https://github.com/jwilleke/yourphr/issues/945) — [FEATURE] Share the consolidated record: FHIR export, IPS, SMART Health Links, printed summary
 - [#944](https://github.com/jwilleke/yourphr/issues/944) — [FEATURE] Records request kit: right-of-access / EHI Export letters and a provider checklist
@@ -136,9 +137,5 @@ Open work in [jwilleke/yourphr](https://github.com/jwilleke/yourphr), ranked. Ge
 
 ## ❓ Needs triage
 
-- [#931](https://github.com/jwilleke/yourphr/pull/931) — chore(deps): bump @angular/cli from 22.2.0 to 22.2.2 in /frontend *(PR · ready)* — no linked issue
-- [#930](https://github.com/jwilleke/yourphr/pull/930) — chore(deps): bump @ng-select/ng-select from 24.1.1 to 24.2.1 in /frontend *(PR · ready)* — no linked issue
-- [#929](https://github.com/jwilleke/yourphr/pull/929) — chore(deps): bump chromatic from 18.2.0 to 18.12.0 in /frontend *(PR · ready)* — no linked issue
-- [#928](https://github.com/jwilleke/yourphr/pull/928) — chore(deps): bump humanize-duration from 3.28.0 to 3.35.0 in /frontend *(PR · ready)* — no linked issue
-- [#927](https://github.com/jwilleke/yourphr/pull/927) — chore(deps): bump zone.js from 0.15.1 to 0.16.3 in /frontend *(PR · ready)* — no linked issue
+- [#949](https://github.com/jwilleke/yourphr/pull/949) — chore(kit): sync to v1.14.0-0-g282c9b7 *(PR · ready)* — no linked issue
 - [#926](https://github.com/jwilleke/yourphr/issues/926) — Register yourPHR as a patient-access SMART on FHIR app with Oracle Health (Cerner Millennium)
