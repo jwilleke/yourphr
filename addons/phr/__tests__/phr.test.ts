@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { buildAddonHost, formatters } from '@jwilleke/ngdpbase-types/testing';
-import { healthRecordsOn, PHR_ENABLED, PHR_RECOVERY_SAVED, PHR_RENDERED, RECOVERY_REMINDER, type UserLike, type UserManagerLike } from '../preferences.js';
+import { healthRecordsOn, PHR_ENABLED, PHR_RENDERED, type UserLike, type UserManagerLike } from '../preferences.js';
 import { profileSectionHtml, saveProfileSection } from '../profile.js';
 import { createPhrWelcomePlugin } from '../plugins/PhrWelcomePlugin.js';
 
@@ -39,43 +39,9 @@ describe('the "Health records" switch', () => {
   it('turns on and off, and keeps the person\'s other preferences', async () => {
     const users = fakeUsers({ alice: { preferences: { 'preferences.timezone': 'America/New_York' } } });
     await saveProfileSection(users, { username: 'alice' }, { [PHR_RENDERED]: '1', [PHR_ENABLED]: 'on' });
-    expect(users.saved.alice.preferences).toEqual({ 'preferences.timezone': 'America/New_York', [PHR_ENABLED]: true, [PHR_RECOVERY_SAVED]: false });
+    expect(users.saved.alice.preferences).toEqual({ 'preferences.timezone': 'America/New_York', [PHR_ENABLED]: true });
     await saveProfileSection(users, { username: 'alice' }, { [PHR_RENDERED]: '1' });
     expect(users.saved.alice.preferences?.[PHR_ENABLED]).toBe(false);
-  });
-});
-
-describe('the recovery-words reminder', () => {
-  const page = (userContext: unknown) => ({ pageName: 'My Health Records', linkGraph: {}, formatters, userContext });
-  const alice = { username: 'alice', isAuthenticated: true };
-
-  it('shows on the records page until the person confirms', async () => {
-    const before = await createPhrWelcomePlugin(() => fakeUsers({ alice: { preferences: { [PHR_ENABLED]: true } } })).execute!(page(alice), {});
-    expect(before).toContain('Save your recovery words');
-    expect(before).toContain('href="/stores/phr"');
-    const after = await createPhrWelcomePlugin(() => fakeUsers({ alice: { preferences: { [PHR_ENABLED]: true, [PHR_RECOVERY_SAVED]: true } } })).execute!(page(alice), {});
-    expect(after).not.toContain('Save your recovery words');
-    expect(after).toContain("You're signed in as");
-  });
-
-  it('is accurate: files in the vault are lost without the words; records are not claimed lost', () => {
-    expect(RECOVERY_REMINDER).toContain('health files');
-    expect(RECOVERY_REMINDER).toContain('12 recovery words');
-    expect(RECOVERY_REMINDER).not.toMatch(/records? (are|is) (lost|gone)/i);
-  });
-
-  it('confirming saves for that person only, and unticking brings the reminder back', async () => {
-    const users = fakeUsers({ alice: { preferences: { [PHR_ENABLED]: true } }, bob: { preferences: { [PHR_ENABLED]: true } } });
-    await saveProfileSection(users, { username: 'alice' }, { [PHR_RENDERED]: '1', [PHR_ENABLED]: 'on', [PHR_RECOVERY_SAVED]: 'on' });
-    expect(users.saved.alice.preferences?.[PHR_RECOVERY_SAVED]).toBe(true);
-    expect(users.saved.bob.preferences?.[PHR_RECOVERY_SAVED]).toBeUndefined();
-    await saveProfileSection(users, { username: 'alice' }, { [PHR_RENDERED]: '1', [PHR_ENABLED]: 'on' });
-    expect(users.saved.alice.preferences?.[PHR_RECOVERY_SAVED]).toBe(false);
-  });
-
-  it('the profile section carries the confirmation box, checked only when confirmed', () => {
-    expect(profileSectionHtml({})).toContain('id="phr-recovery-saved"');
-    expect(profileSectionHtml({ preferences: { [PHR_RECOVERY_SAVED]: true } })).toMatch(/id="phr-recovery-saved"[^>]*checked/);
   });
 });
 
