@@ -4,16 +4,17 @@
  * and pick out the FHIR records in it. Pure: no database, no network, no
  * logging. PhrManager.importFolder writes what this returns, through the door.
  *
- * Read now: FHIR JSON (one resource, or a Bundle of them) and FHIR NDJSON
- * (one resource per line). Everything else (C-CDA/CCR XML, PDFs, images,
- * DICOM) is listed as not yet supported, by file, so nothing is silently
- * dropped. Later slices add those.
+ * Read now: FHIR JSON (one resource, or a Bundle of them), FHIR NDJSON (one
+ * resource per line) and C-CDA XML documents (./ccda.ts). Everything else
+ * (CCR XML, PDFs, images, DICOM) is listed as not yet supported, by file, so
+ * nothing is silently dropped. Later slices add those.
  *
  * Every file carries a sha256 fingerprint of its bytes, so re-importing the
  * same folder skips files that haven't changed.
  */
 import { createHash } from 'node:crypto';
 import { unzipSync } from 'fflate';
+import { readCcda, xmlKind } from './ccda.js';
 
 /** Guards against a zip that expands to far more than it should (a zip bomb). */
 export const LIMITS = {
@@ -23,7 +24,7 @@ export const LIMITS = {
 } as const;
 
 export type FolderFile =
-  | { path: string; sha256: string; kind: 'fhir'; resources: Record<string, unknown>[]; skippedEntries: number }
+  | { path: string; sha256: string; kind: 'fhir'; resources: Record<string, unknown>[]; skippedEntries: number; note?: string }
   | { path: string; sha256: string; kind: 'unsupported'; reason: string }
   | { path: string; sha256: string; kind: 'unreadable'; reason: string };
 
@@ -58,8 +59,9 @@ const isNoise = (path: string): boolean =>
 export function readFolderFile(path: string, bytes: Uint8Array): FolderFile {
   const sha256 = fingerprint(bytes);
   const e = ext(path);
+  if (e === 'xml') return readXmlFile(path, sha256, bytes);
   if (e !== 'json' && e !== 'ndjson') {
-    const what = ({ xml: 'C-CDA/CCR or other XML', pdf: 'PDF', dcm: 'DICOM', txt: 'text (e.g. Blue Button)', jpg: 'image', jpeg: 'image', png: 'image', tif: 'image', tiff: 'image' } as Record<string, string>)[e] ?? (e ? `.${e}` : 'file without an extension');
+    const what = ({ pdf: 'PDF', dcm: 'DICOM', txt: 'text (e.g. Blue Button)', jpg: 'image', jpeg: 'image', png: 'image', tif: 'image', tiff: 'image' } as Record<string, string>)[e] ?? (e ? `.${e}` : 'file without an extension');
     return { path, sha256, kind: 'unsupported', reason: `${what}: not read yet` };
   }
   const text = new TextDecoder('utf-8', { fatal: false }).decode(bytes);
@@ -82,6 +84,22 @@ export function readFolderFile(path: string, bytes: Uint8Array): FolderFile {
   } catch {
     // Never echo the file's content: it may be health data.
     return { path, sha256, kind: 'unreadable', reason: `not valid ${e.toUpperCase()}` };
+  }
+}
+
+/** An XML file: a C-CDA document is read; anything else is named for what it is. */
+function readXmlFile(path: string, sha256: string, bytes: Uint8Array): FolderFile {
+  const text = new TextDecoder('utf-8', { fatal: false }).decode(bytes);
+  switch (xmlKind(text)) {
+    case 'ccda': {
+      const got = readCcda(text);
+      if (!got.ok) return { path, sha256, kind: 'unreadable', reason: got.reason };
+      return { path, sha256, kind: 'fhir', resources: got.resources, skippedEntries: 0, ...(got.partial ? { note: got.partial } : {}) };
+    }
+    case 'ccr': return { path, sha256, kind: 'unsupported', reason: 'CCR: not read yet' };
+    case 'xdm-metadata': return { path, sha256, kind: 'unsupported', reason: 'the download\'s packing list (XDM metadata), not a record' };
+    case 'html': return { path, sha256, kind: 'unsupported', reason: 'a web page saved as .xml (a printable copy), not a record document' };
+    default: return { path, sha256, kind: 'unsupported', reason: 'XML, but not a C-CDA document' };
   }
 }
 

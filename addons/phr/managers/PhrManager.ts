@@ -30,7 +30,7 @@ import { kindName, recordDate, recordName, recordValue } from '../display.js';
 export interface ImportReport {
   files: { imported: number; unchanged: number; unsupported: number; unreadable: number; missing: number };
   records: { created: number; updated: number; unchanged: number; skipped: number; conflicts: number };
-  perFile: { path: string; status: 'imported' | 'unchanged' | 'unsupported' | 'unreadable'; records: number; reason?: string }[];
+  perFile: { path: string; status: 'imported' | 'unchanged' | 'unsupported' | 'unreadable'; records: number; reason?: string; note?: string }[];
 }
 
 /** The caller, as core's ApiContext gives it (only what the door uses). */
@@ -262,7 +262,7 @@ export class PhrManager {
         }
         h.noteSourceFile(sourceId, { path: file.path, sha256: file.sha256, status: 'imported', records: written });
         report.files.imported++;
-        report.perFile.push({ path: file.path, status: 'imported', records: written });
+        report.perFile.push({ path: file.path, status: 'imported', records: written, ...(file.note ? { note: file.note } : {}) });
       }
       report.files.missing = h.markMissing(sourceId, files.map((f) => f.path));
       return report;

@@ -42,12 +42,14 @@
     "vitest": "5.0.5"
   },
   "dependencies": {
+    "@medplum/ccda": "5.1.29",
     "@medplum/core": "5.1.29",
     "@medplum/definitions": "5.1.29",
     "fflate": "0.8.3",
     "fhirpath": "5.1.1"
   },
   "bundleDependencies": [
+    "@medplum/ccda",
     "@medplum/core",
     "@medplum/definitions",
     "fflate",

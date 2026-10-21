@@ -32,7 +32,7 @@ describe('reading a records-folder zip', () => {
     const files = readFolderZip(zipOf({
       'Export/fhir/everything.json': JSON.stringify(bundle(patient, glucose(112))),
       'Export/fhir/Observation.ndjson': `${JSON.stringify(glucose(98))}\n\n`,
-      'Export/ccda/visit.xml': '<ClinicalDocument/>',
+      'Export/ccr/visit.xml': '<ContinuityOfCareRecord/>',
       'Export/scans/letter.pdf': '%PDF-1.4',
       'Export/broken.json': '{ not json',
       'Export/.DS_Store': 'x',
@@ -40,7 +40,7 @@ describe('reading a records-folder zip', () => {
     }));
     expect(files.map((f) => [f.path, f.kind])).toEqual([
       ['Export/broken.json', 'unreadable'],
-      ['Export/ccda/visit.xml', 'unsupported'],
+      ['Export/ccr/visit.xml', 'unsupported'],
       ['Export/fhir/Observation.ndjson', 'fhir'],
       ['Export/fhir/everything.json', 'fhir'],
       ['Export/scans/letter.pdf', 'unsupported']
@@ -83,7 +83,7 @@ describe('importing a records folder through PhrManager', () => {
 
   const folder = (value: number, extra: Record<string, string> = {}) => readFolderZip(zipOf({
     'fhir/everything.json': JSON.stringify(bundle(patient, glucose(value))),
-    'ccda/visit.xml': '<ClinicalDocument/>',
+    'ccr/visit.xml': '<ContinuityOfCareRecord/>',
     ...extra
   }));
 
