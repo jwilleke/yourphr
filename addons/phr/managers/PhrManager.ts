@@ -22,6 +22,7 @@
 import type { AddonHost, AuditEvent, Decision, PermissionSubject } from '@jwilleke/ngdpbase-types';
 import { PhrRecordStore, StoreError, type OwnerHandle, type StoredRecord } from './PhrRecordStore.js';
 import type { FolderFile } from '../importers/recordsFolder.js';
+import type { SearchFilter } from './fhirIndex.js';
 
 /** What an import did, in counts and per file. Never record content. */
 export interface ImportReport {
@@ -129,6 +130,18 @@ export class PhrManager {
   async history(caller: PhrCaller, resourceType: string, id: string, owner?: string): Promise<StoredRecord[]> {
     const target = { owner: this.ownerFor(caller, owner), resourceType, id };
     return this.access(caller, 'phr-read', target, (h) => h.history(resourceType, id));
+  }
+
+  /** One kind of a person's records matching every filter (FHIR search parameters), newest first. */
+  async search(caller: PhrCaller, resourceType: string, filters: readonly SearchFilter[], page?: { count?: number; offset?: number }, owner?: string): Promise<{ total: number; records: StoredRecord[] }> {
+    const target = { owner: this.ownerFor(caller, owner), resourceType };
+    return this.access(caller, 'phr-read', target, (h) => h.search(resourceType, filters, page));
+  }
+
+  /** A person's records whose words match, any kind. */
+  async findText(caller: PhrCaller, query: string, limit?: number, owner?: string): Promise<StoredRecord[]> {
+    const target = { owner: this.ownerFor(caller, owner), resourceType: 'text-search' };
+    return this.access(caller, 'phr-read', target, (h) => h.findText(query, limit));
   }
 
   /** Add or update a record for the owner, from a named source. */

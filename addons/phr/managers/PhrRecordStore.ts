@@ -10,6 +10,7 @@
 
 import type { DatabaseManager } from '@jwilleke/ngdpbase-types';
 import { PHR_LEDGER_TABLE, PHR_MIGRATIONS } from './migrations.js';
+import { ftsQuery, indexEntries, textFor, type SearchFilter } from './fhirIndex.js';
 
 /** The driver calls the store uses (better-sqlite3, as core's DatabaseManager hands it). */
 export interface Db {
@@ -19,7 +20,7 @@ export interface Db {
 interface Statement {
   get(...params: unknown[]): unknown;
   all(...params: unknown[]): unknown[];
-  run(...params: unknown[]): { changes: number };
+  run(...params: unknown[]): { changes: number; lastInsertRowid: number | bigint };
 }
 
 /** A FHIR resource as phr stores it: the JSON plus where it came from. */
@@ -86,6 +87,36 @@ export interface OwnerHandle {
   markMissing(sourceId: string, seenPaths: readonly string[]): number;
   /** Run several store calls as one transaction. */
   inTransaction<T>(fn: () => T): T;
+  /** One kind of this owner's records matching every filter, newest first. */
+  search(resourceType: string, filters: readonly SearchFilter[], page?: { count?: number; offset?: number }): { total: number; records: StoredRecord[] };
+  /** This owner's records whose words match, any kind, best matches first. */
+  findText(query: string, limit?: number): StoredRecord[];
+}
+
+/** One filter as an EXISTS against the generic index, with the owner carried through. */
+function filterSql(filter: SearchFilter): { sql: string; values: unknown[] } {
+  const exists = (clause: string, values: unknown[]) => ({
+    sql: `EXISTS (SELECT 1 FROM phr_search_index si WHERE si.owner = r.owner AND si.resource_type = r.resource_type AND si.resource_id = r.id AND si.code = ? AND ${clause})`,
+    values: [filter.code, ...values]
+  });
+  switch (filter.operator) {
+    case 'eq': return exists('si.value = ?', [filter.value]);
+    case 'contains': return exists('si.value LIKE ?', [`%${filter.value.toLowerCase()}%`]);
+    case 'sw': return exists('si.value LIKE ?', [`${filter.value.toLowerCase()}%`]);
+    case 'gt': return exists('si.value > ?', [filter.value]);
+    case 'ge': return exists('si.value >= ?', [filter.value]);
+    case 'lt': return exists('si.value < ?', [filter.value]);
+    case 'le': return exists('si.value <= ?', [filter.value]);
+    case 'missing': {
+      const missing = filter.value === 'true';
+      return {
+        sql: `${missing ? 'NOT ' : ''}EXISTS (SELECT 1 FROM phr_search_index si WHERE si.owner = r.owner AND si.resource_type = r.resource_type AND si.resource_id = r.id AND si.code = ?)`,
+        values: [filter.code]
+      };
+    }
+    default:
+      throw new StoreError(400, `search operator "${String((filter as { operator: unknown }).operator)}" is not supported`);
+  }
 }
 
 /**
@@ -112,6 +143,28 @@ export class PhrRecordStore {
     if (typeof owner !== 'string' || owner === '') throw new StoreError(500, 'a record handle needs an owner');
     const db = this.db;
     const now = this.now;
+    /** Drop a record's index rows and its text row (found by key, never by scanning the FTS table). */
+    const forgetIndex = (resourceType: string, id: string): void => {
+      db.prepare('DELETE FROM phr_search_index WHERE owner = ? AND resource_type = ? AND resource_id = ?').run(owner, resourceType, id);
+      const key = db.prepare('SELECT text_rowid FROM phr_text_rowids WHERE owner = ? AND resource_type = ? AND resource_id = ?')
+        .get(owner, resourceType, id) as { text_rowid: number } | undefined;
+      if (key) {
+        db.prepare('DELETE FROM phr_search_text WHERE rowid = ?').run(key.text_rowid);
+        db.prepare('DELETE FROM phr_text_rowids WHERE owner = ? AND resource_type = ? AND resource_id = ?').run(owner, resourceType, id);
+      }
+    };
+    /** Rebuild one record's index from its content. */
+    const reindex = (resourceType: string, id: string, resource: Record<string, unknown>): void => {
+      forgetIndex(resourceType, id);
+      const insert = db.prepare('INSERT OR IGNORE INTO phr_search_index (owner, resource_type, resource_id, code, value) VALUES (?, ?, ?, ?, ?)');
+      for (const e of indexEntries(resource)) insert.run(owner, resourceType, id, e.code, e.value);
+      const body = textFor(resource);
+      if (body !== '') {
+        const row = db.prepare('INSERT INTO phr_search_text (owner, resource_type, resource_id, body) VALUES (?, ?, ?, ?)').run(owner, resourceType, id, body);
+        db.prepare('INSERT OR REPLACE INTO phr_text_rowids (owner, resource_type, resource_id, text_rowid) VALUES (?, ?, ?, ?)')
+          .run(owner, resourceType, id, Number(row.lastInsertRowid));
+      }
+    };
     return {
       owner,
       read(resourceType, id) {
@@ -159,13 +212,17 @@ export class PhrRecordStore {
             .run(owner, resourceType, id, sourceId, versionId, lastUpdated, content);
           db.prepare('INSERT INTO phr_resource_history (owner, resource_type, id, version_id, last_updated, content) VALUES (?, ?, ?, ?, ?, ?)')
             .run(owner, resourceType, id, versionId, lastUpdated, content);
+          reindex(resourceType, id, stored);
           return { resourceType, id, sourceId, versionId, lastUpdated, deleted: false, resource: stored, outcome: existing ? 'updated' as const : 'created' as const };
         })();
       },
       remove(resourceType, id) {
-        const r = db.prepare('UPDATE phr_resources SET deleted = 1, last_updated = ? WHERE owner = ? AND resource_type = ? AND id = ? AND deleted = 0')
-          .run(now().toISOString(), owner, resourceType, id);
-        return r.changes > 0;
+        return db.transaction(() => {
+          const r = db.prepare('UPDATE phr_resources SET deleted = 1, last_updated = ? WHERE owner = ? AND resource_type = ? AND id = ? AND deleted = 0')
+            .run(now().toISOString(), owner, resourceType, id);
+          if (r.changes > 0) forgetIndex(resourceType, id);
+          return r.changes > 0;
+        })();
       },
       sourceFiles(sourceId) {
         return (db.prepare('SELECT path, sha256, status, records, first_seen, last_seen FROM phr_source_files WHERE owner = ? AND source_id = ? ORDER BY path')
@@ -190,6 +247,32 @@ export class PhrRecordStore {
       },
       inTransaction(fn) {
         return db.transaction(fn)();
+      },
+      search(resourceType, filters, page = {}) {
+        // EVERY query carries the owner, bound by this handle.
+        const where = ['r.owner = ?', 'r.resource_type = ?', 'r.deleted = 0'];
+        const params: unknown[] = [owner, resourceType];
+        for (const f of filters) { const { sql, values } = filterSql(f); where.push(sql); params.push(...values); }
+        const clause = where.join(' AND ');
+        const total = (db.prepare(`SELECT COUNT(*) AS n FROM phr_resources r WHERE ${clause}`).get(...params) as { n: number }).n;
+        const count = Math.min(Math.max(page.count ?? 20, 1), 1000);
+        const offset = Math.max(page.offset ?? 0, 0);
+        const rows = db.prepare(
+          `SELECT r.resource_type, r.id, r.source_id, r.version_id, r.last_updated, r.deleted, r.content FROM phr_resources r WHERE ${clause} ORDER BY r.last_updated DESC, r.id LIMIT ? OFFSET ?`
+        ).all(...params, count, offset) as Row[];
+        return { total, records: rows.map(toRecord) };
+      },
+      findText(query, limit = 50) {
+        const match = ftsQuery(query);
+        if (match === '') return [];
+        const rows = db.prepare(
+          `SELECT r.resource_type, r.id, r.source_id, r.version_id, r.last_updated, r.deleted, r.content
+             FROM phr_search_text t
+             JOIN phr_resources r ON r.owner = t.owner AND r.resource_type = t.resource_type AND r.id = t.resource_id
+            WHERE phr_search_text MATCH ? AND t.owner = ? AND r.deleted = 0
+            ORDER BY bm25(phr_search_text) LIMIT ?`
+        ).all(match, owner, Math.min(Math.max(limit, 1), 500)) as Row[];
+        return rows.map(toRecord);
       }
     };
   }
