@@ -95,7 +95,7 @@ const PhrAddon = {
       host: tools
     });
 
-    mountApi(engine.app, engine, tools, users);
+    mountApi(engine.app, engine, tools, users, phrRecords);
     await maybeMountDevSeed(engine, _config, tools);
     const plugins = engine.getManager<PluginManagerLike>('PluginManager');
     await plugins?.registerPlugin('PhrWelcome', createPhrWelcomePlugin(users));

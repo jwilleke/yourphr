@@ -10,6 +10,7 @@ import type { PhrCaller, PhrManager } from '../managers/PhrManager.js';
 import type { StoredRecord } from '../managers/PhrRecordStore.js';
 import { healthRecordsOn, type UserManagerLike } from '../preferences.js';
 import { kindName, recordDate, recordName, recordValue } from '../display.js';
+import { noteText } from '../managers/notes.js';
 
 interface Viewer { username?: string | null; isAuthenticated?: boolean; ipAddress?: string }
 
@@ -36,7 +37,11 @@ export function createPhrRecordsPlugin(records: () => PhrManager | null, users: 
       const q = typeof context.query?.q === 'string' ? context.query.q.trim().slice(0, 200) : '';
 
       try {
-        const { counts, recent } = await phr.overview(caller, 10);
+        const { counts: allCounts, recent: allRecent } = await phr.overview(caller, 20);
+        // A person's own notes are shown under the record they're about, not as records of their own.
+        const notes = await phr.notes(caller);
+        const counts = allCounts.filter((c) => c.resourceType !== 'Communication');
+        const recent = allRecent.filter((r) => r.resourceType !== 'Communication').slice(0, 10);
         const total = counts.reduce((n, c) => n + c.count, 0);
         const parts: string[] = [];
         if (total === 0) {
@@ -54,10 +59,11 @@ export function createPhrRecordsPlugin(records: () => PhrManager | null, users: 
           const found = await phr.findText(caller, q, 25);
           parts.push(found.length === 0
             ? `<p class="phr-records-none">Nothing in your records matches “${esc(q)}”.</p>`
-            : `<h2 class="h5">Matching “${esc(q)}”</h2>${list(found, esc)}`);
+            : `<h2 class="h5">Matching “${esc(q)}”</h2>${list(found.filter((r) => r.resourceType !== 'Communication'), esc, notes)}`);
         } else if (total > 0) {
-          parts.push(`<h2 class="h5">Newest records</h2>${list(recent, esc)}`);
+          parts.push(`<h2 class="h5">Newest records</h2>${list(recent, esc, notes)}`);
         }
+        parts.push('<p class="small text-muted phr-records-notes-hint">Notes you add about a record stay private to you, with the record. The Comments tab at the bottom of this page is shared with everyone who can see the page, so don\'t put health details there.</p>');
         return `<div class="phr-records">${parts.join('\n')}</div>`;
       } catch (err) {
         if (err instanceof NotAllowed) return '<p class="text-muted">You can\'t see these health records.</p>';
@@ -68,12 +74,15 @@ export function createPhrRecordsPlugin(records: () => PhrManager | null, users: 
   };
 }
 
-function list(rows: readonly StoredRecord[], esc: (s: string) => string): string {
+function list(rows: readonly StoredRecord[], esc: (s: string) => string, notes: Map<string, StoredRecord[]> = new Map()): string {
   const items = rows.map((r) => {
     const name = recordName(r.resource) ?? 'Name not stated';
     const date = recordDate(r.resource) ?? 'date not stated';
     const value = recordValue(r.resource);
-    return `<li><strong>${esc(name)}</strong>${value ? ` — ${esc(value)}` : ''} <span class="text-muted">(${esc(kindName(r.resourceType, 1))}, ${esc(date)})</span></li>`;
+    const mine = (notes.get(`${r.resourceType}/${r.id}`) ?? [])
+      .map((n) => `<li class="phr-note"><span class="badge bg-info text-dark">Your note</span> ${esc(String(n.resource.sent ?? '').slice(0, 10))}: ${esc(noteText(n.resource) ?? '')}</li>`)
+      .join('');
+    return `<li><strong>${esc(name)}</strong>${value ? ` — ${esc(value)}` : ''} <span class="text-muted">(${esc(kindName(r.resourceType, 1))}, ${esc(date)})</span>${mine ? `<ul class="phr-notes">${mine}</ul>` : ''}</li>`;
   }).join('');
   return `<ul class="phr-records-list">${items}</ul>`;
 }

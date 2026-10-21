@@ -23,6 +23,7 @@ import type { AddonHost, AuditEvent, Decision, PermissionSubject } from '@jwille
 import { PhrRecordStore, StoreError, type OwnerHandle, type StoredRecord } from './PhrRecordStore.js';
 import type { FolderFile } from '../importers/recordsFolder.js';
 import type { SearchFilter } from './fhirIndex.js';
+import { NOTE_MAX_CHARS, NOTE_SOURCE, buildNote, isPatientNote, noteAbout, type NoteTarget } from './notes.js';
 
 /** What an import did, in counts and per file. Never record content. */
 export interface ImportReport {
@@ -148,6 +149,39 @@ export class PhrManager {
   async overview(caller: PhrCaller, recentLimit = 10, owner?: string): Promise<{ counts: { resourceType: string; count: number }[]; recent: StoredRecord[] }> {
     const target = { owner: this.ownerFor(caller, owner), resourceType: 'overview' };
     return this.access(caller, 'phr-read', target, (h) => ({ counts: h.countsByType(), recent: h.recent(recentLimit) }));
+  }
+
+  /**
+   * A person's note about one of their records, stored as its own record
+   * (a patient-entered Communication). Refused if the record isn't theirs or
+   * doesn't exist; the note's text is never audited.
+   */
+  async addNote(caller: PhrCaller, about: NoteTarget, text: string, owner?: string): Promise<StoredRecord> {
+    const words = text.trim();
+    if (words === '') throw new StoreError(400, 'a note needs some words');
+    if (words.length > NOTE_MAX_CHARS) throw new StoreError(400, `a note is at most ${NOTE_MAX_CHARS} characters`);
+    const target = { owner: this.ownerFor(caller, owner), resourceType: 'Communication' };
+    const viaProxy = (caller.subject as { viaProxy?: { actor?: string } } | null)?.viaProxy?.actor;
+    return this.access(caller, 'phr-write', target, (h) => {
+      if (!h.read(about.resourceType, about.id)) throw new StoreError(404, 'that record was not found');
+      const author = viaProxy ? { username: viaProxy, actingFor: h.owner } : { username: h.owner };
+      return h.put(buildNote(about, words, author), NOTE_SOURCE);
+    });
+  }
+
+  /** A person's notes, grouped by the record each is about ("Type/id"), newest first. */
+  async notes(caller: PhrCaller, owner?: string): Promise<Map<string, StoredRecord[]>> {
+    const target = { owner: this.ownerFor(caller, owner), resourceType: 'Communication' };
+    return this.access(caller, 'phr-read', target, (h) => {
+      const byRecord = new Map<string, StoredRecord[]>();
+      for (const n of h.list('Communication', 1000)) {
+        if (!isPatientNote(n.resource)) continue;
+        const about = noteAbout(n.resource);
+        if (!about) continue;
+        byRecord.set(about, [...(byRecord.get(about) ?? []), n]);
+      }
+      return byRecord;
+    });
   }
 
   /** Add or update a record for the owner, from a named source. */
