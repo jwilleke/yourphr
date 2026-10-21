@@ -63,7 +63,6 @@ export function createPhrRecordsPlugin(records: () => PhrManager | null, users: 
         } else if (total > 0) {
           parts.push(`<h2 class="h5">Newest records</h2>${list(recent, esc, notes)}`);
         }
-        parts.push('<p class="small text-muted phr-records-notes-hint">Notes you add about a record stay private to you, with the record. The Comments tab at the bottom of this page is shared with everyone who can see the page, so don\'t put health details there.</p>');
         return `<div class="phr-records">${parts.join('\n')}</div>`;
       } catch (err) {
         if (err instanceof NotAllowed) return '<p class="text-muted">You can\'t see these health records.</p>';

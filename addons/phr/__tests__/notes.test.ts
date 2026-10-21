@@ -72,6 +72,7 @@ describe('a person\'s notes about their records', () => {
     expect(html).toContain('&lt;b&gt;ask&lt;/b&gt; about this');
     expect(html).not.toMatch(/\d+ communications?/i);
     expect(html).toContain('1 lab result or measurement');
+    expect(html).not.toContain('Comments tab');
   });
 });
 
@@ -89,8 +90,9 @@ describe('the "Add a note" form on the forms add-on', () => {
   });
   afterEach(() => db.close());
 
-  it('keeps no copy in the forms add-on and has no email field', () => {
+  it('keeps no copy in the forms add-on, notifies nobody, and has no email field', () => {
     expect(NOTE_FORM.store).toBe(false);
+    expect(NOTE_FORM.notify).toBe(false);
     expect(NOTE_FORM.fields.some((f) => f.name === 'email' || f.type === 'email')).toBe(false);
   });
 

@@ -6,8 +6,9 @@
  * PhrManager's door as patient-entered data.
  *
  * "store": false: the forms add-on keeps no copy of the submission, so the
- * note's words live only in phr.db. No field is named "email", so the forms
- * add-on never sends a confirmation email carrying them.
+ * note's words live only in phr.db. "notify": false (ngdpbase#1954): no
+ * "New form submission" notice and no confirmation email, so a note leaves
+ * no trace outside phr.db.
  */
 import type { PhrCaller, PhrManager } from '../managers/PhrManager.js';
 import { StoreError } from '../managers/PhrRecordStore.js';
@@ -20,6 +21,7 @@ export const NOTE_FORM = {
   title: 'Add a note to one of your records',
   description: 'Your note is kept with the record, private to you (and anyone you share your records with). It never changes what your provider sent.',
   store: false,
+  notify: false,
   fields: [
     { name: 'record', type: 'dropdown', label: 'Which record?', required: true, optionsSource: 'fetch:PhrManager.toFormOptions()' },
     { name: 'note', type: 'textarea', label: 'Your note', required: true, placeholder: 'for example: ask Dr. X about this at my next visit', description: `Up to ${NOTE_MAX_CHARS} characters.` }

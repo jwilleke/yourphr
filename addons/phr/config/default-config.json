@@ -9,7 +9,7 @@
     "ledgerTable": "phr_migrations",
     "encrypt": "required"
   },
-  "_comment_phr_vault": "One PHR vault per person (operator, 2026-10-15; ngdpbase#1559). owner, encrypt, defaultPrivate and shareMaxDays are phr's own and a site can't override them. encrypt is fixed when each person's vault is created. Booleans must be booleans: core refuses to load phr otherwise.",
+  "_comment_phr_vault": "One PHR vault per person (operator, 2026-10-15; ngdpbase#1559). owner, encrypt, defaultPrivate and shareMaxDays are phr's own and a site can't override them. encrypt is fixed when each person's vault is created. Booleans must be booleans: core refuses to load phr otherwise. Comments and footnotes are off on phr's categories (ngdpbase#1952): a person's notes about a record go into phr.db as patient-entered data, never into core's shared comment tabs. phr-pages holds phr's shared, non-PHI pages.",
   "ngdpbase.system-category": {
     "phr": {
       "label": "PHR",
@@ -27,6 +27,24 @@
         "color": "bg-info",
         "label": "PHR",
         "title": "PHR entry"
+      },
+      "comments": false,
+      "footnotes": false
+    },
+    "phr-pages": {
+      "label": "phr-pages",
+      "description": "yourPHR's own pages (no health data in them: records are drawn per person from phr.db)",
+      "enabled": true,
+      "owner": "phr",
+      "storageLocation": {
+        "defaultstore": "pages/"
+      },
+      "comments": false,
+      "footnotes": false,
+      "page-badge": {
+        "color": "bg-info",
+        "label": "PHR",
+        "title": "yourPHR page"
       }
     }
   },

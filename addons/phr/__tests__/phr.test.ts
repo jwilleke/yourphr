@@ -70,6 +70,26 @@ describe('phr is site-critical and its database must be encrypted', () => {
   });
 });
 
+describe('comments and footnotes are off on phr\'s categories', () => {
+  const cats = defaults['ngdpbase.system-category'] as Record<string, Record<string, unknown>>;
+  it('on the vault and on phr-pages, as real booleans, owned by phr', () => {
+    for (const key of ['phr', 'phr-pages']) {
+      expect(cats[key].comments).toBe(false);
+      expect(cats[key].footnotes).toBe(false);
+      expect(cats[key].owner).toBe('phr');
+    }
+    expect(cats['phr-pages'].encrypt).toBeUndefined();
+    expect((cats['phr-pages'].storageLocation as Record<string, unknown>).privatestore).toBeUndefined();
+  });
+
+  it('the seed page lives in phr-pages with both tabs off', () => {
+    const page = readFileSync(new URL('../pages/my-health-records.md', import.meta.url), 'utf8');
+    expect(page).toMatch(/^system-category: phr-pages$/m);
+    expect(page).toMatch(/^comments: false$/m);
+    expect(page).toMatch(/^footnotes: false$/m);
+  });
+});
+
 describe('core accepts phr\'s declarations', () => {
   it('builds phr\'s host from its own defaults', () => {
     const host = buildAddonHost('phr', defaults);
