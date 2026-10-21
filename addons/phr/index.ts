@@ -26,6 +26,7 @@ import { openPhrStore } from './managers/PhrRecordStore.js';
 import { PhrManager } from './managers/PhrManager.js';
 import { mountApi } from './routes/api.js';
 import { createPhrWelcomePlugin } from './plugins/PhrWelcomePlugin.js';
+import { createPhrRecordsPlugin } from './plugins/PhrRecordsPlugin.js';
 import { profileSectionHtml, saveProfileSection } from './profile.js';
 import type { UserLike, UserManagerLike } from './preferences.js';
 
@@ -44,6 +45,28 @@ export function phrRecords(): PhrManager | null {
   return records;
 }
 const users = (): UserManagerLike | null | undefined => engineRef?.getManager<UserManagerLike>('UserManager');
+
+/**
+ * DEVELOPMENT ONLY: the made-up-records loader, on a local test site that asks
+ * for it. dev/ is not in the published package, so on a real site the import
+ * below fails and nothing is mounted, whatever the configuration says.
+ */
+async function maybeMountDevSeed(engine: WikiEngine, config: Record<string, unknown>, tools: AddonHost): Promise<void> {
+  if (config['dev-seed'] !== true || !engine.app) return;
+  const base = String(engine.getManager<{ getProperty(k: string, d?: unknown): unknown }>('ConfigurationManager')?.getProperty('ngdpbase.application.base-url', '') ?? '');
+  let host = '';
+  try { host = new URL(base).hostname; } catch { return; }
+  if (host !== 'localhost' && !host.endsWith('.localhost')) {
+    tools.logger.warn('[phr] dev-seed is set but this is not a localhost site; ignored');
+    return;
+  }
+  try {
+    const dev = await import('./dev/seedSynthetic.js');
+    dev.mountDevSeed(engine.app, engine, tools, phrRecords);
+  } catch {
+    // Not in the published package: nothing to mount.
+  }
+}
 
 const PhrAddon = {
   name: 'phr',
@@ -73,7 +96,10 @@ const PhrAddon = {
     });
 
     mountApi(engine.app, engine, tools, users);
-    await engine.getManager<PluginManagerLike>('PluginManager')?.registerPlugin('PhrWelcome', createPhrWelcomePlugin(users));
+    await maybeMountDevSeed(engine, _config, tools);
+    const plugins = engine.getManager<PluginManagerLike>('PluginManager');
+    await plugins?.registerPlugin('PhrWelcome', createPhrWelcomePlugin(users));
+    await plugins?.registerPlugin('PhrRecords', createPhrRecordsPlugin(phrRecords, users));
     engine.getManager<AddonsManagerLike>('AddonsManager')?.registerDashboardCard?.({
       addonName: 'phr',
       title: 'Health records',

@@ -8,8 +8,8 @@ author: phr
 ---
 # My Health Records
 
-[{PhrWelcome}]
-
 Your medical records, immediately and in your hands — for free.
 
-This is the first page of the yourPHR add-on. Your records will appear here as the add-on grows.
+[{PhrWelcome}]
+
+[{PhrRecords}]

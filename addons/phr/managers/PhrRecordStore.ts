@@ -91,6 +91,10 @@ export interface OwnerHandle {
   search(resourceType: string, filters: readonly SearchFilter[], page?: { count?: number; offset?: number }): { total: number; records: StoredRecord[] };
   /** This owner's records whose words match, any kind, best matches first. */
   findText(query: string, limit?: number): StoredRecord[];
+  /** How many records of each kind this owner holds. */
+  countsByType(): { resourceType: string; count: number }[];
+  /** This owner's most recently stored records, any kind. */
+  recent(limit?: number): StoredRecord[];
 }
 
 /** One filter as an EXISTS against the generic index, with the owner carried through. */
@@ -261,6 +265,15 @@ export class PhrRecordStore {
           `SELECT r.resource_type, r.id, r.source_id, r.version_id, r.last_updated, r.deleted, r.content FROM phr_resources r WHERE ${clause} ORDER BY r.last_updated DESC, r.id LIMIT ? OFFSET ?`
         ).all(...params, count, offset) as Row[];
         return { total, records: rows.map(toRecord) };
+      },
+      countsByType() {
+        return (db.prepare('SELECT resource_type, COUNT(*) AS n FROM phr_resources WHERE owner = ? AND deleted = 0 GROUP BY resource_type ORDER BY n DESC, resource_type')
+          .all(owner) as { resource_type: string; n: number }[]).map((r) => ({ resourceType: r.resource_type, count: r.n }));
+      },
+      recent(limit = 10) {
+        return (db.prepare(
+          'SELECT resource_type, id, source_id, version_id, last_updated, deleted, content FROM phr_resources WHERE owner = ? AND deleted = 0 ORDER BY last_updated DESC, id LIMIT ?'
+        ).all(owner, Math.min(Math.max(limit, 1), 200)) as Row[]).map(toRecord);
       },
       findText(query, limit = 50) {
         const match = ftsQuery(query);

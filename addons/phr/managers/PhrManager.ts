@@ -144,6 +144,12 @@ export class PhrManager {
     return this.access(caller, 'phr-read', target, (h) => h.findText(query, limit));
   }
 
+  /** What a person holds, at a glance: counts by kind and the newest records. One door call. */
+  async overview(caller: PhrCaller, recentLimit = 10, owner?: string): Promise<{ counts: { resourceType: string; count: number }[]; recent: StoredRecord[] }> {
+    const target = { owner: this.ownerFor(caller, owner), resourceType: 'overview' };
+    return this.access(caller, 'phr-read', target, (h) => ({ counts: h.countsByType(), recent: h.recent(recentLimit) }));
+  }
+
   /** Add or update a record for the owner, from a named source. */
   async write(caller: PhrCaller, resource: Record<string, unknown>, sourceId: string, owner?: string): Promise<StoredRecord> {
     const resourceType = typeof resource.resourceType === 'string' ? resource.resourceType : '';
