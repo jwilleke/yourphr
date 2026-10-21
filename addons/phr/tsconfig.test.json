@@ -1,6 +1,6 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": { "noEmit": true, "rootDir": "." },
-  "include": ["*.ts", "routes/**/*.ts", "plugins/**/*.ts", "managers/**/*.ts", "importers/**/*.ts", "dev/**/*.ts", "__tests__/**/*.ts"],
+  "include": ["*.ts", "routes/**/*.ts", "plugins/**/*.ts", "managers/**/*.ts", "importers/**/*.ts", "forms/**/*.ts", "dev/**/*.ts", "__tests__/**/*.ts"],
   "exclude": ["node_modules"]
 }

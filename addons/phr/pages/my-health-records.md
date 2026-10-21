@@ -13,3 +13,7 @@ Your medical records, immediately and in your hands — for free.
 [{PhrWelcome}]
 
 [{PhrRecords}]
+
+## Add a note
+
+[{Form id='phr-note'}]

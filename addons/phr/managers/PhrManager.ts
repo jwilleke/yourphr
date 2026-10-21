@@ -24,6 +24,7 @@ import { PhrRecordStore, StoreError, type OwnerHandle, type StoredRecord } from 
 import type { FolderFile } from '../importers/recordsFolder.js';
 import type { SearchFilter } from './fhirIndex.js';
 import { NOTE_MAX_CHARS, NOTE_SOURCE, buildNote, isPatientNote, noteAbout, type NoteTarget } from './notes.js';
+import { kindName, recordDate, recordName, recordValue } from '../display.js';
 
 /** What an import did, in counts and per file. Never record content. */
 export interface ImportReport {
@@ -182,6 +183,31 @@ export class PhrManager {
       }
       return byRecord;
     });
+  }
+
+  /**
+   * The choices for the "Which record?" dropdown of phr's note form, for this
+   * viewer only (core's forms add-on calls this with the viewer, and again on
+   * submit, refusing any value it didn't offer). Value "Type/id", label in
+   * plain words. A viewer who may not read records gets no choices.
+   */
+  async toFormOptions(_args: Record<string, string>, viewer: unknown): Promise<{ value: string; label: string }[]> {
+    const who = viewer as (PermissionSubject & { ipAddress?: string }) | null | undefined;
+    if (!who || who.isAuthenticated !== true) return [];
+    const caller: PhrCaller = { subject: who, ipAddress: who.ipAddress, enforceDeny: async () => { throw new StoreError(403, 'not allowed'); } };
+    try {
+      const { recent } = await this.overview(caller, 200);
+      return recent
+        .filter((r) => r.resourceType !== 'Communication')
+        .map((r) => {
+          const name = recordName(r.resource) ?? 'Name not stated';
+          const value = recordValue(r.resource);
+          const date = recordDate(r.resource) ?? 'date not stated';
+          return { value: `${r.resourceType}/${r.id}`, label: `${name}${value ? ` — ${value}` : ''} (${kindName(r.resourceType, 1)}, ${date})` };
+        });
+    } catch {
+      return [];
+    }
   }
 
   /** Add or update a record for the owner, from a named source. */

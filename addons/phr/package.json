@@ -11,6 +11,7 @@
     "plugins/**/*.js",
     "managers/**/*.js",
     "importers/**/*.js",
+    "forms/**/*.js",
     "config/",
     "pages/",
     "README.md"

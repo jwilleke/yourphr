@@ -74,3 +74,39 @@ describe('a person\'s notes about their records', () => {
     expect(html).toContain('1 lab result or measurement');
   });
 });
+
+import { NOTE_FORM, noteFormHandler } from '../forms/noteForm.js';
+
+describe('the "Add a note" form on the forms add-on', () => {
+  let db: Db & { close(): void };
+  let phr: PhrManager;
+  beforeEach(async () => {
+    db = openAddonTestDatabase<Db & { close(): void }>('phr', { migrations: PHR_MIGRATIONS, ledgerTable: PHR_LEDGER_TABLE }, { slug: 'phr', defaults });
+    const host = buildAddonHost('phr', defaults);
+    const sink = { logAuditEvent: async () => 'id', flushAuditQueue: async () => {} };
+    phr = new PhrManager({ store: new PhrRecordStore(db), decide: allowAll, recordAudit: (e) => host.recordAuditEvent(sink, e), host });
+    await phr.write(caller('alice'), a1c, 'epic');
+  });
+  afterEach(() => db.close());
+
+  it('keeps no copy in the forms add-on and has no email field', () => {
+    expect(NOTE_FORM.store).toBe(false);
+    expect(NOTE_FORM.fields.some((f) => f.name === 'email' || f.type === 'email')).toBe(false);
+  });
+
+  it('offers each viewer only their own records, in plain words', async () => {
+    const mine = await phr.toFormOptions({}, { username: 'alice', isAuthenticated: true, roles: ['reader'] });
+    expect(mine).toEqual([{ value: 'Observation/a1c', label: 'Hemoglobin A1c — 5.8 % (lab result or measurement, 2024-09-03)' }]);
+    expect(await phr.toFormOptions({}, { username: 'bob', isAuthenticated: true, roles: ['reader'] })).toEqual([]);
+    expect(await phr.toFormOptions({}, null)).toEqual([]);
+  });
+
+  it('the handler stores the note through PhrManager, and refuses bad input with a field message', async () => {
+    const handle = noteFormHandler(() => phr, () => caller('alice'));
+    expect(await handle({ data: { record: 'Observation/a1c', note: 'Ask about this' } }, { req: {} })).toEqual({ ok: true });
+    expect((await phr.notes(caller('alice'))).get('Observation/a1c')).toHaveLength(1);
+    expect(await handle({ data: { record: 'Observation/a1c', note: '   ' } }, { req: {} })).toMatchObject({ ok: false, fields: { note: expect.any(String) } });
+    expect(await handle({ data: { record: 'Observation/missing', note: 'x' } }, { req: {} })).toMatchObject({ ok: false, fields: { record: expect.any(String) } });
+    expect(await handle({ data: { record: 'nonsense', note: 'x' } }, { req: {} })).toMatchObject({ ok: false });
+  });
+});

@@ -24,13 +24,16 @@
 import type { AddonHost, PolicyDecisionPoint, WikiEngine } from '@jwilleke/ngdpbase-types';
 import { openPhrStore } from './managers/PhrRecordStore.js';
 import { PhrManager } from './managers/PhrManager.js';
+import { NOTE_FORM, NOTE_FORM_ID, noteFormHandler } from './forms/noteForm.js';
 import { mountApi } from './routes/api.js';
 import { createPhrWelcomePlugin } from './plugins/PhrWelcomePlugin.js';
 import { createPhrRecordsPlugin } from './plugins/PhrRecordsPlugin.js';
 import { profileSectionHtml, saveProfileSection } from './profile.js';
 import type { UserLike, UserManagerLike } from './preferences.js';
 
-// PluginManager and AddonsManager aren't in core's public types yet (asked of ngdpbase); only the calls phr makes.
+// PluginManager, AddonsManager and the forms add-on aren't in core's public types yet (asked of ngdpbase); only the calls phr makes.
+interface FormsDataManagerLike { registerShippedForm(addon: string, definition: unknown, options?: { required?: boolean }): Promise<unknown> }
+interface FormsAddonLike { registerHandler(formId: string, handler: (submission: { data: Record<string, unknown> }, context: { req: unknown }) => Promise<unknown>): void }
 interface PluginManagerLike { registerPlugin(name: string, plugin: unknown): Promise<void> }
 interface AddonsManagerLike {
   registerDashboardCard?(card: { addonName: string; title: string; icon: string; adminUrl: string }): void;
@@ -68,12 +71,30 @@ async function maybeMountDevSeed(engine: WikiEngine, config: Record<string, unkn
   }
 }
 
+/**
+ * The "Add a note" form, on core's forms add-on (an optional dependency): shipped
+ * as phr's own form and handled by PhrManager. Without the forms add-on, notes
+ * can still be added through phr's API, and the page says the form isn't there.
+ */
+async function registerNoteForm(engine: WikiEngine, tools: AddonHost): Promise<void> {
+  const forms = engine.getManager<FormsDataManagerLike>('FormsDataManager');
+  const formsAddon = engine.getManager<FormsAddonLike>('FormsAddon');
+  if (!forms || !formsAddon) {
+    tools.logger.warn('[phr] the forms add-on is off, so the "Add a note" form is not offered');
+    return;
+  }
+  await forms.registerShippedForm('phr', NOTE_FORM, { required: true });
+  formsAddon.registerHandler(NOTE_FORM_ID, noteFormHandler(phrRecords, (req) => tools.ApiContext.from(req as never, engine)));
+}
+
 const PhrAddon = {
   name: 'phr',
   version: '0.0.1',
   description: 'yourPHR: your health records, in your hands',
   author: 'jwilleke',
   dependencies: [] as string[],
+  // Loaded first when present: its "Add a note" form is phr's (forms/noteForm.ts).
+  optionalDependencies: ['forms'],
 
   async register(engine: WikiEngine, _config: Record<string, unknown> = {}, host?: AddonHost): Promise<void> {
     // phr is site-critical (config/default-config.json): anything that stops it
@@ -94,9 +115,13 @@ const PhrAddon = {
       recordAudit: (event) => tools.recordAuditEvent(auditSink, event),
       host: tools
     });
+    // Reachable as engine.getManager('PhrManager'): the forms add-on's
+    // "fetch:PhrManager.toFormOptions()" fills the note form's record list (ngdpbase guide §6).
+    engine.registerManager('PhrManager', records);
 
     mountApi(engine.app, engine, tools, users, phrRecords);
     await maybeMountDevSeed(engine, _config, tools);
+    await registerNoteForm(engine, tools);
     const plugins = engine.getManager<PluginManagerLike>('PluginManager');
     await plugins?.registerPlugin('PhrWelcome', createPhrWelcomePlugin(users));
     await plugins?.registerPlugin('PhrRecords', createPhrRecordsPlugin(phrRecords, users));
