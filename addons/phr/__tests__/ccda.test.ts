@@ -128,3 +128,35 @@ describe('a C-CDA download in a records folder', () => {
     });
   });
 });
+
+describe('nothing the document does not state is filled in', () => {
+  const recordWith = (resources: Record<string, unknown>[], value: string) => identified(resources, value) as Record<string, unknown>;
+
+  it('a date stays a date, and a month stays a month', () => {
+    const got = ok(CCD.replace('<effectiveTime value="20231001"/>', '<effectiveTime value="202310"/>')).resources;
+    expect(recordWith(got, 'imm-1').occurrenceDateTime).toBe('2023-10');
+    expect(recordWith(got, 'result-1').effectiveDateTime).toBe('2024-01-10');
+  });
+
+  it('a time with a time zone is kept; a time without one keeps only its date', () => {
+    const got = ok(CCD
+      .replace(/<effectiveTime value="20240110"\/>(\s*<value xsi:type="PQ" value="5\.6")/, '<effectiveTime value="20240110083000-0500"/>$1')
+      .replace(/<effectiveTime value="20240115"\/>(\s*<value xsi:type="PQ" value="70")/, '<effectiveTime value="20240115093000"/>$1')).resources;
+    expect(CCD).toMatch(/<effectiveTime value="20240115"\/>\s*<value xsi:type="PQ" value="70"/);
+    expect(recordWith(got, 'result-1').effectiveDateTime).toBe('2024-01-10T08:30:00-05:00');
+    expect(recordWith(got, 'weight-1').effectiveDateTime).toBe('2024-01-15');
+  });
+
+  it('a dose with no unit gets none', () => {
+    const [med] = byType(ok(CCD).resources, 'MedicationRequest');
+    expect(JSON.stringify(med.dosageInstruction)).not.toContain('IU');
+  });
+
+  it('a document with no date is undated, never dated today', () => {
+    const [composition] = byType(ok(CCD.replace('<effectiveTime value="20240115103000-0500"/>', '')).resources, 'Composition');
+    expect(composition.date).toBeUndefined();
+    expect(JSON.stringify(composition._date)).toContain('data-absent-reason');
+    const [dated] = byType(ok(CCD).resources, 'Composition');
+    expect(dated.date).toBe('2024-01-15T10:30:00-05:00');
+  });
+});

@@ -18,6 +18,15 @@
  *    them, otherwise from its content, both scoped to that patient. A record
  *    unchanged between two downloads keeps its id; a changed one is a new
  *    record.
+ *
+ * Nothing the document doesn't state is filled in (the no-guessing rule).
+ * Medplum 5.2.7 keeps a date's precision and a dose without a unit; two gaps
+ * remain, closed here until Medplum fixes them upstream:
+ *
+ *  - a time with no time zone ("20150610103000") would be stored as UTC. It is
+ *    kept as its date only: the day is stated, the moment is not.
+ *  - a document with no date would get the date it was imported. Its
+ *    Composition says the date is unknown instead.
  */
 import { createHash } from 'node:crypto';
 import { convertCcdaToFhir, convertXmlToCcda } from '@medplum/ccda';
@@ -48,6 +57,7 @@ export function readCcda(xml: string): CcdaResult {
   } catch {
     return { ok: false, reason: 'C-CDA, but not well-formed XML' };
   }
+  dropUnzonedTimes(ccda);
   let bundle: { entry?: { resource?: unknown }[] };
   let partial: string | undefined;
   try {
@@ -66,7 +76,34 @@ export function readCcda(xml: string): CcdaResult {
     .map((e) => e.resource)
     .filter((r): r is Record<string, unknown> => typeof r === 'object' && r !== null && typeof (r as Record<string, unknown>).resourceType === 'string');
   if (resources.length === 0) return { ok: false, reason: 'C-CDA, but no records in it' };
+  if (!ccda.effectiveTime?.some((t) => typeof t['@_value'] === 'string' && t['@_value'] !== '')) markUndated(resources);
   return { ok: true, resources: withStableIds(resources, patientIdOf(ccda, xml)), ...(partial ? { partial } : {}) };
+}
+
+/** The elements that carry a point in time (HL7 TS) as `value`. */
+const TIME_ELEMENTS = new Set(['effectiveTime', 'low', 'high', 'center', 'time', 'birthTime', 'deceasedTime']);
+/** A timestamp with hours but no zone: YYYYMMDDHH[MM[SS[.S+]]]. */
+const UNZONED_TIME = /^(\d{8})\d{2}(?:\d{2}(?:\d{2}(?:\.\d+)?)?)?$/;
+
+/** A time stated without a time zone is kept as its date, so it is never read as UTC. */
+function dropUnzonedTimes(node: unknown, key = ''): void {
+  if (Array.isArray(node)) { node.forEach((n) => dropUnzonedTimes(n, key)); return; }
+  if (!node || typeof node !== 'object') return;
+  const obj = node as Record<string, unknown>;
+  if (TIME_ELEMENTS.has(key) && typeof obj['@_value'] === 'string') {
+    const day = obj['@_value'].match(UNZONED_TIME)?.[1];
+    if (day) obj['@_value'] = day;
+  }
+  for (const [k, v] of Object.entries(obj)) if (!k.startsWith('@_')) dropUnzonedTimes(v, k);
+}
+
+/** A document with no date: Composition.date is required, so it is recorded as unknown, never as today. */
+function markUndated(resources: Record<string, unknown>[]): void {
+  for (const r of resources) {
+    if (r.resourceType !== 'Composition') continue;
+    delete r.date;
+    r._date = { extension: [{ url: 'http://hl7.org/fhir/StructureDefinition/data-absent-reason', valueCode: 'unknown' }] };
+  }
 }
 
 /**
