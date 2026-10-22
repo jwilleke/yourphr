@@ -5,7 +5,6 @@ Open work in [jwilleke/yourphr](https://github.com/jwilleke/yourphr), ranked. Ge
 ## 🔴 P0 — Security & Critical
 
 - [#903](https://github.com/jwilleke/yourphr/issues/903) — [security] braces — stack-exhaustion DoS, no patched release (high, dev-only: karma, markdownlint-cli2)
-- [#863](https://github.com/jwilleke/yourphr/issues/863) — [BUG] Epic paused production for app 56252 at all 519 organizations — it selects APIs outside USCDI v3 automatic distribution
 
 ## 🟣 Epics
 
@@ -55,7 +54,6 @@ Open work in [jwilleke/yourphr](https://github.com/jwilleke/yourphr), ranked. Ge
 ## 🟡 P2
 
 - [#896](https://github.com/jwilleke/yourphr/issues/896) — [security] katex — 1 open advisory in the root lockfile (low)
-- [#947](https://github.com/jwilleke/yourphr/pull/947) — chore(kit): sync to v1.14.0 *(PR · ready)* — no linked issue
 - [#946](https://github.com/jwilleke/yourphr/issues/946) — [BUG] The CMS Blue Button production-access runbook still describes the Go stack
 - [#945](https://github.com/jwilleke/yourphr/issues/945) — [FEATURE] Share the consolidated record: FHIR export, IPS, SMART Health Links, printed summary
 - [#944](https://github.com/jwilleke/yourphr/issues/944) — [FEATURE] Records request kit: right-of-access / EHI Export letters and a provider checklist
@@ -137,5 +135,11 @@ Open work in [jwilleke/yourphr](https://github.com/jwilleke/yourphr), ranked. Ge
 
 ## ❓ Needs triage
 
-- [#949](https://github.com/jwilleke/yourphr/pull/949) — chore(kit): sync to v1.14.0-0-g282c9b7 *(PR · ready)* — no linked issue
+- [#956](https://github.com/jwilleke/yourphr/pull/956) — chore(deps): bump @angular-eslint/builder from 22.5.0 to 22.6.0 in /frontend *(PR · ready)* — no linked issue
+- [#955](https://github.com/jwilleke/yourphr/pull/955) — chore(deps): bump @playwright/test from 1.63.0 to 1.64.1 in /frontend *(PR · ready)* — no linked issue
+- [#954](https://github.com/jwilleke/yourphr/pull/954) — chore(deps): bump @angular-devkit/build-angular from 22.2.0 to 22.2.3 in /frontend *(PR · ready)* — no linked issue
+- [#953](https://github.com/jwilleke/yourphr/pull/953) — chore(deps): bump typescript-eslint from 8.70.0 to 8.71.2 in /frontend *(PR · ready)* — no linked issue
+- [#952](https://github.com/jwilleke/yourphr/pull/952) — chore(deps): bump @angular/language-service from 22.2.1 to 22.2.3 in /frontend *(PR · ready)* — no linked issue
+- [#951](https://github.com/jwilleke/yourphr/pull/951) — chore(ci): bump actions/checkout from 4 to 7 *(PR · ready)* — no linked issue
+- [#950](https://github.com/jwilleke/yourphr/pull/950) — chore(deps): bump markdown-it from 15.0.2 to 15.0.3 in the npm_and_yarn group across 1 directory *(PR · ready)* — no linked issue
 - [#926](https://github.com/jwilleke/yourphr/issues/926) — Register yourPHR as a patient-access SMART on FHIR app with Oracle Health (Cerner Millennium)
