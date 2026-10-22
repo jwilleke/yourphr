@@ -21,7 +21,7 @@
  *
  * The exported `name` MUST equal `ngdpbase.slug` in package.json (#927).
  */
-import type { ActorContext, AddonHost, PolicyDecisionPoint, WikiEngine } from '@jwilleke/ngdpbase-types';
+import type { ActorContext, AddonHost, ConsentManager, PolicyDecisionPoint, WikiEngine } from '@jwilleke/ngdpbase-types';
 import { openPhrStore } from './managers/PhrRecordStore.js';
 import { PhrManager } from './managers/PhrManager.js';
 import { NOTE_FORM, NOTE_FORM_ID, noteFormHandler } from './forms/noteForm.js';
@@ -90,6 +90,23 @@ async function registerNoteForm(engine: WikiEngine, tools: AddonHost): Promise<v
   formsAddon.registerHandler(NOTE_FORM_ID, noteFormHandler(phrRecords, (req) => tools.ApiContext.from(req as never, engine)));
 }
 
+/**
+ * phr's own terms and privacy policy (pages/phr-*.md), through core's
+ * ConsentManager (ngdpbase#1603): a person accepts both before their health
+ * records switch turns on, and again when phr raises a document's version.
+ * The paths are where phr is used, so a new version is asked there.
+ */
+export const PHR_CONSENT = {
+  documents: ['phr-terms-of-service', 'phr-privacy-policy'],
+  paths: ['/api/phr', '/view/My%20Health%20Records', '/view/my-health-records']
+};
+function registerConsent(engine: WikiEngine, tools: AddonHost): void {
+  const consent = engine.getManager<ConsentManager>('ConsentManager');
+  if (!consent) throw new Error("ngdpbase's ConsentManager is not available (phr needs ngdpbase 5.26.0 or later)");
+  consent.registerAddonDocuments('phr', PHR_CONSENT);
+  tools.logger.info('[phr] terms and privacy policy registered with ConsentManager');
+}
+
 const PhrAddon = {
   name: 'phr',
   version: '0.0.2',
@@ -126,6 +143,7 @@ const PhrAddon = {
     mountApi(engine.app, engine, tools, healthRecordsOn, phrRecords);
     await maybeMountDevSeed(engine, _config, tools);
     await registerNoteForm(engine, tools);
+    registerConsent(engine, tools);
     const plugins = engine.getManager<PluginManagerLike>('PluginManager');
     await plugins?.registerPlugin('PhrWelcome', createPhrWelcomePlugin(healthRecordsOn));
     await plugins?.registerPlugin('PhrRecords', createPhrRecordsPlugin(phrRecords, healthRecordsOn));
