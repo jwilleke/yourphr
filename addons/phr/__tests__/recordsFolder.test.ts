@@ -7,6 +7,11 @@ import { PHR_MIGRATIONS, PHR_LEDGER_TABLE } from '../managers/migrations.js';
 import { PhrRecordStore, type Db } from '../managers/PhrRecordStore.js';
 import { PhrManager, type PhrCaller } from '../managers/PhrManager.js';
 import { readFolderZip, FolderError } from '../importers/recordsFolder.js';
+import { localId } from '../managers/localIds.js';
+
+/** phr's own id for a record this test's folder (source 'folder', no server named) calls `id`. */
+const pid = (type: string, id: string, source = 'folder') => localId(`urn:yourphr:source:${source}`, type, id);
+const GLUCOSE = pid('Observation', 'obs-glucose');
 
 // Synthetic records only: no real person, no real provider.
 const patient = { resourceType: 'Patient', id: 'p1', name: [{ family: 'Testperson', given: ['Synthetic'] }] };
@@ -91,8 +96,8 @@ describe('importing a records folder through PhrManager', () => {
     const report = await phr.importFolder(caller('alice'), folder(112));
     expect(report.files).toEqual({ imported: 1, unchanged: 0, unsupported: 1, unreadable: 0, missing: 0 });
     expect(report.records).toEqual({ created: 2, updated: 0, unchanged: 0, skipped: 0, conflicts: 0 });
-    expect((await phr.read(caller('alice'), 'Observation', 'obs-glucose'))?.resource.valueQuantity).toEqual({ value: 112, unit: 'mg/dL' });
-    expect(await phr.read(caller('bob'), 'Observation', 'obs-glucose')).toBeUndefined();
+    expect((await phr.read(caller('alice'), 'Observation', GLUCOSE))?.resource.valueQuantity).toEqual({ value: 112, unit: 'mg/dL' });
+    expect(await phr.read(caller('bob'), 'Observation', GLUCOSE)).toBeUndefined();
     const imports = audit.filter((e) => e.action === 'phr-write');
     expect(imports).toHaveLength(1);
     expect((imports[0].metadata as Record<string, unknown>).owner).toBe('alice');
@@ -104,7 +109,7 @@ describe('importing a records folder through PhrManager', () => {
     const again = await phr.importFolder(caller('alice'), folder(112));
     expect(again.files).toEqual({ imported: 0, unchanged: 2, unsupported: 0, unreadable: 0, missing: 0 });
     expect(again.records).toEqual({ created: 0, updated: 0, unchanged: 0, skipped: 0, conflicts: 0 });
-    expect((await phr.history(caller('alice'), 'Observation', 'obs-glucose')).length).toBe(1);
+    expect((await phr.history(caller('alice'), 'Observation', GLUCOSE)).length).toBe(1);
   });
 
   it('a changed file updates just its changed records, keeping history', async () => {
@@ -112,34 +117,35 @@ describe('importing a records folder through PhrManager', () => {
     const changed = await phr.importFolder(caller('alice'), folder(98));
     expect(changed.files.imported).toBe(1);
     expect(changed.records).toEqual({ created: 0, updated: 1, unchanged: 1, skipped: 0, conflicts: 0 });
-    expect((await phr.history(caller('alice'), 'Observation', 'obs-glucose')).map((r) => r.versionId)).toEqual(['2', '1']);
+    expect((await phr.history(caller('alice'), 'Observation', GLUCOSE)).map((r) => r.versionId)).toEqual(['2', '1']);
   });
 
   it('a file missing from a later import is flagged, and its records are kept', async () => {
     await phr.importFolder(caller('alice'), folder(112, { 'fhir/extra.ndjson': JSON.stringify({ resourceType: 'Condition', id: 'c1', code: { text: 'Test condition' } }) }));
     const later = await phr.importFolder(caller('alice'), folder(112));
     expect(later.files.missing).toBe(1);
-    expect(await phr.read(caller('alice'), 'Condition', 'c1')).toBeDefined();
+    expect(await phr.read(caller('alice'), 'Condition', pid('Condition', 'c1'))).toBeDefined();
   });
 
   it('two people importing the same file keep separate records', async () => {
     await phr.importFolder(caller('alice'), folder(112));
     await phr.importFolder(caller('bob'), folder(150));
-    expect((await phr.read(caller('alice'), 'Observation', 'obs-glucose'))?.resource.valueQuantity).toEqual({ value: 112, unit: 'mg/dL' });
-    expect((await phr.read(caller('bob'), 'Observation', 'obs-glucose'))?.resource.valueQuantity).toEqual({ value: 150, unit: 'mg/dL' });
+    expect((await phr.read(caller('alice'), 'Observation', GLUCOSE))?.resource.valueQuantity).toEqual({ value: 112, unit: 'mg/dL' });
+    expect((await phr.read(caller('bob'), 'Observation', GLUCOSE))?.resource.valueQuantity).toEqual({ value: 150, unit: 'mg/dL' });
   });
 
   it('nobody can import into another person\'s records', async () => {
     await expect(phr.importFolder(caller('bob'), folder(112), 'folder', 'alice')).rejects.toThrow(/refused/);
-    expect(await phr.read(caller('alice'), 'Observation', 'obs-glucose')).toBeUndefined();
+    expect(await phr.read(caller('alice'), 'Observation', GLUCOSE)).toBeUndefined();
   });
 
-  it('skips records with no id, and refuses to let the folder overwrite another source\'s record', async () => {
+  it('skips records with no id, and keeps a same-id record from another source as its own record (#784)', async () => {
     await phr.write(caller('alice'), glucose(70), 'epic');
     const report = await phr.importFolder(caller('alice'), readFolderZip(zipOf({
       'a.json': JSON.stringify(bundle(glucose(112), { resourceType: 'Observation', code: { text: 'no id' } }))
     })));
-    expect(report.records).toEqual({ created: 0, updated: 0, unchanged: 0, skipped: 1, conflicts: 1 });
-    expect((await phr.read(caller('alice'), 'Observation', 'obs-glucose'))?.sourceId).toBe('epic');
+    expect(report.records).toEqual({ created: 1, updated: 0, unchanged: 0, skipped: 1, conflicts: 0 });
+    expect((await phr.read(caller('alice'), 'Observation', 'obs-glucose'))?.resource.valueQuantity).toEqual({ value: 70, unit: 'mg/dL' });
+    expect((await phr.read(caller('alice'), 'Observation', GLUCOSE))?.resource.valueQuantity).toEqual({ value: 112, unit: 'mg/dL' });
   });
 });

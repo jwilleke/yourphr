@@ -9,7 +9,7 @@ import type { ActorContext, PermissionSubject, SimplePlugin } from '@jwilleke/ng
 import type { PhrCaller, PhrManager } from '../managers/PhrManager.js';
 import type { StoredRecord } from '../managers/PhrRecordStore.js';
 import type { HealthRecordsOn } from '../preferences.js';
-import { kindName, recordDate, recordName, recordValue } from '../display.js';
+import { kindName, recordDate, recordName, recordValue, shownAsRecord } from '../display.js';
 import { noteText } from '../managers/notes.js';
 
 interface Viewer { username?: string | null; isAuthenticated?: boolean; ipAddress?: string }
@@ -40,8 +40,8 @@ export function createPhrRecordsPlugin(records: () => PhrManager | null, healthR
         const { counts: allCounts, recent: allRecent } = await phr.overview(caller, 20);
         // A person's own notes are shown under the record they're about, not as records of their own.
         const notes = await phr.notes(caller);
-        const counts = allCounts.filter((c) => c.resourceType !== 'Communication');
-        const recent = allRecent.filter((r) => r.resourceType !== 'Communication').slice(0, 10);
+        const counts = allCounts.filter((c) => shownAsRecord(c.resourceType));
+        const recent = allRecent.filter((r) => shownAsRecord(r.resourceType)).slice(0, 10);
         const total = counts.reduce((n, c) => n + c.count, 0);
         const parts: string[] = [];
         if (total === 0) {
@@ -59,7 +59,7 @@ export function createPhrRecordsPlugin(records: () => PhrManager | null, healthR
           const found = await phr.findText(caller, q, 25);
           parts.push(found.length === 0
             ? `<p class="phr-records-none">Nothing in your records matches “${esc(q)}”.</p>`
-            : `<h2 class="h5">Matching “${esc(q)}”</h2>${list(found.filter((r) => r.resourceType !== 'Communication'), esc, notes)}`);
+            : `<h2 class="h5">Matching “${esc(q)}”</h2>${list(found.filter((r) => shownAsRecord(r.resourceType)), esc, notes)}`);
         } else if (total > 0) {
           parts.push(`<h2 class="h5">Newest records</h2>${list(recent, esc, notes)}`);
         }

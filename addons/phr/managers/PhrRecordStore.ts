@@ -94,7 +94,8 @@ export interface OwnerHandle {
   /** How many records of each kind this owner holds. */
   countsByType(): { resourceType: string; count: number }[];
   /** This owner's most recently stored records, any kind. */
-  recent(limit?: number): StoredRecord[];
+  /** The newest records, leaving out the kinds named in `except`. */
+  recent(limit?: number, except?: readonly string[]): StoredRecord[];
 }
 
 /** One filter as an EXISTS against the generic index, with the owner carried through. */
@@ -270,10 +271,11 @@ export class PhrRecordStore {
         return (db.prepare('SELECT resource_type, COUNT(*) AS n FROM phr_resources WHERE owner = ? AND deleted = 0 GROUP BY resource_type ORDER BY n DESC, resource_type')
           .all(owner) as { resource_type: string; n: number }[]).map((r) => ({ resourceType: r.resource_type, count: r.n }));
       },
-      recent(limit = 10) {
+      recent(limit = 10, except = []) {
+        const skip = except.length > 0 ? ` AND resource_type NOT IN (${except.map(() => '?').join(', ')})` : '';
         return (db.prepare(
-          'SELECT resource_type, id, source_id, version_id, last_updated, deleted, content FROM phr_resources WHERE owner = ? AND deleted = 0 ORDER BY last_updated DESC, id LIMIT ?'
-        ).all(owner, Math.min(Math.max(limit, 1), 200)) as Row[]).map(toRecord);
+          `SELECT resource_type, id, source_id, version_id, last_updated, deleted, content FROM phr_resources WHERE owner = ? AND deleted = 0${skip} ORDER BY last_updated DESC, id LIMIT ?`
+        ).all(owner, ...except, Math.min(Math.max(limit, 1), 200)) as Row[]).map(toRecord);
       },
       findText(query, limit = 50) {
         const match = ftsQuery(query);

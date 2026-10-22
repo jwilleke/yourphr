@@ -12,8 +12,7 @@
  *
  *  - the Patient: from the document's `recordTarget/patientRole/id`, the same
  *    derivation yourPHR uses (`cdaPatientId` in src/upload/index.ts), so the
- *    same person's documents land on one Patient, and it matches the Patients
- *    yourPHR already holds;
+ *    same person's documents land on one Patient;
  *  - every other record: from its own identifiers when the document gives
  *    them, otherwise from its content, both scoped to that patient. A record
  *    unchanged between two downloads keeps its id; a changed one is a new

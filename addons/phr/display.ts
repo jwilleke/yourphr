@@ -78,3 +78,13 @@ export function recordValue(resource: Json): string | undefined {
   if (cc) return (typeof cc.text === 'string' && cc.text) || firstCodingDisplay(cc);
   return undefined;
 }
+
+/**
+ * Kinds that aren't records in their own right, so lists and counts leave them
+ * out: a person's notes (Communication), shown under the record they are about,
+ * and Provenance, which says where a record came from (yourphr#784).
+ */
+export const NOT_RECORD_KINDS: readonly string[] = ['Communication', 'Provenance'];
+export function shownAsRecord(resourceType: string): boolean {
+  return !NOT_RECORD_KINDS.includes(resourceType);
+}

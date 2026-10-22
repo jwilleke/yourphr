@@ -22,9 +22,10 @@
 import type { AddonHost, AuditEvent, Decision, PermissionSubject } from '@jwilleke/ngdpbase-types';
 import { PhrRecordStore, StoreError, type OwnerHandle, type StoredRecord } from './PhrRecordStore.js';
 import type { FolderFile } from '../importers/recordsFolder.js';
+import { localiseRecords } from './localIds.js';
 import type { SearchFilter } from './fhirIndex.js';
 import { NOTE_MAX_CHARS, NOTE_SOURCE, buildNote, isPatientNote, noteAbout, type NoteTarget } from './notes.js';
-import { kindName, recordDate, recordName, recordValue } from '../display.js';
+import { NOT_RECORD_KINDS, kindName, recordDate, recordName, recordValue, shownAsRecord } from '../display.js';
 
 /** What an import did, in counts and per file. Never record content. */
 export interface ImportReport {
@@ -149,7 +150,7 @@ export class PhrManager {
   /** What a person holds, at a glance: counts by kind and the newest records. One door call. */
   async overview(caller: PhrCaller, recentLimit = 10, owner?: string): Promise<{ counts: { resourceType: string; count: number }[]; recent: StoredRecord[] }> {
     const target = { owner: this.ownerFor(caller, owner), resourceType: 'overview' };
-    return this.access(caller, 'phr-read', target, (h) => ({ counts: h.countsByType(), recent: h.recent(recentLimit) }));
+    return this.access(caller, 'phr-read', target, (h) => ({ counts: h.countsByType(), recent: h.recent(recentLimit, NOT_RECORD_KINDS) }));
   }
 
   /**
@@ -198,7 +199,7 @@ export class PhrManager {
     try {
       const { recent } = await this.overview(caller, 200);
       return recent
-        .filter((r) => r.resourceType !== 'Communication')
+        .filter((r) => shownAsRecord(r.resourceType))
         .map((r) => {
           const name = recordName(r.resource) ?? 'Name not stated';
           const value = recordValue(r.resource);
@@ -249,12 +250,18 @@ export class PhrManager {
         }
         let written = 0;
         report.records.skipped += file.skippedEntries;
-        for (const resource of file.resources) {
-          if (typeof resource.id !== 'string' || resource.id === '') { report.records.skipped++; continue; }
+        // phr's own ids, never the provider's (yourphr#784); a Provenance keeps the original.
+        const withIds = file.resources.map((r) => typeof r.id === 'string' && r.id !== '');
+        const kept = file.resources.filter((_r, i) => withIds[i]);
+        const keptUrls = file.fullUrls?.filter((_u, i) => withIds[i]);
+        report.records.skipped += file.resources.length - kept.length;
+        const local = localiseRecords(kept, keptUrls, `urn:yourphr:source:${sourceId}`);
+        for (const [i, resource] of local.resources.entries()) {
           try {
             const r = h.put(resource, sourceId);
             report.records[r.outcome]++;
             written++;
+            if (r.outcome !== 'unchanged') h.put(local.provenanceFor(i, r.lastUpdated), sourceId);
           } catch (err) {
             if (err instanceof StoreError && err.status === 409) { report.records.conflicts++; continue; }
             throw err;
