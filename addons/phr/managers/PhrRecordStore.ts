@@ -10,7 +10,7 @@
 
 import type { DatabaseManager } from '@jwilleke/ngdpbase-types';
 import { PHR_LEDGER_TABLE, PHR_MIGRATIONS } from './migrations.js';
-import { ftsQuery, indexEntries, textFor, type SearchFilter } from './fhirIndex.js';
+import { indexEntries, ownerKey, ownTextQuery, textFor, type SearchFilter } from './fhirIndex.js';
 
 /** The driver calls the store uses (better-sqlite3, as core's DatabaseManager hands it). */
 export interface Db {
@@ -165,7 +165,7 @@ export class PhrRecordStore {
       for (const e of indexEntries(resource)) insert.run(owner, resourceType, id, e.code, e.value);
       const body = textFor(resource);
       if (body !== '') {
-        const row = db.prepare('INSERT INTO phr_search_text (owner, resource_type, resource_id, body) VALUES (?, ?, ?, ?)').run(owner, resourceType, id, body);
+        const row = db.prepare('INSERT INTO phr_search_text (owner, owner_key, resource_type, resource_id, body) VALUES (?, ?, ?, ?, ?)').run(owner, ownerKey(owner), resourceType, id, body);
         db.prepare('INSERT OR REPLACE INTO phr_text_rowids (owner, resource_type, resource_id, text_rowid) VALUES (?, ?, ?, ?)')
           .run(owner, resourceType, id, Number(row.lastInsertRowid));
       }
@@ -278,7 +278,8 @@ export class PhrRecordStore {
         ).all(owner, ...except, Math.min(Math.max(limit, 1), 200)) as Row[]).map(toRecord);
       },
       findText(query, limit = 50) {
-        const match = ftsQuery(query);
+        // Matched in this person's rows only (yourphr#912); t.owner is still checked exactly.
+        const match = ownTextQuery(owner, query);
         if (match === '') return [];
         const rows = db.prepare(
           `SELECT r.resource_type, r.id, r.source_id, r.version_id, r.last_updated, r.deleted, r.content

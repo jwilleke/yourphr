@@ -13,6 +13,7 @@
 import { getSearchParameters, indexSearchParameterBundle, indexStructureDefinitionBundle } from '@medplum/core';
 import { readJson } from '@medplum/definitions';
 import type { Bundle, SearchParameter, StructureDefinition } from '@medplum/fhirtypes';
+import { createHash } from 'node:crypto';
 import fhirpath from 'fhirpath';
 import fhirpathR4Model from 'fhirpath/fhir-context/r4/index.js';
 
@@ -192,6 +193,22 @@ export function ftsQuery(q: string): string {
   const terms = q.toLowerCase().split(/[^\p{L}\p{N}]+/u).filter((t) => t.length > 0).slice(0, 12);
   if (terms.length === 0) return '';
   return terms.map((t, i) => `"${t.replace(/"/g, '')}"${i === terms.length - 1 ? '*' : ''}`).join(' AND ');
+}
+
+/**
+ * The owner as one FTS5 token (yourphr#912): a hash, so any username becomes a
+ * single token that no other username shares. Indexed in the text table, it
+ * lets a search match only that person's rows, instead of matching every
+ * person's and filtering afterwards.
+ */
+export function ownerKey(owner: string): string {
+  return `k${createHash('sha256').update(owner, 'utf8').digest('hex').slice(0, 32)}`;
+}
+
+/** A person's words, matched in their own text only. '' when there are no words. */
+export function ownTextQuery(owner: string, q: string): string {
+  const words = ftsQuery(q);
+  return words === '' ? '' : `owner_key : "${ownerKey(owner)}" AND body : (${words})`;
 }
 
 /** The comparisons a search filter may make. Anything else is refused, never guessed. */

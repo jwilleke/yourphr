@@ -12,6 +12,7 @@
  * - Tables are prefixed `phr_`, as core requires of an add-on database.
  */
 import type { Migration } from '@jwilleke/ngdpbase-types';
+import { ownerKey } from './fhirIndex.js';
 
 export const PHR_LEDGER_TABLE = 'phr_migrations';
 
@@ -97,6 +98,26 @@ export const PHR_MIGRATIONS: Migration[] = [
           PRIMARY KEY (owner, source_id, path)
         );
       `);
+    }
+  },
+  {
+    id: '20261022000000',
+    description: 'text index matches one person\'s rows only: an indexed owner key (yourphr#912)',
+    up(db) {
+      // The words table matched every person's rows and filtered by owner after
+      // (owner UNINDEXED). An indexed owner_key column lets a search match only
+      // the searcher's rows. Rows keep their rowids, so phr_text_rowids holds.
+      const rows = db.prepare('SELECT rowid AS rowid, owner, resource_type, resource_id, body FROM phr_search_text').all() as
+        { rowid: number; owner: string; resource_type: string; resource_id: string; body: string }[];
+      db.exec(`
+        DROP TABLE phr_search_text;
+        CREATE VIRTUAL TABLE phr_search_text USING fts5(
+          owner UNINDEXED, owner_key, resource_type UNINDEXED, resource_id UNINDEXED, body,
+          tokenize = 'porter unicode61'
+        );
+      `);
+      const insert = db.prepare('INSERT INTO phr_search_text (rowid, owner, owner_key, resource_type, resource_id, body) VALUES (?, ?, ?, ?, ?, ?)');
+      for (const r of rows) insert.run(r.rowid, r.owner, ownerKey(r.owner), r.resource_type, r.resource_id, r.body);
     }
   }
 ];
