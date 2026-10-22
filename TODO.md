@@ -8,9 +8,9 @@ Open work in [jwilleke/yourphr](https://github.com/jwilleke/yourphr), ranked. Ge
 
 ## 🟣 Epics
 
+- [#958](https://github.com/jwilleke/yourphr/issues/958) — [EPIC] phr add-on: build out yourPHR on ngdpbase to cutover
 - [#935](https://github.com/jwilleke/yourphr/issues/935) — [EPIC] Make sense of the records you already have — one lifetime record from any file
 - [#676](https://github.com/jwilleke/yourphr/issues/676) — [EPIC] The word "fasten" stops appearing in anything we ship
-- [#591](https://github.com/jwilleke/yourphr/issues/591) — [EPIC] Parity: what the TypeScript stack must do before it replaces yourPHR
 - [#385](https://github.com/jwilleke/yourphr/issues/385) — [EPIC] Realistic test-data corpus + golden-test harness
 - [#333](https://github.com/jwilleke/yourphr/issues/333) — [EPIC] Explore — record export options (Save Report, PDF, Email)
 - [#253](https://github.com/jwilleke/yourphr/issues/253) — [FEATURE] Epic: Support manual data entry and user-created records
@@ -23,21 +23,16 @@ Open work in [jwilleke/yourphr](https://github.com/jwilleke/yourphr), ranked. Ge
 - [#895](https://github.com/jwilleke/yourphr/issues/895) — [security] smol-toml — 1 open advisory in the root lockfile (medium)
 - [#871](https://github.com/jwilleke/yourphr/issues/871) — [FEATURE] Provider client secrets come from the instance's .env / Secret, not hand-pasted into the catalog form
 - [#864](https://github.com/jwilleke/yourphr/issues/864) — [SECURITY] Stop GitHub Actions from approving pull requests
-- [#840](https://github.com/jwilleke/yourphr/issues/840) — [FEATURE] System-wide audit log for the operator, ported from ngdpbase's AuditManager
 - [#819](https://github.com/jwilleke/yourphr/issues/819) — [security] webpack-dev-middleware — 1 open advisory in the frontend lockfile (high)
 - [#817](https://github.com/jwilleke/yourphr/issues/817) — [BUG] SSRF guard misses NAT64, 6to4 and two IPv4 special ranges; LAN access switches the guard off entirely
 - [#814](https://github.com/jwilleke/yourphr/issues/814) — [BUG] Sign-out does not end the session: the token stays valid until it expires
-- [#804](https://github.com/jwilleke/yourphr/issues/804) — [FEATURE] Adopt OIDC UserInfo in place of /api/secure/account/me; the UI draws from permission claims
 - [#925](https://github.com/jwilleke/yourphr/issues/925) — [FEATURE] Oracle Health in production: load the 1,319 patient-access endpoints into the catalog — our app already works there, no activation
 - [#924](https://github.com/jwilleke/yourphr/issues/924) — [FEATURE] Epic at scale: confirm the intended way an auto-distributed refresh-token app goes live at all organizations (no per-org activation)
-- [#920](https://github.com/jwilleke/yourphr/issues/920) — [ARCH] YourPHR as an ngdpbase add-on: one Sources-page slice, measured
 - [#916](https://github.com/jwilleke/yourphr/issues/916) — [FEATURE] 'Sync now' makes the person wait for the whole sync: start it, return, notify
 - [#912](https://github.com/jwilleke/yourphr/issues/912) — [BUG] Text search slows down with other people's records: FTS matches every account, then filters by user
 - [#909](https://github.com/jwilleke/yourphr/issues/909) — [FEATURE] Request log: one line per request with status and duration; warn on slow requests and event-loop stalls
 - [#893](https://github.com/jwilleke/yourphr/issues/893) — [FEATURE] Adopt ngdpbase's file logging provider: rotating logs on the data volume
 - [#870](https://github.com/jwilleke/yourphr/issues/870) — [BUG] Every provider connect on prod fails — yourPHR was never pointed at the SMART relay
-- [#862](https://github.com/jwilleke/yourphr/issues/862) — [FEATURE] Device-grant scopes use SMART on FHIR v2 names: patient/Observation.c for connected devices
-- [#860](https://github.com/jwilleke/yourphr/issues/860) — [FEATURE] A connected device's grant lasts until revoked: drop the 30-day term and its reminders
 - [#791](https://github.com/jwilleke/yourphr/issues/791) — [BUG] The backup and recovery docs describe the Go stack — plaintext, gzip, settings file, labels
 - [#784](https://github.com/jwilleke/yourphr/issues/784) — [BUG] Records are keyed without their source — a second provider's record with the same id is refused, and history is shared across people
 - [#782](https://github.com/jwilleke/yourphr/issues/782) — [BUG] A click that cannot complete says nothing — guards wait forever, failures are silent
@@ -45,15 +40,13 @@ Open work in [jwilleke/yourphr](https://github.com/jwilleke/yourphr), ranked. Ge
 - [#737](https://github.com/jwilleke/yourphr/issues/737) — [BUG] PDF, DICOM and image uploads (v2's #255) are gone in v3
 - [#674](https://github.com/jwilleke/yourphr/issues/674) — [BUG] A display label is used as a feature flag — "sandbox mode" keys off the instance's name
 - [#657](https://github.com/jwilleke/yourphr/issues/657) — [FEATURE] Chat over records as an MCP server — the patient's own AI client connects, YourPHR transmits nothing
-- [#641](https://github.com/jwilleke/yourphr/issues/641) — [SPIKE] Ship a minimal working deployment for each of the three targets — bare metal, Docker, k8s
 - [#633](https://github.com/jwilleke/yourphr/issues/633) — [FEATURE] Help content — the pages a patient actually needs
-- [#632](https://github.com/jwilleke/yourphr/issues/632) — [FEATURE] In-app help pages — markdown shipped with the code, rendered as HTML
-- [#624](https://github.com/jwilleke/yourphr/issues/624) — [SPIKE] Configuration: split the bootstrap flag — it is doing three jobs (raw-env, restart-required, secret)
 - [#408](https://github.com/jwilleke/yourphr/issues/408) — [FEATURE] Prove one production SMART provider end-to-end via provider catalog
 
 ## 🟡 P2
 
 - [#896](https://github.com/jwilleke/yourphr/issues/896) — [security] katex — 1 open advisory in the root lockfile (low)
+- [#957](https://github.com/jwilleke/yourphr/pull/957) — chore(kit): sync to v1.14.0 *(PR · ready)* — no linked issue
 - [#946](https://github.com/jwilleke/yourphr/issues/946) — [BUG] The CMS Blue Button production-access runbook still describes the Go stack
 - [#945](https://github.com/jwilleke/yourphr/issues/945) — [FEATURE] Share the consolidated record: FHIR export, IPS, SMART Health Links, printed summary
 - [#944](https://github.com/jwilleke/yourphr/issues/944) — [FEATURE] Records request kit: right-of-access / EHI Export letters and a provider checklist
@@ -65,81 +58,69 @@ Open work in [jwilleke/yourphr](https://github.com/jwilleke/yourphr), ranked. Ge
 - [#938](https://github.com/jwilleke/yourphr/issues/938) — [FEATURE] Duplicates across sources: identical files once, identical facts grouped, near-matches confirmed
 - [#937](https://github.com/jwilleke/yourphr/issues/937) — [FEATURE] Extract facts from documents into FHIR, each linked to its file and page
 - [#936](https://github.com/jwilleke/yourphr/issues/936) — [FEATURE] OCR for scanned pages and phone photos, on the instance
-- [#934](https://github.com/jwilleke/yourphr/issues/934) — [FEATURE] Greenway Health: register the patient app — self-service, free, one review, ~1,400 practices
 - [#933](https://github.com/jwilleke/yourphr/issues/933) — [FEATURE] eClinicalWorks (healow): register the patient app — self-service, ~17k practices; needs private_key_jwt for refresh tokens
 - [#932](https://github.com/jwilleke/yourphr/issues/932) — [FEATURE] NextGen Enterprise: register the patient-access app — one shared endpoint, ~4,820 practices, no gate
 - [#923](https://github.com/jwilleke/yourphr/issues/923) — [FEATURE] Patient identifiers: show one in plain words, hide the MyChart login, keep login IDs out of exports
-- [#922](https://github.com/jwilleke/yourphr/issues/922) — [FEATURE] An admin can delete a user (parked under #920)
-- [#921](https://github.com/jwilleke/yourphr/issues/921) — [BUG] Admin → Configuration says 'no restart' but password min-length and permissions only apply after a restart
-- [#918](https://github.com/jwilleke/yourphr/issues/918) — [FEATURE] Deleting an account makes the person wait for every removal (33 s): start it, sign out, finish in the background
-- [#917](https://github.com/jwilleke/yourphr/issues/917) — [FEATURE] 'Back up now' makes the admin wait ~10 s or more: start it, return, notify
 - [#902](https://github.com/jwilleke/yourphr/issues/902) — [FEATURE] My medical record numbers: each MRN with the organization that issued it
 - [#901](https://github.com/jwilleke/yourphr/issues/901) — [FEATURE] Show NPI registry facts beside records that state an NPI (type 1 and type 2)
 - [#900](https://github.com/jwilleke/yourphr/issues/900) — [FEATURE] NPI organization lookup (type 2) beside the clinician lookup
-- [#894](https://github.com/jwilleke/yourphr/issues/894) — [FEATURE] Wire Dynamic Client Registration (src/dcr) into provider connect
-- [#884](https://github.com/jwilleke/yourphr/issues/884) — [FEATURE] Restart the server from the admin UI, without depending on PM2
-- [#833](https://github.com/jwilleke/yourphr/issues/833) — [FEATURE] Per-person notification channels: each person chooses where notices reach them
-- [#803](https://github.com/jwilleke/yourphr/issues/803) — [FEATURE] "spike" in test/CI variable names, temp prefixes, comments and docs — rename to yourPHR
 - [#802](https://github.com/jwilleke/yourphr/issues/802) — [FEATURE] The live deployment still sets SPIKE_* variables — rename them, then retire the fallback
-- [#801](https://github.com/jwilleke/yourphr/issues/801) — [FEATURE] The app database file is still called spike.db — rename it, migrating existing instances
-- [#772](https://github.com/jwilleke/yourphr/issues/772) — [CHORE] check-routes compares paths, not methods — a GET-only path reads as served for PATCH and DELETE
-- [#709](https://github.com/jwilleke/yourphr/issues/709) — [FEATURE] Per-user settings have no store — Go's user_settings table got no successor, so preferences live in one browser
-- [#705](https://github.com/jwilleke/yourphr/issues/705) — [FEATURE] Reconnect an expired source through the catalog — re-authorize without disconnect + re-import
-- [#704](https://github.com/jwilleke/yourphr/issues/704) — [CHORE] Frontend tests: off the deprecated Karma builder, then Karma/Jasmine to Vitest
-- [#702](https://github.com/jwilleke/yourphr/issues/702) — [CHORE] Replace frontend baseUrl with paths mappings — TypeScript 7 removes it
-- [#699](https://github.com/jwilleke/yourphr/issues/699) — [CHORE] Migrate the frontend off Yarn Classic to npm — one package manager, one audit surface
-- [#693](https://github.com/jwilleke/yourphr/issues/693) — [BUG] IdP callback posts to a route that does not exist
-- [#552](https://github.com/jwilleke/yourphr/issues/552) — [CHORE] Port the DICOM viewer to dwv 0.36 — removed APIs and a build path that no longer exists
 - [#535](https://github.com/jwilleke/yourphr/issues/535) — [FEATURE] No list view for Organizations (individual ones display fine)
-- [#502](https://github.com/jwilleke/yourphr/issues/502) — [ARCH] Evaluate moving Azia's hand-rolled dark stylesheet onto Bootstrap 5.3 colour modes (data-bs-theme)
-- [#499](https://github.com/jwilleke/yourphr/issues/499) — [FEATURE] ui.color-mode: instance default for light/dark (user's own choice still wins)
-- [#487](https://github.com/jwilleke/yourphr/issues/487) — [CHORE] Migrating off Karma must not silently defang the contrast test (jsdom has no real cascade)
-- [#475](https://github.com/jwilleke/yourphr/issues/475) — [FEATURE] Show the storage roots (YOURPHR_FAST_STORAGE, YOURPHR_SLOW_STORAGE) on Admin → Configuration
-- [#465](https://github.com/jwilleke/yourphr/issues/465) — [FEATURE] Record the document digest on the consent record
 - [#462](https://github.com/jwilleke/yourphr/issues/462) — [FEATURE] Share records as a SMART Health Link (shlink)
-- [#436](https://github.com/jwilleke/yourphr/issues/436) — [FEATURE] Support for "Bootstrap" and themas
 - [#415](https://github.com/jwilleke/yourphr/issues/415) — [docs] Manual SMART connect golden-path checklist (relay + catalog)
 - [#389](https://github.com/jwilleke/yourphr/issues/389) — [FEATURE] /patient-profile Care Provider
-- [#370](https://github.com/jwilleke/yourphr/issues/370) — [FEATURE] Add VA Clinical Health (FHIR) as a SMART provider
-- [#369](https://github.com/jwilleke/yourphr/issues/369) — [FEATURE] /medical-history — server-side grouping endpoint (counts + paged detail) for scale
-- [#364](https://github.com/jwilleke/yourphr/issues/364) — [FEATURE] Admin Database card — polish (free space, schema version, totals, vacuum)
-- [#353](https://github.com/jwilleke/yourphr/issues/353) — [FEATURE] Patient private notes on records (persist + indicator)
-- [#343](https://github.com/jwilleke/yourphr/issues/343) — [FEATURE] Add patient/Observation.rs (+ lab/vital scopes) to the Cerner sandbox seed — no lab values import today
-- [#340](https://github.com/jwilleke/yourphr/issues/340) — [FEATURE] Provider logos on Connected Sources — minted UUID brand_id for seeded sandboxes, brand_logo_url override for custom entries
-- [#339](https://github.com/jwilleke/yourphr/issues/339) — [FEATURE] athenahealth sandbox — complete Developer-Portal onboarding (approval-gated)
 - [#334](https://github.com/jwilleke/yourphr/issues/334) — [FEATURE] Explore — Save Report
 - [#314](https://github.com/jwilleke/yourphr/issues/314) — [FEATURE] Wearable Device Integration for Vitals, Activity & PGHD
 - [#313](https://github.com/jwilleke/yourphr/issues/313) — [FEATURE] patients able to add records to their own PHR
 - [#307](https://github.com/jwilleke/yourphr/issues/307) — [FEATURE] Manual records — frontend: entry/edit/delete forms
 - [#305](https://github.com/jwilleke/yourphr/issues/305) — [FEATURE] Manual records — backend: store/edit/delete user-created records (FHIR-consistent)
 - [#300](https://github.com/jwilleke/yourphr/issues/300) — [FEATURE] Angular surface for Medicare claims & coverage (insurance view)
-- [#287](https://github.com/jwilleke/yourphr/issues/287) — [FEATURE] Upload/import UI polish — make all supported file types selectable + clearer 'add my data' affordances
 - [#280](https://github.com/jwilleke/yourphr/issues/280) — [FEATURE] Raw fhir-cards: resolve a referenced resource's display name (e.g. Medication/{id})
 - [#252](https://github.com/jwilleke/yourphr/issues/252) — [FEATURE] Harden re-import dedup: guard idempotent upserts against stale (older) overwrites + add coverage
-- [#251](https://github.com/jwilleke/yourphr/issues/251) — [FEATURE] Explore Apple Health's supported-institution list as a provider-catalog / FHIR-endpoint source
-- [#14](https://github.com/jwilleke/yourphr/issues/14) — [FEATURE] The person sets their display name — adopt ngdpbase's user displayName
 
 ## 🔵 In review
 
-*None.*
+- [#921](https://github.com/jwilleke/yourphr/issues/921) — [BUG] Admin → Configuration says 'no restart' but password min-length and permissions only apply after a restart
+- [#624](https://github.com/jwilleke/yourphr/issues/624) — [SPIKE] Configuration: split the bootstrap flag — it is doing three jobs (raw-env, restart-required, secret)
 
 ## ⏸ Deferred
 
+- [#804](https://github.com/jwilleke/yourphr/issues/804) — [FEATURE] Adopt OIDC UserInfo in place of /api/secure/account/me; the UI draws from permission claims
 - [#363](https://github.com/jwilleke/yourphr/issues/363) — [FEATURE] Database at-rest encryption: enable/migrate (guarded) + decrypt
+- [#934](https://github.com/jwilleke/yourphr/issues/934) — [FEATURE] Greenway Health: register the patient app — self-service, free, one review, ~1,400 practices
+- [#918](https://github.com/jwilleke/yourphr/issues/918) — [FEATURE] Deleting an account makes the person wait for every removal (33 s): start it, sign out, finish in the background
+- [#917](https://github.com/jwilleke/yourphr/issues/917) — [FEATURE] 'Back up now' makes the admin wait ~10 s or more: start it, return, notify
+- [#894](https://github.com/jwilleke/yourphr/issues/894) — [FEATURE] Wire Dynamic Client Registration (src/dcr) into provider connect
 - [#890](https://github.com/jwilleke/yourphr/issues/890) — [FEATURE] List YourPHR in the Harvard SMART App Gallery
+- [#884](https://github.com/jwilleke/yourphr/issues/884) — [FEATURE] Restart the server from the admin UI, without depending on PM2
+- [#862](https://github.com/jwilleke/yourphr/issues/862) — [FEATURE] Device-grant scopes use SMART on FHIR v2 names: patient/Observation.c for connected devices
+- [#860](https://github.com/jwilleke/yourphr/issues/860) — [FEATURE] A connected device's grant lasts until revoked: drop the 30-day term and its reminders
+- [#833](https://github.com/jwilleke/yourphr/issues/833) — [FEATURE] Per-person notification channels: each person chooses where notices reach them
+- [#803](https://github.com/jwilleke/yourphr/issues/803) — [FEATURE] "spike" in test/CI variable names, temp prefixes, comments and docs — rename to yourPHR
+- [#801](https://github.com/jwilleke/yourphr/issues/801) — [FEATURE] The app database file is still called spike.db — rename it, migrating existing instances
+- [#772](https://github.com/jwilleke/yourphr/issues/772) — [CHORE] check-routes compares paths, not methods — a GET-only path reads as served for PATCH and DELETE
 - [#770](https://github.com/jwilleke/yourphr/issues/770) — [FEATURE] Patient self-report forms as QuestionnaireResponse — the questionnaire has to exist first
-- [#708](https://github.com/jwilleke/yourphr/issues/708) — [ARCH] relay/main.go is the last Go module — port it to TypeScript or record that it stays Go
+- [#705](https://github.com/jwilleke/yourphr/issues/705) — [FEATURE] Reconnect an expired source through the catalog — re-authorize without disconnect + re-import
+- [#704](https://github.com/jwilleke/yourphr/issues/704) — [CHORE] Frontend tests: off the deprecated Karma builder, then Karma/Jasmine to Vitest
+- [#702](https://github.com/jwilleke/yourphr/issues/702) — [CHORE] Replace frontend baseUrl with paths mappings — TypeScript 7 removes it
+- [#699](https://github.com/jwilleke/yourphr/issues/699) — [CHORE] Migrate the frontend off Yarn Classic to npm — one package manager, one audit surface
+- [#591](https://github.com/jwilleke/yourphr/issues/591) — [EPIC] Parity: what the TypeScript stack must do before it replaces yourPHR
+- [#552](https://github.com/jwilleke/yourphr/issues/552) — [CHORE] Port the DICOM viewer to dwv 0.36 — removed APIs and a build path that no longer exists
+- [#502](https://github.com/jwilleke/yourphr/issues/502) — [ARCH] Evaluate moving Azia's hand-rolled dark stylesheet onto Bootstrap 5.3 colour modes (data-bs-theme)
+- [#499](https://github.com/jwilleke/yourphr/issues/499) — [FEATURE] ui.color-mode: instance default for light/dark (user's own choice still wins)
+- [#487](https://github.com/jwilleke/yourphr/issues/487) — [CHORE] Migrating off Karma must not silently defang the contrast test (jsdom has no real cascade)
+- [#436](https://github.com/jwilleke/yourphr/issues/436) — [FEATURE] Support for "Bootstrap" and themas
+- [#370](https://github.com/jwilleke/yourphr/issues/370) — [FEATURE] Add VA Clinical Health (FHIR) as a SMART provider
+- [#369](https://github.com/jwilleke/yourphr/issues/369) — [FEATURE] /medical-history — server-side grouping endpoint (counts + paged detail) for scale
+- [#364](https://github.com/jwilleke/yourphr/issues/364) — [FEATURE] Admin Database card — polish (free space, schema version, totals, vacuum)
 - [#352](https://github.com/jwilleke/yourphr/issues/352) — [FEATURE] Patient-friendly Body Diagram / Body Map View
 - [#351](https://github.com/jwilleke/yourphr/issues/351) — [FEATURE] /medical-history — group & filter by Date (default), Condition, Provider, Place, Type
+- [#343](https://github.com/jwilleke/yourphr/issues/343) — [FEATURE] Add patient/Observation.rs (+ lab/vital scopes) to the Cerner sandbox seed — no lab values import today
+- [#340](https://github.com/jwilleke/yourphr/issues/340) — [FEATURE] Provider logos on Connected Sources — minted UUID brand_id for seeded sandboxes, brand_logo_url override for custom entries
+- [#339](https://github.com/jwilleke/yourphr/issues/339) — [FEATURE] athenahealth sandbox — complete Developer-Portal onboarding (approval-gated)
 - [#263](https://github.com/jwilleke/yourphr/issues/263) — [FEATURE] Message Provider
+- [#251](https://github.com/jwilleke/yourphr/issues/251) — [FEATURE] Explore Apple Health's supported-institution list as a provider-catalog / FHIR-endpoint source
 
 ## ❓ Needs triage
 
-- [#956](https://github.com/jwilleke/yourphr/pull/956) — chore(deps): bump @angular-eslint/builder from 22.5.0 to 22.6.0 in /frontend *(PR · ready)* — no linked issue
-- [#955](https://github.com/jwilleke/yourphr/pull/955) — chore(deps): bump @playwright/test from 1.63.0 to 1.64.1 in /frontend *(PR · ready)* — no linked issue
-- [#954](https://github.com/jwilleke/yourphr/pull/954) — chore(deps): bump @angular-devkit/build-angular from 22.2.0 to 22.2.3 in /frontend *(PR · ready)* — no linked issue
-- [#953](https://github.com/jwilleke/yourphr/pull/953) — chore(deps): bump typescript-eslint from 8.70.0 to 8.71.2 in /frontend *(PR · ready)* — no linked issue
-- [#952](https://github.com/jwilleke/yourphr/pull/952) — chore(deps): bump @angular/language-service from 22.2.1 to 22.2.3 in /frontend *(PR · ready)* — no linked issue
-- [#951](https://github.com/jwilleke/yourphr/pull/951) — chore(ci): bump actions/checkout from 4 to 7 *(PR · ready)* — no linked issue
-- [#950](https://github.com/jwilleke/yourphr/pull/950) — chore(deps): bump markdown-it from 15.0.2 to 15.0.3 in the npm_and_yarn group across 1 directory *(PR · ready)* — no linked issue
 - [#926](https://github.com/jwilleke/yourphr/issues/926) — Register yourPHR as a patient-access SMART on FHIR app with Oracle Health (Cerner Millennium)
