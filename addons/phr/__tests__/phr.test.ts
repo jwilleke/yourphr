@@ -1,28 +1,30 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { buildAddonHost, formatters } from '@jwilleke/ngdpbase-types/testing';
-import { healthRecordsOn, PHR_ENABLED, PHR_RENDERED, type UserLike, type UserManagerLike } from '../preferences.js';
+import type { ActorContext } from '@jwilleke/ngdpbase-types';
+import { healthRecordsOnFor, switchShownOn, PHR_ENABLED, PHR_RENDERED } from '../preferences.js';
 import { profileSectionHtml, saveProfileSection } from '../profile.js';
 import { createPhrWelcomePlugin } from '../plugins/PhrWelcomePlugin.js';
 
 const defaults = JSON.parse(readFileSync(new URL('../config/default-config.json', import.meta.url), 'utf8')) as Record<string, unknown>;
 
-/** An in-memory stand-in for core's UserManager: only the two calls phr makes. */
-function fakeUsers(start: Record<string, UserLike>): UserManagerLike & { saved: Record<string, UserLike> } {
-  const saved: Record<string, UserLike> = structuredClone(start);
-  return {
-    saved,
-    async getUser(username) { return saved[username]; },
-    async updateUser(username, updates) { saved[username] = { ...saved[username], ...updates }; return saved[username]; }
-  };
-}
+/** A stand-in for core's AddonsManager.enabledAddonsFor: phr is on for the people named. */
+const onFor = (...names: string[]) => healthRecordsOnFor(() => ({
+  enabledAddonsFor: async (ctx) => (names.includes(String((ctx as { username?: string }).username)) ? ['forms', 'phr'] : ['forms'])
+}));
+const alice = { username: 'alice', roles: ['reader'], isAuthenticated: true } as unknown as ActorContext;
 
 describe('the "Health records" switch', () => {
-  it('is off unless the person turned it on', () => {
-    expect(healthRecordsOn(undefined)).toBe(false);
-    expect(healthRecordsOn({})).toBe(false);
-    expect(healthRecordsOn({ preferences: { [PHR_ENABLED]: 'true' } })).toBe(false);
-    expect(healthRecordsOn({ preferences: { [PHR_ENABLED]: true } })).toBe(true);
+  it('is on only when core lists phr among the person\'s add-ons', async () => {
+    expect(await onFor('alice')(alice)).toBe(true);
+    expect(await onFor('bob')(alice)).toBe(false);
+    expect(await healthRecordsOnFor(() => null)(alice)).toBe(false);
+  });
+
+  it('the profile checkbox shows on only for the boolean true', () => {
+    expect(switchShownOn(undefined)).toBe(false);
+    expect(switchShownOn({ preferences: { [PHR_ENABLED]: 'true' } })).toBe(false);
+    expect(switchShownOn({ preferences: { [PHR_ENABLED]: true } })).toBe(true);
   });
 
   it('shows checked only when on', () => {
@@ -31,17 +33,17 @@ describe('the "Health records" switch', () => {
   });
 
   it('saves nothing when the section was not on the submitted form', async () => {
-    const users = fakeUsers({ alice: { preferences: { [PHR_ENABLED]: true } } });
-    await saveProfileSection(users, { username: 'alice' }, {});
-    expect(users.saved.alice.preferences?.[PHR_ENABLED]).toBe(true);
+    const calls: boolean[] = [];
+    await saveProfileSection(async (_ctx, on) => { calls.push(on); }, alice, {});
+    expect(calls).toEqual([]);
   });
 
-  it('turns on and off, and keeps the person\'s other preferences', async () => {
-    const users = fakeUsers({ alice: { preferences: { 'preferences.timezone': 'America/New_York' } } });
-    await saveProfileSection(users, { username: 'alice' }, { [PHR_RENDERED]: '1', [PHR_ENABLED]: 'on' });
-    expect(users.saved.alice.preferences).toEqual({ 'preferences.timezone': 'America/New_York', [PHR_ENABLED]: true });
-    await saveProfileSection(users, { username: 'alice' }, { [PHR_RENDERED]: '1' });
-    expect(users.saved.alice.preferences?.[PHR_ENABLED]).toBe(false);
+  it('turns on and off through core\'s setter, for the person saving', async () => {
+    const calls: [unknown, boolean][] = [];
+    const host = buildAddonHost('phr', defaults, async (ctx, on) => { calls.push([ctx, on]); });
+    await saveProfileSection(host.setEnabledForPerson, alice, { [PHR_RENDERED]: '1', [PHR_ENABLED]: 'on' });
+    await saveProfileSection(host.setEnabledForPerson, alice, { [PHR_RENDERED]: '1' });
+    expect(calls).toEqual([[alice, true], [alice, false]]);
   });
 });
 
@@ -101,18 +103,18 @@ describe('[{PhrWelcome}]', () => {
   const page = (userContext: unknown) => ({ pageName: 'My Health Records', linkGraph: {}, formatters, userContext });
 
   it('asks a visitor to sign in', async () => {
-    const plugin = createPhrWelcomePlugin(() => fakeUsers({}));
+    const plugin = createPhrWelcomePlugin(onFor());
     expect(await plugin.execute!(page(undefined), {})).toContain('Sign in');
   });
 
   it('points a person with health records off to their profile', async () => {
-    const plugin = createPhrWelcomePlugin(() => fakeUsers({ bob: {} }));
+    const plugin = createPhrWelcomePlugin(onFor());
     expect(await plugin.execute!(page({ username: 'bob', isAuthenticated: true }), {})).toContain('href="/profile"');
   });
 
   it('escapes the username', async () => {
     const name = '<img src=x onerror=alert(1)>';
-    const plugin = createPhrWelcomePlugin(() => fakeUsers({ [name]: { preferences: { [PHR_ENABLED]: true } } }));
+    const plugin = createPhrWelcomePlugin(onFor(name));
     const html = await plugin.execute!(page({ username: name, isAuthenticated: true }), {});
     expect(html).not.toContain('<img');
     expect(html).toContain('&lt;img');

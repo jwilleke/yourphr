@@ -6,11 +6,11 @@
  */
 import type { Application, Request, Response } from 'express';
 import type { AddonHost, WikiEngine } from '@jwilleke/ngdpbase-types';
-import { healthRecordsOn, type UserManagerLike } from '../preferences.js';
+import type { HealthRecordsOn } from '../preferences.js';
 import type { PhrManager } from '../managers/PhrManager.js';
 import { StoreError } from '../managers/PhrRecordStore.js';
 
-export function mountApi(app: Application, engine: WikiEngine, host: AddonHost, users: () => UserManagerLike | null | undefined, records: () => PhrManager | null = () => null): void {
+export function mountApi(app: Application, engine: WikiEngine, host: AddonHost, healthRecordsOn: HealthRecordsOn, records: () => PhrManager | null = () => null): void {
   // Who you are, as phr sees you. The first proof that phr rides ngdpbase's sign-in.
   app.get('/api/phr/whoami', (req: Request, res: Response) => {
     void (async () => {
@@ -18,7 +18,7 @@ export function mountApi(app: Application, engine: WikiEngine, host: AddonHost, 
         const ctx = host.ApiContext.from(req, engine);
         await ctx.requirePermission('phr-read');
         const username = ctx.actingUsername();
-        const healthRecords = healthRecordsOn(await users()?.getUser(username)) ? 'on' : 'off';
+        const healthRecords = (await healthRecordsOn(ctx as never)) ? 'on' : 'off';
         res.json({ success: true, data: { username, isTest: ctx.isTest, healthRecords } });
       } catch (err) {
         if (err instanceof host.ApiError) { host.sendApiError(res, err); return; }

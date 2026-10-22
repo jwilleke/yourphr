@@ -6,7 +6,7 @@ import { PHR_MIGRATIONS, PHR_LEDGER_TABLE } from '../managers/migrations.js';
 import { PhrRecordStore, type Db } from '../managers/PhrRecordStore.js';
 import { PhrManager, type PhrCaller } from '../managers/PhrManager.js';
 import { createPhrRecordsPlugin } from '../plugins/PhrRecordsPlugin.js';
-import { PHR_ENABLED, type UserManagerLike } from '../preferences.js';
+import { healthRecordsOnFor } from '../preferences.js';
 import { PGHD_TAG, isPatientNote, noteText } from '../managers/notes.js';
 
 const defaults = JSON.parse(readFileSync(new URL('../config/default-config.json', import.meta.url), 'utf8')) as Record<string, unknown>;
@@ -66,8 +66,8 @@ describe('a person\'s notes about their records', () => {
 
   it('shows notes under their record on the page, escaped, and not as records of their own', async () => {
     await phr.addNote(caller('alice'), { resourceType: 'Observation', id: 'a1c' }, '<b>ask</b> about this');
-    const users: UserManagerLike = { async getUser() { return { preferences: { [PHR_ENABLED]: true } }; }, async updateUser() { return undefined; } };
-    const html = await createPhrRecordsPlugin(() => phr, () => users).execute!({ pageName: 'x', linkGraph: {}, formatters, userContext: { username: 'alice', isAuthenticated: true } } as never, {});
+    const on = healthRecordsOnFor(() => ({ enabledAddonsFor: async () => ['phr'] }));
+    const html = await createPhrRecordsPlugin(() => phr, on).execute!({ pageName: 'x', linkGraph: {}, formatters, userContext: { username: 'alice', isAuthenticated: true } } as never, {});
     expect(html).toContain('Your note');
     expect(html).toContain('&lt;b&gt;ask&lt;/b&gt; about this');
     expect(html).not.toMatch(/\d+ communications?/i);

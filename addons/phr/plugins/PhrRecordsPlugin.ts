@@ -5,10 +5,10 @@
  * only their own records (or those of someone they act for by proxy).
  * Wording follows the plain-language and no-guessing rules (display.ts).
  */
-import type { PermissionSubject, SimplePlugin } from '@jwilleke/ngdpbase-types';
+import type { ActorContext, PermissionSubject, SimplePlugin } from '@jwilleke/ngdpbase-types';
 import type { PhrCaller, PhrManager } from '../managers/PhrManager.js';
 import type { StoredRecord } from '../managers/PhrRecordStore.js';
-import { healthRecordsOn, type UserManagerLike } from '../preferences.js';
+import type { HealthRecordsOn } from '../preferences.js';
 import { kindName, recordDate, recordName, recordValue } from '../display.js';
 import { noteText } from '../managers/notes.js';
 
@@ -16,7 +16,7 @@ interface Viewer { username?: string | null; isAuthenticated?: boolean; ipAddres
 
 class NotAllowed extends Error {}
 
-export function createPhrRecordsPlugin(records: () => PhrManager | null, users: () => UserManagerLike | null | undefined): SimplePlugin {
+export function createPhrRecordsPlugin(records: () => PhrManager | null, healthRecordsOn: HealthRecordsOn): SimplePlugin {
   return {
     name: 'PhrRecords',
     // Who is looking decides what shows, so the page is never cached.
@@ -25,7 +25,7 @@ export function createPhrRecordsPlugin(records: () => PhrManager | null, users: 
       const esc = context.formatters.escapeHtml;
       const who = (context as { userContext?: Viewer }).userContext;
       if (!who?.isAuthenticated || !who.username) return '';
-      if (!healthRecordsOn(await users()?.getUser(who.username))) return '';
+      if (!(await healthRecordsOn(who as unknown as ActorContext))) return '';
       const phr = records();
       if (!phr) return '<p class="text-muted">Health records aren\'t available right now.</p>';
 

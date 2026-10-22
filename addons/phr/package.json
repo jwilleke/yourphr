@@ -1,6 +1,6 @@
 {
   "name": "@yourphr/phr-addon",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "yourPHR as an ngdpbase add-on: your health records, in your hands",
   "license": "GPL-3.0-only",
   "type": "module",
@@ -27,7 +27,8 @@
   "ngdpbase": {
     "slug": "phr",
     "type": "additive",
-    "minVersion": "5.24.0"
+    "minVersion": "5.25.0",
+    "perPerson": true
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
@@ -35,7 +36,7 @@
     "typecheck": "tsc -p tsconfig.test.json"
   },
   "devDependencies": {
-    "@jwilleke/ngdpbase-types": "5.24.0",
+    "@jwilleke/ngdpbase-types": "5.25.0",
     "@medplum/fhirtypes": "5.2.7",
     "@types/node": "^24.19.1",
     "typescript": "^6.0.3",

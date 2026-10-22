@@ -7,15 +7,14 @@ import { PhrRecordStore, type Db } from '../managers/PhrRecordStore.js';
 import { PhrManager } from '../managers/PhrManager.js';
 import { createPhrRecordsPlugin } from '../plugins/PhrRecordsPlugin.js';
 import { kindName, recordDate, recordName, recordValue } from '../display.js';
-import { PHR_ENABLED, type UserManagerLike } from '../preferences.js';
+import { healthRecordsOnFor } from '../preferences.js';
 import { SYNTHETIC_RECORDS } from '../dev/seedSynthetic.js';
 
 const defaults = JSON.parse(readFileSync(new URL('../config/default-config.json', import.meta.url), 'utf8')) as Record<string, unknown>;
 const allowAll = async (): Promise<Decision> => ({ permit: true, applicable: true, reason: 'test-allow' });
-const usersOn = (...names: string[]): UserManagerLike => ({
-  async getUser(u) { return names.includes(u) ? { preferences: { [PHR_ENABLED]: true } } : { preferences: {} }; },
-  async updateUser() { return undefined; }
-});
+const onFor = (...names: string[]) => healthRecordsOnFor(() => ({
+  enabledAddonsFor: async (ctx) => (names.includes(String((ctx as { username?: string }).username)) ? ['phr'] : [])
+}));
 
 describe('plain-language display, nothing guessed', () => {
   it('names kinds the way people do', () => {
@@ -51,13 +50,13 @@ describe('[{PhrRecords}]', () => {
   afterEach(() => db.close());
 
   it('says so when there are no records yet', async () => {
-    const html = await createPhrRecordsPlugin(() => phr, () => usersOn('alice')).execute!(page(alice), {});
+    const html = await createPhrRecordsPlugin(() => phr, onFor('alice')).execute!(page(alice), {});
     expect(html).toContain("don't have any health records here yet");
   });
 
   it('shows what a person has by kind, their newest records, and "not stated" instead of guesses', async () => {
     for (const r of SYNTHETIC_RECORDS) await phr.write({ subject: alice as never, ipAddress: undefined, enforceDeny: async () => { throw new Error('no'); } }, r, 'synthetic');
-    const html = await createPhrRecordsPlugin(() => phr, () => usersOn('alice')).execute!(page(alice), {});
+    const html = await createPhrRecordsPlugin(() => phr, onFor('alice')).execute!(page(alice), {});
     expect(html).toContain('lab results and measurements');
     expect(html).toContain('Hemoglobin A1c');
     expect(html).toContain('Name not stated');
@@ -66,7 +65,7 @@ describe('[{PhrRecords}]', () => {
 
   it('finds by words, and escapes what the person typed', async () => {
     for (const r of SYNTHETIC_RECORDS) await phr.write({ subject: alice as never, ipAddress: undefined, enforceDeny: async () => { throw new Error('no'); } }, r, 'synthetic');
-    const plugin = createPhrRecordsPlugin(() => phr, () => usersOn('alice'));
+    const plugin = createPhrRecordsPlugin(() => phr, onFor('alice'));
     expect(await plugin.execute!(page(alice, { q: 'prediab' }), {})).toContain('Prediabetes');
     const evil = await plugin.execute!(page(alice, { q: '<script>alert(1)</script>' }), {});
     expect(evil).not.toContain('<script>');
@@ -74,7 +73,7 @@ describe('[{PhrRecords}]', () => {
   });
 
   it('shows nothing to someone signed out or with health records off', async () => {
-    const plugin = createPhrRecordsPlugin(() => phr, () => usersOn('alice'));
+    const plugin = createPhrRecordsPlugin(() => phr, onFor('alice'));
     expect(await plugin.execute!(page(undefined), {})).toBe('');
     expect(await plugin.execute!(page({ username: 'bob', isAuthenticated: true }), {})).toBe('');
   });

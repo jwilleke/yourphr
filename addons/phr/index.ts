@@ -21,7 +21,7 @@
  *
  * The exported `name` MUST equal `ngdpbase.slug` in package.json (#927).
  */
-import type { AddonHost, PolicyDecisionPoint, WikiEngine } from '@jwilleke/ngdpbase-types';
+import type { ActorContext, AddonHost, PolicyDecisionPoint, WikiEngine } from '@jwilleke/ngdpbase-types';
 import { openPhrStore } from './managers/PhrRecordStore.js';
 import { PhrManager } from './managers/PhrManager.js';
 import { NOTE_FORM, NOTE_FORM_ID, noteFormHandler } from './forms/noteForm.js';
@@ -29,10 +29,10 @@ import { mountApi } from './routes/api.js';
 import { createPhrWelcomePlugin } from './plugins/PhrWelcomePlugin.js';
 import { createPhrRecordsPlugin } from './plugins/PhrRecordsPlugin.js';
 import { profileSectionHtml, saveProfileSection } from './profile.js';
-import type { UserLike, UserManagerLike } from './preferences.js';
+import { healthRecordsOnFor, type AddonsManagerLike as PersonSwitchReader, type UserLike } from './preferences.js';
 
 // PluginManager, AddonsManager and the forms add-on aren't in core's public types yet (asked of ngdpbase); only the calls phr makes.
-interface FormsDataManagerLike { registerShippedForm(addon: string, definition: unknown, options?: { required?: boolean }): Promise<unknown> }
+interface FormsDataManagerLike { registerShippedForm(addon: string, definition: unknown, ctx: unknown): Promise<unknown> }
 interface FormsAddonLike { registerHandler(formId: string, handler: (submission: { data: Record<string, unknown> }, context: { req: unknown }) => Promise<unknown>): void }
 interface PluginManagerLike { registerPlugin(name: string, plugin: unknown): Promise<void> }
 interface AddonsManagerLike {
@@ -41,13 +41,15 @@ interface AddonsManagerLike {
 
 let unavailable: string | null = 'not registered yet';
 let engineRef: WikiEngine | null = null;
+let hostRef: AddonHost | null = null;
 let records: PhrManager | null = null;
 
 /** The one door to health records, for phr's routes, plugins and jobs. Null until phr has started. */
 export function phrRecords(): PhrManager | null {
   return records;
 }
-const users = (): UserManagerLike | null | undefined => engineRef?.getManager<UserManagerLike>('UserManager');
+/** Is phr on for this person? Core's answer (AddonsManager.enabledAddonsFor, ngdpbase#1963). */
+const healthRecordsOn = healthRecordsOnFor(() => engineRef?.getManager<PersonSwitchReader>('AddonsManager'));
 
 /**
  * DEVELOPMENT ONLY: the made-up-records loader, on a local test site that asks
@@ -83,13 +85,14 @@ async function registerNoteForm(engine: WikiEngine, tools: AddonHost): Promise<v
     tools.logger.warn('[phr] the forms add-on is off, so the "Add a note" form is not offered');
     return;
   }
-  await forms.registerShippedForm('phr', NOTE_FORM, { required: true });
+  // The form's version is phr's package version: a newer phr replaces it (ngdpbase#1973).
+  await forms.registerShippedForm('phr', NOTE_FORM, tools.systemContext('phr: register its note form'));
   formsAddon.registerHandler(NOTE_FORM_ID, noteFormHandler(phrRecords, (req) => tools.ApiContext.from(req as never, engine)));
 }
 
 const PhrAddon = {
   name: 'phr',
-  version: '0.0.1',
+  version: '0.0.2',
   description: 'yourPHR: your health records, in your hands',
   author: 'jwilleke',
   dependencies: [] as string[],
@@ -103,6 +106,7 @@ const PhrAddon = {
     if (!host) throw new Error('ngdpbase passed no host tools (phr needs ngdpbase 5.20.0 or later)');
     const tools = host;
     engineRef = engine;
+    hostRef = tools;
     if (!engine.app) throw new Error('the engine has no web app to mount on');
 
     const store = openPhrStore(engine.getManager('DatabaseManager'));
@@ -119,12 +123,12 @@ const PhrAddon = {
     // "fetch:PhrManager.toFormOptions()" fills the note form's record list (ngdpbase guide §6).
     engine.registerManager('PhrManager', records);
 
-    mountApi(engine.app, engine, tools, users, phrRecords);
+    mountApi(engine.app, engine, tools, healthRecordsOn, phrRecords);
     await maybeMountDevSeed(engine, _config, tools);
     await registerNoteForm(engine, tools);
     const plugins = engine.getManager<PluginManagerLike>('PluginManager');
-    await plugins?.registerPlugin('PhrWelcome', createPhrWelcomePlugin(users));
-    await plugins?.registerPlugin('PhrRecords', createPhrRecordsPlugin(phrRecords, users));
+    await plugins?.registerPlugin('PhrWelcome', createPhrWelcomePlugin(healthRecordsOn));
+    await plugins?.registerPlugin('PhrRecords', createPhrRecordsPlugin(phrRecords, healthRecordsOn));
     engine.getManager<AddonsManagerLike>('AddonsManager')?.registerDashboardCard?.({
       addonName: 'phr',
       title: 'Health records',
@@ -141,9 +145,9 @@ const PhrAddon = {
     return unavailable ? null : { title: 'Health records', html: profileSectionHtml(user) };
   },
 
-  async saveProfileSection(ctx: { username: string }, body: Record<string, unknown>): Promise<void> {
-    if (unavailable) return;
-    await saveProfileSection(users(), ctx, body);
+  async saveProfileSection(ctx: ActorContext, body: Record<string, unknown>): Promise<void> {
+    if (unavailable || !hostRef) return;
+    await saveProfileSection(hostRef.setEnabledForPerson, ctx, body);
   },
 
   /** Shown on Admin → Add-ons. */
