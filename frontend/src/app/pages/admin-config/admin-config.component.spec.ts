@@ -68,6 +68,21 @@ describe('AdminConfigComponent', () => {
     expect(text).toContain('/opt/yourphr/data/config/app-custom-config.json');
   });
 
+  // #921/#624: a key the server reads only at startup says so, and the page no longer promises
+  // that every change applies without a restart.
+  it('marks settings that take effect only after a restart, and nothing else', () => {
+    apiSpy.getAdminConfig.and.returnValue(of(config({entries: [
+      entry({}),
+      entry({key: 'yourphr.auth.password.min-length', value: 12, default: 12, public: false}),
+    ]})));
+    fixture.detectChanges();
+    const rows = Array.from(fixture.nativeElement.querySelectorAll('tbody tr')) as HTMLElement[];
+    const row = (key: string) => rows.find((r) => r.textContent?.includes(key))?.textContent ?? '';
+    expect(row('yourphr.auth.password.min-length')).toContain('after a restart');
+    expect(row('operator.name')).not.toContain('after a restart');
+    expect(fixture.nativeElement.textContent).not.toContain('no restart');
+  });
+
   // A read-only admin (the demo tour) is refused the snapshot by design (#751): the page explains
   // that, rather than reporting a failure.
   it('explains a 403 instead of showing it as an error', () => {
