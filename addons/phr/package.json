@@ -28,7 +28,9 @@
     "slug": "phr",
     "type": "additive",
     "minVersion": "5.25.0",
-    "perPerson": true
+    "perPerson": true,
+    "aboutPage": "about-yourphr",
+    "family": "yourPHR"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
