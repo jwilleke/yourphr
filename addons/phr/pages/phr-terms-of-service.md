@@ -18,7 +18,7 @@ These terms cover your use of yourPHR, the health records part of this site. How
 
 ## Agreeing
 
-You accept these terms, and the privacy policy, when you turn on **Use health records** in your profile. If you don't agree, leave health records off. When these terms change in a way you need to accept again, the version number changes and yourPHR asks you before you use it again.
+You accept these terms, and the privacy policy, when you turn on __Use health records__ in your profile. If you don't agree, leave health records off. When these terms change in a way you need to accept again, the version number changes and yourPHR asks you before you use it again.
 
 ## What yourPHR is
 
