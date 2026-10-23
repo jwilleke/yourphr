@@ -2,7 +2,9 @@ name: Markdown Lint
 
 on:
   push:
-    branches: [master, main]
+    # yourphr-addon: the phr add-on is built on that branch until cutover; without it here its
+    # pages went unlinted (32 MD050 errors found only after a merge from main, 2026-10-23).
+    branches: [master, main, yourphr-addon]
   pull_request:
     branches: [master, main]
 
