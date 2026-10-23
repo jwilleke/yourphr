@@ -88,12 +88,12 @@
     "@types/markdown-it": "^14.2.0",
     "@types/node": "^24.0.0",
     "@types/smtp-server": "^3.5.13",
-    "@vitest/coverage-v8": "^4.1.11",
+    "@vitest/coverage-v8": "^5.0.5",
     "markdownlint-cli2": "^0.24.0",
     "smtp-server": "^3.19.15",
     "tsx": "^4.19.2",
     "typescript": "^7.0.2",
-    "vitest": "^4.1.11"
+    "vitest": "^5.0.5"
   },
   "overrides": {
     "csv-parse": "7.0.2"
