@@ -109,7 +109,7 @@ function registerConsent(engine: WikiEngine, tools: AddonHost): void {
 
 const PhrAddon = {
   name: 'phr',
-  version: '0.0.2',
+  version: '0.0.3',
   description: 'yourPHR: your health records, in your hands',
   author: 'jwilleke',
   dependencies: [] as string[],
