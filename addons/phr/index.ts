@@ -21,11 +21,13 @@
  *
  * The exported `name` MUST equal `ngdpbase.slug` in package.json (#927).
  */
-import type { ActorContext, AddonHost, ConsentManager, PolicyDecisionPoint, WikiEngine } from '@jwilleke/ngdpbase-types';
+import type { ActorContext, AddonHost, ConsentManager, Decision, PolicyDecisionPoint, WikiEngine } from '@jwilleke/ngdpbase-types';
 import { openPhrStore } from './managers/PhrRecordStore.js';
 import { PhrManager } from './managers/PhrManager.js';
 import { NOTE_FORM, NOTE_FORM_ID, noteFormHandler } from './forms/noteForm.js';
 import { mountApi } from './routes/api.js';
+import { ccdaShim, fhirShim } from './importers/shims.js';
+import { healthRecordsReceiver } from './importers/receiver.js';
 import { createPhrWelcomePlugin } from './plugins/PhrWelcomePlugin.js';
 import { createPhrRecordsPlugin } from './plugins/PhrRecordsPlugin.js';
 import { profileSectionHtml, saveProfileSection } from './profile.js';
@@ -107,6 +109,24 @@ function registerConsent(engine: WikiEngine, tools: AddonHost): void {
   tools.logger.info('[phr] terms and privacy policy registered with ConsentManager');
 }
 
+/**
+ * phr on ngdpbase's import engine (ICE, ngdpbase#1979): its FHIR and C-CDA
+ * shims, and its receiver, the door to health records. The engine owns files,
+ * fingerprints and status; a person starts an import from core's import
+ * screen (ngdpbase#2021). Names are declared in package.json's manifest.
+ */
+function registerImport(engine: WikiEngine, tools: AddonHost, decide: (ctx: ActorContext, request: { action: string }) => Promise<Decision>): void {
+  const consent = engine.getManager<ConsentManager>('ConsentManager');
+  tools.registerReceiver(healthRecordsReceiver({
+    records: phrRecords,
+    healthRecordsOn,
+    decide,
+    pendingConsent: async (username) => consent ? consent.pendingFor(username, 'phr') : []
+  }));
+  tools.registerShim(fhirShim());
+  tools.registerShim(ccdaShim());
+}
+
 const PhrAddon = {
   name: 'phr',
   version: '0.0.3',
@@ -130,9 +150,13 @@ const PhrAddon = {
     const pdp = engine.getManager<PolicyDecisionPoint>('PolicyDecisionPoint');
     if (!pdp) throw new Error("ngdpbase's PolicyDecisionPoint is not available");
     const auditSink = engine.getManager<Parameters<AddonHost['recordAuditEvent']>[0]>('AuditManager');
+    // ngdpbase#2022: core's decide takes any ActorContext (a person's or a job's)
+    // and makes the subject itself. Until ngdpbase-types has that signature, this
+    // is the one place phr's context meets the older one. Never convert it here.
+    const decide = (ctx: ActorContext | null, request: { action: string }) => pdp.decide(ctx as Parameters<typeof pdp.decide>[0], request);
     records = new PhrManager({
       store,
-      decide: (subject, request) => pdp.decide(subject, request),
+      decide,
       recordAudit: (event) => tools.recordAuditEvent(auditSink, event),
       host: tools
     });
@@ -144,6 +168,7 @@ const PhrAddon = {
     await maybeMountDevSeed(engine, _config, tools);
     await registerNoteForm(engine, tools);
     registerConsent(engine, tools);
+    registerImport(engine, tools, decide);
     const plugins = engine.getManager<PluginManagerLike>('PluginManager');
     await plugins?.registerPlugin('PhrWelcome', createPhrWelcomePlugin(healthRecordsOn));
     await plugins?.registerPlugin('PhrRecords', createPhrRecordsPlugin(phrRecords, healthRecordsOn));

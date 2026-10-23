@@ -19,24 +19,31 @@
  * makes the subject the person represented, so "owner = subject" lets Jim
  * act for Mom within her grant, and the audit names Jim as the actor.
  */
-import type { AddonHost, AuditEvent, Decision, PermissionSubject } from '@jwilleke/ngdpbase-types';
+import type { ActorContext, AddonHost, AuditEvent, Decision, PermissionSubject } from '@jwilleke/ngdpbase-types';
 import { PhrRecordStore, StoreError, type OwnerHandle, type StoredRecord } from './PhrRecordStore.js';
-import type { FolderFile } from '../importers/recordsFolder.js';
+import type { PhrFileData } from '../importers/shims.js';
 import { localiseRecords } from './localIds.js';
 import type { SearchFilter } from './fhirIndex.js';
 import { NOTE_MAX_CHARS, NOTE_SOURCE, buildNote, isPatientNote, noteAbout, type NoteTarget } from './notes.js';
 import { NOT_RECORD_KINDS, kindName, recordDate, recordName, recordValue, shownAsRecord } from '../display.js';
 
-/** What an import did, in counts and per file. Never record content. */
-export interface ImportReport {
-  files: { imported: number; unchanged: number; unsupported: number; unreadable: number; missing: number };
-  records: { created: number; updated: number; unchanged: number; skipped: number; conflicts: number };
-  perFile: { path: string; status: 'imported' | 'unchanged' | 'unsupported' | 'unreadable'; records: number; reason?: string; note?: string }[];
+/** What importing one file did, in counts. Never record content. */
+export interface FileImportReport {
+  created: number;
+  updated: number;
+  unchanged: number;
+  /** Records without an id, or Bundle entries without a resource. */
+  skipped: number;
+  /** Records the store refused as conflicting with what it holds. */
+  conflicts: number;
 }
 
-/** The caller, as core's ApiContext gives it (only what the door uses). */
+/**
+ * The caller (only what the door uses): core's ApiContext for a request, or
+ * the context an import run carries, a person's or a background job's.
+ */
 export interface PhrCaller {
-  readonly subject: PermissionSubject | null;
+  readonly subject: ActorContext | null;
   readonly ipAddress: string | undefined;
   /** Core's refusal: 401 or 403 (and a step-up prompt, if one is ever configured). Always throws. */
   enforceDeny(permission: string, decision: Decision): Promise<never>;
@@ -45,7 +52,7 @@ export interface PhrCaller {
 /** The actions phr declares as permissions (config/default-config.json), each with its audit event. */
 export type PhrAction = 'phr-read' | 'phr-write' | 'phr-delete';
 
-export type Decide = (subject: PermissionSubject | null, request: { action: string }) => Promise<Decision>;
+export type Decide = (subject: ActorContext | null, request: { action: string }) => Promise<Decision>;
 export type RecordAudit = (event: AuditEvent) => Promise<unknown>;
 
 export interface PhrManagerDeps {
@@ -67,8 +74,13 @@ export class PhrManager {
 
   /** The person this caller acts as: themselves, or the person a proxy grant represents. */
   private subjectName(caller: PhrCaller): string | null {
-    const name = caller.subject?.username;
-    return typeof name === 'string' && name !== '' && caller.subject?.isAuthenticated === true ? name : null;
+    const subject = caller.subject;
+    if (!subject) return null;
+    const name = subject.username;
+    if (typeof name !== 'string' || name === '') return null;
+    // A request's subject says whether it signed in. A job's context names the
+    // person it runs for and is never anonymous; core's PDP has already decided it.
+    return !('isAuthenticated' in subject) || subject.isAuthenticated === true ? name : null;
   }
 
   /** The owner a call means: the one it names, or else the caller themselves. */
@@ -220,58 +232,31 @@ export class PhrManager {
   }
 
   /**
-   * Import a records folder (yourphr#939): one door call and one audit event
-   * for the whole import, not one per record. Idempotent: a file whose
-   * fingerprint hasn't changed is skipped, the same record content makes no
-   * new version, and a file missing from this import is flagged, never deleted.
+   * Import one file's records (ngdpbase's import engine hands them here, one
+   * file at a time): one door call, one audit event and one transaction for
+   * the file, never one per record. Idempotent: the same record content makes
+   * no new version. Each record gets phr's own id and a Provenance keeping the
+   * original (yourphr#784).
    */
-  async importFolder(caller: PhrCaller, files: readonly FolderFile[], sourceId = 'folder', owner?: string): Promise<ImportReport> {
-    const target = { owner: this.ownerFor(caller, owner), resourceType: 'records-folder-import' };
+  async importFile(caller: PhrCaller, file: PhrFileData, sourceId = 'folder', owner?: string): Promise<FileImportReport> {
+    const target = { owner: this.ownerFor(caller, owner), resourceType: 'records-import' };
     return this.access(caller, 'phr-write', target, (h) => h.inTransaction(() => {
-      const report: ImportReport = {
-        files: { imported: 0, unchanged: 0, unsupported: 0, unreadable: 0, missing: 0 },
-        records: { created: 0, updated: 0, unchanged: 0, skipped: 0, conflicts: 0 },
-        perFile: []
-      };
-      const before = new Map(h.sourceFiles(sourceId).map((f) => [f.path, f]));
-      for (const file of files) {
-        const prior = before.get(file.path);
-        if (prior && prior.sha256 === file.sha256 && prior.status !== 'missing') {
-          h.noteSourceFile(sourceId, { path: file.path, sha256: file.sha256, status: prior.status, records: prior.records });
-          report.files.unchanged++;
-          report.perFile.push({ path: file.path, status: 'unchanged', records: prior.records });
-          continue;
+      const report: FileImportReport = { created: 0, updated: 0, unchanged: 0, skipped: file.skippedEntries, conflicts: 0 };
+      const withIds = file.resources.map((r) => typeof r.id === 'string' && r.id !== '');
+      const kept = file.resources.filter((_r, i) => withIds[i]);
+      const keptUrls = file.fullUrls?.filter((_u, i) => withIds[i]);
+      report.skipped += file.resources.length - kept.length;
+      const local = localiseRecords(kept, keptUrls, `urn:yourphr:source:${sourceId}`);
+      for (const [i, resource] of local.resources.entries()) {
+        try {
+          const r = h.put(resource, sourceId);
+          report[r.outcome]++;
+          if (r.outcome !== 'unchanged') h.put(local.provenanceFor(i, r.lastUpdated), sourceId);
+        } catch (err) {
+          if (err instanceof StoreError && err.status === 409) { report.conflicts++; continue; }
+          throw err;
         }
-        if (file.kind !== 'fhir') {
-          h.noteSourceFile(sourceId, { path: file.path, sha256: file.sha256, status: file.kind, records: 0 });
-          report.files[file.kind]++;
-          report.perFile.push({ path: file.path, status: file.kind, records: 0, reason: file.reason });
-          continue;
-        }
-        let written = 0;
-        report.records.skipped += file.skippedEntries;
-        // phr's own ids, never the provider's (yourphr#784); a Provenance keeps the original.
-        const withIds = file.resources.map((r) => typeof r.id === 'string' && r.id !== '');
-        const kept = file.resources.filter((_r, i) => withIds[i]);
-        const keptUrls = file.fullUrls?.filter((_u, i) => withIds[i]);
-        report.records.skipped += file.resources.length - kept.length;
-        const local = localiseRecords(kept, keptUrls, `urn:yourphr:source:${sourceId}`);
-        for (const [i, resource] of local.resources.entries()) {
-          try {
-            const r = h.put(resource, sourceId);
-            report.records[r.outcome]++;
-            written++;
-            if (r.outcome !== 'unchanged') h.put(local.provenanceFor(i, r.lastUpdated), sourceId);
-          } catch (err) {
-            if (err instanceof StoreError && err.status === 409) { report.records.conflicts++; continue; }
-            throw err;
-          }
-        }
-        h.noteSourceFile(sourceId, { path: file.path, sha256: file.sha256, status: 'imported', records: written });
-        report.files.imported++;
-        report.perFile.push({ path: file.path, status: 'imported', records: written, ...(file.note ? { note: file.note } : {}) });
       }
-      report.files.missing = h.markMissing(sourceId, files.map((f) => f.path));
       return report;
     }));
   }

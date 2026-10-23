@@ -1,15 +1,15 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { zipSync, strToU8 } from 'fflate';
 import { buildAddonHost, openAddonTestDatabase } from '@jwilleke/ngdpbase-types/testing';
 import type { Decision, PermissionSubject } from '@jwilleke/ngdpbase-types';
 import { PHR_MIGRATIONS, PHR_LEDGER_TABLE } from '../managers/migrations.js';
 import { PhrRecordStore, type Db } from '../managers/PhrRecordStore.js';
 import { PhrManager, type PhrCaller } from '../managers/PhrManager.js';
-import { readFolderZip, FolderError } from '../importers/recordsFolder.js';
+import { readFolderFile } from '../importers/recordsFolder.js';
 import { localId } from '../managers/localIds.js';
+import { fileItem, importFiles, shimFor } from './importHelpers.js';
 
-/** phr's own id for a record this test's folder (source 'folder', no server named) calls `id`. */
+/** phr's own id for a record this test's files (source 'folder', no server named) call `id`. */
 const pid = (type: string, id: string, source = 'folder') => localId(`urn:yourphr:source:${source}`, type, id);
 const GLUCOSE = pid('Observation', 'obs-glucose');
 
@@ -17,10 +17,7 @@ const GLUCOSE = pid('Observation', 'obs-glucose');
 const patient = { resourceType: 'Patient', id: 'p1', name: [{ family: 'Testperson', given: ['Synthetic'] }] };
 const glucose = (value: number) => ({ resourceType: 'Observation', id: 'obs-glucose', status: 'final', code: { text: 'Glucose' }, valueQuantity: { value, unit: 'mg/dL' } });
 const bundle = (...resources: object[]) => ({ resourceType: 'Bundle', type: 'collection', entry: resources.map((resource) => ({ resource })) });
-
-function zipOf(files: Record<string, string>): Uint8Array {
-  return zipSync(Object.fromEntries(Object.entries(files).map(([k, v]) => [k, strToU8(v)])));
-}
+const bytes = (s: string) => new TextEncoder().encode(s);
 
 const defaults = JSON.parse(readFileSync(new URL('../config/default-config.json', import.meta.url), 'utf8')) as Record<string, unknown>;
 const allowAll = async (): Promise<Decision> => ({ permit: true, applicable: true, reason: 'test-allow' });
@@ -32,47 +29,42 @@ function caller(username: string): PhrCaller {
   };
 }
 
-describe('reading a records-folder zip', () => {
-  it('reads FHIR JSON bundles and NDJSON, and lists everything else as not read yet', () => {
-    const files = readFolderZip(zipOf({
+describe('reading one file from a records download', () => {
+  it('reads FHIR JSON bundles and NDJSON, and names everything else for what it is', () => {
+    const files = {
       'Export/fhir/everything.json': JSON.stringify(bundle(patient, glucose(112))),
       'Export/fhir/Observation.ndjson': `${JSON.stringify(glucose(98))}\n\n`,
       'Export/ccr/visit.xml': '<ContinuityOfCareRecord/>',
       'Export/scans/letter.pdf': '%PDF-1.4',
-      'Export/broken.json': '{ not json',
-      'Export/.DS_Store': 'x',
-      '__MACOSX/Export/._everything.json': 'x'
-    }));
-    expect(files.map((f) => [f.path, f.kind])).toEqual([
-      ['Export/broken.json', 'unreadable'],
-      ['Export/ccr/visit.xml', 'unsupported'],
-      ['Export/fhir/Observation.ndjson', 'fhir'],
+      'Export/broken.json': '{ not json'
+    };
+    const read = Object.entries(files).map(([path, text]) => readFolderFile(path, bytes(text)));
+    expect(read.map((f) => [f.path, f.kind])).toEqual([
       ['Export/fhir/everything.json', 'fhir'],
-      ['Export/scans/letter.pdf', 'unsupported']
+      ['Export/fhir/Observation.ndjson', 'fhir'],
+      ['Export/ccr/visit.xml', 'unsupported'],
+      ['Export/scans/letter.pdf', 'unsupported'],
+      ['Export/broken.json', 'unreadable']
     ]);
-    const everything = files.find((f) => f.path.endsWith('everything.json'));
-    expect(everything?.kind === 'fhir' && everything.resources.length).toBe(2);
-    expect(files.every((f) => /^[0-9a-f]{64}$/.test(f.sha256))).toBe(true);
+    expect(read[0].kind === 'fhir' && read[0].resources.length).toBe(2);
   });
 
   it('never echoes a file\'s content in a reason', () => {
-    const [f] = readFolderZip(zipOf({ 'x.json': '{"name": "Synthetic Testperson", oops' }));
+    const f = readFolderFile('x.json', bytes('{"name": "Synthetic Testperson", oops'));
     expect(f.kind).toBe('unreadable');
     expect(JSON.stringify(f)).not.toContain('Testperson');
   });
 
-  it('refuses something that isn\'t a zip', () => {
-    expect(() => readFolderZip(strToU8('hello'))).toThrow(FolderError);
-  });
-
-  it('refuses a zip that expands past the limits, importing nothing', () => {
-    const zip = zipOf({ 'a.json': 'x'.repeat(5000), 'b.json': 'y'.repeat(5000) });
-    expect(() => readFolderZip(zip, { maxEntries: 10, maxEntryBytes: 1_000_000, maxTotalBytes: 8000 })).toThrow(/once expanded/);
-    expect(() => readFolderZip(zip, { maxEntries: 1, maxEntryBytes: 1_000_000, maxTotalBytes: 1_000_000 })).toThrow(/more than 1 files/);
+  it('the engine hands phr only the files phr reads: FHIR JSON, NDJSON and C-CDA, by content too', () => {
+    expect(shimFor(fileItem('a.json', bundle(patient)))?.name).toBe('fhir');
+    expect(shimFor(fileItem('a.ndjson', `${JSON.stringify(glucose(1))}\n`))?.name).toBe('fhir');
+    expect(shimFor(fileItem('a.json', { not: 'fhir' }))).toBeUndefined();
+    expect(shimFor(fileItem('visit.xml', '<ContinuityOfCareRecord/>'))).toBeUndefined();
+    expect(shimFor(fileItem('letter.pdf', '%PDF-1.4'))).toBeUndefined();
   });
 });
 
-describe('importing a records folder through PhrManager', () => {
+describe('importing a file through PhrManager', () => {
   let db: Db & { close(): void };
   let audit: Record<string, unknown>[];
   let phr: PhrManager;
@@ -86,16 +78,15 @@ describe('importing a records folder through PhrManager', () => {
   });
   afterEach(() => db.close());
 
-  const folder = (value: number, extra: Record<string, string> = {}) => readFolderZip(zipOf({
+  const download = (value: number, extra: Record<string, string> = {}) => ({
     'fhir/everything.json': JSON.stringify(bundle(patient, glucose(value))),
     'ccr/visit.xml': '<ContinuityOfCareRecord/>',
     ...extra
-  }));
+  });
 
-  it('imports the records, owned by the person importing, with one audit event', async () => {
-    const report = await phr.importFolder(caller('alice'), folder(112));
-    expect(report.files).toEqual({ imported: 1, unchanged: 0, unsupported: 1, unreadable: 0, missing: 0 });
-    expect(report.records).toEqual({ created: 2, updated: 0, unchanged: 0, skipped: 0, conflicts: 0 });
+  it('imports the records, owned by the person importing, with one audit event per file', async () => {
+    const report = await importFiles(phr, caller('alice'), download(112));
+    expect(report).toEqual({ created: 2, updated: 0, unchanged: 0, skipped: 0, conflicts: 0 });
     expect((await phr.read(caller('alice'), 'Observation', GLUCOSE))?.resource.valueQuantity).toEqual({ value: 112, unit: 'mg/dL' });
     expect(await phr.read(caller('bob'), 'Observation', GLUCOSE)).toBeUndefined();
     const imports = audit.filter((e) => e.action === 'phr-write');
@@ -104,47 +95,38 @@ describe('importing a records folder through PhrManager', () => {
     expect(JSON.stringify(audit)).not.toContain('Glucose');
   });
 
-  it('importing the same folder again changes nothing', async () => {
-    await phr.importFolder(caller('alice'), folder(112));
-    const again = await phr.importFolder(caller('alice'), folder(112));
-    expect(again.files).toEqual({ imported: 0, unchanged: 2, unsupported: 0, unreadable: 0, missing: 0 });
-    expect(again.records).toEqual({ created: 0, updated: 0, unchanged: 0, skipped: 0, conflicts: 0 });
+  it('importing the same file again makes no new versions', async () => {
+    await importFiles(phr, caller('alice'), download(112));
+    const again = await importFiles(phr, caller('alice'), download(112));
+    expect(again).toEqual({ created: 0, updated: 0, unchanged: 2, skipped: 0, conflicts: 0 });
     expect((await phr.history(caller('alice'), 'Observation', GLUCOSE)).length).toBe(1);
   });
 
   it('a changed file updates just its changed records, keeping history', async () => {
-    await phr.importFolder(caller('alice'), folder(112));
-    const changed = await phr.importFolder(caller('alice'), folder(98));
-    expect(changed.files.imported).toBe(1);
-    expect(changed.records).toEqual({ created: 0, updated: 1, unchanged: 1, skipped: 0, conflicts: 0 });
+    await importFiles(phr, caller('alice'), download(112));
+    const changed = await importFiles(phr, caller('alice'), download(98));
+    expect(changed).toEqual({ created: 0, updated: 1, unchanged: 1, skipped: 0, conflicts: 0 });
     expect((await phr.history(caller('alice'), 'Observation', GLUCOSE)).map((r) => r.versionId)).toEqual(['2', '1']);
   });
 
-  it('a file missing from a later import is flagged, and its records are kept', async () => {
-    await phr.importFolder(caller('alice'), folder(112, { 'fhir/extra.ndjson': JSON.stringify({ resourceType: 'Condition', id: 'c1', code: { text: 'Test condition' } }) }));
-    const later = await phr.importFolder(caller('alice'), folder(112));
-    expect(later.files.missing).toBe(1);
-    expect(await phr.read(caller('alice'), 'Condition', pid('Condition', 'c1'))).toBeDefined();
-  });
-
   it('two people importing the same file keep separate records', async () => {
-    await phr.importFolder(caller('alice'), folder(112));
-    await phr.importFolder(caller('bob'), folder(150));
+    await importFiles(phr, caller('alice'), download(112));
+    await importFiles(phr, caller('bob'), download(150));
     expect((await phr.read(caller('alice'), 'Observation', GLUCOSE))?.resource.valueQuantity).toEqual({ value: 112, unit: 'mg/dL' });
     expect((await phr.read(caller('bob'), 'Observation', GLUCOSE))?.resource.valueQuantity).toEqual({ value: 150, unit: 'mg/dL' });
   });
 
   it('nobody can import into another person\'s records', async () => {
-    await expect(phr.importFolder(caller('bob'), folder(112), 'folder', 'alice')).rejects.toThrow(/refused/);
+    await expect(importFiles(phr, caller('bob'), download(112), 'alice')).rejects.toThrow(/refused/);
     expect(await phr.read(caller('alice'), 'Observation', GLUCOSE)).toBeUndefined();
   });
 
   it('skips records with no id, and keeps a same-id record from another source as its own record (#784)', async () => {
     await phr.write(caller('alice'), glucose(70), 'epic');
-    const report = await phr.importFolder(caller('alice'), readFolderZip(zipOf({
+    const report = await importFiles(phr, caller('alice'), {
       'a.json': JSON.stringify(bundle(glucose(112), { resourceType: 'Observation', code: { text: 'no id' } }))
-    })));
-    expect(report.records).toEqual({ created: 1, updated: 0, unchanged: 0, skipped: 1, conflicts: 0 });
+    });
+    expect(report).toEqual({ created: 1, updated: 0, unchanged: 0, skipped: 1, conflicts: 0 });
     expect((await phr.read(caller('alice'), 'Observation', 'obs-glucose'))?.resource.valueQuantity).toEqual({ value: 70, unit: 'mg/dL' });
     expect((await phr.read(caller('alice'), 'Observation', GLUCOSE))?.resource.valueQuantity).toEqual({ value: 112, unit: 'mg/dL' });
   });

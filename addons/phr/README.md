@@ -19,7 +19,7 @@ Name it in the site's configuration. ngdpbase installs it pinned to the exact ve
 }
 ```
 
-Needs ngdpbase 5.24.0 or later, with its database turned on (`ngdpbase.database.provider: "sqlite"`) and `NGDPBASE_DATABASE_KEY` set and Node 24.15 or later.
+Needs ngdpbase 5.27.0 or later (its import engine takes phr's FHIR and C-CDA readers), with its database turned on (`ngdpbase.database.provider: "sqlite"`) and `NGDPBASE_DATABASE_KEY` set and Node 24.15 or later.
 
 ## Source
 

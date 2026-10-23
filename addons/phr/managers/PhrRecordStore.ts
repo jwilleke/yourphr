@@ -51,16 +51,6 @@ export class StoreError extends Error {
 /** What a write did: a new record, a new version of a changed one, or nothing (same content). */
 export type PutOutcome = 'created' | 'updated' | 'unchanged';
 
-/** A file as a source last saw it. */
-export interface SourceFile {
-  path: string;
-  sha256: string;
-  status: 'imported' | 'unsupported' | 'unreadable' | 'missing';
-  records: number;
-  firstSeen: string;
-  lastSeen: string;
-}
-
 /** The record without its version stamp, so the same content compares equal. */
 function withoutMeta(resource: Record<string, unknown>): string {
   const meta = { ...(resource.meta as Record<string, unknown> | undefined) };
@@ -79,12 +69,6 @@ export interface OwnerHandle {
   history(resourceType: string, id: string): StoredRecord[];
   put(resource: Record<string, unknown>, sourceId: string): StoredRecord & { outcome: PutOutcome };
   remove(resourceType: string, id: string): boolean;
-  /** The files a source holds for this owner, as last seen. */
-  sourceFiles(sourceId: string): SourceFile[];
-  /** Record that a file was seen in an import, with its fingerprint and result. */
-  noteSourceFile(sourceId: string, file: { path: string; sha256: string; status: SourceFile['status']; records: number }): void;
-  /** Mark files a source held before but not in this import as missing. Nothing is deleted. */
-  markMissing(sourceId: string, seenPaths: readonly string[]): number;
   /** Run several store calls as one transaction. */
   inTransaction<T>(fn: () => T): T;
   /** One kind of this owner's records matching every filter, newest first. */
@@ -228,27 +212,6 @@ export class PhrRecordStore {
           if (r.changes > 0) forgetIndex(resourceType, id);
           return r.changes > 0;
         })();
-      },
-      sourceFiles(sourceId) {
-        return (db.prepare('SELECT path, sha256, status, records, first_seen, last_seen FROM phr_source_files WHERE owner = ? AND source_id = ? ORDER BY path')
-          .all(owner, sourceId) as { path: string; sha256: string; status: SourceFile['status']; records: number; first_seen: string; last_seen: string }[])
-          .map((r) => ({ path: r.path, sha256: r.sha256, status: r.status, records: r.records, firstSeen: r.first_seen, lastSeen: r.last_seen }));
-      },
-      noteSourceFile(sourceId, file) {
-        const at = now().toISOString();
-        db.prepare(`INSERT INTO phr_source_files (owner, source_id, path, sha256, status, records, first_seen, last_seen)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                    ON CONFLICT (owner, source_id, path) DO UPDATE SET
-                      sha256 = excluded.sha256, status = excluded.status, records = excluded.records, last_seen = excluded.last_seen`)
-          .run(owner, sourceId, file.path, file.sha256, file.status, file.records, at, at);
-      },
-      markMissing(sourceId, seenPaths) {
-        const seen = new Set(seenPaths);
-        const gone = (db.prepare("SELECT path FROM phr_source_files WHERE owner = ? AND source_id = ? AND status <> 'missing'")
-          .all(owner, sourceId) as { path: string }[]).filter((r) => !seen.has(r.path));
-        const mark = db.prepare("UPDATE phr_source_files SET status = 'missing' WHERE owner = ? AND source_id = ? AND path = ?");
-        for (const r of gone) mark.run(owner, sourceId, r.path);
-        return gone.length;
       },
       inTransaction(fn) {
         return db.transaction(fn)();

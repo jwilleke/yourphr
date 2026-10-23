@@ -1,13 +1,12 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { zipSync, strToU8 } from 'fflate';
 import { buildAddonHost, openAddonTestDatabase } from '@jwilleke/ngdpbase-types/testing';
 import type { Decision, PermissionSubject } from '@jwilleke/ngdpbase-types';
 import { PHR_MIGRATIONS, PHR_LEDGER_TABLE } from '../managers/migrations.js';
 import { PhrRecordStore, type Db } from '../managers/PhrRecordStore.js';
 import { PhrManager, type PhrCaller } from '../managers/PhrManager.js';
 import { localId, localiseRecords } from '../managers/localIds.js';
-import { readFolderZip } from '../importers/recordsFolder.js';
+import { importFiles } from './importHelpers.js';
 
 // Synthetic records from two made-up servers that both use id 12345.
 const A = 'https://fhir.a.example/r4';
@@ -68,7 +67,6 @@ describe('importing two servers\' records with the same id (#784)', () => {
     ipAddress: '127.0.0.1',
     enforceDeny: async (permission: string) => { throw new Error(`refused ${permission}`); }
   };
-  const zipOf = (files: Record<string, unknown>) => readFolderZip(zipSync(Object.fromEntries(Object.entries(files).map(([k, v]) => [k, strToU8(JSON.stringify(v))]))));
   let db: Db & { close(): void };
   let phr: PhrManager;
   beforeEach(() => {
@@ -80,11 +78,11 @@ describe('importing two servers\' records with the same id (#784)', () => {
   afterEach(() => db.close());
 
   it('stores both, each pointing at its own server\'s patient, never refusing or overwriting', async () => {
-    const report = await phr.importFolder(alice, zipOf({
+    const report = await importFiles(phr, alice, {
       'a/everything.json': bundleFrom(A, patient, condition('High blood pressure')),
       'b/everything.json': bundleFrom(B, patient, condition('Asthma'))
-    }));
-    expect(report.records).toEqual({ created: 4, updated: 0, unchanged: 0, skipped: 0, conflicts: 0 });
+    });
+    expect(report).toEqual({ created: 4, updated: 0, unchanged: 0, skipped: 0, conflicts: 0 });
     const a = await phr.read(alice, 'Condition', localId(A, 'Condition', '12345'));
     const b = await phr.read(alice, 'Condition', localId(B, 'Condition', '12345'));
     expect((a?.resource.code as { text: string }).text).toBe('High blood pressure');
@@ -94,8 +92,8 @@ describe('importing two servers\' records with the same id (#784)', () => {
   });
 
   it('keeps a Provenance per record, out of the counts and lists, and changes it only when the record changes', async () => {
-    const files = (text: string) => zipOf({ 'a/everything.json': bundleFrom(A, patient, condition(text)) });
-    await phr.importFolder(alice, files('High blood pressure'));
+    const files = (text: string) => ({ 'a/everything.json': bundleFrom(A, patient, condition(text)) });
+    await importFiles(phr, alice, files('High blood pressure'));
     const provs = await phr.list(alice, 'Provenance');
     expect(provs).toHaveLength(2);
     const { counts, recent } = await phr.overview(alice, 50);
@@ -103,8 +101,8 @@ describe('importing two servers\' records with the same id (#784)', () => {
     expect(recent.some((r) => r.resourceType === 'Provenance')).toBe(false); // …but never listed as a record
     expect((await phr.toFormOptions({}, alice.subject)).some((o) => o.value.startsWith('Provenance/'))).toBe(false);
 
-    const changed = await phr.importFolder(alice, files('Hypertension'));
-    expect(changed.records).toEqual({ created: 0, updated: 1, unchanged: 1, skipped: 0, conflicts: 0 });
+    const changed = await importFiles(phr, alice, files('Hypertension'));
+    expect(changed).toEqual({ created: 0, updated: 1, unchanged: 1, skipped: 0, conflicts: 0 });
     const conditionProv = (await phr.list(alice, 'Provenance')).find((p) => JSON.stringify(p.resource.target).includes(localId(A, 'Condition', '12345')));
     expect(conditionProv?.versionId).toBe('2');
   });

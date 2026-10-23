@@ -1,14 +1,14 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
-import { zipSync, strToU8 } from 'fflate';
 import { buildAddonHost, openAddonTestDatabase } from '@jwilleke/ngdpbase-types/testing';
 import type { Decision, PermissionSubject } from '@jwilleke/ngdpbase-types';
 import { PHR_MIGRATIONS, PHR_LEDGER_TABLE } from '../managers/migrations.js';
 import { PhrRecordStore, type Db } from '../managers/PhrRecordStore.js';
 import { PhrManager, type PhrCaller } from '../managers/PhrManager.js';
 import { readCcda, xmlKind } from '../importers/ccda.js';
-import { readFolderZip } from '../importers/recordsFolder.js';
+import { readFolderFile } from '../importers/recordsFolder.js';
+import { fileItem, importFiles, shimFor } from './importHelpers.js';
 
 // A synthetic C-CDA document: every person, place and value in it is made up.
 const CCD = readFileSync(new URL('./fixtures/synthetic-ccd.xml', import.meta.url), 'utf8');
@@ -81,20 +81,20 @@ describe('reading a C-CDA document', () => {
 
 describe('a C-CDA download in a records folder', () => {
   // Epic MyChart's "Download my records" layout: documents under IHE_XDM, with a packing list.
-  const download = (xml = CCD) => readFolderZip(zipSync({
-    'IHE_XDM/SYNTHETIC1/DOC0001.XML': strToU8(xml),
-    'IHE_XDM/SYNTHETIC1/METADATA.XML': strToU8('<rs:SubmitObjectsRequest xmlns:rs="urn:oasis:names:tc:ebxml-regrep:xsd:rs:3.0"/>'),
-    'INDEX.HTM': strToU8('<html></html>')
-  }));
+  const download = (xml = CCD): Record<string, string> => ({
+    'IHE_XDM/SYNTHETIC1/DOC0001.XML': xml,
+    'IHE_XDM/SYNTHETIC1/METADATA.XML': '<rs:SubmitObjectsRequest xmlns:rs="urn:oasis:names:tc:ebxml-regrep:xsd:rs:3.0"/>',
+    'INDEX.HTM': '<html></html>'
+  });
 
-  it('reads the documents and names the packing list for what it is', () => {
-    const files = download();
-    expect(files.map((f) => [f.path, f.kind])).toEqual([
-      ['IHE_XDM/SYNTHETIC1/DOC0001.XML', 'fhir'],
-      ['IHE_XDM/SYNTHETIC1/METADATA.XML', 'unsupported'],
-      ['INDEX.HTM', 'unsupported']
+  it('the engine hands phr the documents only, never the packing list or the index page', () => {
+    const picked = Object.entries(download()).map(([name, text]) => [name, shimFor(fileItem(name, text))?.name ?? null]);
+    expect(picked).toEqual([
+      ['IHE_XDM/SYNTHETIC1/DOC0001.XML', 'ccda'],
+      ['IHE_XDM/SYNTHETIC1/METADATA.XML', null],
+      ['INDEX.HTM', null]
     ]);
-    const meta = files[1];
+    const meta = readFolderFile('METADATA.XML', new TextEncoder().encode(download()['IHE_XDM/SYNTHETIC1/METADATA.XML']));
     expect(meta.kind === 'unsupported' && meta.reason).toMatch(/packing list/);
   });
 
@@ -117,12 +117,12 @@ describe('a C-CDA download in a records folder', () => {
     afterEach(() => db.close());
 
     it('a newer download of the same document updates records in place, never duplicates them', async () => {
-      const first = await phr.importFolder(alice, download());
-      const created = first.records.created;
+      const first = await importFiles(phr, alice, download());
+      const created = first.created;
       expect(created).toBe(ok(CCD).resources.length);
-      const newer = await phr.importFolder(alice, download(CCD.replace('value="70" unit="kg"', 'value="71" unit="kg"')));
-      expect(newer.records.created).toBe(0);
-      expect(newer.records.updated).toBeGreaterThan(0);
+      const newer = await importFiles(phr, alice, download(CCD.replace('value="70" unit="kg"', 'value="71" unit="kg"')));
+      expect(newer.created).toBe(0);
+      expect(newer.updated).toBeGreaterThan(0);
       const observations = await phr.list(alice, 'Observation');
       expect(observations.length).toBe(byType(ok(CCD).resources, 'Observation').length);
     });

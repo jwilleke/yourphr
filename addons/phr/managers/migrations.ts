@@ -119,5 +119,15 @@ export const PHR_MIGRATIONS: Migration[] = [
       const insert = db.prepare('INSERT INTO phr_search_text (rowid, owner, owner_key, resource_type, resource_id, body) VALUES (?, ?, ?, ?, ?, ?)');
       for (const r of rows) insert.run(r.rowid, r.owner, ownerKey(r.owner), r.resource_type, r.resource_id, r.body);
     }
+  },
+  {
+    id: '20261023000000',
+    description: 'imported files are tracked by ngdpbase\'s import engine, not phr (yourphr#958)',
+    up(db) {
+      // The engine (ngdpbase#1979) fingerprints files and keeps their status in
+      // its own ledger. The first import through it reads a file once more; the
+      // store makes no new version of a record whose content hasn't changed.
+      db.exec('DROP TABLE IF EXISTS phr_source_files;');
+    }
   }
 ];

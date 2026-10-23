@@ -1,27 +1,17 @@
 /**
- * "My records folder" (yourphr#939), first slice: read a zip of the files a
- * patient downloaded (an EHI export, "Export All My Data", a portal download)
- * and pick out the FHIR records in it. Pure: no database, no network, no
- * logging. PhrManager.importFolder writes what this returns, through the door.
+ * "My records folder" (yourphr#939): read one file a patient downloaded (from
+ * an EHI export, "Export All My Data", a portal download) and pick out the
+ * FHIR records in it. Pure: no database, no network, no logging. ngdpbase's
+ * import engine unzips, filters noise and fingerprints; phr's shims
+ * (./shims.ts) call this for each file, and PhrManager.importFile writes it.
  *
  * Read now: FHIR JSON (one resource, or a Bundle of them), FHIR NDJSON (one
  * resource per line) and C-CDA XML documents (./ccda.ts). Everything else
  * (CCR XML, PDFs, images, DICOM) is listed as not yet supported, by file, so
  * nothing is silently dropped. Later slices add those.
- *
- * Every file carries a sha256 fingerprint of its bytes, so re-importing the
- * same folder skips files that haven't changed.
- */
+ * */
 import { createHash } from 'node:crypto';
-import { unzipSync } from 'fflate';
 import { readCcda, xmlKind } from './ccda.js';
-
-/** Guards against a zip that expands to far more than it should (a zip bomb). */
-export const LIMITS = {
-  maxEntries: 50_000,
-  maxEntryBytes: 256 * 1024 * 1024,
-  maxTotalBytes: 2 * 1024 * 1024 * 1024
-} as const;
 
 export type FolderFile =
   | { path: string; sha256: string; kind: 'fhir'; resources: Record<string, unknown>[]; skippedEntries: number; note?: string;
@@ -29,10 +19,6 @@ export type FolderFile =
       fullUrls?: (string | undefined)[] }
   | { path: string; sha256: string; kind: 'unsupported'; reason: string }
   | { path: string; sha256: string; kind: 'unreadable'; reason: string };
-
-export class FolderError extends Error {
-  constructor(public readonly status: number, message: string) { super(message); }
-}
 
 const isResource = (v: unknown): v is Record<string, unknown> =>
   typeof v === 'object' && v !== null && !Array.isArray(v) && typeof (v as Record<string, unknown>).resourceType === 'string';
@@ -53,10 +39,6 @@ function resourcesOf(value: unknown): { resources: Record<string, unknown>[]; fu
 
 const fingerprint = (bytes: Uint8Array): string => createHash('sha256').update(bytes).digest('hex');
 const ext = (path: string): string => (path.match(/\.([a-z0-9]+)$/i)?.[1] ?? '').toLowerCase();
-
-/** Hidden and system files a zip tool adds, never the patient's records. */
-const isNoise = (path: string): boolean =>
-  path.endsWith('/') || path.split('/').some((p) => p.startsWith('.') || p === '__MACOSX') || /(^|\/)(thumbs\.db|desktop\.ini)$/i.test(path);
 
 /** Read one file's bytes into what it holds. */
 export function readFolderFile(path: string, bytes: Uint8Array): FolderFile {
@@ -106,29 +88,4 @@ function readXmlFile(path: string, sha256: string, bytes: Uint8Array): FolderFil
     case 'html': return { path, sha256, kind: 'unsupported', reason: 'a web page saved as .xml (a printable copy), not a record document' };
     default: return { path, sha256, kind: 'unsupported', reason: 'XML, but not a C-CDA document' };
   }
-}
-
-/** Read a zip of a records folder. Refuses a zip that isn't one, or that is too large once expanded. */
-export function readFolderZip(zip: Uint8Array, limits: { maxEntries: number; maxEntryBytes: number; maxTotalBytes: number } = LIMITS): FolderFile[] {
-  let entries = 0;
-  let total = 0;
-  let tooBig: string | null = null;
-  let files: Record<string, Uint8Array>;
-  try {
-    files = unzipSync(zip, {
-      filter: (f) => {
-        if (isNoise(f.name)) return false;
-        entries++;
-        total += f.originalSize;
-        if (entries > limits.maxEntries) tooBig = `more than ${limits.maxEntries} files`;
-        else if (f.originalSize > limits.maxEntryBytes) tooBig = `a file larger than ${Math.round(limits.maxEntryBytes / 1024 / 1024)} MB`;
-        else if (total > limits.maxTotalBytes) tooBig = `more than ${Math.round(limits.maxTotalBytes / 1024 / 1024)} MB once expanded`;
-        return tooBig === null;
-      }
-    });
-  } catch {
-    throw new FolderError(400, 'not a readable zip file');
-  }
-  if (tooBig) throw new FolderError(413, `the zip holds ${tooBig}; nothing was imported`);
-  return Object.keys(files).sort().map((path) => readFolderFile(path, files[path]));
 }
