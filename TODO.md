@@ -5,7 +5,6 @@ Open work in [jwilleke/yourphr](https://github.com/jwilleke/yourphr), ranked. Ge
 ## 🔴 P0 — Security & Critical
 
 - [#964](https://github.com/jwilleke/yourphr/issues/964) — [security] vite 7 / launch-editor — frontend dev-server advisories (high, dev-only)
-- [#963](https://github.com/jwilleke/yourphr/issues/963) — [security] storybook — code injection into the dev server and preview (critical, frontend, dev-only)
 
 ## 🟣 Epics
 
@@ -78,6 +77,7 @@ Open work in [jwilleke/yourphr](https://github.com/jwilleke/yourphr), ranked. Ge
 
 ## 🔵 In review
 
+- [#963](https://github.com/jwilleke/yourphr/issues/963) — [security] storybook — code injection into the dev server and preview (critical, frontend, dev-only)
 - [#903](https://github.com/jwilleke/yourphr/issues/903) — [security] braces — stack-exhaustion DoS, no patched release (high, dev-only: karma, markdownlint-cli2)
 
 ## ⏸ Deferred
