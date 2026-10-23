@@ -1,4 +1,4 @@
-<!-- KIT:START v1.14.0-0-g282c9b7 — managed by mjs-project-template; edit below the KIT:END marker -->
+<!-- KIT:START v1.15.0-2-gc79a0b9 — managed by mjs-project-template; edit below the KIT:END marker -->
 ## Agent Kit Protocols
 
 This section is __managed by the kit__ (`install-kit.sh`) — it is identical across repos. Put repo-specific context __below the `KIT:END` marker__; do not edit here.
@@ -10,10 +10,11 @@ repo that installs it, so that string says whose it is.
 
 ### Don't Repeat Yourself
 
-Two halves of one rule. Both fire before you write anything.
+Three parts of one rule. All fire before you write anything.
 
 - __Knowledge: one representation.__ Every fact — a rule, a decision, a version, a list — has exactly one authoritative home. Point at it; never restate it. A second copy is not redundancy, it is a future contradiction: the copies drift, and nothing tells you which one is current. Before writing a fact down, find where it already lives. If it lives in two places already, that is a defect worth fixing, not a pattern to follow.
 - __Work: check it is not already done.__ Before starting, read the `▶ Resume here` block in `TODO.md`, recent `git log`, and the related GitHub issue. Repeating finished work is the most common avoidable mistake.
+- __Reuse: check the platform first.__ If this repo builds on a platform (for example an ngdpbase addon), search the platform's code for the feature before writing it — managers, helpers, config, routes, UI pieces. If it exists, use it. If it almost fits, extend it in the platform, not here. If it is missing and other addons would need it too, __open a P1 issue on the platform repo__ and link it, rather than building a private copy in the addon. Recreating platform code in an addon is a DRY defect.
 
 The long form is the operator's __Do NOT Repeat Yourself (DRY)__ page. It lives on a private wiki, so it is named here, not linked. It is not copied here on purpose — copying it would be the very defect this protocol names. The kit owns this paragraph; the page owns the rest.
 
@@ -37,6 +38,7 @@ Priority labels are mutually exclusive and mean:
 Then:
 
 - Security comes first. Scanner alerts (Dependabot / code-scanning / GitGuardian / the ecosystem audit, e.g. `npm audit`) become issues labeled `security` + a graded priority: critical/high → `P0`, medium → `P1`, low → `P2`.
+- Test credentials are generated at run time (e.g. `randomUUID()`), never written as literals, and no real secret is committed anywhere, tests and fixtures included. `.gitguardian.yaml` ignores test paths on that basis; gitleaks (`secret-scan.yml`) still scans them.
 - `TODO.md` = a `▶ Resume here` block (maintained by `/wrap`) on top, then priority bands that `/pstatus` regenerates from the labels. Do not hand-edit the bands.
 - The two halves have one writer each and a deliberate handover: `/wrap` writes the resume pointer at session end, `/context` reads it at session open, and the first `/pstatus` of the session __removes__ it — by then you have already resumed, so it has served its purpose. A bands-only `TODO.md` mid-session is expected, not a loss.
 - Kit files are overwritten wholesale on every sync — `.claude/commands/*.md`, `utility/sync-labels.sh`, `.markdownlint-cli2.jsonc`. Never add a rule to one of them: it is destroyed at the next sync (the installer now warns, but the rule still goes). A __generic__ rule belongs upstream in [mjs-project-template](https://github.com/jwilleke/mjs-project-template) so every repo gets it. A __repo-specific__ note about a command — a package manager the kit does not name, a scanner only this repo has — goes in `.claude/commands/<command>.local.md`, which the kit never writes, reads, or deletes. Read that file, if present, as part of the command; commit it, so it travels with the repo.
