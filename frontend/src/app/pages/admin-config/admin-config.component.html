@@ -92,6 +92,10 @@
                       <span class="badge text-bg-dark mg-l-5"
                       [title]="'Set by ' + entry.env_var + ', which takes precedence over this screen'">environment</span>
                     }
+                    @if (needsRestart(entry)) {
+                      <span class="badge text-bg-danger mg-l-5"
+                      title="The server reads this once, when it starts. A change shows here at once but takes effect only after a restart.">after a restart</span>
+                    }
                   </td>
                   <td class="align-middle">
                     @if (editingKey !== entry.key) {
@@ -171,8 +175,10 @@
         </div>
         <p class="tx-gray-500 mg-t-15 mg-b-0">
           A small number of secrets are hidden until you reveal them, and a hidden value is not sent
-          to your browser until you ask for it. Everything else is shown outright. Changes apply
-          immediately — no restart.
+          to your browser until you ask for it. Everything else is shown outright. Most changes apply
+          immediately. Settings marked <strong>after a restart</strong> are read only when the server
+          starts: a change shows here at once, but the server keeps using the old value until it is
+          restarted.
         </p>
       }
     </div>

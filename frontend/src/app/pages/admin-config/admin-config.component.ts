@@ -8,6 +8,19 @@ import {LoadingSpinnerComponent} from '../../components/loading-spinner/loading-
 
 type TabId = 'current' | 'custom' | 'defaults';
 
+// Keys the server reads once, at startup (#921, #624): a saved change shows here at once but is
+// enforced only after a restart. Kept by hand until each key declares it (ngdpbase D6 at cutover).
+const RESTART_KEYS: ReadonlySet<string> = new Set([
+  'yourphr.auth.password.min-length',   // UsersManager caches it in its constructor
+  'yourphr.auth.permissions.definitions', // PolicyManager reads it at initialisation
+  'yourphr.auth.roles.definitions',       // PolicyManager reads it at initialisation
+  'yourphr.web.listen.port',
+  'yourphr.web.listen.host',
+  'yourphr.web.secure-cookies',
+  'yourphr.web.static-dir',
+  'yourphr.database.location',
+]);
+
 // Admin Configuration page (#458). Admin-only.
 //
 // Answers the question an operator cannot answer today — what is this instance actually
@@ -135,6 +148,11 @@ export class AdminConfigComponent implements OnInit {
   cancelEdit() {
     this.editingKey = '';
     this.editingValue = '';
+  }
+
+  /** True when a change to this key is enforced only after the server restarts. */
+  needsRestart(entry: ConfigEntry): boolean {
+    return RESTART_KEYS.has(entry.key);
   }
 
   isBoolean(entry: ConfigEntry): boolean {

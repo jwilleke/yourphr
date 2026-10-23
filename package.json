@@ -79,7 +79,7 @@
     "better-sqlite3-multiple-ciphers": "^13.0.3",
     "dotenv": "^17.4.2",
     "fhirpath": "^5.1.1",
-    "markdown-it": "^15.0.2",
+    "markdown-it": "^15.0.3",
     "nodemailer": "^10.0.12"
   },
   "devDependencies": {
@@ -89,7 +89,7 @@
     "@types/node": "^24.0.0",
     "@types/smtp-server": "^3.5.13",
     "@vitest/coverage-v8": "^4.1.11",
-    "markdownlint-cli2": "^0.23.3",
+    "markdownlint-cli2": "^0.24.0",
     "smtp-server": "^3.19.15",
     "tsx": "^4.19.2",
     "typescript": "^7.0.2",

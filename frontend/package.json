@@ -63,14 +63,14 @@
     "zone.js": "~0.16.3"
   },
   "devDependencies": {
-    "@angular-devkit/build-angular": "^22.2.0",
-    "@angular-eslint/builder": "22.5.0",
+    "@angular-devkit/build-angular": "^22.2.3",
+    "@angular-eslint/builder": "22.6.0",
     "@angular/cli": "^22.2.2",
     "@angular/compiler-cli": "^22.2.1",
-    "@angular/language-service": "^22.2.1",
+    "@angular/language-service": "^22.2.3",
     "@compodoc/compodoc": "^2.0.0",
     "@eslint/js": "^10",
-    "@playwright/test": "^1.63.0",
+    "@playwright/test": "^1.64.1",
     "@storybook/addon-docs": "^10.5.10",
     "@storybook/addon-links": "^10.5.10",
     "@storybook/angular": "^10.5.10",
@@ -96,7 +96,7 @@
     "storybook": "^10.5.10",
     "ts-node": "~9.1.1",
     "typescript": "~6.0.3",
-    "typescript-eslint": "8.70.0"
+    "typescript-eslint": "8.71.2"
   },
   "resolutions": {
     "webpack": "5.105.0",
