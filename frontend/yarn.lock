@@ -20,20 +20,20 @@
     "@jridgewell/gen-mapping" "^0.3.5"
     "@jridgewell/trace-mapping" "^0.3.24"
 
-"@angular-devkit/architect@0.2202.2":
-  version "0.2202.2"
-  resolved "https://registry.yarnpkg.com/@angular-devkit/architect/-/architect-0.2202.2.tgz#e79d2938186f42711efac81a4300a9bb5e507b97"
-  integrity sha512-7ScBo47haHyRGG5M5ZEpbhwHgO2LEDbCLwNCjpjwhtRFDIEmAFbULM1OQjIybN3x+wOyY1kWRK7KvihCbs371g==
-  dependencies:
-    "@angular-devkit/core" "22.2.2"
-    rxjs "7.8.2"
-
 "@angular-devkit/architect@0.2202.3", "@angular-devkit/architect@>= 0.2200.0 < 0.2300.0":
   version "0.2202.3"
   resolved "https://registry.yarnpkg.com/@angular-devkit/architect/-/architect-0.2202.3.tgz#ed263805072ccab035db32873fa7f2dede56a2d1"
   integrity sha512-/605FxTg8Kt5fqNuIBVZMfuiNwIf+CTNsiYnHY85/7OTqCNkEwdkXKc3DiFM2KlR/AV2g64GkvHgHqxHzYh34g==
   dependencies:
     "@angular-devkit/core" "22.2.3"
+    rxjs "7.8.2"
+
+"@angular-devkit/architect@0.2202.4":
+  version "0.2202.4"
+  resolved "https://registry.yarnpkg.com/@angular-devkit/architect/-/architect-0.2202.4.tgz#680d90e9c81085cfb19d738493f56b6099feeb82"
+  integrity sha512-hafew1tft3+bnv+DjAtLDEq/Yx5/UyAz/+M4VC5EWQQhcFCN81X47szTX3F9dNeiZIQb8d/WmCnmlbHz6CyupA==
+  dependencies:
+    "@angular-devkit/core" "22.2.4"
     rxjs "7.8.2"
 
 "@angular-devkit/build-angular@^22.2.3":
@@ -141,6 +141,18 @@
     rxjs "7.8.2"
     source-map "0.8.0"
 
+"@angular-devkit/core@22.2.4":
+  version "22.2.4"
+  resolved "https://registry.yarnpkg.com/@angular-devkit/core/-/core-22.2.4.tgz#062f946ebdb4fa12483f60fc11aadd073584fbb7"
+  integrity sha512-HDlsVK/qN7p5ttKgPvVLo87yrN0UcHR7OyQo1n/lvvMQcYrA0n01E+ix4t+q4C04ifpMbNQtrK0I1222OKi99w==
+  dependencies:
+    ajv "8.20.0"
+    ajv-formats "3.0.1"
+    jsonc-parser "3.3.1"
+    picomatch "4.0.7"
+    rxjs "7.8.2"
+    source-map "0.8.0"
+
 "@angular-devkit/schematics@22.0.4":
   version "22.0.4"
   resolved "https://registry.yarnpkg.com/@angular-devkit/schematics/-/schematics-22.0.4.tgz#56a37aef6990520236d1e017f5f4f0af035c9a2c"
@@ -152,7 +164,18 @@
     ora "9.4.0"
     rxjs "7.8.2"
 
-"@angular-devkit/schematics@22.2.2", "@angular-devkit/schematics@>= 22.0.0 < 23.0.0":
+"@angular-devkit/schematics@22.2.4":
+  version "22.2.4"
+  resolved "https://registry.yarnpkg.com/@angular-devkit/schematics/-/schematics-22.2.4.tgz#045e1400b48bd2254e98daf95cbb2fb315add9f2"
+  integrity sha512-9pRNtcZN87yM7KQX+HTxGatrm86y30JxVwkF2WNG1pR0e9yeiYWc1KQ5hRS1Nq1LULoP95HApc+TBXqUXzF4Ag==
+  dependencies:
+    "@angular-devkit/core" "22.2.4"
+    jsonc-parser "3.3.1"
+    magic-string "1.4.1"
+    ora "9.4.1"
+    rxjs "7.8.2"
+
+"@angular-devkit/schematics@>= 22.0.0 < 23.0.0":
   version "22.2.2"
   resolved "https://registry.yarnpkg.com/@angular-devkit/schematics/-/schematics-22.2.2.tgz#a36398e0941bccd3fe6538b62793b4f71386ae1c"
   integrity sha512-uCpFZbQgFUrOjKHLeYSCaYCJdufauYom8yFGggm67yetMAGKPbmRvUEko8i8auNFoBQ+1w1CivjSTwtmXQzZkA==
@@ -281,25 +304,25 @@
     parse5 "^8.0.0"
     tslib "^2.3.0"
 
-"@angular/cli@^22.2.2":
-  version "22.2.2"
-  resolved "https://registry.yarnpkg.com/@angular/cli/-/cli-22.2.2.tgz#f25822685820a997ba1bff010087dde6c2563ea8"
-  integrity sha512-AALIN+zai0CiA7HgSCGVPHyZyiw3yFWliCfbaS4ueHDJHVZ8QhVjRUrnfGZc3EJnigcyQ0w2DKeTxjwqpDjKew==
+"@angular/cli@^22.2.4":
+  version "22.2.4"
+  resolved "https://registry.yarnpkg.com/@angular/cli/-/cli-22.2.4.tgz#4668160c3dc0ff804ef1cd7925ffd7f71cfc92d0"
+  integrity sha512-luD9gNbMV7ME7mv9cUatVE+WF8Ecqa8v9Zo47YZK/6EPQUKdLxeosGWlHtrvBXElK1YehHItrUbawtZQmQwwlg==
   dependencies:
-    "@angular-devkit/architect" "0.2202.2"
-    "@angular-devkit/core" "22.2.2"
-    "@angular-devkit/schematics" "22.2.2"
+    "@angular-devkit/architect" "0.2202.4"
+    "@angular-devkit/core" "22.2.4"
+    "@angular-devkit/schematics" "22.2.4"
     "@inquirer/prompts" "8.7.2"
     "@listr2/prompt-adapter-inquirer" "4.2.7"
     "@modelcontextprotocol/server" "2.3.1"
-    "@schematics/angular" "22.2.2"
+    "@schematics/angular" "22.2.4"
     jsonc-parser "3.3.1"
     listr2 "11.1.0"
     npm-package-arg "14.0.0"
     parse5-html-rewriting-stream "8.0.1"
     semver "7.8.5"
     yargs "18.1.0"
-    zod "4.6.5"
+    zod "4.6.6"
 
 "@angular/common@^22.2.1":
   version "22.2.1"
@@ -3338,13 +3361,13 @@
   resolved "https://registry.yarnpkg.com/@rolldown/pluginutils/-/pluginutils-1.0.1.tgz#e3fcee093fbb5ce765e1ad088ff4de2889f6f9be"
   integrity sha512-2j9bGt5Jh8hj+vPtgzPtl72j0yRxHAyumoo6TNfAjsLB04UtpSvPbPcDcBMxz7n+9CYB0c1GxQFxYRg2jimqGw==
 
-"@schematics/angular@22.2.2":
-  version "22.2.2"
-  resolved "https://registry.yarnpkg.com/@schematics/angular/-/angular-22.2.2.tgz#53896b8de74c978aaa02ec315fdb1ef2258bc5d5"
-  integrity sha512-JxpXKpxdmQcRsJbriWJOhB7HeVTzz9CEsPNw6fQ0LOuPFnvtyUIXLxyFbKv/LfoFUz8wFADCtNU5sjowME5Mvg==
+"@schematics/angular@22.2.4":
+  version "22.2.4"
+  resolved "https://registry.yarnpkg.com/@schematics/angular/-/angular-22.2.4.tgz#6364b30280bf15e1a2fbab5af011bc271dbd92ea"
+  integrity sha512-3yXpeDsn780rk/Pm+2QjoGpvS03doyuB2i8jUt/tNtDatIIVoXUJak3kjPOK3TVorOJX/fTNMjMxDwQzvec2+w==
   dependencies:
-    "@angular-devkit/core" "22.2.2"
-    "@angular-devkit/schematics" "22.2.2"
+    "@angular-devkit/core" "22.2.4"
+    "@angular-devkit/schematics" "22.2.4"
     jsonc-parser "3.3.1"
     oxc-parser "0.150.0"
     typescript "6.0.3"
@@ -10442,10 +10465,10 @@ yoctocolors@^2.1.1:
   resolved "https://registry.yarnpkg.com/yoctocolors/-/yoctocolors-2.1.2.tgz#d795f54d173494e7d8db93150cec0ed7f678c83a"
   integrity sha512-CzhO+pFNo8ajLM2d2IW/R93ipy99LWjtwblvC1RsoSUMZgyLbYFr221TnSNT7GjGdYui6P459mw9JH/g/zW2ug==
 
-zod@4.6.5, zod@^4.0.10, zod@^4.2.0:
-  version "4.6.5"
-  resolved "https://registry.yarnpkg.com/zod/-/zod-4.6.5.tgz#e3af3edbdc260239c52f73caad05dbbffe6e82cd"
-  integrity sha512-v5l/aFXZQeai4awLbOpSoHecE9UiMrnfx75tEXLjNonXVARxQ5mOeipTjROUchszUNCqnE+hqAMujRsRHsut2Q==
+zod@4.6.6, zod@^4.0.10, zod@^4.2.0, zod@^4.6.6:
+  version "4.6.7"
+  resolved "https://registry.yarnpkg.com/zod/-/zod-4.6.7.tgz#e806cf64a7f4e37635ce9f2f52c04c3766f75e5b"
+  integrity sha512-g8W2D2kU6a8untc053fX1uVBKzM7yqAxW/3zwk83+6RyF2+SKOuV+c0wBDhUwzV1PaGapmZH+rmcUzPf+3CGwg==
 
 zone.js@~0.16.3:
   version "0.16.3"
