@@ -21,7 +21,6 @@ Open work in [jwilleke/yourphr](https://github.com/jwilleke/yourphr), ranked. Ge
 - [#898](https://github.com/jwilleke/yourphr/issues/898) — [SECURITY] Retire SPIKE_TEST_ALLOW_INTERNAL: no switch turns the outbound guard off
 - [#897](https://github.com/jwilleke/yourphr/issues/897) — [SECURITY] Adopt ngdpbase's egress policy as the outbound guard
 - [#864](https://github.com/jwilleke/yourphr/issues/864) — [SECURITY] Stop GitHub Actions from approving pull requests
-- [#967](https://github.com/jwilleke/yourphr/issues/967) — [BUG] 50 of 114 Storybook stories throw on open — missing Angular providers and unregistered Chart.js scales
 - [#926](https://github.com/jwilleke/yourphr/issues/926) — Register yourPHR as a patient-access SMART on FHIR app with Oracle Health (Cerner Millennium)
 - [#925](https://github.com/jwilleke/yourphr/issues/925) — [FEATURE] Oracle Health in production: load the 1,319 patient-access endpoints into the catalog — our app already works there, no activation
 - [#924](https://github.com/jwilleke/yourphr/issues/924) — [FEATURE] Epic at scale: confirm the intended way an auto-distributed refresh-token app goes live at all organizations (no per-org activation)
@@ -44,6 +43,7 @@ Open work in [jwilleke/yourphr](https://github.com/jwilleke/yourphr), ranked. Ge
 ## 🟡 P2
 
 - [#896](https://github.com/jwilleke/yourphr/issues/896) — [security] katex — 1 open advisory in the root lockfile (low)
+- [#967](https://github.com/jwilleke/yourphr/issues/967) — [BUG] 50 of 114 Storybook stories throw on open — missing Angular providers and unregistered Chart.js scales
 - [#946](https://github.com/jwilleke/yourphr/issues/946) — [BUG] The CMS Blue Button production-access runbook still describes the Go stack
 - [#945](https://github.com/jwilleke/yourphr/issues/945) — [FEATURE] Share the consolidated record: FHIR export, IPS, SMART Health Links, printed summary
 - [#944](https://github.com/jwilleke/yourphr/issues/944) — [FEATURE] Records request kit: right-of-access / EHI Export letters and a provider checklist
