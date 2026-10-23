@@ -22,7 +22,6 @@ Open work in [jwilleke/yourphr](https://github.com/jwilleke/yourphr), ranked. Ge
 - [#897](https://github.com/jwilleke/yourphr/issues/897) — [SECURITY] Adopt ngdpbase's egress policy as the outbound guard
 - [#871](https://github.com/jwilleke/yourphr/issues/871) — [FEATURE] Provider client secrets come from the instance's .env / Secret, not hand-pasted into the catalog form
 - [#864](https://github.com/jwilleke/yourphr/issues/864) — [SECURITY] Stop GitHub Actions from approving pull requests
-- [#819](https://github.com/jwilleke/yourphr/issues/819) — [security] webpack-dev-middleware — 1 open advisory in the frontend lockfile (high)
 - [#817](https://github.com/jwilleke/yourphr/issues/817) — [BUG] SSRF guard misses NAT64, 6to4 and two IPv4 special ranges; LAN access switches the guard off entirely
 - [#814](https://github.com/jwilleke/yourphr/issues/814) — [BUG] Sign-out does not end the session: the token stays valid until it expires
 - [#925](https://github.com/jwilleke/yourphr/issues/925) — [FEATURE] Oracle Health in production: load the 1,319 patient-access endpoints into the catalog — our app already works there, no activation
@@ -76,7 +75,8 @@ Open work in [jwilleke/yourphr](https://github.com/jwilleke/yourphr), ranked. Ge
 
 ## 🔵 In review
 
-*None.*
+- [#966](https://github.com/jwilleke/yourphr/issues/966) — [security] zod — memory exhaustion validating oversized collections (high, frontend, dev-only)
+- [#819](https://github.com/jwilleke/yourphr/issues/819) — [security] webpack-dev-middleware — 1 open advisory in the frontend lockfile (high)
 
 ## ⏸ Deferred
 
@@ -118,4 +118,5 @@ Open work in [jwilleke/yourphr](https://github.com/jwilleke/yourphr), ranked. Ge
 
 ## ❓ Needs triage
 
+- [#967](https://github.com/jwilleke/yourphr/issues/967) — [BUG] 50 of 114 Storybook stories throw on open — missing Angular providers and unregistered Chart.js scales
 - [#926](https://github.com/jwilleke/yourphr/issues/926) — Register yourPHR as a patient-access SMART on FHIR app with Oracle Health (Cerner Millennium)
