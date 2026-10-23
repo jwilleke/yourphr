@@ -75,8 +75,7 @@ Open work in [jwilleke/yourphr](https://github.com/jwilleke/yourphr), ranked. Ge
 
 ## 🔵 In review
 
-- [#966](https://github.com/jwilleke/yourphr/issues/966) — [security] zod — memory exhaustion validating oversized collections (high, frontend, dev-only)
-- [#819](https://github.com/jwilleke/yourphr/issues/819) — [security] webpack-dev-middleware — 1 open advisory in the frontend lockfile (high)
+*None.*
 
 ## ⏸ Deferred
 
