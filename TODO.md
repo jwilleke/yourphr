@@ -20,16 +20,18 @@ Open work in [jwilleke/yourphr](https://github.com/jwilleke/yourphr), ranked. Ge
 - [#899](https://github.com/jwilleke/yourphr/issues/899) — [SECURITY] Tests reach fake servers through an injected transport, as ngdpbase does
 - [#898](https://github.com/jwilleke/yourphr/issues/898) — [SECURITY] Retire SPIKE_TEST_ALLOW_INTERNAL: no switch turns the outbound guard off
 - [#897](https://github.com/jwilleke/yourphr/issues/897) — [SECURITY] Adopt ngdpbase's egress policy as the outbound guard
-- [#871](https://github.com/jwilleke/yourphr/issues/871) — [FEATURE] Provider client secrets come from the instance's .env / Secret, not hand-pasted into the catalog form
 - [#864](https://github.com/jwilleke/yourphr/issues/864) — [SECURITY] Stop GitHub Actions from approving pull requests
-- [#817](https://github.com/jwilleke/yourphr/issues/817) — [BUG] SSRF guard misses NAT64, 6to4 and two IPv4 special ranges; LAN access switches the guard off entirely
-- [#814](https://github.com/jwilleke/yourphr/issues/814) — [BUG] Sign-out does not end the session: the token stays valid until it expires
+- [#967](https://github.com/jwilleke/yourphr/issues/967) — [BUG] 50 of 114 Storybook stories throw on open — missing Angular providers and unregistered Chart.js scales
+- [#926](https://github.com/jwilleke/yourphr/issues/926) — Register yourPHR as a patient-access SMART on FHIR app with Oracle Health (Cerner Millennium)
 - [#925](https://github.com/jwilleke/yourphr/issues/925) — [FEATURE] Oracle Health in production: load the 1,319 patient-access endpoints into the catalog — our app already works there, no activation
 - [#924](https://github.com/jwilleke/yourphr/issues/924) — [FEATURE] Epic at scale: confirm the intended way an auto-distributed refresh-token app goes live at all organizations (no per-org activation)
 - [#916](https://github.com/jwilleke/yourphr/issues/916) — [FEATURE] 'Sync now' makes the person wait for the whole sync: start it, return, notify
 - [#909](https://github.com/jwilleke/yourphr/issues/909) — [FEATURE] Request log: one line per request with status and duration; warn on slow requests and event-loop stalls
 - [#893](https://github.com/jwilleke/yourphr/issues/893) — [FEATURE] Adopt ngdpbase's file logging provider: rotating logs on the data volume
+- [#871](https://github.com/jwilleke/yourphr/issues/871) — [FEATURE] Provider client secrets come from the instance's .env / Secret, not hand-pasted into the catalog form
 - [#870](https://github.com/jwilleke/yourphr/issues/870) — [BUG] Every provider connect on prod fails — yourPHR was never pointed at the SMART relay
+- [#817](https://github.com/jwilleke/yourphr/issues/817) — [BUG] SSRF guard misses NAT64, 6to4 and two IPv4 special ranges; LAN access switches the guard off entirely
+- [#814](https://github.com/jwilleke/yourphr/issues/814) — [BUG] Sign-out does not end the session: the token stays valid until it expires
 - [#791](https://github.com/jwilleke/yourphr/issues/791) — [BUG] The backup and recovery docs describe the Go stack — plaintext, gzip, settings file, labels
 - [#782](https://github.com/jwilleke/yourphr/issues/782) — [BUG] A click that cannot complete says nothing — guards wait forever, failures are silent
 - [#776](https://github.com/jwilleke/yourphr/issues/776) — [BUG] Sync imports document titles but never fetches the documents — the Binary pass went with the Go stack
@@ -117,5 +119,4 @@ Open work in [jwilleke/yourphr](https://github.com/jwilleke/yourphr), ranked. Ge
 
 ## ❓ Needs triage
 
-- [#967](https://github.com/jwilleke/yourphr/issues/967) — [BUG] 50 of 114 Storybook stories throw on open — missing Angular providers and unregistered Chart.js scales
-- [#926](https://github.com/jwilleke/yourphr/issues/926) — Register yourPHR as a patient-access SMART on FHIR app with Oracle Health (Cerner Millennium)
+*None.*
