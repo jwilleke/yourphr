@@ -28,11 +28,12 @@ description = "URL with an explicit port: likely an internal service address"
 regex = '''(?i)\b(?:https?|wss?)://[a-z0-9][a-z0-9.-]*:[0-9]{2,5}\b'''
 keywords = ["://"]
 
-# Loopback and reserved example hosts name nothing real.
+# Loopback (including *.localhost, which always resolves to the local machine)
+# and reserved example hosts name nothing real.
 [[rules.allowlists]]
 regexTarget = "match"
 regexes = [
-  '''(?i)://(?:localhost|127\.0\.0\.1|0\.0\.0\.0):''',
+  '''(?i)://(?:(?:[a-z0-9-]+\.)*localhost|127\.0\.0\.1|0\.0\.0\.0):''',
   '''(?i)://(?:[a-z0-9-]+\.)*example\.(?:com|org|net):''',
 ]
 
