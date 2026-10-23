@@ -1,9 +1,9 @@
 {
   "schema": 1,
   "source": "https://github.com/jwilleke/mjs-project-template",
-  "installed": "v1.14.0",
-  "installed_ref": "v1.14.0-0-g282c9b7",
-  "installed_at": "2026-10-18",
+  "installed": "v1.15.0",
+  "installed_ref": "v1.15.0-2-gc79a0b9",
+  "installed_at": "2026-10-23",
   "files": {
     ".claude/commands/pstatus.md": { "behavior": "overwrite", "sha256": "9f812e552e72e7522a2bd194e3b3d69329d4744b0dc764e7e05c900d88dca23c" },
     ".claude/commands/session-commit.md": { "behavior": "overwrite", "sha256": "2f38aa7347ea3a54e34245c92c518ccfc3667e058e52ad1023ea8f6ebf2a0e05" },
