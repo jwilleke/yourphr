@@ -88,29 +88,13 @@
     {
       "id": "phr-access",
       "name": "Health records",
-      "description": "Who may use phr at all: every signed-in person. Whose records a person may see is not decided here: phr reads each record's owner from storage and core decides (owner rule, then policy). The resource type becomes phr-record once phr declares it (ngdpbase#1823).",
+      "description": "Who may use phr at all: every person, through the role vault-owner that every account holds (ngdpbase#1539, operator 2026-10-24: a permission over a person's own records goes to vault-owner, never to site roles). Whose records a person may see is not decided here: phr reads each record's owner from storage and core decides (owner rule, then policy). The resource type becomes phr-record once phr declares it (ngdpbase#1823).",
       "priority": 90,
       "effect": "allow",
       "subjects": [
         {
           "type": "role",
-          "value": "reader"
-        },
-        {
-          "type": "role",
-          "value": "contributor"
-        },
-        {
-          "type": "role",
-          "value": "editor"
-        },
-        {
-          "type": "role",
-          "value": "user-admin"
-        },
-        {
-          "type": "role",
-          "value": "admin"
+          "value": "vault-owner"
         }
       ],
       "resources": [
