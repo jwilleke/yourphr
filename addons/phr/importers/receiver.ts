@@ -10,8 +10,10 @@
  * - Refused, not stored, when the person hasn't turned health records on or
  *   hasn't accepted phr's current terms and privacy policy: an import may come
  *   from a core screen, where phr's own consent paths are never visited.
- * - No `keepOriginal` yet: originals go to the person's PHR vault once a
- *   background job can write there (yourphr#968).
+ * - Originals: `none` only. phr has no `keepOriginal` yet, and without one
+ *   the engine's `keep` would put a health-record file in core's shared
+ *   attachments. Originals go to the person's PHR vault once a background job
+ *   can write there (yourphr#968, ngdpbase#1811).
  */
 import type { ActorContext, Decision, IceItem, IceReceiver, ReceiveOutcome } from '@jwilleke/ngdpbase-types';
 import type { PhrCaller, PhrManager } from '../managers/PhrManager.js';
@@ -50,6 +52,7 @@ export function healthRecordsReceiver(deps: ReceiverDeps): IceReceiver {
     name: 'health-records',
     label: 'Health records',
     accepts: [PHR_FILE_KIND],
+    originals: { allowed: ['none'], default: 'none' },
     mayUse: async (ctx) => (await whyNot(ctx)) === null,
     async receive(item: IceItem, ctx: ActorContext): Promise<ReceiveOutcome> {
       const why = await whyNot(ctx);

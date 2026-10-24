@@ -100,6 +100,10 @@ describe('phr.health-records, the import engine\'s door to health records', () =
 
   it('takes only what phr\'s shims produce', () => {
     expect(receiver().accepts).toEqual([PHR_FILE_KIND]);
+  });
+
+  it('offers no way to keep the original: without phr\'s own keep door it would land in core\'s shared files', () => {
+    expect(receiver().originals).toEqual({ allowed: ['none'], default: 'none' });
     expect(receiver().keepOriginal).toBeUndefined();
   });
 });

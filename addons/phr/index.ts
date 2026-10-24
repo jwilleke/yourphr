@@ -113,7 +113,8 @@ function registerConsent(engine: WikiEngine, tools: AddonHost): void {
  * phr on ngdpbase's import engine (ICE, ngdpbase#1979): its FHIR and C-CDA
  * shims, and its receiver, the door to health records. The engine owns files,
  * fingerprints and status; a person starts an import from core's import
- * screen (ngdpbase#2021). Names are declared in package.json's manifest.
+ * screen, /import (ngdpbase#2021), linked from My Health Records. Names are
+ * declared in package.json's manifest.
  */
 function registerImport(engine: WikiEngine, tools: AddonHost, decide: (ctx: ActorContext, request: { action: string }) => Promise<Decision>): void {
   const consent = engine.getManager<ConsentManager>('ConsentManager');
@@ -150,10 +151,9 @@ const PhrAddon = {
     const pdp = engine.getManager<PolicyDecisionPoint>('PolicyDecisionPoint');
     if (!pdp) throw new Error("ngdpbase's PolicyDecisionPoint is not available");
     const auditSink = engine.getManager<Parameters<AddonHost['recordAuditEvent']>[0]>('AuditManager');
-    // ngdpbase#2022: core's decide takes any ActorContext (a person's or a job's)
-    // and makes the subject itself. Until ngdpbase-types has that signature, this
-    // is the one place phr's context meets the older one. Never convert it here.
-    const decide = (ctx: ActorContext | null, request: { action: string }) => pdp.decide(ctx as Parameters<typeof pdp.decide>[0], request);
+    // Core's decide takes any ActorContext, a person's or a background job's,
+    // and makes the subject itself (ngdpbase#2022). phr never converts it.
+    const decide = (ctx: ActorContext | null, request: { action: string }) => pdp.decide(ctx, request);
     records = new PhrManager({
       store,
       decide,

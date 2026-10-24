@@ -11,6 +11,7 @@ import type { StoredRecord } from '../managers/PhrRecordStore.js';
 import type { HealthRecordsOn } from '../preferences.js';
 import { kindName, recordDate, recordName, recordValue, shownAsRecord } from '../display.js';
 import { noteText } from '../managers/notes.js';
+import { PHR_RECEIVER } from '../importers/shims.js';
 
 interface Viewer { username?: string | null; isAuthenticated?: boolean; ipAddress?: string }
 
@@ -50,6 +51,8 @@ export function createPhrRecordsPlugin(records: () => PhrManager | null, healthR
           const kinds = counts.map((c) => `<li>${c.count} ${esc(kindName(c.resourceType, c.count))}</li>`).join('');
           parts.push(`<h2 class="h5">What you have</h2><ul class="phr-records-kinds">${kinds}</ul>`);
         }
+        // Core's import screen (ngdpbase#2021), opened on phr's receiver.
+        parts.push(`<p class="phr-records-import"><a class="btn btn-outline-primary btn-sm" href="/import?receiver=${encodeURIComponent(PHR_RECEIVER)}">Add records from a download</a> <span class="text-muted small">FHIR or C-CDA files, or a zip of them</span></p>`);
         parts.push(`<form method="get" class="phr-records-search my-3" role="search">
   <label for="phr-q" class="form-label">Find in your records</label>
   <div class="input-group"><input type="search" class="form-control" id="phr-q" name="q" value="${esc(q)}" placeholder="for example: glucose, prediabetes, 2019">
