@@ -84,7 +84,7 @@ __Before any work on the TypeScript stack, read [`architecture-principles-typesc
 
 ## Project Context
 
-Repo-specific brief for agents. The kit-managed protocol is __above__ `KIT:END`; everything below is owned by this repo and is the single source of truth for product context (formerly `CLAUDE.md`). Claude Code loads [`CLAUDE.md`](CLAUDE.md), which is a short pointer here.
+Repo-specific brief for agents. The kit-managed protocol is __above__ `KIT:END`; everything below is owned by this repo and is the single source of truth for product context. Claude Code loads [`CLAUDE.md`](CLAUDE.md), which is a short pointer here.
 
 ### What this is
 
@@ -108,7 +108,7 @@ __No runtime dependency on Fasten-operated services. This is a rule, not a prefe
 
 It is also incoherent with the reason this project exists: the paragraph above says YourPHR went standalone BECAUSE upstream's Lighthouse relay moved into the commercial Fasten Connect product. Continuing to call that relay is depending on the thing we forked away from, and it is a liveness risk in every self-hosted instance — if Fasten retires or gates the endpoint, that path breaks everywhere at once, and no operator can fix it without a rebuild.
 
-Known and being removed ([#700](https://github.com/jwilleke/yourphr/issues/700)): `frontend/src/environments/environment*.ts` sets `connect_gateway_api_endpoint_base` to `https://lighthouse.fastenhealth.com/...` in EVERY configuration including `environment.prod.ts`, and `connect-gateway.service.ts` calls `/search`, `/catalog`, `/connect/{id}`, `/redirect/{state}` and `/token/{endpoint_id}` there. It is live, not dead code — `medical-sources.component.ts` and `explore.component.ts` both inject the service — and the strings are verifiably in the shipped bundle on the live demo. The replacement is ours and already exists: `CatalogManager`, `SmartSourceClientProvider`, and `relay/`.
+The last such call, the Angular app's Lighthouse connect gateway, was removed by [#700](https://github.com/jwilleke/yourphr/issues/700). Ours replaced it: `CatalogManager`, `SmartSourceClientProvider` and `relay/`.
 
 When touching provider connection, source authorisation, or the catalog: route through OUR catalog and OUR relay. If a change would add or preserve a call to a Fasten-operated host, stop and raise it rather than carrying it forward because it was already there.
 
@@ -129,7 +129,7 @@ __Never commit:__
 - __Secrets / keys.__ No real `jwt.issuer.key`, encryption keys, OAuth client secrets, access/refresh tokens, `.env`, `*.pem` / `*.key` / `*.p12` / `*.pfx`. Real config goes in `.env` (gitignored) or environment variables — never in a committed file. The `.env.*.example` templates are committed: placeholders only.
 - __Certs.__ `certs/` is gitignored (the app generates its own CA at runtime).
 
-__Note on YAML configuration:__ there is no `config.yaml` and no `--config` flag ([#470](https://github.com/jwilleke/yourphr/issues/470), [#474](https://github.com/jwilleke/yourphr/issues/474)). For local development `cp .env.dev.example .env`. The layering is described under __Configuration__ below.
+For local development, `cp .env.dev.example .env`; the layering is under __Configuration__ below.
 
 __Before any commit or push:__ run `git status` / `git diff --staged` and confirm no DB, `.env`, key, or real-patient file is staged. Never use `git add -A` / `git add .` blindly — add specific files. If something sensitive was already committed, treat it as compromised: rotate the secret and scrub history (`git filter-repo` / BFG), don't just delete it in a new commit.
 
@@ -148,8 +148,7 @@ make test-relay        # the one Go thing left
 make serve-storybook   # component dev/test in isolation
 ```
 
-__The server's own suites are npm scripts__, and CI runs them one job per script — see
-`.github/workflows/server-ci.yaml` for the authoritative list.
+__The server's own suites are npm scripts__, and CI runs them one job per script — see `.github/workflows/server-ci.yaml` for the authoritative list.
 
 ```bash
 npm test               # vitest: unit tests, src/**/__tests__/**
@@ -161,8 +160,7 @@ npm run check:boundary # nothing outside src/http reaches the network
 npm run check:store    # no database handle escapes a provider
 ```
 
-__`typecheck` and `build` read different configs and disagree__ — that difference has turned a green
-laptop into a red CI run. Before pushing, run the whole `server-ci` list, not a subset.
+__`typecheck` and `build` read different configs and disagree__ — that difference has turned a green laptop into a red CI run. Before pushing, run the whole `server-ci` list, not a subset.
 
 Run a single test:
 
@@ -173,9 +171,7 @@ cd frontend && ng test --include='**/badge.component.spec.ts'
 
 ### Server architecture (`src/`)
 
-Built on the ngdpbase model ([#608](https://github.com/jwilleke/yourphr/issues/608)) — read
-[`architecture-principles-typescript.md`](https://github.com/jwilleke/ngdpbase/blob/master/docs/planning/architecture-principles-typescript.md)
-(in ngdpbase) before changing any of it.
+Built on the ngdpbase model ([#608](https://github.com/jwilleke/yourphr/issues/608)) — read [`architecture-principles-typescript.md`](https://github.com/jwilleke/ngdpbase/blob/master/docs/planning/architecture-principles-typescript.md) (in ngdpbase) before changing any of it.
 
 - __Entry point__: `src/main.ts` — a subcommand layer ([#654](https://github.com/jwilleke/yourphr/issues/654)) over `src/cli/`: `start` (the default), `migrate`, `reset-password`, `version`, `help`. An unknown command exits non-zero and never starts a server.
 - __Composition root__: `src/app.ts` — `openStores()` and `assembleApp()` build the engine, its managers in dependency order, and the providers configuration selects.
@@ -186,37 +182,26 @@ Built on the ngdpbase model ([#608](https://github.com/jwilleke/yourphr/issues/6
 - __Migration from Go__: `src/migrate/` — one-way, idempotent, and its exit criterion is a record-for-record verification rather than a successful import.
 - __Logging__: `src/log/` — one logger, a ring buffer the Logs page reads, and secret redaction driven by `yourphr.config.secret-keys` ([#638](https://github.com/jwilleke/yourphr/issues/638)).
 
-There is __no code generation__. The Go generators (`go generate`, `tygo`) went with the Go stack;
-`frontend/src/app/models/patient-access-brands/` was tygo output and is now ordinary source.
+There is __no code generation__. The Go generators (`go generate`, `tygo`) went with the Go stack; `frontend/src/app/models/patient-access-brands/` was tygo output and is now ordinary source.
 
 #### Configuration
 
-Three layers, one vocabulary: environment > `<data>/config/app-custom-config.json` > shipped
-defaults in `config/app-default-config.json`. `ConfigurationManager` is the only reader. There is no
-`config.yaml` and no `--config` flag ([#470](https://github.com/jwilleke/yourphr/issues/470),
-[#474](https://github.com/jwilleke/yourphr/issues/474)). Bootstrap and secrets come from
-`<YOURPHR_FAST_STORAGE>/.env` or the ambient environment; everything else is Admin → Configuration.
-See [`docs/architecture/configuration-system.md`](./docs/architecture/configuration-system.md).
+Three layers, one vocabulary: environment > `<data>/config/app-custom-config.json` > shipped defaults in `config/app-default-config.json`. `ConfigurationManager` is the only reader. There is no `config.yaml` and no `--config` flag ([#470](https://github.com/jwilleke/yourphr/issues/470), [#474](https://github.com/jwilleke/yourphr/issues/474)). Bootstrap and secrets come from `<YOURPHR_FAST_STORAGE>/.env` or the ambient environment; everything else is Admin → Configuration. See [`docs/architecture/configuration-system.md`](./docs/architecture/configuration-system.md).
 
-`yourphr.config.env-keys` names the handful of keys the environment OWNS — read-only on the settings
-screen whether or not the variable is set. Every other key still honours its `YOURPHR_*` variable
-when one is present; declaring a key in that list does not add the variable, it removes the screen.
+`yourphr.config.env-keys` names the handful of keys the environment OWNS — read-only on the settings screen whether or not the variable is set. Every other key still honours its `YOURPHR_*` variable when one is present; declaring a key in that list does not add the variable, it removes the screen.
 
 #### SMART on FHIR
 
-The SMART client is a provider behind `SourcesManager`, selected by `yourphr.sources.client.provider`
-with an inert `null` alternative. The OAuth relay (`relay/`, deployed as
-`ghcr.io/jwilleke/yourphr-relay`) is store-and-poll for the auth code — the server does the token
-exchange and the relay never sees tokens.
+The SMART client is a provider behind `SourcesManager`, selected by `yourphr.sources.client.provider` with an inert `null` alternative. The OAuth relay (`relay/`, deployed as `ghcr.io/jwilleke/yourphr-relay`) is store-and-poll for the auth code — the server does the token exchange and the relay never sees tokens.
 
-__Live relay-based sync is not a v3 capability yet__, and the stack says so rather than pretending: `GET /api/secure/source/relay-config` reports that none is configured. The gap to a proven production provider is [#408](https://github.com/jwilleke/yourphr/issues/408); Veradigm/FollowMyHealth ([#53](https://github.com/jwilleke/yourphr/issues/53)) is blocked on vendor approval. Manual FHIR bundle upload is the zero-setup import path ([#736](https://github.com/jwilleke/yourphr/issues/736) restored it after v3.4.0); C-CDA adds one step, running the converter service and setting its address ([#735](https://github.com/jwilleke/yourphr/issues/735), [`docs/import/c-cda.md`](docs/import/c-cda.md)).
+__Live relay-based sync is not a v3 capability yet__, and the stack says so rather than pretending: `GET /api/secure/source/relay-config` reports that none is configured. The gap to a proven production provider is [#408](https://github.com/jwilleke/yourphr/issues/408). Manual FHIR bundle upload is the zero-setup import path ([#736](https://github.com/jwilleke/yourphr/issues/736) restored it after v3.4.0); C-CDA adds one step, running the converter service and setting its address ([#735](https://github.com/jwilleke/yourphr/issues/735), [`docs/import/c-cda.md`](docs/import/c-cda.md)).
 
 ### Frontend architecture (`frontend/src/app/`)
 
-Standard Angular 22 module layout (upgraded 14→20 via foundation epic [#12](https://github.com/jwilleke/yourphr/issues/12), then 20→22 in [#701](https://github.com/jwilleke/yourphr/pull/701)):
+Standard Angular 22 module layout:
 
 - `services/` — `fasten-api.service.ts` is the main backend API client; `auth.service.ts` + `auth-interceptor.service.ts` handle JWT; `event-bus.service.ts` for SSE/streaming.
-- `pages/`, `components/`, `widgets/` — UI; `models/` — typed view models (the `patient-access-brands/` subdir is tygo-generated, don't edit).
+- `pages/`, `components/`, `widgets/` — UI; `models/` — typed view models.
 - Backend `/api/secure/events/stream` is a Server-Sent Events endpoint (used for sync/job progress).
 - __Long operations are set-and-walk-away — a rule__ (Jim, 2026-10-13, [#905](https://github.com/jwilleke/yourphr/issues/905)). Nothing a patient or admin starts may keep them waiting: removing a source or its data, sync, import, export, backup, restore, reindex. The request starts a background job (ngdpbase's BackgroundJobManager) and returns at once; progress and the outcome arrive as a notification. The server stays responsive throughout. No synchronous work that can block `/healthz` (the k8s liveness probe kills the pod after ~90 s, rolling the work back).
 - __Admin-only UI lives under `/admin` — a rule__ (Jim, 2026-10-13, [#904](https://github.com/jwilleke/yourphr/issues/904)). No admin control, listing or tool renders on a patient page or in the top navigation. Outside `/admin` an admin sees at most the doorway (the account menu's "Admin Dashboard" link and "Administrator" label) or a one-line pointer into `/admin`. A new admin page gets an `/admin/...` route and a card on the admin dashboard.
@@ -228,11 +213,11 @@ Four defects it has already cost us:
 - __`yarn audit` exits a severity BITMASK__ (1 info, 2 low, 4 moderate, 8 high, 16 critical), not pass/fail, and `--level` does not filter — it still reports and still counts. That is the whole reason for the 37-line audit-gate workaround in `development.yaml`.
 - __`yarn upgrade <pkg>` silently does nothing for a transitive dependency__ and prints `success`. It only re-resolves DIRECT dependencies. Do not read its success as "already fixed" — [#590](https://github.com/jwilleke/yourphr/issues/590) was nearly closed on that misreading.
 - __It rewrites the lockfile behind you__: yarn 1.22.22 turns `elliptic "git+https://…git"` back into `"https://…"`, undoing what Dependabot writes. Expect that hunk on unrelated installs and do not commit it.
-- __Its lax peer resolution hides real defects.__ `@angular/common` and `@angular/forms`, both declared `^20.3.29`, once resolved to DIFFERENT patches — yarn installs that happily, npm refuses it. That instance is closed: every `@angular/*` package is now pinned exactly (`22.1.4`) through `resolutions`, so the skew is gone from the tree. The mechanism is not, and yarn will hide the next one the same way — note that the pins masking it are themselves a Yarn-only field npm ignores.
+- __Its lax peer resolution hides real defects.__ `@angular/common` and `@angular/forms`, both declared `^20.3.29`, once resolved to DIFFERENT patches — yarn installs that happily, npm refuses it. Yarn will hide the next one the same way.
 
-Plus the cost of two package managers: `npm audit` reads clean while the frontend carries 39 advisories, which is exactly how [#530](https://github.com/jwilleke/yourphr/issues/530) hid a vulnerable `elliptic` in the shipped bundle for months.
+Plus the cost of two package managers: `npm audit` reads only the root lockfile, never the frontend's, which is exactly how [#530](https://github.com/jwilleke/yourphr/issues/530) hid a vulnerable `elliptic` in the shipped bundle for months.
 
-So: do not add yarn scripts, yarn-only syntax, or new `resolutions` entries. `resolutions` is a Yarn field npm ignores entirely — a naive `npm install` silently drops all 37 of the pins there, most of which are security pins from [#416](https://github.com/jwilleke/yourphr/issues/416). Anything new that needs pinning should be written so it survives the move (npm `overrides`). Yarn Berry is not the destination either; the goal is ONE package manager for the repository, and that is npm.
+So: do not add yarn scripts, yarn-only syntax, or new `resolutions` entries. `resolutions` is a Yarn field npm ignores entirely — a naive `npm install` silently drops every pin there, most of which are security pins from [#416](https://github.com/jwilleke/yourphr/issues/416). Anything new that needs pinning should be written so it survives the move (npm `overrides`). Yarn Berry is not the destination either; the goal is ONE package manager for the repository, and that is npm.
 
 ### Deployment
 
@@ -241,14 +226,3 @@ So: do not add yarn scripts, yarn-only syntax, or new `resolutions` entries. `re
 - __Delivery is RELEASE-GATED (GitOps via Flux).__ [`.github/workflows/release-image.yaml`](.github/workflows/release-image.yaml) builds + pushes __`ghcr.io/jwilleke/yourphr`__ (tags `:X.Y.Z`, `:X.Y`, `:latest`) __only on a `vX.Y.Z` release tag__, or when the GitHub Release is published — a second trigger added because a tag push once produced no run at all ([#658](https://github.com/jwilleke/yourphr/issues/658)). Pushes to `main` are CI-tested but build NO image and do NOT deploy. __Use this filename when checking that a release built__ (`gh run list --workflow=release-image.yaml`): the old name `docker-jwilleke.yaml` no longer exists, and asking for it returns an empty list that is indistinguishable from the [#658](https://github.com/jwilleke/yourphr/issues/658) symptom. Flux (repo `jwilleke/mj-infra-flux`, `apps/production/image-automation/yourphr-policy.yaml`) has a __semver `ImagePolicy`__ that deploys the highest released `:X.Y.Z`. So __to ship anything to the live instance you must cut a release__ (a `patch` release for hotfixes). The k8s app dir is `apps/production/yourphr` and the __namespace is `yourphr`__. The serving Deployment is `yourphr-ts`, whose database is on the `local-path` PVC `yourphr-ts-data` mounted at `/opt/yourphr/data`; the frozen Go Deployment beside it still holds `yourphr-data` at `/opt/fasten/db` as the rollback, which is why both PVCs exist.
 - The full contract is in [`docs/deployment/deployment-contract.md`](docs/deployment/deployment-contract.md); cutting a release is in [`docs/development/releasing.md`](./docs/development/releasing.md).
 - The image name follows `${{ github.repository }}`, so it tracks the repo name automatically.
-
-### Conventions
-
-- When changing a Go struct that tygo exports, or `search-parameters.json`, re-run `make generate-backend` and commit the regenerated files — never hand-edit `fhir_*.go` or the generated TS models.
-- Backend tests use real FHIR JSON fixtures in `testdata/` directories; mirror that pattern (add a fixture + an `ExtractSearchParameters` test) when adding resource handling.
-- Prefer display __fallbacks__ for non-US-Core FHIR (e.g. missing `type[]`) over assuming US-Core-only shape.
-
-## Status
-
-- project_state: active
-- blockers: none
