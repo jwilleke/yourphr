@@ -27,7 +27,7 @@
   "ngdpbase": {
     "slug": "phr",
     "type": "additive",
-    "minVersion": "5.28.0",
+    "minVersion": "5.29.0",
     "perPerson": true,
     "aboutPage": "about-yourphr",
     "family": "yourPHR",

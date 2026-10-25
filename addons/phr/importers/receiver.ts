@@ -10,10 +10,12 @@
  * - Refused, not stored, when the person hasn't turned health records on or
  *   hasn't accepted phr's current terms and privacy policy: an import may come
  *   from a core screen, where phr's own consent paths are never visited.
- * - Originals: `none` only. phr has no `keepOriginal` yet, and without one
- *   the engine's `keep` would put a health-record file in core's shared
- *   attachments. Originals go to the person's PHR vault once a background job
- *   can write there (yourphr#968, ngdpbase#1811).
+ * - Originals are kept in the person's own encrypted PHR vault (the `phr`
+ *   store), through core's attachment door, by default; the person may
+ *   choose not to (yourphr#968, Jim 2026-10-25). `keepsEncrypted` makes core
+ *   call `keepOriginal` during the upload, with the request's context, while
+ *   the person's vault key is live (ngdpbase#2034); the run reuses it. Never
+ *   `cite` or core's shared files: a health-record file stays in the vault.
  */
 import type { ActorContext, Decision, IceItem, IceReceiver, ReceiveOutcome } from '@jwilleke/ngdpbase-types';
 import type { PhrCaller, PhrManager } from '../managers/PhrManager.js';
@@ -31,12 +33,24 @@ export interface ReceiverDeps {
   decide: (ctx: ActorContext, request: { action: string }) => Promise<Decision>;
   /** The phr documents this person has yet to accept at their current version (ConsentManager.pendingFor). */
   pendingConsent: (username: string) => Promise<unknown[]>;
+  /**
+   * Keep one original file in the person's encrypted PHR vault, as `ctx`
+   * (core's AttachmentManager, store `phr`); returns the stored file's id.
+   * Throws when core refuses (no unlocked key, no permission, too large).
+   */
+  keepInVault: (file: { name: string; bytes: Buffer; mediaType?: string }, ctx: ActorContext) => Promise<string>;
 }
 
 /** A refusal from the door, carried out of PhrManager as a value rather than an HTTP answer. */
 class Refused extends Error {}
 
 const refused = (message: string): ReceiveOutcome => ({ status: 'refused', message });
+
+/** What a file phr reads is, by its extension: a file from inside a zip arrives with no type. */
+export function mediaTypeOf(name: string): string | undefined {
+  const ext = (name.match(/\.([a-z0-9]+)$/i)?.[1] ?? '').toLowerCase();
+  return ({ json: 'application/fhir+json', ndjson: 'application/fhir+ndjson', xml: 'application/xml' } as Record<string, string>)[ext];
+}
 
 export function healthRecordsReceiver(deps: ReceiverDeps): IceReceiver {
   /** Why this context may not import into health records, or null when it may. */
@@ -52,8 +66,23 @@ export function healthRecordsReceiver(deps: ReceiverDeps): IceReceiver {
     name: 'health-records',
     label: 'Health records',
     accepts: [PHR_FILE_KIND],
-    originals: { allowed: ['none'], default: 'none' },
+    originals: { allowed: ['none', 'keep'], default: 'keep' },
+    keepsEncrypted: true,
     mayUse: async (ctx) => (await whyNot(ctx)) === null,
+    async keepOriginal(original: IceItem, ctx: ActorContext): Promise<ReceiveOutcome> {
+      const why = await whyNot(ctx);
+      if (why) return refused(why);
+      const bytes = original.bytes ?? Buffer.from(original.text ?? '', 'utf8');
+      const name = original.name.split('/').pop() || original.name;
+      const mediaType = original.mediaType ?? mediaTypeOf(name);
+      try {
+        const ref = await deps.keepInVault({ name, bytes, ...(mediaType ? { mediaType } : {}) }, ctx);
+        return { status: 'stored', ref };
+      } catch (err) {
+        // Core's reason (a locked vault, a size limit) never carries the file's content.
+        return refused(`the original could not be kept in your PHR vault: ${err instanceof Error ? err.message : String(err)}`);
+      }
+    },
     async receive(item: IceItem, ctx: ActorContext): Promise<ReceiveOutcome> {
       const why = await whyNot(ctx);
       if (why) return refused(why);

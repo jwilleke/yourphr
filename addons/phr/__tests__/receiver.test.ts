@@ -28,6 +28,8 @@ describe('phr.health-records, the import engine\'s door to health records', () =
   let permit: boolean;
   let on: boolean;
   let pending: unknown[];
+  let vault: { name: string; size: number; mediaType?: string; ctx: unknown }[];
+  let vaultRefuses: string | null;
 
   const item = async (value: number): Promise<IceItem> => {
     const [data] = await readFiles({ 'glucose.json': glucose(value) });
@@ -40,6 +42,8 @@ describe('phr.health-records, the import engine\'s door to health records', () =
     permit = true;
     on = true;
     pending = [];
+    vault = [];
+    vaultRefuses = null;
     const host = buildAddonHost('phr', defaults);
     const sink = { logAuditEvent: async () => 'id', flushAuditQueue: async () => {} };
     const decide = async (ctx: unknown): Promise<Decision> => {
@@ -55,6 +59,11 @@ describe('phr.health-records, the import engine\'s door to health records', () =
     healthRecordsOn: async () => on,
     decide: async (ctx) => { decided.push(ctx); return { permit, applicable: true, reason: permit ? 'test-allow' : 'test-deny' }; },
     pendingConsent: async () => pending,
+    keepInVault: async (file, ctx) => {
+      if (vaultRefuses) throw new Error(vaultRefuses);
+      vault.push({ name: file.name, size: file.bytes.length, mediaType: file.mediaType, ctx });
+      return `vault-file-${vault.length}`;
+    },
     ...over
   });
 
@@ -102,8 +111,45 @@ describe('phr.health-records, the import engine\'s door to health records', () =
     expect(receiver().accepts).toEqual([PHR_FILE_KIND]);
   });
 
-  it('offers no way to keep the original: without phr\'s own keep door it would land in core\'s shared files', () => {
-    expect(receiver().originals).toEqual({ allowed: ['none'], default: 'none' });
-    expect(receiver().keepOriginal).toBeUndefined();
+  it('keeps originals by default, in the person\'s encrypted vault during the upload, and never offers core\'s shared files', () => {
+    expect(receiver().originals).toEqual({ allowed: ['none', 'keep'], default: 'keep' });
+    expect(receiver().keepsEncrypted).toBe(true);
+    expect(typeof receiver().keepOriginal).toBe('function');
+  });
+
+  describe('keeping the original file', () => {
+    const original = (name = 'Export/fhir/everything.json'): IceItem =>
+      ({ kind: 'file', name, bytes: Buffer.from('{"resourceType":"Bundle"}'), mediaType: 'application/json' });
+
+    it('puts it in the person\'s vault as the request\'s own context, under its file name, and returns the vault\'s id', async () => {
+      const ctx = person('alice');
+      expect(await receiver().keepOriginal!(original(), ctx)).toEqual({ status: 'stored', ref: 'vault-file-1' });
+      expect(vault).toEqual([{ name: 'everything.json', size: 25, mediaType: 'application/json', ctx }]);
+    });
+
+    it('is refused, keeping nothing, when the person may not import (health records off, consent pending, or phr-write denied)', async () => {
+      on = false;
+      expect((await receiver().keepOriginal!(original(), person('alice'))).status).toBe('refused');
+      on = true;
+      pending = [{ id: 'phr-terms-of-service' }];
+      expect((await receiver().keepOriginal!(original(), person('alice'))).status).toBe('refused');
+      pending = [];
+      permit = false;
+      expect((await receiver().keepOriginal!(original(), person('alice'))).status).toBe('refused');
+      expect(vault).toEqual([]);
+    });
+
+    it('names a file from inside a zip by its extension, since the engine hands it over with no type', async () => {
+      const bare: IceItem = { kind: 'file', name: 'download.zip/IHE_XDM/DOC0001.XML', bytes: Buffer.from('<ClinicalDocument/>') };
+      await receiver().keepOriginal!(bare, person('alice'));
+      expect(vault[0]).toMatchObject({ name: 'DOC0001.XML', mediaType: 'application/xml' });
+    });
+
+    it('passes on core\'s refusal (a locked vault) as a refusal that names the vault', async () => {
+      vaultRefuses = 'the store is sealed and its key is not unlocked';
+      const out = await receiver().keepOriginal!(original(), person('alice'));
+      expect(out.status).toBe('refused');
+      expect(out.message).toMatch(/could not be kept in your PHR vault: the store is sealed/);
+    });
   });
 });

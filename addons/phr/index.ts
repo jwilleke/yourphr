@@ -37,6 +37,11 @@ import { healthRecordsOnFor, type AddonsManagerLike as PersonSwitchReader, type 
 interface FormsDataManagerLike { registerShippedForm(addon: string, definition: unknown, ctx: unknown): Promise<unknown> }
 interface FormsAddonLike { registerHandler(formId: string, handler: (submission: { data: Record<string, unknown> }, context: { req: unknown }) => Promise<unknown>): void }
 interface PluginManagerLike { registerPlugin(name: string, plugin: unknown): Promise<void> }
+// Core's attachment door (not in core's public types yet): only the call phr makes.
+interface AttachmentManagerLike {
+  uploadAttachment(bytes: Buffer, info: { originalName: string; mimeType: string; size: number }, ctx: ActorContext,
+    options: { private: boolean; store: string; description?: string }): Promise<{ identifier: string }>;
+}
 interface AddonsManagerLike {
   registerDashboardCard?(card: { addonName: string; title: string; icon: string; adminUrl: string }): void;
 }
@@ -122,7 +127,16 @@ function registerImport(engine: WikiEngine, tools: AddonHost, decide: (ctx: Acto
     records: phrRecords,
     healthRecordsOn,
     decide,
-    pendingConsent: async (username) => consent ? consent.pendingFor(username, 'phr') : []
+    pendingConsent: async (username) => consent ? consent.pendingFor(username, 'phr') : [],
+    keepInVault: async (file, ctx) => {
+      const attachments = engine.getManager<AttachmentManagerLike>('AttachmentManager');
+      if (!attachments) throw new Error("ngdpbase's AttachmentManager is not available");
+      // The person's own PHR vault (system category `phr`, encrypted per person).
+      const stored = await attachments.uploadAttachment(file.bytes,
+        { originalName: file.name, mimeType: file.mediaType ?? 'application/octet-stream', size: file.bytes.length },
+        ctx, { private: true, store: 'phr', description: 'Original file of a health-records import' });
+      return stored.identifier;
+    }
   }));
   tools.registerShim(fhirShim());
   tools.registerShim(ccdaShim());
