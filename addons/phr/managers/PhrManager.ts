@@ -75,6 +75,13 @@ export interface PhrManagerDeps {
    * never by username (ngdpbase identity model). Null when there is none.
    */
   identityOf: (ctx: ActorContext) => Promise<string | null>;
+  /**
+   * The username of the user an owner @id names (the identity record's
+   * `identifier`), for the audit's `metadata.owner`: core's per-user audit
+   * view matches that field against the username until identity model step 6
+   * (ngdpbase#2041) moves audit to @id. Null when the @id names no account.
+   */
+  usernameOf: (ownerId: string) => Promise<string | null>;
 }
 
 /** What a call is about: whose records (an identity @id), and which (a kind, and for one record its id). */
@@ -139,6 +146,7 @@ export class PhrManager {
       ? this.deps.host.actorOf(caller.subject)
       : { user: 'unknown', ipAddress: caller.ipAddress, metadata: { actorMissing: true } };
     const { metadata, ...fields } = who as { user: string; actor?: string; ipAddress?: string; metadata?: Record<string, unknown> };
+    const owner = target.owner ? await this.deps.usernameOf(target.owner) : null;
     const event: AuditEvent = {
       eventType: this.deps.host.addonAuditEventName(action),
       action,
@@ -148,9 +156,11 @@ export class PhrManager {
       resource: target.id ? `${target.resourceType}/${target.id}` : target.resourceType,
       ...(reason ? { reason } : {}),
       ...fields,
-      // Never record content: the owner, the kind and the id only.
+      // Never record content: the owner, the kind and the id only. The owner is
+      // the username of the stored owner (@id), never taken from the request:
+      // core's "entries about me" view matches it (ngdpbase#2041 moves it to @id).
       ipAddress: fields.ipAddress,
-      metadata: { ...(metadata ?? {}), owner: target.owner }
+      metadata: { ...(metadata ?? {}), ...(owner ? { owner } : {}) }
     };
     await this.deps.recordAudit(event);
   }

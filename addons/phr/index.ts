@@ -143,6 +143,19 @@ function registerImport(engine: WikiEngine, tools: AddonHost, decide: (ctx: Acto
   tools.registerShim(ccdaShim());
 }
 
+/** An owner @id's username (identity record `identifier`), cached; null for no account. */
+function ownerUsernames(identities: IdentityManager, tools: AddonHost): (ownerId: string) => Promise<string | null> {
+  const known = new Map<string, string | null>();
+  const ctx = tools.systemContext('phr: name the owner of a health record in its audit entry');
+  return async (ownerId) => {
+    if (known.has(ownerId)) return known.get(ownerId) ?? null;
+    const identifier = (await identities.getById(ctx, ownerId).catch(() => null))?.identifier;
+    const username = identifier && !identifier.startsWith('person:') ? identifier : null;
+    known.set(ownerId, username);
+    return username;
+  };
+}
+
 /**
  * Rows keyed by username, from before phr keyed by identity @id, move to the
  * user's @id: core's IdentityManager, as the system context. Idempotent. A
@@ -203,6 +216,11 @@ const PhrAddon = {
       // (ngdpbase identity model). actorOf(ctx).user is the account acted on:
       // under a proxy grant, the represented user.
       identityOf: async (ctx) => (await identities.getByUserIdentifier(ctx, tools.actorOf(ctx).user))?.['@id'] ?? null,
+      // The audit names the record's owner by username until core moves audit
+      // to @id (ngdpbase#2041). Looked up from the stored owner @id as the
+      // system context: a refused caller may not read another user's identity
+      // record, but the attempt is still recorded against that owner.
+      usernameOf: ownerUsernames(identities, tools),
       // A user's records stay out of reach until they have turned health
       // records on and accepted phr's current terms.
       optedIn: async (caller) => {

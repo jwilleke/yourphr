@@ -51,7 +51,9 @@ describe('PhrManager', () => {
       recordAudit: (event) => host.recordAuditEvent(sink, event),
       host,
       optedIn,
-      identityOf: async (c) => `urn:test:${c.username}`
+      identityOf: async (c) => `urn:test:${c.username}`,
+      // An @id that names no account has no username.
+      usernameOf: async (id) => (id.startsWith('urn:test:') ? id.slice('urn:test:'.length) : null)
     });
   });
   afterEach(() => db.close());
@@ -103,7 +105,8 @@ describe('PhrManager', () => {
     const last = audit.at(-1)!;
     expect(last.user).toBe('mom');
     expect(last.actor).toBe('jim');
-    expect((last.metadata as Record<string, unknown>).owner).toBe('urn:test:mom'); // the represented user's identity @id
+    // The audit names the owner by username (core's per-user view matches it until ngdpbase#2041).
+    expect((last.metadata as Record<string, unknown>).owner).toBe('mom');
   });
 
   it('a proxy for one user can\'t reach a third user', async () => {
@@ -118,10 +121,11 @@ describe('PhrManager', () => {
     await phr.read(caller('alice'), 'Observation', 'o1');
     await phr.read(caller('bob'), 'Observation', 'o1', 'urn:test:alice').catch(() => undefined);
     expect(audit.map(e => [e.action, e.result, (e.metadata as Record<string, unknown>).owner])).toEqual([
-      // Owners are identity @ids, never usernames (ngdpbase identity model).
-      ['phr-write', 'allow', 'urn:test:alice'],
-      ['phr-read', 'allow', 'urn:test:alice'],
-      ['phr-read', 'deny', 'urn:test:alice']
+      // Stored owners are identity @ids; the audit names the owner by username,
+      // read from the stored owner, until core moves audit to @id (ngdpbase#2041).
+      ['phr-write', 'allow', 'alice'],
+      ['phr-read', 'allow', 'alice'],
+      ['phr-read', 'deny', 'alice']
     ]);
     expect(audit.every(e => String(e.eventType).includes('phr-'))).toBe(true);
     expect(JSON.stringify(audit)).not.toContain('Glucose');
@@ -145,7 +149,7 @@ describe('PhrManager', () => {
   it('refuses the action when its audit record can\'t be written', async () => {
     const host = buildAddonHost('phr', defaults);
     const broken = { logAuditEvent: async () => { throw new Error('disk full'); }, flushAuditQueue: async () => {} };
-    const phr = new PhrManager({ store: new PhrRecordStore(db), decide: allowAll, recordAudit: (e) => host.recordAuditEvent(broken, e), host, optedIn: async () => null, identityOf: async (c) => `urn:test:${c.username}` });
+    const phr = new PhrManager({ store: new PhrRecordStore(db), decide: allowAll, recordAudit: (e) => host.recordAuditEvent(broken, e), host, optedIn: async () => null, identityOf: async (c) => `urn:test:${c.username}`, usernameOf: async (id) => id.replace('urn:test:', '') });
     await expect(phr.write(caller('alice'), observation('o1', 'x'), 'folder')).rejects.toThrow();
     expect(db.prepare('SELECT COUNT(*) AS n FROM phr_resources').get()).toEqual({ n: 0 });
   });
@@ -160,6 +164,15 @@ describe('PhrManager', () => {
     gate = null;
     await phr.write(caller('alice'), observation('o1', 'Private'), 'folder');
     expect((await phr.list(caller('alice'), 'Observation')).length).toBe(1);
+  });
+
+  it('never puts an @id in the audit\'s owner: an owner with no account is left out', async () => {
+    const phr = make();
+    await phr.read(caller('bob'), 'Observation', 'o1', 'urn:uuid:no-such-account').catch(() => undefined);
+    const last = audit[audit.length - 1];
+    expect(last.result).toBe('deny');
+    expect(last.metadata as Record<string, unknown>).not.toHaveProperty('owner');
+    expect(JSON.stringify(audit)).not.toContain('urn:');
   });
 
   it('the database refuses a row nobody owns', () => {
