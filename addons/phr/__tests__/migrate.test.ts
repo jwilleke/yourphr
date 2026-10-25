@@ -37,6 +37,9 @@ describe('the move from yourPHR into phr (#969)', () => {
   let phr: PhrManager;
   let audit: Record<string, unknown>[];
   let optedIn: Set<string>;
+  let switchedOn: Set<string>;
+  let termsPending: Set<string>;
+  let gateAsked: string[];
 
   // Core's decision point, as phr's policies make it: phr-migrate to the job alone, the rest to people.
   const decide = async (ctx: unknown, { action }: { action: string }): Promise<Decision> => {
@@ -66,11 +69,21 @@ describe('the move from yourPHR into phr (#969)', () => {
     db = openAddonTestDatabase<Db & { close(): void }>('phr', { migrations: PHR_MIGRATIONS, ledgerTable: PHR_LEDGER_TABLE }, { slug: 'phr', defaults });
     audit = [];
     optedIn = new Set();
+    switchedOn = new Set();
+    termsPending = new Set();
+    gateAsked = [];
     const host = buildAddonHost('phr', defaults);
     const sink = { logAuditEvent: async (e: Record<string, unknown>) => { audit.push(e); return 'id'; }, flushAuditQueue: async () => {} };
     phr = new PhrManager({
       store: new PhrRecordStore(db), decide, recordAudit: (e) => host.recordAuditEvent(sink, e), host,
-      optedIn: async (c) => (optedIn.has(String(c.subject?.username)) ? null : 'health records are off')
+      // As index.ts wires it: health records switched on, and no phr terms pending.
+      optedIn: async (c) => {
+        const who = String(c.subject?.username);
+        gateAsked.push(who);
+        if (optedIn.has(who)) return null;
+        if (!switchedOn.has(who)) return 'health records are off';
+        return termsPending.has(who) ? "phr's terms are not accepted" : null;
+      }
     });
     insert('alice', 'epic-1', patient);
     insert('alice', 'epic-1', condition);
@@ -136,5 +149,17 @@ describe('the move from yourPHR into phr (#969)', () => {
     await runMove();
     await expect(phr.list(callerOf(person('bob')), 'Patient')).rejects.toThrow();
     expect(audit.some((e) => e.action === 'phr-read' && e.result === 'deny' && e.reason === 'not-opted-in')).toBe(true);
+  });
+
+  // Operator decision (i), 2026-10-25: the move writes before anyone opts in.
+  it('moves the records of someone with health records off and terms pending; they can read them only after opting in', async () => {
+    termsPending.add('alice');
+    expect(await runMove()).toEqual({ alice: [], bob: [] });
+    expect(gateAsked).toEqual([]); // the move never asks the opt-in gate
+    await expect(phr.list(callerOf(person('alice')), 'Patient')).rejects.toThrow(/refused phr-read/); // off
+    switchedOn.add('alice');
+    await expect(phr.list(callerOf(person('alice')), 'Patient')).rejects.toThrow(/refused phr-read/); // on, terms pending
+    termsPending.delete('alice');
+    expect((await phr.list(callerOf(person('alice')), 'Patient')).length).toBe(1); // on and accepted
   });
 });
