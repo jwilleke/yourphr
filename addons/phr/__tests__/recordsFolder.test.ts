@@ -74,7 +74,7 @@ describe('importing a file through PhrManager', () => {
     audit = [];
     const host = buildAddonHost('phr', defaults);
     const sink = { logAuditEvent: async (e: Record<string, unknown>) => { audit.push(e); return 'id'; }, flushAuditQueue: async () => {} };
-    phr = new PhrManager({ store: new PhrRecordStore(db), decide: allowAll, recordAudit: (e) => host.recordAuditEvent(sink, e), host });
+    phr = new PhrManager({ store: new PhrRecordStore(db), decide: allowAll, recordAudit: (e) => host.recordAuditEvent(sink, e), host, optedIn: async () => null });
   });
   afterEach(() => db.close());
 

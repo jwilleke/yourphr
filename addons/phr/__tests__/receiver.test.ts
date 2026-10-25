@@ -50,7 +50,7 @@ describe('phr.health-records, the import engine\'s door to health records', () =
       decided.push(ctx);
       return { permit, applicable: true, reason: permit ? 'test-allow' : 'test-deny' };
     };
-    phr = new PhrManager({ store: new PhrRecordStore(db), decide, recordAudit: (e) => host.recordAuditEvent(sink, e), host });
+    phr = new PhrManager({ store: new PhrRecordStore(db), decide, recordAudit: (e) => host.recordAuditEvent(sink, e), host, optedIn: async () => null });
   });
   afterEach(() => db.close());
 

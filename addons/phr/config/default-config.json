@@ -82,6 +82,17 @@
         "on-failure": "refuse",
         "description": "Health record removed: who, whose (owner), which kind and id"
       }
+    },
+    "phr-migrate": {
+      "description": "Move each person's records from yourPHR into their own health record, once, at cutover (yourphr#969). Held only by the scheduled job phr.migrate-yourphr",
+      "label": "Move records in from yourPHR",
+      "icon": "notes-medical",
+      "color": "#6c757d",
+      "audit": {
+        "enabled": true,
+        "on-failure": "refuse",
+        "description": "Health record moved in from yourPHR: which job, whose (owner), which kind and id; never content"
+      }
     }
   },
   "ngdpbase.access.policies": [
@@ -107,6 +118,28 @@
         "phr-read",
         "phr-write",
         "phr-delete"
+      ]
+    },
+    {
+      "id": "phr-migrate-job",
+      "name": "phr: the move in from yourPHR",
+      "description": "The scheduled job phr.migrate-yourphr alone may write each person's records from yourPHR into that person's own health record, until cutover is done; then the job and this policy go (yourphr#969, operator 2026-10-25). No role holds phr-migrate.",
+      "priority": 90,
+      "effect": "allow",
+      "subjects": [
+        {
+          "type": "job",
+          "value": "phr.migrate-yourphr"
+        }
+      ],
+      "resources": [
+        {
+          "type": "page",
+          "pattern": "*"
+        }
+      ],
+      "actions": [
+        "phr-migrate"
       ]
     }
   ]

@@ -45,11 +45,12 @@ describe('PhrManager', () => {
     // A durable sink, as core's AuditManager is: phr's events are on-failure "refuse", so core
     // refuses the action outright when the sink can't promise the record is written.
     const sink = { logAuditEvent: async (e: Record<string, unknown>) => { audit.push(e); return 'id'; }, flushAuditQueue: async () => {} };
-    make = (decide = allowAll) => new PhrManager({
+    make = (decide = allowAll, optedIn: (c: PhrCaller) => Promise<string | null> = async () => null) => new PhrManager({
       store: new PhrRecordStore(db),
       decide,
       recordAudit: (event) => host.recordAuditEvent(sink, event),
-      host
+      host,
+      optedIn
     });
   });
   afterEach(() => db.close());
@@ -142,7 +143,7 @@ describe('PhrManager', () => {
   it('refuses the action when its audit record can\'t be written', async () => {
     const host = buildAddonHost('phr', defaults);
     const broken = { logAuditEvent: async () => { throw new Error('disk full'); }, flushAuditQueue: async () => {} };
-    const phr = new PhrManager({ store: new PhrRecordStore(db), decide: allowAll, recordAudit: (e) => host.recordAuditEvent(broken, e), host });
+    const phr = new PhrManager({ store: new PhrRecordStore(db), decide: allowAll, recordAudit: (e) => host.recordAuditEvent(broken, e), host, optedIn: async () => null });
     await expect(phr.write(caller('alice'), observation('o1', 'x'), 'folder')).rejects.toThrow();
     expect(db.prepare('SELECT COUNT(*) AS n FROM phr_resources').get()).toEqual({ n: 0 });
   });

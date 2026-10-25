@@ -169,9 +169,20 @@ const PhrAddon = {
     // Core's decide takes any ActorContext, a person's or a background job's,
     // and makes the subject itself (ngdpbase#2022). phr never converts it.
     const decide = (ctx: ActorContext | null, request: { action: string }) => pdp.decide(ctx, request);
+    const consentForGate = engine.getManager<ConsentManager>('ConsentManager');
     records = new PhrManager({
       store,
       decide,
+      // A person's records stay out of reach until they have turned health
+      // records on and accepted phr's current terms (yourphr#969: records moved
+      // in from yourPHR wait for each person's own opt-in).
+      optedIn: async (caller) => {
+        const subject = caller.subject;
+        if (!subject) return 'not signed in';
+        if (!(await healthRecordsOn(subject))) return 'health records are off';
+        const pending = consentForGate ? await consentForGate.pendingFor(subject.username, 'phr') : [];
+        return pending.length > 0 ? "phr's terms are not accepted" : null;
+      },
       recordAudit: (event) => tools.recordAuditEvent(auditSink, event),
       host: tools
     });
