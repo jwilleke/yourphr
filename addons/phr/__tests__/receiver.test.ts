@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { buildAddonHost, openAddonTestDatabase } from '@jwilleke/ngdpbase-types/testing';
-import type { ActorContext, Decision, IceItem, ReceiveInfo } from '@jwilleke/ngdpbase-types';
+import type { ActorContext, Decision, IceItem, OriginalKeep, ReceiveInfo } from '@jwilleke/ngdpbase-types';
 import { PHR_MIGRATIONS, PHR_LEDGER_TABLE } from '../managers/migrations.js';
 import { PhrRecordStore, type Db } from '../managers/PhrRecordStore.js';
 import { PhrManager } from '../managers/PhrManager.js';
@@ -125,9 +125,7 @@ describe('phr.health-records, the import engine\'s door to health records', () =
     it('puts it in the person\'s vault as the request\'s own context, under its file name, and returns the vault\'s id', async () => {
       const ctx = person('alice');
       const keep = { oneTime: 'allowance' };
-      // Three arguments since ngdpbase#2061; the published types still say two.
-      const keepOriginal = receiver().keepOriginal as unknown as (i: IceItem, c: unknown, k: unknown) => Promise<unknown>;
-      expect(await keepOriginal(original(), ctx, keep)).toEqual({ status: 'stored', ref: 'vault-file-1' });
+      expect(await receiver().keepOriginal!(original(), ctx, keep as unknown as OriginalKeep)).toEqual({ status: 'stored', ref: 'vault-file-1' });
       expect(vault).toEqual([{ name: 'everything.json', size: 25, mediaType: 'application/json', ctx, keep }]);
     });
 
@@ -141,12 +139,6 @@ describe('phr.health-records, the import engine\'s door to health records', () =
       permit = false;
       expect((await receiver().keepOriginal!(original(), person('alice'))).status).toBe('refused');
       expect(vault).toEqual([]);
-    });
-
-    it('names a file from inside a zip by its extension, since the engine hands it over with no type', async () => {
-      const bare: IceItem = { kind: 'file', name: 'download.zip/IHE_XDM/DOC0001.XML', bytes: Buffer.from('<ClinicalDocument/>') };
-      await receiver().keepOriginal!(bare, person('alice'));
-      expect(vault[0]).toMatchObject({ name: 'DOC0001.XML', mediaType: 'application/xml' });
     });
 
     it('passes on core\'s refusal (a locked vault) as a refusal that names the vault', async () => {

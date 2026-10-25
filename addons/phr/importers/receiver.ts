@@ -17,7 +17,7 @@
  *   the person's vault key is live (ngdpbase#2034); the run reuses it. Never
  *   `cite` or core's shared files: a health-record file stays in the vault.
  */
-import type { ActorContext, Decision, IceItem, IceReceiver, ReceiveOutcome } from '@jwilleke/ngdpbase-types';
+import type { ActorContext, Decision, IceItem, IceReceiver, OriginalKeep, ReceiveOutcome } from '@jwilleke/ngdpbase-types';
 import type { PhrCaller, PhrManager } from '../managers/PhrManager.js';
 import type { HealthRecordsOn } from '../preferences.js';
 import { PHR_FILE_KIND, type PhrFileData } from './shims.js';
@@ -39,7 +39,7 @@ export interface ReceiverDeps {
    * allowance for this file (ngdpbase#2061); returns the stored file's id.
    * Throws when core refuses (no unlocked key, no permission, too large).
    */
-  keepInVault: (file: { name: string; bytes: Buffer; mediaType?: string }, ctx: ActorContext, keep: OriginalKeep) => Promise<string>;
+  keepInVault: (file: { name: string; bytes: Buffer; mediaType?: string }, ctx: ActorContext, keep?: OriginalKeep) => Promise<string>;
 }
 
 /** A refusal from the door, carried out of PhrManager as a value rather than an HTTP answer. */
@@ -47,12 +47,6 @@ class Refused extends Error {}
 
 const refused = (message: string): ReceiveOutcome => ({ status: 'refused', message });
 
-/**
- * Core's one-time allowance to keep one original (ngdpbase#2061): good for
- * one write, by this person, into phr's own vault. phr passes it through
- * untouched. Opaque until ngdpbase-types exports `OriginalKeep`.
- */
-export type OriginalKeep = unknown;
 
 /**
  * The file types phr keeps as originals, as core's upload door stores them
@@ -62,23 +56,6 @@ export type OriginalKeep = unknown;
  */
 export const KEPT_TYPES = ['application/json', 'application/x-ndjson', 'application/xml', 'text/xml'];
 
-/**
- * The original-file choices phr offers. `types` (ngdpbase#2061) names what
- * core lets into the person's own vault for a keep at upload; the site-wide
- * upload list stays as it is. Until ngdpbase-types has the field, this object
- * is passed as a value rather than written inline in the receiver.
- */
-export const PHR_ORIGINALS = { allowed: ['none', 'keep'] as ('none' | 'keep')[], default: 'keep' as const, types: KEPT_TYPES };
-
-/**
- * What a file phr reads is, by its extension: a file from inside a zip
- * arrives with no type. The engine will label zip members itself
- * (ngdpbase#2061); this goes once it does.
- */
-export function mediaTypeOf(name: string): string | undefined {
-  const ext = (name.match(/\.([a-z0-9]+)$/i)?.[1] ?? '').toLowerCase();
-  return ({ json: 'application/json', ndjson: 'application/x-ndjson', xml: 'application/xml' } as Record<string, string>)[ext];
-}
 
 export function healthRecordsReceiver(deps: ReceiverDeps): IceReceiver {
   /** Why this context may not import into health records, or null when it may. */
@@ -94,7 +71,9 @@ export function healthRecordsReceiver(deps: ReceiverDeps): IceReceiver {
     name: 'health-records',
     label: 'Health records',
     accepts: [PHR_FILE_KIND],
-    originals: PHR_ORIGINALS,
+    // `types` (ngdpbase#2061): core lets exactly these into the person's own
+    // vault for a keep at upload; the site-wide upload list stays as it is.
+    originals: { allowed: ['none', 'keep'], default: 'keep', types: KEPT_TYPES },
     keepsEncrypted: true,
     mayUse: async (ctx) => (await whyNot(ctx)) === null,
     async keepOriginal(original: IceItem, ctx: ActorContext, keep?: OriginalKeep): Promise<ReceiveOutcome> {
@@ -102,7 +81,8 @@ export function healthRecordsReceiver(deps: ReceiverDeps): IceReceiver {
       if (why) return refused(why);
       const bytes = original.bytes ?? Buffer.from(original.text ?? '', 'utf8');
       const name = original.name.split('/').pop() || original.name;
-      const mediaType = original.mediaType ?? mediaTypeOf(name);
+      // The engine types every file, including each one from inside a zip (ngdpbase#2061).
+      const mediaType = original.mediaType;
       try {
         const ref = await deps.keepInVault({ name, bytes, ...(mediaType ? { mediaType } : {}) }, ctx, keep);
         return { status: 'stored', ref };

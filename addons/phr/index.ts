@@ -21,7 +21,7 @@
  *
  * The exported `name` MUST equal `ngdpbase.slug` in package.json (#927).
  */
-import type { ActorContext, AddonHost, ConsentManager, Decision, PolicyDecisionPoint, WikiEngine } from '@jwilleke/ngdpbase-types';
+import type { ActorContext, AddonHost, ConsentManager, Decision, OriginalKeep, PolicyDecisionPoint, WikiEngine } from '@jwilleke/ngdpbase-types';
 import { openPhrStore } from './managers/PhrRecordStore.js';
 import { PhrManager } from './managers/PhrManager.js';
 import { NOTE_FORM, NOTE_FORM_ID, noteFormHandler } from './forms/noteForm.js';
@@ -40,7 +40,7 @@ interface PluginManagerLike { registerPlugin(name: string, plugin: unknown): Pro
 // Core's attachment door (not in core's public types yet): only the call phr makes.
 interface AttachmentManagerLike {
   uploadAttachment(bytes: Buffer, info: { originalName: string; mimeType: string; size: number; mediaType?: string }, ctx: ActorContext,
-    options: { private: boolean; store: string; description?: string; keep?: unknown }): Promise<{ identifier: string }>;
+    options: { private: boolean; store: string; description?: string; keep?: OriginalKeep }): Promise<{ identifier: string }>;
 }
 interface AddonsManagerLike {
   registerDashboardCard?(card: { addonName: string; title: string; icon: string; adminUrl: string }): void;

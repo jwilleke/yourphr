@@ -19,7 +19,7 @@ Name it in the site's configuration. ngdpbase installs it pinned to the exact ve
 }
 ```
 
-Needs ngdpbase 5.29.0 or later (its import engine takes phr's FHIR and C-CDA readers, and keeps each original in the person's encrypted PHR vault), with its database turned on (`ngdpbase.database.provider: "sqlite"`) and `NGDPBASE_DATABASE_KEY` set and Node 24.15 or later.
+Needs ngdpbase 5.30.1 or later (its import engine takes phr's FHIR and C-CDA readers, and keeps each original in the person's encrypted PHR vault), with its database turned on (`ngdpbase.database.provider: "sqlite"`) and `NGDPBASE_DATABASE_KEY` set and Node 24.15 or later.
 
 ## Source
 
