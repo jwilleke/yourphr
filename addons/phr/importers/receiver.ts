@@ -46,7 +46,22 @@ class Refused extends Error {}
 
 const refused = (message: string): ReceiveOutcome => ({ status: 'refused', message });
 
-/** What a file phr reads is, by its extension: a file from inside a zip arrives with no type. */
+/** The file types phr keeps as originals: the ones its shims read. */
+export const KEPT_TYPES = ['application/fhir+json', 'application/fhir+ndjson', 'application/xml'];
+
+/**
+ * The original-file choices phr offers. `types` (ngdpbase#2061) names what
+ * core lets into the person's own vault for a keep at upload; the site-wide
+ * upload list stays as it is. Until ngdpbase-types has the field, this object
+ * is passed as a value rather than written inline in the receiver.
+ */
+export const PHR_ORIGINALS = { allowed: ['none', 'keep'] as ('none' | 'keep')[], default: 'keep' as const, types: KEPT_TYPES };
+
+/**
+ * What a file phr reads is, by its extension: a file from inside a zip
+ * arrives with no type. The engine will label zip members itself
+ * (ngdpbase#2061); this goes once it does.
+ */
 export function mediaTypeOf(name: string): string | undefined {
   const ext = (name.match(/\.([a-z0-9]+)$/i)?.[1] ?? '').toLowerCase();
   return ({ json: 'application/fhir+json', ndjson: 'application/fhir+ndjson', xml: 'application/xml' } as Record<string, string>)[ext];
@@ -66,7 +81,7 @@ export function healthRecordsReceiver(deps: ReceiverDeps): IceReceiver {
     name: 'health-records',
     label: 'Health records',
     accepts: [PHR_FILE_KIND],
-    originals: { allowed: ['none', 'keep'], default: 'keep' },
+    originals: PHR_ORIGINALS,
     keepsEncrypted: true,
     mayUse: async (ctx) => (await whyNot(ctx)) === null,
     async keepOriginal(original: IceItem, ctx: ActorContext): Promise<ReceiveOutcome> {

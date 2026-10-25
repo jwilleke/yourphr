@@ -112,7 +112,8 @@ describe('phr.health-records, the import engine\'s door to health records', () =
   });
 
   it('keeps originals by default, in the person\'s encrypted vault during the upload, and never offers core\'s shared files', () => {
-    expect(receiver().originals).toEqual({ allowed: ['none', 'keep'], default: 'keep' });
+    // ngdpbase#2061: core lets exactly these types into phr's own vault; the site-wide list is untouched.
+    expect(receiver().originals).toEqual({ allowed: ['none', 'keep'], default: 'keep', types: ['application/fhir+json', 'application/fhir+ndjson', 'application/xml'] });
     expect(receiver().keepsEncrypted).toBe(true);
     expect(typeof receiver().keepOriginal).toBe('function');
   });
