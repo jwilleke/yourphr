@@ -35,10 +35,11 @@ export interface ReceiverDeps {
   pendingConsent: (username: string) => Promise<unknown[]>;
   /**
    * Keep one original file in the person's encrypted PHR vault, as `ctx`
-   * (core's AttachmentManager, store `phr`); returns the stored file's id.
+   * (core's AttachmentManager, store `phr`), under core's one-time `keep`
+   * allowance for this file (ngdpbase#2061); returns the stored file's id.
    * Throws when core refuses (no unlocked key, no permission, too large).
    */
-  keepInVault: (file: { name: string; bytes: Buffer; mediaType?: string }, ctx: ActorContext) => Promise<string>;
+  keepInVault: (file: { name: string; bytes: Buffer; mediaType?: string }, ctx: ActorContext, keep: OriginalKeep) => Promise<string>;
 }
 
 /** A refusal from the door, carried out of PhrManager as a value rather than an HTTP answer. */
@@ -46,8 +47,20 @@ class Refused extends Error {}
 
 const refused = (message: string): ReceiveOutcome => ({ status: 'refused', message });
 
-/** The file types phr keeps as originals: the ones its shims read. */
-export const KEPT_TYPES = ['application/fhir+json', 'application/fhir+ndjson', 'application/xml'];
+/**
+ * Core's one-time allowance to keep one original (ngdpbase#2061): good for
+ * one write, by this person, into phr's own vault. phr passes it through
+ * untouched. Opaque until ngdpbase-types exports `OriginalKeep`.
+ */
+export type OriginalKeep = unknown;
+
+/**
+ * The file types phr keeps as originals, as core's upload door stores them
+ * (it types a file by its bytes): FHIR JSON is application/json, NDJSON
+ * application/x-ndjson, and XML is text/xml with an `<?xml` prolog or
+ * application/xml without one.
+ */
+export const KEPT_TYPES = ['application/json', 'application/x-ndjson', 'application/xml', 'text/xml'];
 
 /**
  * The original-file choices phr offers. `types` (ngdpbase#2061) names what
@@ -64,7 +77,7 @@ export const PHR_ORIGINALS = { allowed: ['none', 'keep'] as ('none' | 'keep')[],
  */
 export function mediaTypeOf(name: string): string | undefined {
   const ext = (name.match(/\.([a-z0-9]+)$/i)?.[1] ?? '').toLowerCase();
-  return ({ json: 'application/fhir+json', ndjson: 'application/fhir+ndjson', xml: 'application/xml' } as Record<string, string>)[ext];
+  return ({ json: 'application/json', ndjson: 'application/x-ndjson', xml: 'application/xml' } as Record<string, string>)[ext];
 }
 
 export function healthRecordsReceiver(deps: ReceiverDeps): IceReceiver {
@@ -84,14 +97,14 @@ export function healthRecordsReceiver(deps: ReceiverDeps): IceReceiver {
     originals: PHR_ORIGINALS,
     keepsEncrypted: true,
     mayUse: async (ctx) => (await whyNot(ctx)) === null,
-    async keepOriginal(original: IceItem, ctx: ActorContext): Promise<ReceiveOutcome> {
+    async keepOriginal(original: IceItem, ctx: ActorContext, keep?: OriginalKeep): Promise<ReceiveOutcome> {
       const why = await whyNot(ctx);
       if (why) return refused(why);
       const bytes = original.bytes ?? Buffer.from(original.text ?? '', 'utf8');
       const name = original.name.split('/').pop() || original.name;
       const mediaType = original.mediaType ?? mediaTypeOf(name);
       try {
-        const ref = await deps.keepInVault({ name, bytes, ...(mediaType ? { mediaType } : {}) }, ctx);
+        const ref = await deps.keepInVault({ name, bytes, ...(mediaType ? { mediaType } : {}) }, ctx, keep);
         return { status: 'stored', ref };
       } catch (err) {
         // Core's reason (a locked vault, a size limit) never carries the file's content.

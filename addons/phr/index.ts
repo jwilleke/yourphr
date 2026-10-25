@@ -39,8 +39,8 @@ interface FormsAddonLike { registerHandler(formId: string, handler: (submission:
 interface PluginManagerLike { registerPlugin(name: string, plugin: unknown): Promise<void> }
 // Core's attachment door (not in core's public types yet): only the call phr makes.
 interface AttachmentManagerLike {
-  uploadAttachment(bytes: Buffer, info: { originalName: string; mimeType: string; size: number }, ctx: ActorContext,
-    options: { private: boolean; store: string; description?: string }): Promise<{ identifier: string }>;
+  uploadAttachment(bytes: Buffer, info: { originalName: string; mimeType: string; size: number; mediaType?: string }, ctx: ActorContext,
+    options: { private: boolean; store: string; description?: string; keep?: unknown }): Promise<{ identifier: string }>;
 }
 interface AddonsManagerLike {
   registerDashboardCard?(card: { addonName: string; title: string; icon: string; adminUrl: string }): void;
@@ -128,13 +128,14 @@ function registerImport(engine: WikiEngine, tools: AddonHost, decide: (ctx: Acto
     healthRecordsOn,
     decide,
     pendingConsent: async (username) => consent ? consent.pendingFor(username, 'phr') : [],
-    keepInVault: async (file, ctx) => {
+    keepInVault: async (file, ctx, keep) => {
       const attachments = engine.getManager<AttachmentManagerLike>('AttachmentManager');
       if (!attachments) throw new Error("ngdpbase's AttachmentManager is not available");
       // The person's own PHR vault (system category `phr`, encrypted per person).
       const stored = await attachments.uploadAttachment(file.bytes,
-        { originalName: file.name, mimeType: file.mediaType ?? 'application/octet-stream', size: file.bytes.length },
-        ctx, { private: true, store: 'phr', description: 'Original file of a health-records import' });
+        { originalName: file.name, mimeType: file.mediaType ?? 'application/octet-stream', size: file.bytes.length, ...(file.mediaType ? { mediaType: file.mediaType } : {}) },
+        // `keep`: core's one-time allowance for this original, phr's vault only (ngdpbase#2061).
+        ctx, { private: true, store: 'phr', description: 'Original file of a health-records import', keep });
       return stored.identifier;
     }
   }));

@@ -28,7 +28,7 @@ describe('phr.health-records, the import engine\'s door to health records', () =
   let permit: boolean;
   let on: boolean;
   let pending: unknown[];
-  let vault: { name: string; size: number; mediaType?: string; ctx: unknown }[];
+  let vault: { name: string; size: number; mediaType?: string; ctx: unknown; keep: unknown }[];
   let vaultRefuses: string | null;
 
   const item = async (value: number): Promise<IceItem> => {
@@ -59,9 +59,9 @@ describe('phr.health-records, the import engine\'s door to health records', () =
     healthRecordsOn: async () => on,
     decide: async (ctx) => { decided.push(ctx); return { permit, applicable: true, reason: permit ? 'test-allow' : 'test-deny' }; },
     pendingConsent: async () => pending,
-    keepInVault: async (file, ctx) => {
+    keepInVault: async (file, ctx, keep) => {
       if (vaultRefuses) throw new Error(vaultRefuses);
-      vault.push({ name: file.name, size: file.bytes.length, mediaType: file.mediaType, ctx });
+      vault.push({ name: file.name, size: file.bytes.length, mediaType: file.mediaType, ctx, keep });
       return `vault-file-${vault.length}`;
     },
     ...over
@@ -113,7 +113,7 @@ describe('phr.health-records, the import engine\'s door to health records', () =
 
   it('keeps originals by default, in the person\'s encrypted vault during the upload, and never offers core\'s shared files', () => {
     // ngdpbase#2061: core lets exactly these types into phr's own vault; the site-wide list is untouched.
-    expect(receiver().originals).toEqual({ allowed: ['none', 'keep'], default: 'keep', types: ['application/fhir+json', 'application/fhir+ndjson', 'application/xml'] });
+    expect(receiver().originals).toEqual({ allowed: ['none', 'keep'], default: 'keep', types: ['application/json', 'application/x-ndjson', 'application/xml', 'text/xml'] });
     expect(receiver().keepsEncrypted).toBe(true);
     expect(typeof receiver().keepOriginal).toBe('function');
   });
@@ -124,8 +124,11 @@ describe('phr.health-records, the import engine\'s door to health records', () =
 
     it('puts it in the person\'s vault as the request\'s own context, under its file name, and returns the vault\'s id', async () => {
       const ctx = person('alice');
-      expect(await receiver().keepOriginal!(original(), ctx)).toEqual({ status: 'stored', ref: 'vault-file-1' });
-      expect(vault).toEqual([{ name: 'everything.json', size: 25, mediaType: 'application/json', ctx }]);
+      const keep = { oneTime: 'allowance' };
+      // Three arguments since ngdpbase#2061; the published types still say two.
+      const keepOriginal = receiver().keepOriginal as unknown as (i: IceItem, c: unknown, k: unknown) => Promise<unknown>;
+      expect(await keepOriginal(original(), ctx, keep)).toEqual({ status: 'stored', ref: 'vault-file-1' });
+      expect(vault).toEqual([{ name: 'everything.json', size: 25, mediaType: 'application/json', ctx, keep }]);
     });
 
     it('is refused, keeping nothing, when the person may not import (health records off, consent pending, or phr-write denied)', async () => {
