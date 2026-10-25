@@ -1,9 +1,7 @@
 /**
  * The store door (the lint, as a test so it runs everywhere the tests run):
  * only managers/PhrRecordStore.ts and managers/migrations.ts may hold SQL or
- * talk to the database driver. Everything else goes through PhrManager. The one
- * other: migrate/YourphrSourceStore.ts, read-only SELECTs on yourPHR's old
- * records.db for the move into phr (yourphr#969), never phr.db.
+ * talk to the database driver. Everything else goes through PhrManager.
  */
 import { describe, it, expect } from 'vitest';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
@@ -11,7 +9,7 @@ import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
-const allowed = new Set(['managers/PhrRecordStore.ts', 'managers/migrations.ts', 'migrate/YourphrSourceStore.ts']);
+const allowed = new Set(['managers/PhrRecordStore.ts', 'managers/migrations.ts']);
 
 function sources(dir: string): string[] {
   return readdirSync(dir).flatMap((name) => {

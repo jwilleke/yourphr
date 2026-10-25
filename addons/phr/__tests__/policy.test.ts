@@ -9,19 +9,10 @@ describe("phr's access policy", () => {
   // records goes to every user through the role vault-owner, never to site roles
   // and never to an `authenticated` subject. PhrManager still checks the owner.
   it('grants phr-read, phr-write and phr-delete to vault-owner, and to nothing else', () => {
-    const phr = policies.filter((p) => p.actions.some((a) => ['phr-read', 'phr-write', 'phr-delete'].includes(a)));
+    const phr = policies.filter((p) => p.actions.some((a) => a.startsWith('phr-')));
     expect(phr.map((p) => p.id)).toEqual(['phr-access']);
     expect(phr[0].effect).toBe('allow');
     expect(phr[0].subjects).toEqual([{ type: 'role', value: 'vault-owner' }]);
     expect([...phr[0].actions].sort()).toEqual(['phr-delete', 'phr-read', 'phr-write']);
-  });
-
-  // yourphr#969 (operator 2026-10-25): the move from yourPHR writes into each
-  // user's own record as the scheduled job, never as a role or a user.
-  it('grants phr-migrate to the migration job alone, plus identity-read to find each user\'s @id, and nothing else to it', () => {
-    const migrate = policies.filter((p) => p.actions.includes('phr-migrate'));
-    expect(migrate.map((p) => p.id)).toEqual(['phr-migrate-job']);
-    expect(migrate[0].subjects).toEqual([{ type: 'job', value: 'phr.migrate-yourphr' }]);
-    expect(migrate[0].actions).toEqual(['phr-migrate', 'identity-read']);
   });
 });

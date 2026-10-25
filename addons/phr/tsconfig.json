@@ -31,7 +31,6 @@
     "plugins/**/*.ts",
     "managers/**/*.ts",
     "importers/**/*.ts",
-    "migrate/**/*.ts",
     "forms/**/*.ts",
     "dev/**/*.ts"
   ],

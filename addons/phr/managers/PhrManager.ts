@@ -50,7 +50,7 @@ export interface PhrCaller {
 }
 
 /** The actions phr declares as permissions (config/default-config.json), each with its audit event. */
-export type PhrAction = 'phr-read' | 'phr-write' | 'phr-delete' | 'phr-migrate';
+export type PhrAction = 'phr-read' | 'phr-write' | 'phr-delete';
 
 export type Decide = (subject: ActorContext | null, request: { action: string }) => Promise<Decision>;
 export type RecordAudit = (event: AuditEvent) => Promise<unknown>;
@@ -65,8 +65,7 @@ export interface PhrManagerDeps {
   /**
    * Has the user this caller acts as turned health records on, and accepted
    * phr's current terms and privacy policy? Null when they have; otherwise the
-   * reason. Records moved in from yourPHR (yourphr#969) are held for users
-   * who haven't yet, so the door refuses every read and write until they do.
+   * reason. The door refuses every read and write until they have.
    */
   optedIn: (caller: PhrCaller) => Promise<string | null>;
   /**
@@ -268,58 +267,16 @@ export class PhrManager {
    */
   async importFile(caller: PhrCaller, file: PhrFileData, sourceId = 'folder', owner?: string): Promise<FileImportReport> {
     const target = { owner, resourceType: 'records-import' };
-    return this.access(caller, 'phr-write', target, (h) => h.inTransaction(() => this.writeFile(h, file, sourceId).report));
-  }
-
-  /**
-   * The one-time move from yourPHR into phr (yourphr#969): one source file's
-   * records into the health record of the user the source names. Only the
-   * scheduled migration job may do it: core's decision point grants
-   * `phr-migrate` to that job alone (phr's own policy, job subject
-   * `phr.migrate-yourphr`), so the job writes into `owner` without being the
-   * owner. Every other call keeps the owner rule. Each record written is
-   * audited, with its owner, never its content.
-   */
-  async migrateFile(caller: PhrCaller, owner: string, file: PhrFileData, sourceId: string): Promise<FileImportReport> {
-    const written = await this.migration(caller, { owner, resourceType: 'records-migration' }, (h) => h.inTransaction(() => this.writeFile(h, file, sourceId)));
-    for (const ref of written.refs) await this.audit(caller, 'phr-migrate', { owner, ...ref }, 'allow');
-    return written.report;
-  }
-
-  /** How many records of each kind a user holds, for the migration's record-for-record check. */
-  async migratedCounts(caller: PhrCaller, owner: string): Promise<{ resourceType: string; count: number }[]> {
-    return this.migration(caller, { owner, resourceType: 'records-migration-check' }, (h) => h.countsByType());
-  }
-
-  /** Of these phr ids (`Type/id`), the ones a user's health record does not hold: the migration's record-for-record check. */
-  async migratedMissing(caller: PhrCaller, owner: string, refs: readonly string[]): Promise<string[]> {
-    return this.migration(caller, { owner, resourceType: 'records-migration-check' }, (h) => refs.filter((ref) => {
-      const slash = ref.indexOf('/');
-      return slash < 1 || !h.read(ref.slice(0, slash), ref.slice(slash + 1));
-    }));
-  }
-
-  /** The migration's door: core decides `phr-migrate`, and the target names one owner. */
-  private async migration<T>(caller: PhrCaller, target: Target, work: (h: OwnerHandle) => T): Promise<T> {
-    const decision = await this.deps.decide(caller.subject, { action: 'phr-migrate' });
-    if (!decision.permit || target.owner === '') {
-      const why = decision.permit ? { ...refusedOwner, reason: 'no-owner' } : decision;
-      await this.audit(caller, 'phr-migrate', target, 'deny', why.reason);
-      return caller.enforceDeny('phr-migrate', why);
-    }
-    await this.audit(caller, 'phr-migrate', target, 'allow');
-    return work(this.deps.store.forOwner(target.owner));
+    return this.access(caller, 'phr-write', target, (h) => h.inTransaction(() => this.writeFile(h, file, sourceId)));
   }
 
   /**
    * Write one file's records for the handle's owner: phr's own id for each
    * and a Provenance keeping the original (yourphr#784). Records without an
-   * id are skipped; a conflicting one is counted, never overwritten. Returns
-   * the records written, for a caller that audits each one.
+   * id are skipped; a conflicting one is counted, never overwritten.
    */
-  private writeFile(h: OwnerHandle, file: PhrFileData, sourceId: string): { report: FileImportReport; refs: { resourceType: string; id: string }[] } {
+  private writeFile(h: OwnerHandle, file: PhrFileData, sourceId: string): FileImportReport {
     const report: FileImportReport = { created: 0, updated: 0, unchanged: 0, skipped: file.skippedEntries, conflicts: 0 };
-    const refs: { resourceType: string; id: string }[] = [];
     const withIds = file.resources.map((r) => typeof r.id === 'string' && r.id !== '');
     const kept = file.resources.filter((_r, i) => withIds[i]);
     const keptUrls = file.fullUrls?.filter((_u, i) => withIds[i]);
@@ -329,16 +286,13 @@ export class PhrManager {
       try {
         const r = h.put(resource, sourceId);
         report[r.outcome]++;
-        if (r.outcome !== 'unchanged') {
-          h.put(local.provenanceFor(i, r.lastUpdated), sourceId);
-          refs.push({ resourceType: r.resourceType, id: r.id });
-        }
+        if (r.outcome !== 'unchanged') h.put(local.provenanceFor(i, r.lastUpdated), sourceId);
       } catch (err) {
         if (err instanceof StoreError && err.status === 409) { report.conflicts++; continue; }
         throw err;
       }
     }
-    return { report, refs };
+    return report;
   }
 
   async remove(caller: PhrCaller, resourceType: string, id: string, owner?: string): Promise<boolean> {

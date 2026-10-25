@@ -199,13 +199,12 @@ const PhrAddon = {
     records = new PhrManager({
       store,
       decide,
-      // A user's records stay out of reach until they have turned health
-      // records on and accepted phr's current terms (yourphr#969: records moved
-      // in from yourPHR wait for each user's own opt-in).
       // phr keys every record by the user's identity @id, never the username
       // (ngdpbase identity model). actorOf(ctx).user is the account acted on:
       // under a proxy grant, the represented user.
       identityOf: async (ctx) => (await identities.getByUserIdentifier(ctx, tools.actorOf(ctx).user))?.['@id'] ?? null,
+      // A user's records stay out of reach until they have turned health
+      // records on and accepted phr's current terms.
       optedIn: async (caller) => {
         const subject = caller.subject;
         if (!subject) return 'not signed in';

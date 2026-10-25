@@ -35,7 +35,7 @@ const observation = (id: string, text: string) => ({ resourceType: 'Observation'
 describe('PhrManager', () => {
   let db: Db & { close(): void };
   let audit: Record<string, unknown>[];
-  let make: (decide?: typeof allowAll) => PhrManager;
+  let make: (decide?: typeof allowAll, optedIn?: (c: PhrCaller) => Promise<string | null>) => PhrManager;
 
   beforeEach(() => {
     // declaredBy: the test database must match phr's own declaration, as a site would require.
@@ -148,6 +148,18 @@ describe('PhrManager', () => {
     const phr = new PhrManager({ store: new PhrRecordStore(db), decide: allowAll, recordAudit: (e) => host.recordAuditEvent(broken, e), host, optedIn: async () => null, identityOf: async (c) => `urn:test:${c.username}` });
     await expect(phr.write(caller('alice'), observation('o1', 'x'), 'folder')).rejects.toThrow();
     expect(db.prepare('SELECT COUNT(*) AS n FROM phr_resources').get()).toEqual({ n: 0 });
+  });
+
+  it('refuses every read and write until the user has turned health records on and accepted phr\'s terms', async () => {
+    let gate: string | null = 'health records are off';
+    const phr = make(allowAll, async () => gate);
+    await expect(phr.write(caller('alice'), observation('o1', 'Private'), 'folder')).rejects.toBeInstanceOf(Refused);
+    gate = "phr's terms are not accepted";
+    await expect(phr.list(caller('alice'), 'Observation')).rejects.toBeInstanceOf(Refused);
+    expect(audit.filter((e) => e.result === 'deny').map((e) => e.reason)).toEqual(['not-opted-in', 'not-opted-in']);
+    gate = null;
+    await phr.write(caller('alice'), observation('o1', 'Private'), 'folder');
+    expect((await phr.list(caller('alice'), 'Observation')).length).toBe(1);
   });
 
   it('the database refuses a row nobody owns', () => {
