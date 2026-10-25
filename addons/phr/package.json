@@ -61,7 +61,6 @@
     "@medplum/ccda",
     "@medplum/core",
     "@medplum/definitions",
-    "fflate",
     "fhirpath"
   ]
 }
