@@ -4,7 +4,8 @@
  * (src/SqliteFhirRepository.ts) with one change everywhere: every table is
  * keyed by `owner` first.
  *
- * - `owner` is the person the record is about, by username, and is required:
+ * - `owner` is the user the record is about, by identity @id (`urn:uuid`,
+ *   ngdpbase identity model; rows from before are re-keyed at start), and is required:
  *   NOT NULL with no default, and never ''. yourPHR's old store let
  *   `user_id` default to '' (yourphr#812), which left rows nobody owned.
  * - Every primary key and every index starts with `owner`, so one person's

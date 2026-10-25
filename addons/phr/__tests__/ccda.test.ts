@@ -112,7 +112,7 @@ describe('a C-CDA download in a records folder', () => {
       db = openAddonTestDatabase<Db & { close(): void }>('phr', { migrations: PHR_MIGRATIONS, ledgerTable: PHR_LEDGER_TABLE }, { slug: 'phr', defaults });
       const host = buildAddonHost('phr', defaults);
       const sink = { logAuditEvent: async () => 'id', flushAuditQueue: async () => {} };
-      phr = new PhrManager({ store: new PhrRecordStore(db), decide: allowAll, recordAudit: (e) => host.recordAuditEvent(sink, e), host, optedIn: async () => null });
+      phr = new PhrManager({ store: new PhrRecordStore(db), decide: allowAll, recordAudit: (e) => host.recordAuditEvent(sink, e), host, optedIn: async () => null, identityOf: async (c) => `urn:test:${c.username}` });
     });
     afterEach(() => db.close());
 

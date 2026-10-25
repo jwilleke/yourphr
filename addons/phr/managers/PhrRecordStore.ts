@@ -127,6 +127,38 @@ export function openPhrStore(databases: DatabaseManager | undefined): PhrRecordS
 export class PhrRecordStore {
   constructor(private readonly db: Db, private readonly now: () => Date = () => new Date()) {}
 
+  /**
+   * Owners still keyed by username: anything not an identity @id (`urn:`).
+   * phr keys records by the user's identity @id (ngdpbase identity model);
+   * rows written before that are re-keyed once at start (rekeyOwner).
+   */
+  ownersNotKeyedById(): string[] {
+    return (this.db.prepare(`SELECT owner FROM phr_resources WHERE owner NOT LIKE 'urn:%'
+                             UNION SELECT owner FROM phr_resource_history WHERE owner NOT LIKE 'urn:%'
+                             UNION SELECT owner FROM phr_text_rowids WHERE owner NOT LIKE 'urn:%' ORDER BY owner`).all() as { owner: string }[])
+      .map((r) => r.owner);
+  }
+
+  /**
+   * Move every row of `from` to `to` (an identity @id), in one transaction:
+   * records, history, the search index, the text index and its owner key.
+   * Refuses a target that already holds rows, so two owners never merge.
+   * Returns the records moved.
+   */
+  rekeyOwner(from: string, to: string): number {
+    if (!to.startsWith('urn:')) throw new StoreError(500, 'an owner is re-keyed only to an identity @id');
+    return this.db.transaction(() => {
+      const held = this.db.prepare('SELECT COUNT(*) AS n FROM phr_resources WHERE owner = ?').get(to) as { n: number };
+      if (Number(held.n) > 0) throw new StoreError(409, 'the identity already holds records; not merged');
+      const moved = this.db.prepare('UPDATE phr_resources SET owner = ? WHERE owner = ?').run(to, from).changes;
+      this.db.prepare('UPDATE phr_resource_history SET owner = ? WHERE owner = ?').run(to, from);
+      this.db.prepare('UPDATE phr_search_index SET owner = ? WHERE owner = ?').run(to, from);
+      this.db.prepare('UPDATE phr_text_rowids SET owner = ? WHERE owner = ?').run(to, from);
+      this.db.prepare('UPDATE phr_search_text SET owner = ?, owner_key = ? WHERE owner_key = ?').run(to, ownerKey(to), ownerKey(from));
+      return moved;
+    })();
+  }
+
   /** A handle for one owner. An empty owner is refused: a row nobody owns can't exist. */
   forOwner(owner: string): OwnerHandle {
     if (typeof owner !== 'string' || owner === '') throw new StoreError(500, 'a record handle needs an owner');

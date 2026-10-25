@@ -50,7 +50,8 @@ describe('PhrManager', () => {
       decide,
       recordAudit: (event) => host.recordAuditEvent(sink, event),
       host,
-      optedIn
+      optedIn,
+      identityOf: async (c) => `urn:test:${c.username}`
     });
   });
   afterEach(() => db.close());
@@ -69,7 +70,7 @@ describe('PhrManager', () => {
     await expect(phr.read(caller('bob'), 'Observation', 'o1', 'alice')).rejects.toBeInstanceOf(Refused);
     await expect(phr.list(caller('bob'), 'Observation', 'alice')).rejects.toBeInstanceOf(Refused);
     await expect(phr.history(caller('bob'), 'Observation', 'o1', 'alice')).rejects.toBeInstanceOf(Refused);
-    await expect(phr.write(caller('bob'), observation('o1', 'Changed'), 'folder', 'alice')).rejects.toBeInstanceOf(Refused);
+    await expect(phr.write(caller('bob'), observation('o1', 'Changed'), 'folder', 'urn:test:alice')).rejects.toBeInstanceOf(Refused);
     await expect(phr.remove(caller('bob'), 'Observation', 'o1', 'alice')).rejects.toBeInstanceOf(Refused);
     // And bob's own space doesn't see alice's record either.
     expect(await phr.read(caller('bob'), 'Observation', 'o1')).toBeUndefined();
@@ -102,24 +103,25 @@ describe('PhrManager', () => {
     const last = audit.at(-1)!;
     expect(last.user).toBe('mom');
     expect(last.actor).toBe('jim');
-    expect((last.metadata as Record<string, unknown>).owner).toBe('mom');
+    expect((last.metadata as Record<string, unknown>).owner).toBe('urn:test:mom'); // the represented user's identity @id
   });
 
   it('a proxy for one person can\'t reach a third person', async () => {
     const phr = make();
     await phr.write(caller('carol'), observation('o1', 'Private'), 'folder');
-    await expect(phr.read(caller('jim', { actingFor: 'mom' }), 'Observation', 'o1', 'carol')).rejects.toBeInstanceOf(Refused);
+    await expect(phr.read(caller('jim', { actingFor: 'mom' }), 'Observation', 'o1', 'urn:test:carol')).rejects.toBeInstanceOf(Refused);
   });
 
   it('audits every call, allowed and refused, with the owner and never the content', async () => {
     const phr = make();
     await phr.write(caller('alice'), observation('o1', 'Glucose 112 mg/dL'), 'folder');
     await phr.read(caller('alice'), 'Observation', 'o1');
-    await phr.read(caller('bob'), 'Observation', 'o1', 'alice').catch(() => undefined);
+    await phr.read(caller('bob'), 'Observation', 'o1', 'urn:test:alice').catch(() => undefined);
     expect(audit.map(e => [e.action, e.result, (e.metadata as Record<string, unknown>).owner])).toEqual([
-      ['phr-write', 'allow', 'alice'],
-      ['phr-read', 'allow', 'alice'],
-      ['phr-read', 'deny', 'alice']
+      // Owners are identity @ids, never usernames (ngdpbase identity model).
+      ['phr-write', 'allow', 'urn:test:alice'],
+      ['phr-read', 'allow', 'urn:test:alice'],
+      ['phr-read', 'deny', 'urn:test:alice']
     ]);
     expect(audit.every(e => String(e.eventType).includes('phr-'))).toBe(true);
     expect(JSON.stringify(audit)).not.toContain('Glucose');
@@ -143,7 +145,7 @@ describe('PhrManager', () => {
   it('refuses the action when its audit record can\'t be written', async () => {
     const host = buildAddonHost('phr', defaults);
     const broken = { logAuditEvent: async () => { throw new Error('disk full'); }, flushAuditQueue: async () => {} };
-    const phr = new PhrManager({ store: new PhrRecordStore(db), decide: allowAll, recordAudit: (e) => host.recordAuditEvent(broken, e), host, optedIn: async () => null });
+    const phr = new PhrManager({ store: new PhrRecordStore(db), decide: allowAll, recordAudit: (e) => host.recordAuditEvent(broken, e), host, optedIn: async () => null, identityOf: async (c) => `urn:test:${c.username}` });
     await expect(phr.write(caller('alice'), observation('o1', 'x'), 'folder')).rejects.toThrow();
     expect(db.prepare('SELECT COUNT(*) AS n FROM phr_resources').get()).toEqual({ n: 0 });
   });

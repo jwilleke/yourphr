@@ -64,7 +64,7 @@ describe('searching through PhrManager', () => {
     db = openAddonTestDatabase<Db & { close(): void }>('phr', { migrations: PHR_MIGRATIONS, ledgerTable: PHR_LEDGER_TABLE }, { slug: 'phr', defaults });
     const host = buildAddonHost('phr', defaults);
     const sink = { logAuditEvent: async () => 'id', flushAuditQueue: async () => {} };
-    phr = new PhrManager({ store: new PhrRecordStore(db), decide: allowAll, recordAudit: (e) => host.recordAuditEvent(sink, e), host, optedIn: async () => null });
+    phr = new PhrManager({ store: new PhrRecordStore(db), decide: allowAll, recordAudit: (e) => host.recordAuditEvent(sink, e), host, optedIn: async () => null, identityOf: async (c) => `urn:test:${c.username}` });
     for (const r of [glucose('g1', 112, '2024-01-15'), glucose('g2', 98, '2024-06-02'), a1c, condition]) await phr.write(caller('alice'), r, 'folder');
     await phr.write(caller('bob'), glucose('g9', 250, '2024-02-02'), 'folder');
   });

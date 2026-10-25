@@ -21,8 +21,8 @@
  *
  * The exported `name` MUST equal `ngdpbase.slug` in package.json (#927).
  */
-import type { ActorContext, AddonHost, ConsentManager, Decision, OriginalKeep, PolicyDecisionPoint, WikiEngine } from '@jwilleke/ngdpbase-types';
-import { openPhrStore } from './managers/PhrRecordStore.js';
+import type { ActorContext, AddonHost, ConsentManager, Decision, IdentityManager, OriginalKeep, PolicyDecisionPoint, WikiEngine } from '@jwilleke/ngdpbase-types';
+import { openPhrStore, type PhrRecordStore } from './managers/PhrRecordStore.js';
 import { PhrManager } from './managers/PhrManager.js';
 import { NOTE_FORM, NOTE_FORM_ID, noteFormHandler } from './forms/noteForm.js';
 import { mountApi } from './routes/api.js';
@@ -143,6 +143,30 @@ function registerImport(engine: WikiEngine, tools: AddonHost, decide: (ctx: Acto
   tools.registerShim(ccdaShim());
 }
 
+/**
+ * Rows keyed by username, from before phr keyed by identity @id, move to the
+ * user's @id: core's IdentityManager, as the system context. Idempotent. A
+ * username with no account, or an @id that already holds records, is left
+ * as it is and counted. Logs counts only, never usernames.
+ */
+async function rekeyOwners(store: PhrRecordStore, identities: IdentityManager, tools: AddonHost): Promise<void> {
+  try {
+    const old = store.ownersNotKeyedById();
+    if (old.length === 0) return;
+    const ctx = tools.systemContext('phr: key health records by identity @id instead of username');
+    let moved = 0;
+    let left = 0;
+    for (const username of old) {
+      const id = (await identities.getByUserIdentifier(ctx, username))?.['@id'];
+      if (!id) { left++; continue; }
+      try { store.rekeyOwner(username, id); moved++; } catch { left++; }
+    }
+    tools.logger.info(`[phr] re-keyed ${moved} user(s) to identity @id${left ? `; ${left} left as they were (no account, or already holding records)` : ''}`);
+  } catch (err) {
+    tools.logger.error(`[phr] re-keying owners to identity @id failed: ${String(err)}`);
+  }
+}
+
 const PhrAddon = {
   name: 'phr',
   version: '0.0.5',
@@ -170,12 +194,18 @@ const PhrAddon = {
     // and makes the subject itself (ngdpbase#2022). phr never converts it.
     const decide = (ctx: ActorContext | null, request: { action: string }) => pdp.decide(ctx, request);
     const consentForGate = engine.getManager<ConsentManager>('ConsentManager');
+    const identities = engine.getManager<IdentityManager>('IdentityManager');
+    if (!identities) throw new Error("ngdpbase's IdentityManager is not available (phr needs ngdpbase 5.30.1 or later)");
     records = new PhrManager({
       store,
       decide,
       // A person's records stay out of reach until they have turned health
       // records on and accepted phr's current terms (yourphr#969: records moved
       // in from yourPHR wait for each person's own opt-in).
+      // phr keys every record by the user's identity @id, never the username
+      // (ngdpbase identity model). actorOf(ctx).user is the account acted on:
+      // under a proxy grant, the represented user.
+      identityOf: async (ctx) => (await identities.getByUserIdentifier(ctx, tools.actorOf(ctx).user))?.['@id'] ?? null,
       optedIn: async (caller) => {
         const subject = caller.subject;
         if (!subject) return 'not signed in';
@@ -186,6 +216,10 @@ const PhrAddon = {
       recordAudit: (event) => tools.recordAuditEvent(auditSink, event),
       host: tools
     });
+    // Records written before phr keyed owners by identity @id are re-keyed once,
+    // in the background so the site starts at once (ngdpbase identity model).
+    void rekeyOwners(store, identities, tools);
+
     // Reachable as engine.getManager('PhrManager'): the forms add-on's
     // "fetch:PhrManager.toFormOptions()" fills the note form's record list (ngdpbase guide §6).
     engine.registerManager('PhrManager', records);

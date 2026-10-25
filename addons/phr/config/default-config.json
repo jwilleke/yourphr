@@ -123,7 +123,7 @@
     {
       "id": "phr-migrate-job",
       "name": "phr: the move in from yourPHR",
-      "description": "The scheduled job phr.migrate-yourphr alone may write each person's records from yourPHR into that person's own health record, until cutover is done; then the job and this policy go (yourphr#969, operator 2026-10-25). No role holds phr-migrate.",
+      "description": "The scheduled job phr.migrate-yourphr alone may write each user's records from yourPHR into that user's own health record, until cutover is done; then the job and this policy go (yourphr#969, operator 2026-10-25). It also reads each old user's identity record (identity-read) to find the identity @id phr keys records by. No role holds phr-migrate.",
       "priority": 90,
       "effect": "allow",
       "subjects": [
@@ -139,7 +139,8 @@
         }
       ],
       "actions": [
-        "phr-migrate"
+        "phr-migrate",
+        "identity-read"
       ]
     }
   ]

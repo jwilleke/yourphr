@@ -18,10 +18,10 @@ describe("phr's access policy", () => {
 
   // yourphr#969 (operator 2026-10-25): the move from yourPHR writes into each
   // person's own record as the scheduled job, never as a role or a person.
-  it('grants phr-migrate to the migration job alone, and nothing else to it', () => {
+  it('grants phr-migrate to the migration job alone, plus identity-read to find each user\'s @id, and nothing else to it', () => {
     const migrate = policies.filter((p) => p.actions.includes('phr-migrate'));
     expect(migrate.map((p) => p.id)).toEqual(['phr-migrate-job']);
     expect(migrate[0].subjects).toEqual([{ type: 'job', value: 'phr.migrate-yourphr' }]);
-    expect(migrate[0].actions).toEqual(['phr-migrate']);
+    expect(migrate[0].actions).toEqual(['phr-migrate', 'identity-read']);
   });
 });

@@ -7,7 +7,8 @@ import { PHR_MIGRATIONS, PHR_LEDGER_TABLE } from '../managers/migrations.js';
 import { PhrRecordStore, type Db } from '../managers/PhrRecordStore.js';
 import { PhrManager, type PhrCaller } from '../managers/PhrManager.js';
 import { YourphrSourceStore } from '../migrate/YourphrSourceStore.js';
-import { expectedRefs, filesFrom, NO_SOURCE } from '../migrate/yourphrSource.js';
+import { filesFrom, NO_SOURCE } from '../migrate/yourphrSource.js';
+import { moveAll } from '../migrate/moveAll.js';
 
 // Synthetic records only: no real identity, no real provider.
 const defaults = JSON.parse(readFileSync(new URL('../config/default-config.json', import.meta.url), 'utf8')) as Record<string, unknown>;
@@ -52,16 +53,18 @@ describe('the move from yourPHR into phr (#969)', () => {
     source.prepare('INSERT INTO resources (resource_type, id, user_id, source_id, version_id, last_updated, deleted, content) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
       .run(String(resource.resourceType), String(resource.id), owner, sourceId, '1', '2026-01-01T00:00:00Z', deleted, JSON.stringify(resource));
 
-  /** One run of the job's work: every user, every source file, then the check. */
+  /** Each user's identity @id, as core's IdentityManager gives it; a test user here is `urn:test:<username>`. */
+  const ID = (username: string) => `urn:test:${username}`;
+  let accounts: Set<string>;
+  let lookedUp: string[];
+
+  /** One run of the job's work (moveAll), as `{ username: records the check found missing }`. */
   const runMove = async (as: ActorContext = JOB) => {
-    const store = new YourphrSourceStore(source);
-    const missing: Record<string, string[]> = {};
-    for (const owner of store.owners()) {
-      const files = filesFrom(store.rowsOf(owner));
-      for (const { sourceId, file } of files) await phr.migrateFile(callerOf(as), owner, file, sourceId);
-      missing[owner] = await phr.migratedMissing(callerOf(as), owner, expectedRefs(files));
-    }
-    return missing;
+    const report = await moveAll(new YourphrSourceStore(source), phr, callerOf(as), async (username) => {
+      lookedUp.push(username);
+      return accounts.has(username) ? ID(username) : null;
+    });
+    return Object.fromEntries(report.moved.map((m) => [m.username, m.missing]));
   };
 
   beforeEach(() => {
@@ -72,6 +75,8 @@ describe('the move from yourPHR into phr (#969)', () => {
     switchedOn = new Set();
     termsPending = new Set();
     gateAsked = [];
+    accounts = new Set(['alice', 'bob']);
+    lookedUp = [];
     const host = buildAddonHost('phr', defaults);
     const sink = { logAuditEvent: async (e: Record<string, unknown>) => { audit.push(e); return 'id'; }, flushAuditQueue: async () => {} };
     phr = new PhrManager({
@@ -83,7 +88,8 @@ describe('the move from yourPHR into phr (#969)', () => {
         if (optedIn.has(who)) return null;
         if (!switchedOn.has(who)) return 'health records are off';
         return termsPending.has(who) ? "phr's terms are not accepted" : null;
-      }
+      },
+      identityOf: async (c) => ID(c.username)
     });
     insert('alice', 'epic-1', patient);
     insert('alice', 'epic-1', condition);
@@ -124,17 +130,18 @@ describe('the move from yourPHR into phr (#969)', () => {
     await runMove();
     const moved = audit.filter((e) => e.action === 'phr-migrate' && e.result === 'allow' && String(e.resource).includes('/'));
     expect(moved.length).toBe(4); // alice: patient, condition, glucose; bob: patient
-    expect(new Set(moved.map((e) => (e.metadata as { owner: string }).owner))).toEqual(new Set(['alice', 'bob']));
+    // The owner is the identity @id, never the username (ngdpbase identity model).
+    expect(new Set(moved.map((e) => (e.metadata as { owner: string }).owner))).toEqual(new Set([ID('alice'), ID('bob')]));
     expect(JSON.stringify(audit)).not.toMatch(/Glucose|Testperson|Synthetic condition/);
   });
 
   it('nobody but the migration job may move records, a user not even into their own record', async () => {
     await expect(runMove(user('alice'))).rejects.toThrow(/refused phr-migrate/);
-    expect(await phr.migratedMissing(callerOf(JOB), 'alice', ['Patient/x'])).toEqual(['Patient/x']);
+    expect(await phr.migratedMissing(callerOf(JOB), ID('alice'), ['Patient/x'])).toEqual(['Patient/x']);
   });
 
   it('the job cannot use the ordinary doors: no reads, no writes as anyone', async () => {
-    await expect(phr.list(callerOf(JOB), 'Patient', 'alice')).rejects.toThrow(/refused phr-read/);
+    await expect(phr.list(callerOf(JOB), 'Patient', ID('alice'))).rejects.toThrow(/refused phr-read/);
   });
 
   it('a user sees nothing moved in until they have opted in (health records on, terms accepted)', async () => {
@@ -161,5 +168,17 @@ describe('the move from yourPHR into phr (#969)', () => {
     await expect(phr.list(callerOf(user('alice')), 'Patient')).rejects.toThrow(/refused phr-read/); // on, terms pending
     termsPending.delete('alice');
     expect((await phr.list(callerOf(user('alice')), 'Patient')).length).toBe(1); // on and accepted
+  });
+
+  it('looks each user\'s identity up once per run, and moves nothing for a username with no account, never keyed by username', async () => {
+    accounts.delete('bob');
+    const report = await moveAll(new YourphrSourceStore(source), phr, callerOf(JOB), async (username) => {
+      lookedUp.push(username);
+      return accounts.has(username) ? ID(username) : null;
+    });
+    expect(lookedUp).toEqual(['alice', 'bob']);
+    expect(report.noAccount).toEqual(['bob']);
+    expect(report.moved.map((m) => m.id)).toEqual([ID('alice')]);
+    expect(await phr.migratedMissing(callerOf(JOB), 'bob', ['Patient/x'])).toEqual(['Patient/x']);
   });
 });

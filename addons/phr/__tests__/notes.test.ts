@@ -28,7 +28,7 @@ describe('a person\'s notes about their records', () => {
     audit = [];
     const host = buildAddonHost('phr', defaults);
     const sink = { logAuditEvent: async (e: Record<string, unknown>) => { audit.push(e); return 'id'; }, flushAuditQueue: async () => {} };
-    phr = new PhrManager({ store: new PhrRecordStore(db), decide: allowAll, recordAudit: (e) => host.recordAuditEvent(sink, e), host, optedIn: async () => null });
+    phr = new PhrManager({ store: new PhrRecordStore(db), decide: allowAll, recordAudit: (e) => host.recordAuditEvent(sink, e), host, optedIn: async () => null, identityOf: async (c) => `urn:test:${c.username}` });
     await phr.write(caller('alice'), a1c, 'epic');
   });
   afterEach(() => db.close());
@@ -85,7 +85,7 @@ describe('the "Add a note" form on the forms add-on', () => {
     db = openAddonTestDatabase<Db & { close(): void }>('phr', { migrations: PHR_MIGRATIONS, ledgerTable: PHR_LEDGER_TABLE }, { slug: 'phr', defaults });
     const host = buildAddonHost('phr', defaults);
     const sink = { logAuditEvent: async () => 'id', flushAuditQueue: async () => {} };
-    phr = new PhrManager({ store: new PhrRecordStore(db), decide: allowAll, recordAudit: (e) => host.recordAuditEvent(sink, e), host, optedIn: async () => null });
+    phr = new PhrManager({ store: new PhrRecordStore(db), decide: allowAll, recordAudit: (e) => host.recordAuditEvent(sink, e), host, optedIn: async () => null, identityOf: async (c) => `urn:test:${c.username}` });
     await phr.write(caller('alice'), a1c, 'epic');
   });
   afterEach(() => db.close());

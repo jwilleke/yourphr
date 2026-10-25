@@ -69,10 +69,19 @@ export interface PhrManagerDeps {
    * who haven't yet, so the door refuses every read and write until they do.
    */
   optedIn: (caller: PhrCaller) => Promise<string | null>;
+  /**
+   * The identity @id (a `urn:uuid`) of the user this context acts as: core's
+   * IdentityManager.getByUserIdentifier(ctx, actorOf(ctx).user). Under a
+   * proxy grant that is the represented user. phr keys every record by it,
+   * never by username (ngdpbase identity model). Null when there is none.
+   */
+  identityOf: (ctx: ActorContext) => Promise<string | null>;
 }
 
-/** What a call is about: whose records, and which (a kind, and for one record its id). */
+/** What a call is about: whose records (an identity @id), and which (a kind, and for one record its id). */
 interface Target { owner: string; resourceType: string; id?: string }
+/** A call's target before the door resolves it: no owner means the caller's own record. */
+type Asked = Omit<Target, 'owner'> & { owner?: string };
 
 const refusedOwner: Decision = { permit: false, applicable: true, reason: 'not-the-owner' };
 
@@ -90,24 +99,27 @@ export class PhrManager {
     return !('isAuthenticated' in subject) || subject.isAuthenticated === true ? name : null;
   }
 
-  /** The owner a call means: the one it names, or else the caller themselves. */
-  private ownerFor(caller: PhrCaller, owner?: string): string {
-    return owner ?? this.subjectName(caller) ?? '';
+  /** The identity @id of the user this caller acts as, or null for no signed-in user. */
+  private async me(caller: PhrCaller): Promise<string | null> {
+    if (this.subjectName(caller) === null || !caller.subject) return null;
+    return this.deps.identityOf(caller.subject);
   }
 
   /**
    * The door. Every public method goes through here, and nothing reaches the
    * store any other way.
    */
-  private async access<T>(caller: PhrCaller, action: PhrAction, target: Target, work: (h: OwnerHandle) => T): Promise<T> {
+  private async access<T>(caller: PhrCaller, action: PhrAction, asked: Asked, work: (h: OwnerHandle) => T): Promise<T> {
+    const me = await this.me(caller);
+    const target: Target = { ...asked, owner: asked.owner ?? me ?? '' };
     const decision = await this.deps.decide(caller.subject, { action });
     if (!decision.permit) {
       await this.audit(caller, action, target, 'deny', decision.reason);
       return caller.enforceDeny(action, decision);
     }
     // Interim owner rule (until core decides it, ngdpbase#1823): only the owner,
-    // or someone core has made the owner's subject (a proxy), may touch the records.
-    const me = this.subjectName(caller);
+    // or someone core has made the owner's subject (a proxy), may touch the
+    // records. Owners are identity @ids, compared as such.
     if (target.owner === '' || me === null || target.owner !== me) {
       await this.audit(caller, action, target, 'deny', refusedOwner.reason);
       return caller.enforceDeny(action, refusedOwner);
@@ -146,36 +158,36 @@ export class PhrManager {
 
   /** One record. Undefined when it doesn't exist (or was removed). */
   async read(caller: PhrCaller, resourceType: string, id: string, owner?: string): Promise<StoredRecord | undefined> {
-    const target = { owner: this.ownerFor(caller, owner), resourceType, id };
+    const target = { owner, resourceType, id };
     return this.access(caller, 'phr-read', target, (h) => h.read(resourceType, id));
   }
 
   /** One kind of a person's records, newest first. A refusal is a refusal, never an empty list. */
   async list(caller: PhrCaller, resourceType: string, owner?: string): Promise<StoredRecord[]> {
-    const target = { owner: this.ownerFor(caller, owner), resourceType };
+    const target = { owner, resourceType };
     return this.access(caller, 'phr-read', target, (h) => h.list(resourceType));
   }
 
   async history(caller: PhrCaller, resourceType: string, id: string, owner?: string): Promise<StoredRecord[]> {
-    const target = { owner: this.ownerFor(caller, owner), resourceType, id };
+    const target = { owner, resourceType, id };
     return this.access(caller, 'phr-read', target, (h) => h.history(resourceType, id));
   }
 
   /** One kind of a person's records matching every filter (FHIR search parameters), newest first. */
   async search(caller: PhrCaller, resourceType: string, filters: readonly SearchFilter[], page?: { count?: number; offset?: number }, owner?: string): Promise<{ total: number; records: StoredRecord[] }> {
-    const target = { owner: this.ownerFor(caller, owner), resourceType };
+    const target = { owner, resourceType };
     return this.access(caller, 'phr-read', target, (h) => h.search(resourceType, filters, page));
   }
 
   /** A person's records whose words match, any kind. */
   async findText(caller: PhrCaller, query: string, limit?: number, owner?: string): Promise<StoredRecord[]> {
-    const target = { owner: this.ownerFor(caller, owner), resourceType: 'text-search' };
+    const target = { owner, resourceType: 'text-search' };
     return this.access(caller, 'phr-read', target, (h) => h.findText(query, limit));
   }
 
   /** What a person holds, at a glance: counts by kind and the newest records. One door call. */
   async overview(caller: PhrCaller, recentLimit = 10, owner?: string): Promise<{ counts: { resourceType: string; count: number }[]; recent: StoredRecord[] }> {
-    const target = { owner: this.ownerFor(caller, owner), resourceType: 'overview' };
+    const target = { owner, resourceType: 'overview' };
     return this.access(caller, 'phr-read', target, (h) => ({ counts: h.countsByType(), recent: h.recent(recentLimit, NOT_RECORD_KINDS) }));
   }
 
@@ -188,18 +200,20 @@ export class PhrManager {
     const words = text.trim();
     if (words === '') throw new StoreError(400, 'a note needs some words');
     if (words.length > NOTE_MAX_CHARS) throw new StoreError(400, `a note is at most ${NOTE_MAX_CHARS} characters`);
-    const target = { owner: this.ownerFor(caller, owner), resourceType: 'Communication' };
+    const target = { owner, resourceType: 'Communication' };
     const viaProxy = (caller.subject as { viaProxy?: { actor?: string } } | null)?.viaProxy?.actor;
     return this.access(caller, 'phr-write', target, (h) => {
       if (!h.read(about.resourceType, about.id)) throw new StoreError(404, 'that record was not found');
-      const author = viaProxy ? { username: viaProxy, actingFor: h.owner } : { username: h.owner };
+      // The note names users by their sign-in names, a label for people to read; the record is keyed by @id.
+      const named = caller.subject?.username ?? '';
+      const author = viaProxy ? { username: viaProxy, actingFor: named } : { username: named };
       return h.put(buildNote(about, words, author), NOTE_SOURCE);
     });
   }
 
   /** A person's notes, grouped by the record each is about ("Type/id"), newest first. */
   async notes(caller: PhrCaller, owner?: string): Promise<Map<string, StoredRecord[]>> {
-    const target = { owner: this.ownerFor(caller, owner), resourceType: 'Communication' };
+    const target = { owner, resourceType: 'Communication' };
     return this.access(caller, 'phr-read', target, (h) => {
       const byRecord = new Map<string, StoredRecord[]>();
       for (const n of h.list('Communication', 1000)) {
@@ -241,7 +255,7 @@ export class PhrManager {
   async write(caller: PhrCaller, resource: Record<string, unknown>, sourceId: string, owner?: string): Promise<StoredRecord> {
     const resourceType = typeof resource.resourceType === 'string' ? resource.resourceType : '';
     const id = typeof resource.id === 'string' ? resource.id : undefined;
-    const target = { owner: this.ownerFor(caller, owner), resourceType, id };
+    const target = { owner, resourceType, id };
     return this.access(caller, 'phr-write', target, (h) => h.put(resource, sourceId));
   }
 
@@ -253,7 +267,7 @@ export class PhrManager {
    * original (yourphr#784).
    */
   async importFile(caller: PhrCaller, file: PhrFileData, sourceId = 'folder', owner?: string): Promise<FileImportReport> {
-    const target = { owner: this.ownerFor(caller, owner), resourceType: 'records-import' };
+    const target = { owner, resourceType: 'records-import' };
     return this.access(caller, 'phr-write', target, (h) => h.inTransaction(() => this.writeFile(h, file, sourceId).report));
   }
 
@@ -328,7 +342,7 @@ export class PhrManager {
   }
 
   async remove(caller: PhrCaller, resourceType: string, id: string, owner?: string): Promise<boolean> {
-    const target = { owner: this.ownerFor(caller, owner), resourceType, id };
+    const target = { owner, resourceType, id };
     return this.access(caller, 'phr-delete', target, (h) => h.remove(resourceType, id));
   }
 }

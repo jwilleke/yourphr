@@ -74,7 +74,7 @@ describe('importing a file through PhrManager', () => {
     audit = [];
     const host = buildAddonHost('phr', defaults);
     const sink = { logAuditEvent: async (e: Record<string, unknown>) => { audit.push(e); return 'id'; }, flushAuditQueue: async () => {} };
-    phr = new PhrManager({ store: new PhrRecordStore(db), decide: allowAll, recordAudit: (e) => host.recordAuditEvent(sink, e), host, optedIn: async () => null });
+    phr = new PhrManager({ store: new PhrRecordStore(db), decide: allowAll, recordAudit: (e) => host.recordAuditEvent(sink, e), host, optedIn: async () => null, identityOf: async (c) => `urn:test:${c.username}` });
   });
   afterEach(() => db.close());
 
@@ -91,7 +91,7 @@ describe('importing a file through PhrManager', () => {
     expect(await phr.read(caller('bob'), 'Observation', GLUCOSE)).toBeUndefined();
     const imports = audit.filter((e) => e.action === 'phr-write');
     expect(imports).toHaveLength(1);
-    expect((imports[0].metadata as Record<string, unknown>).owner).toBe('alice');
+    expect((imports[0].metadata as Record<string, unknown>).owner).toBe('urn:test:alice');
     expect(JSON.stringify(audit)).not.toContain('Glucose');
   });
 
@@ -117,7 +117,7 @@ describe('importing a file through PhrManager', () => {
   });
 
   it('nobody can import into another person\'s records', async () => {
-    await expect(importFiles(phr, caller('bob'), download(112), 'alice')).rejects.toThrow(/refused/);
+    await expect(importFiles(phr, caller('bob'), download(112), 'urn:test:alice')).rejects.toThrow(/refused/);
     expect(await phr.read(caller('alice'), 'Observation', GLUCOSE)).toBeUndefined();
   });
 
