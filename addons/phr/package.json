@@ -1,6 +1,6 @@
 {
   "name": "@yourphr/phr-addon",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "yourPHR as an ngdpbase add-on: your health records, in your hands",
   "license": "GPL-3.0-only",
   "type": "module",
