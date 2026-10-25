@@ -63,9 +63,9 @@ export interface PhrManagerDeps {
   recordAudit: RecordAudit;
   host: Pick<AddonHost, 'addonAuditEventName' | 'actorOf'>;
   /**
-   * Has the person this caller acts as turned health records on, and accepted
+   * Has the user this caller acts as turned health records on, and accepted
    * phr's current terms and privacy policy? Null when they have; otherwise the
-   * reason. Records moved in from yourPHR (yourphr#969) are held for people
+   * reason. Records moved in from yourPHR (yourphr#969) are held for users
    * who haven't yet, so the door refuses every read and write until they do.
    */
   optedIn: (caller: PhrCaller) => Promise<string | null>;
@@ -112,7 +112,7 @@ export class PhrManager {
       await this.audit(caller, action, target, 'deny', refusedOwner.reason);
       return caller.enforceDeny(action, refusedOwner);
     }
-    // Nothing of a person's health record is reachable until they have opted in.
+    // Nothing of a user's health record is reachable until they have opted in.
     const notYet = await this.deps.optedIn(caller);
     if (notYet !== null) {
       const refusal: Decision = { permit: false, applicable: true, reason: 'not-opted-in' };
@@ -272,12 +272,12 @@ export class PhrManager {
     return written.report;
   }
 
-  /** How many records of each kind a person holds, for the migration's record-for-record check. */
+  /** How many records of each kind a user holds, for the migration's record-for-record check. */
   async migratedCounts(caller: PhrCaller, owner: string): Promise<{ resourceType: string; count: number }[]> {
     return this.migration(caller, { owner, resourceType: 'records-migration-check' }, (h) => h.countsByType());
   }
 
-  /** Of these phr ids (`Type/id`), the ones a person's health record does not hold: the migration's record-for-record check. */
+  /** Of these phr ids (`Type/id`), the ones a user's health record does not hold: the migration's record-for-record check. */
   async migratedMissing(caller: PhrCaller, owner: string, refs: readonly string[]): Promise<string[]> {
     return this.migration(caller, { owner, resourceType: 'records-migration-check' }, (h) => refs.filter((ref) => {
       const slash = ref.indexOf('/');

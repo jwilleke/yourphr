@@ -14,7 +14,7 @@ import { localiseRecords } from '../managers/localIds.js';
 import type { PhrFileData } from '../importers/shims.js';
 import type { SourceRow } from './YourphrSourceStore.js';
 
-/** One source's records for one person, as phr's migration door takes them. */
+/** One source's records for one user, as phr's migration door takes them. */
 export interface SourceFile {
   /** The connected source the records came from in yourPHR, or `yourphr` for none. */
   sourceId: string;
@@ -27,7 +27,7 @@ export type PhrRef = string;
 /** yourPHR's own name for records with no source (uploaded files, notes). */
 export const NO_SOURCE = 'yourphr';
 
-/** A person's live rows (YourphrSourceStore.rowsOf), one file per source, ready for PhrManager.migrateFile. */
+/** A user's live rows (YourphrSourceStore.rowsOf), one file per source, ready for PhrManager.migrateFile. */
 export function filesFrom(rows: readonly SourceRow[]): SourceFile[] {
   const bySource = new Map<string, PhrFileData>();
   for (const row of rows) {
@@ -49,7 +49,7 @@ export function filesFrom(rows: readonly SourceRow[]): SourceFile[] {
 }
 
 /**
- * The phr id each of a person's records gets in the move, computed the way
+ * The phr id each of a user's records gets in the move, computed the way
  * the move computes it (same origin rules, same fallback per source), so a
  * check can ask phr for exactly these. Records without an id are left out,
  * as the move skips them.

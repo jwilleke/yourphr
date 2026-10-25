@@ -9,7 +9,7 @@ import { PhrManager, type PhrCaller } from '../managers/PhrManager.js';
 import { YourphrSourceStore } from '../migrate/YourphrSourceStore.js';
 import { expectedRefs, filesFrom, NO_SOURCE } from '../migrate/yourphrSource.js';
 
-// Synthetic records only: no real person, no real provider.
+// Synthetic records only: no real identity, no real provider.
 const defaults = JSON.parse(readFileSync(new URL('../config/default-config.json', import.meta.url), 'utf8')) as Record<string, unknown>;
 
 /** yourPHR's records store, as main's SqliteFhirRepository creates it (the columns the move reads). In memory, Node's own SQLite. */
@@ -28,7 +28,7 @@ const condition = { resourceType: 'Condition', id: 'c1', code: { text: 'Syntheti
 
 /** The migration job's scheduled run: the system principal, acting as the job. */
 const JOB = { username: 'system', origin: 'scheduled', requestedAt: '2026-10-25T00:00:00Z', job: 'phr.migrate-yourphr' } as unknown as ActorContext;
-const person = (username: string) => ({ username, roles: ['vault-owner'], isAuthenticated: true } as unknown as ActorContext);
+const user = (username: string) => ({ username, roles: ['vault-owner'], isAuthenticated: true } as unknown as ActorContext);
 const callerOf = (subject: ActorContext): PhrCaller => ({ subject, ipAddress: undefined, enforceDeny: async (p) => { throw new Error(`refused ${p}`); } });
 
 describe('the move from yourPHR into phr (#969)', () => {
@@ -41,7 +41,7 @@ describe('the move from yourPHR into phr (#969)', () => {
   let termsPending: Set<string>;
   let gateAsked: string[];
 
-  // Core's decision point, as phr's policies make it: phr-migrate to the job alone, the rest to people.
+  // Core's decision point, as phr's policies make it: phr-migrate to the job alone, the rest to users.
   const decide = async (ctx: unknown, { action }: { action: string }): Promise<Decision> => {
     const isJob = (ctx as { job?: string } | null)?.job === 'phr.migrate-yourphr';
     const permit = action === 'phr-migrate' ? isJob : !isJob;
@@ -52,7 +52,7 @@ describe('the move from yourPHR into phr (#969)', () => {
     source.prepare('INSERT INTO resources (resource_type, id, user_id, source_id, version_id, last_updated, deleted, content) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
       .run(String(resource.resourceType), String(resource.id), owner, sourceId, '1', '2026-01-01T00:00:00Z', deleted, JSON.stringify(resource));
 
-  /** One run of the job's work: every person, every source file, then the check. */
+  /** One run of the job's work: every user, every source file, then the check. */
   const runMove = async (as: ActorContext = JOB) => {
     const store = new YourphrSourceStore(source);
     const missing: Record<string, string[]> = {};
@@ -93,10 +93,10 @@ describe('the move from yourPHR into phr (#969)', () => {
   });
   afterEach(() => { source.close(); db.close(); });
 
-  it('moves every live record into its own person\'s record, and the check finds them all', async () => {
+  it('moves every live record into its own user\'s record, and the check finds them all', async () => {
     expect(await runMove()).toEqual({ alice: [], bob: [] });
     optedIn.add('alice');
-    const mine = await phr.overview(callerOf(person('alice')), 50);
+    const mine = await phr.overview(callerOf(user('alice')), 50);
     expect(mine.counts.filter((c) => c.resourceType !== 'Provenance')).toEqual(expect.arrayContaining([
       { resourceType: 'Patient', count: 1 }, { resourceType: 'Condition', count: 1 }, { resourceType: 'Observation', count: 1 }
     ]));
@@ -115,9 +115,9 @@ describe('the move from yourPHR into phr (#969)', () => {
 
   it('a second run changes nothing', async () => {
     await runMove();
-    const versions = (await Promise.all(['alice'].map(async () => { optedIn.add('alice'); return (await phr.overview(callerOf(person('alice')), 50)).counts; })))[0];
+    const versions = (await Promise.all(['alice'].map(async () => { optedIn.add('alice'); return (await phr.overview(callerOf(user('alice')), 50)).counts; })))[0];
     expect(await runMove()).toEqual({ alice: [], bob: [] });
-    expect((await phr.overview(callerOf(person('alice')), 50)).counts).toEqual(versions);
+    expect((await phr.overview(callerOf(user('alice')), 50)).counts).toEqual(versions);
   });
 
   it('audits each record moved, with its owner, never its content', async () => {
@@ -128,8 +128,8 @@ describe('the move from yourPHR into phr (#969)', () => {
     expect(JSON.stringify(audit)).not.toMatch(/Glucose|Testperson|Synthetic condition/);
   });
 
-  it('nobody but the migration job may move records, a person not even into their own record', async () => {
-    await expect(runMove(person('alice'))).rejects.toThrow(/refused phr-migrate/);
+  it('nobody but the migration job may move records, a user not even into their own record', async () => {
+    await expect(runMove(user('alice'))).rejects.toThrow(/refused phr-migrate/);
     expect(await phr.migratedMissing(callerOf(JOB), 'alice', ['Patient/x'])).toEqual(['Patient/x']);
   });
 
@@ -137,29 +137,29 @@ describe('the move from yourPHR into phr (#969)', () => {
     await expect(phr.list(callerOf(JOB), 'Patient', 'alice')).rejects.toThrow(/refused phr-read/);
   });
 
-  it('a person sees nothing moved in until they have opted in (health records on, terms accepted)', async () => {
+  it('a user sees nothing moved in until they have opted in (health records on, terms accepted)', async () => {
     await runMove();
-    await expect(phr.list(callerOf(person('alice')), 'Patient')).rejects.toThrow(/refused phr-read/);
+    await expect(phr.list(callerOf(user('alice')), 'Patient')).rejects.toThrow(/refused phr-read/);
     optedIn.add('alice');
-    expect((await phr.list(callerOf(person('alice')), 'Patient')).length).toBe(1);
-    await expect(phr.list(callerOf(person('bob')), 'Patient')).rejects.toThrow(/refused phr-read/);
+    expect((await phr.list(callerOf(user('alice')), 'Patient')).length).toBe(1);
+    await expect(phr.list(callerOf(user('bob')), 'Patient')).rejects.toThrow(/refused phr-read/);
   });
 
-  it('records the refusal of a person who has not opted in', async () => {
+  it('records the refusal of a user who has not opted in', async () => {
     await runMove();
-    await expect(phr.list(callerOf(person('bob')), 'Patient')).rejects.toThrow();
+    await expect(phr.list(callerOf(user('bob')), 'Patient')).rejects.toThrow();
     expect(audit.some((e) => e.action === 'phr-read' && e.result === 'deny' && e.reason === 'not-opted-in')).toBe(true);
   });
 
   // Operator decision (i), 2026-10-25: the move writes before anyone opts in.
-  it('moves the records of someone with health records off and terms pending; they can read them only after opting in', async () => {
+  it('moves the records of a user with health records off and terms pending; they can read them only after opting in', async () => {
     termsPending.add('alice');
     expect(await runMove()).toEqual({ alice: [], bob: [] });
     expect(gateAsked).toEqual([]); // the move never asks the opt-in gate
-    await expect(phr.list(callerOf(person('alice')), 'Patient')).rejects.toThrow(/refused phr-read/); // off
+    await expect(phr.list(callerOf(user('alice')), 'Patient')).rejects.toThrow(/refused phr-read/); // off
     switchedOn.add('alice');
-    await expect(phr.list(callerOf(person('alice')), 'Patient')).rejects.toThrow(/refused phr-read/); // on, terms pending
+    await expect(phr.list(callerOf(user('alice')), 'Patient')).rejects.toThrow(/refused phr-read/); // on, terms pending
     termsPending.delete('alice');
-    expect((await phr.list(callerOf(person('alice')), 'Patient')).length).toBe(1); // on and accepted
+    expect((await phr.list(callerOf(user('alice')), 'Patient')).length).toBe(1); // on and accepted
   });
 });

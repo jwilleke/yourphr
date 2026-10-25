@@ -20,19 +20,19 @@ export interface SourceRow { source_id: string; content: string }
 export class YourphrSourceStore {
   constructor(private readonly db: SourceDb) {}
 
-  /** The people who hold live records, by username (yourPHR's `user_id`). */
+  /** The users who hold live records, by username (yourPHR's `user_id`). */
   owners(): string[] {
     return (this.db.prepare("SELECT DISTINCT user_id FROM resources WHERE deleted = 0 AND user_id <> '' ORDER BY user_id").all() as { user_id: string }[])
       .map((r) => r.user_id);
   }
 
-  /** A person's live records, ordered by source, kind and id. */
+  /** A user's live records, ordered by source, kind and id. */
   rowsOf(owner: string): SourceRow[] {
     return this.db.prepare('SELECT source_id, content FROM resources WHERE user_id = ? AND deleted = 0 ORDER BY source_id, resource_type, id')
       .all(owner) as SourceRow[];
   }
 
-  /** Live records of each kind a person holds. */
+  /** Live records of each kind a user holds. */
   countsOf(owner: string): Map<string, number> {
     const rows = this.db.prepare('SELECT resource_type, COUNT(*) AS n FROM resources WHERE user_id = ? AND deleted = 0 GROUP BY resource_type')
       .all(owner) as { resource_type: string; n: number }[];
