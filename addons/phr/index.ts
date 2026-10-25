@@ -182,7 +182,7 @@ async function rekeyOwners(store: PhrRecordStore, identities: IdentityManager, t
 
 const PhrAddon = {
   name: 'phr',
-  version: '0.0.5',
+  version: '0.0.6',
   description: 'yourPHR: your health records, in your hands',
   author: 'jwilleke',
   dependencies: [] as string[],
