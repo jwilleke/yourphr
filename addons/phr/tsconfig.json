@@ -1,7 +1,9 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "lib": ["ES2022"],
+    "lib": [
+      "ES2022"
+    ],
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "rootDir": ".",
@@ -15,9 +17,27 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "skipLibCheck": true,
-    "types": ["node"],
+    "types": [
+      "node"
+    ],
     "tsBuildInfoFile": "./.tsbuildinfo"
   },
-  "include": ["index.ts", "preferences.ts", "profile.ts", "display.ts", "routes/**/*.ts", "plugins/**/*.ts", "managers/**/*.ts", "importers/**/*.ts", "forms/**/*.ts", "dev/**/*.ts"],
-  "exclude": ["node_modules", "**/*.test.ts", "**/__tests__/**"]
+  "include": [
+    "index.ts",
+    "preferences.ts",
+    "profile.ts",
+    "display.ts",
+    "routes/**/*.ts",
+    "plugins/**/*.ts",
+    "managers/**/*.ts",
+    "importers/**/*.ts",
+    "migrate/**/*.ts",
+    "forms/**/*.ts",
+    "dev/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "**/*.test.ts",
+    "**/__tests__/**"
+  ]
 }

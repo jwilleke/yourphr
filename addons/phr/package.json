@@ -11,6 +11,7 @@
     "plugins/**/*.js",
     "managers/**/*.js",
     "importers/**/*.js",
+    "migrate/**/*.js",
     "forms/**/*.js",
     "config/",
     "pages/",
