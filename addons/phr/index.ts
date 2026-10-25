@@ -145,7 +145,7 @@ function registerImport(engine: WikiEngine, tools: AddonHost, decide: (ctx: Acto
 
 const PhrAddon = {
   name: 'phr',
-  version: '0.0.4',
+  version: '0.0.5',
   description: 'yourPHR: your health records, in your hands',
   author: 'jwilleke',
   dependencies: [] as string[],
