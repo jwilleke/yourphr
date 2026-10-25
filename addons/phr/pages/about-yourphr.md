@@ -12,7 +12,7 @@ author: phr
 
 Your medical records, immediately and in your hands — for free.
 
-yourPHR is a free, open-source personal health record: your medical history from every provider, in one private place you control. On this site it is an add-on, and each person turns it on for themselves.
+yourPHR is a free, open-source personal health record: your medical history from every provider, in one private place you control. On this site it is an add-on, and you turn it on for yourself.
 
 ## What it does
 

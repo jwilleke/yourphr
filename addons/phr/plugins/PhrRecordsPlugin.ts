@@ -1,7 +1,7 @@
 /**
- * [{PhrRecords}] — a person's health records at a glance, inside ngdpbase's
+ * [{PhrRecords}] — a user's health records at a glance, inside ngdpbase's
  * own page layout: what they hold by kind, the newest records, and a search
- * by words. Everything comes through PhrManager's one door, so a person sees
+ * by words. Everything comes through PhrManager's one door, so a user sees
  * only their own records (or those of someone they act for by proxy).
  * Wording follows the plain-language and no-guessing rules (display.ts).
  */
@@ -39,7 +39,7 @@ export function createPhrRecordsPlugin(records: () => PhrManager | null, healthR
 
       try {
         const { counts: allCounts, recent: allRecent } = await phr.overview(caller, 20);
-        // A person's own notes are shown under the record they're about, not as records of their own.
+        // A user's own notes are shown under the record they're about, not as records of their own.
         const notes = await phr.notes(caller);
         const counts = allCounts.filter((c) => shownAsRecord(c.resourceType));
         const recent = allRecent.filter((r) => shownAsRecord(r.resourceType)).slice(0, 10);

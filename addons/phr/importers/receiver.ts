@@ -4,17 +4,17 @@
  * ./shims.ts); it passes them to PhrManager.importFile, the one door to
  * health records, with the context the run carries.
  *
- * - The run's context goes to core's decision point as it is, a person's or a
+ * - The run's context goes to core's decision point as it is, a user's or a
  *   background job's; core turns it into a subject (ngdpbase#2022). phr never
  *   converts it.
- * - Refused, not stored, when the person hasn't turned health records on or
+ * - Refused, not stored, when the user hasn't turned health records on or
  *   hasn't accepted phr's current terms and privacy policy: an import may come
  *   from a core screen, where phr's own consent paths are never visited.
- * - Originals are kept in the person's own encrypted PHR vault (the `phr`
- *   store), through core's attachment door, by default; the person may
+ * - Originals are kept in the user's own encrypted PHR vault (the `phr`
+ *   store), through core's attachment door, by default; the user may
  *   choose not to (yourphr#968, Jim 2026-10-25). `keepsEncrypted` makes core
  *   call `keepOriginal` during the upload, with the request's context, while
- *   the person's vault key is live (ngdpbase#2034); the run reuses it. Never
+ *   the user's vault key is live (ngdpbase#2034); the run reuses it. Never
  *   `cite` or core's shared files: a health-record file stays in the vault.
  */
 import type { ActorContext, Decision, IceItem, IceReceiver, OriginalKeep, ReceiveOutcome } from '@jwilleke/ngdpbase-types';
@@ -31,10 +31,10 @@ export interface ReceiverDeps {
   healthRecordsOn: HealthRecordsOn;
   /** Core's decision point, handed the run's context as it is. */
   decide: (ctx: ActorContext, request: { action: string }) => Promise<Decision>;
-  /** The phr documents this person has yet to accept at their current version (ConsentManager.pendingFor). */
+  /** The phr documents this user has yet to accept at their current version (ConsentManager.pendingFor). */
   pendingConsent: (username: string) => Promise<unknown[]>;
   /**
-   * Keep one original file in the person's encrypted PHR vault, as `ctx`
+   * Keep one original file in the user's encrypted PHR vault, as `ctx`
    * (core's AttachmentManager, store `phr`), under core's one-time `keep`
    * allowance for this file (ngdpbase#2061); returns the stored file's id.
    * Throws when core refuses (no unlocked key, no permission, too large).
@@ -71,7 +71,7 @@ export function healthRecordsReceiver(deps: ReceiverDeps): IceReceiver {
     name: 'health-records',
     label: 'Health records',
     accepts: [PHR_FILE_KIND],
-    // `types` (ngdpbase#2061): core lets exactly these into the person's own
+    // `types` (ngdpbase#2061): core lets exactly these into the user's own
     // vault for a keep at upload; the site-wide upload list stays as it is.
     originals: { allowed: ['none', 'keep'], default: 'keep', types: KEPT_TYPES },
     keepsEncrypted: true,

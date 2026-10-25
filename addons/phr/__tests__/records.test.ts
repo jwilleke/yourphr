@@ -17,7 +17,7 @@ const onFor = (...names: string[]) => healthRecordsOnFor(() => ({
 }));
 
 describe('plain-language display, nothing guessed', () => {
-  it('names kinds the way people do', () => {
+  it('names kinds the way users do', () => {
     expect(kindName('Observation', 2)).toBe('lab results and measurements');
     expect(kindName('Condition', 1)).toBe('condition');
     expect(kindName('ServiceRequest', 3)).toBe('service request');
@@ -54,7 +54,7 @@ describe('[{PhrRecords}]', () => {
     expect(html).toContain("don't have any health records here yet");
   });
 
-  it('shows what a person has by kind, their newest records, and "not stated" instead of guesses', async () => {
+  it('shows what a user has by kind, their newest records, and "not stated" instead of guesses', async () => {
     for (const r of SYNTHETIC_RECORDS) await phr.write({ subject: alice as never, ipAddress: undefined, enforceDeny: async () => { throw new Error('no'); } }, r, 'synthetic');
     const html = await createPhrRecordsPlugin(() => phr, onFor('alice')).execute!(page(alice), {});
     expect(html).toContain('lab results and measurements');
@@ -63,7 +63,7 @@ describe('[{PhrRecords}]', () => {
     expect(html).not.toContain('Observation');
   });
 
-  it('finds by words, and escapes what the person typed', async () => {
+  it('finds by words, and escapes what the user typed', async () => {
     for (const r of SYNTHETIC_RECORDS) await phr.write({ subject: alice as never, ipAddress: undefined, enforceDeny: async () => { throw new Error('no'); } }, r, 'synthetic');
     const plugin = createPhrRecordsPlugin(() => phr, onFor('alice'));
     expect(await plugin.execute!(page(alice, { q: 'prediab' }), {})).toContain('Prediabetes');

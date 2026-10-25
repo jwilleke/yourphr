@@ -13,7 +13,7 @@ import { fileItem, importFiles, shimFor } from './importHelpers.js';
 const pid = (type: string, id: string, source = 'folder') => localId(`urn:yourphr:source:${source}`, type, id);
 const GLUCOSE = pid('Observation', 'obs-glucose');
 
-// Synthetic records only: no real person, no real provider.
+// Synthetic records only: no real identity, no real provider.
 const patient = { resourceType: 'Patient', id: 'p1', name: [{ family: 'Testperson', given: ['Synthetic'] }] };
 const glucose = (value: number) => ({ resourceType: 'Observation', id: 'obs-glucose', status: 'final', code: { text: 'Glucose' }, valueQuantity: { value, unit: 'mg/dL' } });
 const bundle = (...resources: object[]) => ({ resourceType: 'Bundle', type: 'collection', entry: resources.map((resource) => ({ resource })) });
@@ -84,7 +84,7 @@ describe('importing a file through PhrManager', () => {
     ...extra
   });
 
-  it('imports the records, owned by the person importing, with one audit event per file', async () => {
+  it('imports the records, owned by the user importing, with one audit event per file', async () => {
     const report = await importFiles(phr, caller('alice'), download(112));
     expect(report).toEqual({ created: 2, updated: 0, unchanged: 0, skipped: 0, conflicts: 0 });
     expect((await phr.read(caller('alice'), 'Observation', GLUCOSE))?.resource.valueQuantity).toEqual({ value: 112, unit: 'mg/dL' });
@@ -109,14 +109,14 @@ describe('importing a file through PhrManager', () => {
     expect((await phr.history(caller('alice'), 'Observation', GLUCOSE)).map((r) => r.versionId)).toEqual(['2', '1']);
   });
 
-  it('two people importing the same file keep separate records', async () => {
+  it('two users importing the same file keep separate records', async () => {
     await importFiles(phr, caller('alice'), download(112));
     await importFiles(phr, caller('bob'), download(150));
     expect((await phr.read(caller('alice'), 'Observation', GLUCOSE))?.resource.valueQuantity).toEqual({ value: 112, unit: 'mg/dL' });
     expect((await phr.read(caller('bob'), 'Observation', GLUCOSE))?.resource.valueQuantity).toEqual({ value: 150, unit: 'mg/dL' });
   });
 
-  it('nobody can import into another person\'s records', async () => {
+  it('nobody can import into another user\'s records', async () => {
     await expect(importFiles(phr, caller('bob'), download(112), 'urn:test:alice')).rejects.toThrow(/refused/);
     expect(await phr.read(caller('alice'), 'Observation', GLUCOSE)).toBeUndefined();
   });

@@ -10,7 +10,7 @@ import { readCcda, xmlKind } from '../importers/ccda.js';
 import { readFolderFile } from '../importers/recordsFolder.js';
 import { fileItem, importFiles, shimFor } from './importHelpers.js';
 
-// A synthetic C-CDA document: every person, place and value in it is made up.
+// A synthetic C-CDA document: every user, place and value in it is made up.
 const CCD = readFileSync(new URL('./fixtures/synthetic-ccd.xml', import.meta.url), 'utf8');
 const ok = (xml: string) => {
   const got = readCcda(xml);

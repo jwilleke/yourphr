@@ -5,7 +5,7 @@ import { PHR_MIGRATIONS, PHR_LEDGER_TABLE } from '../managers/migrations.js';
 import { PhrRecordStore, type Db } from '../managers/PhrRecordStore.js';
 import { ownerKey, ownTextQuery } from '../managers/fhirIndex.js';
 
-// yourphr#912: a person's word search matches their own rows only.
+// yourphr#912: a user's word search matches their own rows only.
 const defaults = JSON.parse(readFileSync(new URL('../config/default-config.json', import.meta.url), 'utf8')) as Record<string, unknown>;
 const note = (id: string, text: string) => ({ resourceType: 'Observation', id, status: 'final', code: { text } });
 
@@ -17,7 +17,7 @@ describe('word search reads only the searcher\'s own text', () => {
     expect(ownTextQuery('alice', '  ')).toBe('');
   });
 
-  it('finds the same word for each person in their own records only', () => {
+  it('finds the same word for each user in their own records only', () => {
     const db = openAddonTestDatabase<Db & { close(): void }>('phr', { migrations: PHR_MIGRATIONS, ledgerTable: PHR_LEDGER_TABLE }, { slug: 'phr', defaults });
     const store = new PhrRecordStore(db);
     store.forOwner('alice').put(note('a1', 'Glucose fasting'), 'test');

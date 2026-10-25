@@ -8,8 +8,8 @@
  *   ngdpbase identity model; rows from before are re-keyed at start), and is required:
  *   NOT NULL with no default, and never ''. yourPHR's old store let
  *   `user_id` default to '' (yourphr#812), which left rows nobody owned.
- * - Every primary key and every index starts with `owner`, so one person's
- *   reads never scan another person's rows (yourphr#537, #908, #915).
+ * - Every primary key and every index starts with `owner`, so one user's
+ *   reads never scan another user's rows (yourphr#537, #908, #915).
  * - Tables are prefixed `phr_`, as core requires of an add-on database.
  */
 import type { Migration } from '@jwilleke/ngdpbase-types';

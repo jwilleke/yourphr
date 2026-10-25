@@ -12,7 +12,7 @@ class Refused extends Error {
   constructor(public readonly permission: string, public readonly reason: string | undefined) { super(`refused ${permission}`); }
 }
 
-/** A signed-in caller. `actingFor` makes it a proxy: core sets the subject to the person represented. */
+/** A signed-in caller. `actingFor` makes it a proxy: core sets the subject to the user represented. */
 function caller(username: string | null, opts: { actingFor?: string } = {}): PhrCaller {
   const subject = username === null ? null : ({
     username: opts.actingFor ?? username,
@@ -56,7 +56,7 @@ describe('PhrManager', () => {
   });
   afterEach(() => db.close());
 
-  it('lets a person write and read their own records', async () => {
+  it('lets a user write and read their own records', async () => {
     const phr = make();
     await phr.write(caller('alice'), observation('o1', 'Glucose'), 'folder');
     const got = await phr.read(caller('alice'), 'Observation', 'o1');
@@ -64,7 +64,7 @@ describe('PhrManager', () => {
     expect(got?.versionId).toBe('1');
   });
 
-  it('never lets one person read another person\'s records, by any method', async () => {
+  it('never lets one user read another user\'s records, by any method', async () => {
     const phr = make();
     await phr.write(caller('alice'), observation('o1', 'Glucose'), 'folder');
     await expect(phr.read(caller('bob'), 'Observation', 'o1', 'alice')).rejects.toBeInstanceOf(Refused);
@@ -78,7 +78,7 @@ describe('PhrManager', () => {
     expect((await phr.read(caller('alice'), 'Observation', 'o1'))?.resource.code).toEqual({ text: 'Glucose' });
   });
 
-  it('keeps two people\'s records with the same id apart', async () => {
+  it('keeps two users\'s records with the same id apart', async () => {
     const phr = make();
     await phr.write(caller('alice'), observation('same', 'Alice'), 'epic');
     await phr.write(caller('bob'), observation('same', 'Bob'), 'epic');
@@ -95,7 +95,7 @@ describe('PhrManager', () => {
     await expect(phr.list(caller('alice'), 'Observation')).rejects.toMatchObject({ permission: 'phr-read', reason: 'test-deny' });
   });
 
-  it('lets a proxy act for the person represented, and names the proxy in the audit', async () => {
+  it('lets a proxy act for the user represented, and names the proxy in the audit', async () => {
     const phr = make();
     await phr.write(caller('mom'), observation('o1', 'Blood pressure'), 'folder');
     const got = await phr.read(caller('jim', { actingFor: 'mom' }), 'Observation', 'o1');
@@ -106,7 +106,7 @@ describe('PhrManager', () => {
     expect((last.metadata as Record<string, unknown>).owner).toBe('urn:test:mom'); // the represented user's identity @id
   });
 
-  it('a proxy for one person can\'t reach a third person', async () => {
+  it('a proxy for one user can\'t reach a third user', async () => {
     const phr = make();
     await phr.write(caller('carol'), observation('o1', 'Private'), 'folder');
     await expect(phr.read(caller('jim', { actingFor: 'mom' }), 'Observation', 'o1', 'urn:test:carol')).rejects.toBeInstanceOf(Refused);

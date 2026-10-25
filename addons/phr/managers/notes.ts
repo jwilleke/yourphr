@@ -1,11 +1,11 @@
 /**
- * A person's own note about one of their records (operator decision
+ * A user's own note about one of their records (operator decision
  * 2026-10-21): stored as its own FHIR record, never written into the
  * hospital's. A `Communication` whose `about` points at the record, tagged as
  * patient-generated health data (PGHD), the same tag yourPHR uses for
- * everything a person enters (src/patient-entry/shared.ts, yourphr#806).
+ * everything a user enters (src/patient-entry/shared.ts, yourphr#806).
  * The source record stays exactly as its provider sent it, so re-imports keep
- * working, and a person's words are always told apart from their providers'.
+ * working, and a user's words are always told apart from their providers'.
  * Pure: builds and reads the resource; PhrManager stores it.
  */
 import { randomUUID } from 'node:crypto';
@@ -17,7 +17,7 @@ export const NOTE_MAX_CHARS = 2000;
 
 export interface NoteTarget { resourceType: string; id: string }
 
-/** Who wrote it: the person, or the person acting for them by proxy. Names only what the session states. */
+/** Who wrote it: the user, or the user acting for them by proxy. Names only what the session states. */
 export interface NoteAuthor { username: string; actingFor?: string }
 
 export function buildNote(about: NoteTarget, text: string, author: NoteAuthor, now: Date = new Date()): Record<string, unknown> {

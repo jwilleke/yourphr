@@ -18,7 +18,7 @@ const caller = (username: string, actingFor?: string): PhrCaller => ({
 });
 const a1c = { resourceType: 'Observation', id: 'a1c', status: 'final', code: { text: 'Hemoglobin A1c' }, effectiveDateTime: '2024-09-03', valueQuantity: { value: 5.8, unit: '%' } };
 
-describe('a person\'s notes about their records', () => {
+describe('a user\'s notes about their records', () => {
   let db: Db & { close(): void };
   let audit: Record<string, unknown>[];
   let phr: PhrManager;
@@ -52,7 +52,7 @@ describe('a person\'s notes about their records', () => {
     await expect(phr.addNote(caller('alice'), { resourceType: 'Observation', id: 'a1c' }, 'x'.repeat(2001))).rejects.toMatchObject({ status: 400 });
   });
 
-  it('a proxy\'s note says who wrote it, and belongs to the person represented', async () => {
+  it('a proxy\'s note says who wrote it, and belongs to the user represented', async () => {
     const note = await phr.addNote(caller('jim', 'alice'), { resourceType: 'Observation', id: 'a1c' }, 'Brought this up at the visit');
     expect((note.resource.sender as { display: string }).display).toBe('jim');
     expect(JSON.stringify(note.resource.note)).toContain('acting for alice');

@@ -83,7 +83,7 @@ describe('searching through PhrManager', () => {
     expect(r.records.map((x) => x.id)).toEqual(['g2']);
   });
 
-  it('never returns another person\'s records', async () => {
+  it('never returns another user\'s records', async () => {
     const r = await phr.search(caller('alice'), 'Observation', [{ code: 'code', operator: 'eq', value: '2345-7' }]);
     expect(r.records.map((x) => x.id).sort()).toEqual(['g1', 'g2']);
     expect((await phr.search(caller('bob'), 'Observation', [{ code: 'code', operator: 'eq', value: '2345-7' }])).records.map((x) => x.id)).toEqual(['g9']);

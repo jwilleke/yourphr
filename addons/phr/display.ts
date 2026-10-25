@@ -81,7 +81,7 @@ export function recordValue(resource: Json): string | undefined {
 
 /**
  * Kinds that aren't records in their own right, so lists and counts leave them
- * out: a person's notes (Communication), shown under the record they are about,
+ * out: a user's notes (Communication), shown under the record they are about,
  * and Provenance, which says where a record came from (yourphr#784).
  */
 export const NOT_RECORD_KINDS: readonly string[] = ['Communication', 'Provenance'];

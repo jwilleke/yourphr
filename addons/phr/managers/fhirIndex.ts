@@ -188,7 +188,7 @@ export function textFor(resource: unknown): string {
   return out.join(' ').replace(/\s+/g, ' ').trim().slice(0, MAX_CHARS);
 }
 
-/** A person's words as an FTS5 query: every term required, the last one as a prefix, nothing else interpreted. */
+/** A user's words as an FTS5 query: every term required, the last one as a prefix, nothing else interpreted. */
 export function ftsQuery(q: string): string {
   const terms = q.toLowerCase().split(/[^\p{L}\p{N}]+/u).filter((t) => t.length > 0).slice(0, 12);
   if (terms.length === 0) return '';
@@ -198,14 +198,14 @@ export function ftsQuery(q: string): string {
 /**
  * The owner as one FTS5 token (yourphr#912): a hash, so any username becomes a
  * single token that no other username shares. Indexed in the text table, it
- * lets a search match only that person's rows, instead of matching every
- * person's and filtering afterwards.
+ * lets a search match only that user's rows, instead of matching every
+ * user's and filtering afterwards.
  */
 export function ownerKey(owner: string): string {
   return `k${createHash('sha256').update(owner, 'utf8').digest('hex').slice(0, 32)}`;
 }
 
-/** A person's words, matched in their own text only. '' when there are no words. */
+/** A user's words, matched in their own text only. '' when there are no words. */
 export function ownTextQuery(owner: string, q: string): string {
   const words = ftsQuery(q);
   return words === '' ? '' : `owner_key : "${ownerKey(owner)}" AND body : (${words})`;

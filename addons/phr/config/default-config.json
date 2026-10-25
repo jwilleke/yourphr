@@ -9,7 +9,7 @@
     "ledgerTable": "phr_migrations",
     "encrypt": "required"
   },
-  "_comment_phr_vault": "One PHR vault per person (operator, 2026-10-15; ngdpbase#1559). owner, encrypt, defaultPrivate and shareMaxDays are phr's own and a site can't override them. encrypt is fixed when each person's vault is created. Booleans must be booleans: core refuses to load phr otherwise. Comments and footnotes are off on phr's categories (ngdpbase#1952): a person's notes about a record go into phr.db as patient-entered data, never into core's shared comment tabs. phr-pages holds phr's shared, non-PHI pages.",
+  "_comment_phr_vault": "One PHR vault per user (operator, 2026-10-15; ngdpbase#1559). owner, encrypt, defaultPrivate and shareMaxDays are phr's own and a site can't override them. encrypt is fixed when each user's vault is created. Booleans must be booleans: core refuses to load phr otherwise. Comments and footnotes are off on phr's categories (ngdpbase#1952): a user's notes about a record go into phr.db as patient-entered data, never into core's shared comment tabs. phr-pages holds phr's shared, non-PHI pages.",
   "ngdpbase.system-category": {
     "phr": {
       "label": "PHR",
@@ -33,7 +33,7 @@
     },
     "phr-pages": {
       "label": "phr-pages",
-      "description": "yourPHR's own pages (no health data in them: records are drawn per person from phr.db)",
+      "description": "yourPHR's own pages (no health data in them: records are drawn per user from phr.db)",
       "enabled": true,
       "owner": "phr",
       "storageLocation": {
@@ -51,7 +51,7 @@
   "_comment_step_up": "No phr permission is marked \"step-up\": true (operator decision 2026-10-18): add-ons keep step-up off for now, because a form loses its fields across the fresh sign-in. Core's own step-up window is 60 minutes.",
   "ngdpbase.permissions.definitions": {
     "phr-read": {
-      "description": "Read one's own health records in the phr add-on (or a represented person's, under a proxy grant)",
+      "description": "Read one's own health records in the phr add-on (or a represented user's, under a proxy grant)",
       "label": "See my health records",
       "icon": "notes-medical",
       "color": "#0d6efd",
@@ -84,7 +84,7 @@
       }
     },
     "phr-migrate": {
-      "description": "Move each person's records from yourPHR into their own health record, once, at cutover (yourphr#969). Held only by the scheduled job phr.migrate-yourphr",
+      "description": "Move each user's records from yourPHR into their own health record, once, at cutover (yourphr#969). Held only by the scheduled job phr.migrate-yourphr",
       "label": "Move records in from yourPHR",
       "icon": "notes-medical",
       "color": "#6c757d",
@@ -99,7 +99,7 @@
     {
       "id": "phr-access",
       "name": "Health records",
-      "description": "Who may use phr at all: every person, through the role vault-owner that every account holds (ngdpbase#1539, operator 2026-10-24: a permission over a person's own records goes to vault-owner, never to site roles). Whose records a person may see is not decided here: phr reads each record's owner from storage and core decides (owner rule, then policy). The resource type becomes phr-record once phr declares it (ngdpbase#1823).",
+      "description": "Who may use phr at all: every user, through the role vault-owner that every account holds (ngdpbase#1539, operator 2026-10-24: a permission over a user's own records goes to vault-owner, never to site roles). Whose records a user may see is not decided here: phr reads each record's owner from storage and core decides (owner rule, then policy). The resource type becomes phr-record once phr declares it (ngdpbase#1823).",
       "priority": 90,
       "effect": "allow",
       "subjects": [

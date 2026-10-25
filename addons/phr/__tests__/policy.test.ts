@@ -5,8 +5,8 @@ const defaults = JSON.parse(readFileSync(new URL('../config/default-config.json'
 const policies = defaults['ngdpbase.access.policies'] as Array<{ id: string; effect: string; subjects: { type: string; value: string }[]; actions: string[] }>;
 
 describe("phr's access policy", () => {
-  // Operator decision 2026-10-24 (ngdpbase#1539): a permission over a person's own
-  // records goes to every person through the role vault-owner, never to site roles
+  // Operator decision 2026-10-24 (ngdpbase#1539): a permission over a user's own
+  // records goes to every user through the role vault-owner, never to site roles
   // and never to an `authenticated` subject. PhrManager still checks the owner.
   it('grants phr-read, phr-write and phr-delete to vault-owner, and to nothing else', () => {
     const phr = policies.filter((p) => p.actions.some((a) => ['phr-read', 'phr-write', 'phr-delete'].includes(a)));
@@ -17,7 +17,7 @@ describe("phr's access policy", () => {
   });
 
   // yourphr#969 (operator 2026-10-25): the move from yourPHR writes into each
-  // person's own record as the scheduled job, never as a role or a person.
+  // user's own record as the scheduled job, never as a role or a user.
   it('grants phr-migrate to the migration job alone, plus identity-read to find each user\'s @id, and nothing else to it', () => {
     const migrate = policies.filter((p) => p.actions.includes('phr-migrate'));
     expect(migrate.map((p) => p.id)).toEqual(['phr-migrate-job']);

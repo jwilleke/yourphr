@@ -8,14 +8,14 @@ import { createPhrWelcomePlugin } from '../plugins/PhrWelcomePlugin.js';
 
 const defaults = JSON.parse(readFileSync(new URL('../config/default-config.json', import.meta.url), 'utf8')) as Record<string, unknown>;
 
-/** A stand-in for core's AddonsManager.enabledAddonsFor: phr is on for the people named. */
+/** A stand-in for core's AddonsManager.enabledAddonsFor: phr is on for the users named. */
 const onFor = (...names: string[]) => healthRecordsOnFor(() => ({
   enabledAddonsFor: async (ctx) => (names.includes(String((ctx as { username?: string }).username)) ? ['forms', 'phr'] : ['forms'])
 }));
 const alice = { username: 'alice', roles: ['reader'], isAuthenticated: true } as unknown as ActorContext;
 
 describe('the "Health records" switch', () => {
-  it('is on only when core lists phr among the person\'s add-ons', async () => {
+  it('is on only when core lists phr among the user\'s add-ons', async () => {
     expect(await onFor('alice')(alice)).toBe(true);
     expect(await onFor('bob')(alice)).toBe(false);
     expect(await healthRecordsOnFor(() => null)(alice)).toBe(false);
@@ -38,7 +38,7 @@ describe('the "Health records" switch', () => {
     expect(calls).toEqual([]);
   });
 
-  it('turns on and off through core\'s setter, for the person saving', async () => {
+  it('turns on and off through core\'s setter, for the user saving', async () => {
     const calls: [unknown, boolean][] = [];
     const host = buildAddonHost('phr', defaults, async (ctx, on) => { calls.push([ctx, on]); });
     await saveProfileSection(host.setEnabledForPerson, alice, { [PHR_RENDERED]: '1', [PHR_ENABLED]: 'on' });
@@ -57,7 +57,7 @@ describe('the PHR vault declaration', () => {
     expect(category.default).not.toBe(true);
   });
 
-  it('keeps one vault per person, with the slug as the vault id', () => {
+  it('keeps one vault per user, with the slug as the vault id', () => {
     expect((category.storageLocation as Record<string, string>).privatestore).toBe('pages/vaults/{user}/phr/');
   });
 });
@@ -107,7 +107,7 @@ describe('[{PhrWelcome}]', () => {
     expect(await plugin.execute!(page(undefined), {})).toContain('Sign in');
   });
 
-  it('points a person with health records off to their profile', async () => {
+  it('points a user with health records off to their profile', async () => {
     const plugin = createPhrWelcomePlugin(onFor());
     expect(await plugin.execute!(page({ username: 'bob', isAuthenticated: true }), {})).toContain('href="/profile"');
   });

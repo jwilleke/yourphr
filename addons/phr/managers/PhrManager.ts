@@ -7,16 +7,16 @@
  * PhrManager decides nothing itself: every call goes through `access()`,
  * which
  *   1. asks core's decision point (the PDP) about the action,
- *   2. checks the owner — the person the records are about — against the
+ *   2. checks the owner — the user the records are about — against the
  *      caller (interim rule, replaced by core's owner rule in ngdpbase#1823),
  *   3. refuses or allows, and records an audit event either way, carrying
- *      the owner (the person's access view is built from these), and only then
+ *      the owner (the user's access view is built from these), and only then
  *   4. hands the work a store handle bound to that owner.
  *
  * The owner is never taken from the request body or URL as authority: a call
  * names whose records it wants, and the door checks that name; the store
  * handle then only ever touches that owner's rows. Under a proxy grant core
- * makes the subject the person represented, so "owner = subject" lets Jim
+ * makes the subject the user represented, so "owner = subject" lets Jim
  * act for Mom within her grant, and the audit names Jim as the actor.
  */
 import type { ActorContext, AddonHost, AuditEvent, Decision, PermissionSubject } from '@jwilleke/ngdpbase-types';
@@ -40,7 +40,7 @@ export interface FileImportReport {
 
 /**
  * The caller (only what the door uses): core's ApiContext for a request, or
- * the context an import run carries, a person's or a background job's.
+ * the context an import run carries, a user's or a background job's.
  */
 export interface PhrCaller {
   readonly subject: ActorContext | null;
@@ -88,14 +88,14 @@ const refusedOwner: Decision = { permit: false, applicable: true, reason: 'not-t
 export class PhrManager {
   constructor(private readonly deps: PhrManagerDeps) {}
 
-  /** The person this caller acts as: themselves, or the person a proxy grant represents. */
+  /** The user this caller acts as: themselves, or the user a proxy grant represents. */
   private subjectName(caller: PhrCaller): string | null {
     const subject = caller.subject;
     if (!subject) return null;
     const name = subject.username;
     if (typeof name !== 'string' || name === '') return null;
     // A request's subject says whether it signed in. A job's context names the
-    // person it runs for and is never anonymous; core's PDP has already decided it.
+    // user it runs for and is never anonymous; core's PDP has already decided it.
     return !('isAuthenticated' in subject) || subject.isAuthenticated === true ? name : null;
   }
 
@@ -162,7 +162,7 @@ export class PhrManager {
     return this.access(caller, 'phr-read', target, (h) => h.read(resourceType, id));
   }
 
-  /** One kind of a person's records, newest first. A refusal is a refusal, never an empty list. */
+  /** One kind of a user's records, newest first. A refusal is a refusal, never an empty list. */
   async list(caller: PhrCaller, resourceType: string, owner?: string): Promise<StoredRecord[]> {
     const target = { owner, resourceType };
     return this.access(caller, 'phr-read', target, (h) => h.list(resourceType));
@@ -173,26 +173,26 @@ export class PhrManager {
     return this.access(caller, 'phr-read', target, (h) => h.history(resourceType, id));
   }
 
-  /** One kind of a person's records matching every filter (FHIR search parameters), newest first. */
+  /** One kind of a user's records matching every filter (FHIR search parameters), newest first. */
   async search(caller: PhrCaller, resourceType: string, filters: readonly SearchFilter[], page?: { count?: number; offset?: number }, owner?: string): Promise<{ total: number; records: StoredRecord[] }> {
     const target = { owner, resourceType };
     return this.access(caller, 'phr-read', target, (h) => h.search(resourceType, filters, page));
   }
 
-  /** A person's records whose words match, any kind. */
+  /** A user's records whose words match, any kind. */
   async findText(caller: PhrCaller, query: string, limit?: number, owner?: string): Promise<StoredRecord[]> {
     const target = { owner, resourceType: 'text-search' };
     return this.access(caller, 'phr-read', target, (h) => h.findText(query, limit));
   }
 
-  /** What a person holds, at a glance: counts by kind and the newest records. One door call. */
+  /** What a user holds, at a glance: counts by kind and the newest records. One door call. */
   async overview(caller: PhrCaller, recentLimit = 10, owner?: string): Promise<{ counts: { resourceType: string; count: number }[]; recent: StoredRecord[] }> {
     const target = { owner, resourceType: 'overview' };
     return this.access(caller, 'phr-read', target, (h) => ({ counts: h.countsByType(), recent: h.recent(recentLimit, NOT_RECORD_KINDS) }));
   }
 
   /**
-   * A person's note about one of their records, stored as its own record
+   * A user's note about one of their records, stored as its own record
    * (a patient-entered Communication). Refused if the record isn't theirs or
    * doesn't exist; the note's text is never audited.
    */
@@ -204,14 +204,14 @@ export class PhrManager {
     const viaProxy = (caller.subject as { viaProxy?: { actor?: string } } | null)?.viaProxy?.actor;
     return this.access(caller, 'phr-write', target, (h) => {
       if (!h.read(about.resourceType, about.id)) throw new StoreError(404, 'that record was not found');
-      // The note names users by their sign-in names, a label for people to read; the record is keyed by @id.
+      // The note names users by their sign-in names, a label for users to read; the record is keyed by @id.
       const named = caller.subject?.username ?? '';
       const author = viaProxy ? { username: viaProxy, actingFor: named } : { username: named };
       return h.put(buildNote(about, words, author), NOTE_SOURCE);
     });
   }
 
-  /** A person's notes, grouped by the record each is about ("Type/id"), newest first. */
+  /** A user's notes, grouped by the record each is about ("Type/id"), newest first. */
   async notes(caller: PhrCaller, owner?: string): Promise<Map<string, StoredRecord[]>> {
     const target = { owner, resourceType: 'Communication' };
     return this.access(caller, 'phr-read', target, (h) => {
@@ -273,7 +273,7 @@ export class PhrManager {
 
   /**
    * The one-time move from yourPHR into phr (yourphr#969): one source file's
-   * records into the health record of the person the source names. Only the
+   * records into the health record of the user the source names. Only the
    * scheduled migration job may do it: core's decision point grants
    * `phr-migrate` to that job alone (phr's own policy, job subject
    * `phr.migrate-yourphr`), so the job writes into `owner` without being the

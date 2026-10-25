@@ -1,6 +1,6 @@
 /**
  * DEVELOPMENT ONLY. Loads a small set of made-up health records for the
- * signed-in person on a local test site, so the records page has something
+ * signed-in user on a local test site, so the records page has something
  * to show while real imports wait on core's upload (ngdpbase#1855).
  *
  * - Never in the published package: package.json's `files` leaves dev/ out,
@@ -9,8 +9,8 @@
  *   `ngdpbase.addons.phr.dev-seed` is true AND the site's base URL is
  *   localhost or *.localhost.
  * - Writes through PhrManager like any other write (the one door, audited),
- *   owned by the person asking, from the source "synthetic".
- * - No real person: every name, value and date below is invented.
+ *   owned by the user asking, from the source "synthetic".
+ * - no real identity: every name, value and date below is invented.
  */
 import type { Application, Request, Response } from 'express';
 import type { AddonHost, WikiEngine } from '@jwilleke/ngdpbase-types';

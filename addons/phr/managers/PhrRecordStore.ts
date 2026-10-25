@@ -61,7 +61,7 @@ function withoutMeta(resource: Record<string, unknown>): string {
   return JSON.stringify(rest);
 }
 
-/** One person's records. Every method is bound to the owner the handle was made for. */
+/** One user's records. Every method is bound to the owner the handle was made for. */
 export interface OwnerHandle {
   readonly owner: string;
   read(resourceType: string, id: string): StoredRecord | undefined;
@@ -273,7 +273,7 @@ export class PhrRecordStore {
         ).all(owner, ...except, Math.min(Math.max(limit, 1), 200)) as Row[]).map(toRecord);
       },
       findText(query, limit = 50) {
-        // Matched in this person's rows only (yourphr#912); t.owner is still checked exactly.
+        // Matched in this user's rows only (yourphr#912); t.owner is still checked exactly.
         const match = ownTextQuery(owner, query);
         if (match === '') return [];
         const rows = db.prepare(

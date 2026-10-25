@@ -28,7 +28,7 @@ export function mountApi(app: Application, engine: WikiEngine, host: AddonHost, 
     })();
   });
 
-  // A person's note about one of their records (stored as patient-entered data).
+  // A user's note about one of their records (stored as patient-entered data).
   // JSON { resourceType, id, text }; core's CSRF check applies (X-CSRF-Token).
   app.post('/api/phr/notes', (req: Request, res: Response) => {
     void (async () => {

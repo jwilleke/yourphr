@@ -7,8 +7,8 @@
  *   - /api/phr/whoami answers who is signed in, through ngdpbase's own sign-in;
  *   - [{PhrWelcome}] draws inside ngdpbase's page layout;
  *   - the "My Health Records" page is seeded;
- *   - each person turns health records on in /profile (off until they do);
- *   - the PHR vault (one per person, encrypted) is declared in config.
+ *   - each user turns health records on in /profile (off until they do);
+ *   - the PHR vault (one per user, encrypted) is declared in config.
  * No records, no PHI, no database yet.
  *
  * ngdpbase hands the add-on its tools as the third argument of register()
@@ -55,7 +55,7 @@ let records: PhrManager | null = null;
 export function phrRecords(): PhrManager | null {
   return records;
 }
-/** Is phr on for this person? Core's answer (AddonsManager.enabledAddonsFor, ngdpbase#1963). */
+/** Is phr on for this user? Core's answer (AddonsManager.enabledAddonsFor, ngdpbase#1963). */
 const healthRecordsOn = healthRecordsOnFor(() => engineRef?.getManager<PersonSwitchReader>('AddonsManager'));
 
 /**
@@ -99,7 +99,7 @@ async function registerNoteForm(engine: WikiEngine, tools: AddonHost): Promise<v
 
 /**
  * phr's own terms and privacy policy (pages/phr-*.md), through core's
- * ConsentManager (ngdpbase#1603): a person accepts both before their health
+ * ConsentManager (ngdpbase#1603): a user accepts both before their health
  * records switch turns on, and again when phr raises a document's version.
  * The paths are where phr is used, so a new version is asked there.
  */
@@ -117,7 +117,7 @@ function registerConsent(engine: WikiEngine, tools: AddonHost): void {
 /**
  * phr on ngdpbase's import engine (ICE, ngdpbase#1979): its FHIR and C-CDA
  * shims, and its receiver, the door to health records. The engine owns files,
- * fingerprints and status; a person starts an import from core's import
+ * fingerprints and status; a user starts an import from core's import
  * screen, /import (ngdpbase#2021), linked from My Health Records. Names are
  * declared in package.json's manifest.
  */
@@ -131,7 +131,7 @@ function registerImport(engine: WikiEngine, tools: AddonHost, decide: (ctx: Acto
     keepInVault: async (file, ctx, keep) => {
       const attachments = engine.getManager<AttachmentManagerLike>('AttachmentManager');
       if (!attachments) throw new Error("ngdpbase's AttachmentManager is not available");
-      // The person's own PHR vault (system category `phr`, encrypted per person).
+      // The user's own PHR vault (system category `phr`, encrypted per user).
       const stored = await attachments.uploadAttachment(file.bytes,
         { originalName: file.name, mimeType: file.mediaType ?? 'application/octet-stream', size: file.bytes.length, ...(file.mediaType ? { mediaType: file.mediaType } : {}) },
         // `keep`: core's one-time allowance for this original, phr's vault only (ngdpbase#2061).
@@ -190,7 +190,7 @@ const PhrAddon = {
     const pdp = engine.getManager<PolicyDecisionPoint>('PolicyDecisionPoint');
     if (!pdp) throw new Error("ngdpbase's PolicyDecisionPoint is not available");
     const auditSink = engine.getManager<Parameters<AddonHost['recordAuditEvent']>[0]>('AuditManager');
-    // Core's decide takes any ActorContext, a person's or a background job's,
+    // Core's decide takes any ActorContext, a user's or a background job's,
     // and makes the subject itself (ngdpbase#2022). phr never converts it.
     const decide = (ctx: ActorContext | null, request: { action: string }) => pdp.decide(ctx, request);
     const consentForGate = engine.getManager<ConsentManager>('ConsentManager');
@@ -199,9 +199,9 @@ const PhrAddon = {
     records = new PhrManager({
       store,
       decide,
-      // A person's records stay out of reach until they have turned health
+      // A user's records stay out of reach until they have turned health
       // records on and accepted phr's current terms (yourphr#969: records moved
-      // in from yourPHR wait for each person's own opt-in).
+      // in from yourPHR wait for each user's own opt-in).
       // phr keys every record by the user's identity @id, never the username
       // (ngdpbase identity model). actorOf(ctx).user is the account acted on:
       // under a proxy grant, the represented user.
