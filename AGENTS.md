@@ -173,10 +173,10 @@ cd frontend && ng test --include='**/badge.component.spec.ts'
 
 Built on the ngdpbase model ([#608](https://github.com/jwilleke/yourphr/issues/608)) — read [`architecture-principles-typescript.md`](https://github.com/jwilleke/ngdpbase/blob/master/docs/planning/architecture-principles-typescript.md) (in ngdpbase) before changing any of it.
 
-- __Entry point__: `src/main.ts` — a subcommand layer ([#654](https://github.com/jwilleke/yourphr/issues/654)) over `src/cli/`: `start` (the default), `migrate`, `reset-password`, `version`, `help`. An unknown command exits non-zero and never starts a server.
+- __Entry point__: `src/main.ts` — a subcommand layer ([#654](https://github.com/jwilleke/yourphr/issues/654)) over `src/cli/`: `start` (the default), `migrate`, `reset-password`, `compact` and `reindex` (both with the server stopped), `version`, `help`. An unknown command exits non-zero and never starts a server.
 - __Composition root__: `src/app.ts` — `openStores()` and `assembleApp()` build the engine, its managers in dependency order, and the providers configuration selects.
 - __Web layer__: `src/server.ts` — routes, the session cookie, the access-log hook, and the demo read-only guard.
-- __The manager rule__: a resource has exactly one door. Managers live in `src/framework/managers/` (configuration, users, sessions, audit, backups, jobs, settings, database) and `src/app/managers/` (records, sources, catalog, glossary, demo). Providers behind them are chosen by configuration and are the only code that touches a store. `npm run check:store` fails CI if that is breached.
+- __The manager rule__: a resource has exactly one door. Managers live in `src/framework/` (`ConfigurationManager`) and `src/framework/managers/` (users, sessions, agent tokens, policy, audit, backups, background jobs, jobs, settings, database, email, notifications, filter), and in `src/app/managers/` (records, sources, catalog, glossary, lookups, demo). Providers behind them are chosen by configuration and are the only code that touches a store. `npm run check:store` fails CI if that is breached.
 - __Request context__: `src/framework/ApiContext.ts` — who is asking, on every manager call.
 - __Records__: `src/app/providers/SqliteRecordsProvider.ts` over `records.db`; the app database is `spike.db` (a name [#676](https://github.com/jwilleke/yourphr/issues/676) still owes you).
 - __Migration from Go__: `src/migrate/` — one-way, idempotent, and its exit criterion is a record-for-record verification rather than a successful import.
