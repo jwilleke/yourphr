@@ -82,7 +82,7 @@
     "eslint": "^10",
     "fishery": "^2.4.0",
     "istanbul-lib-instrument": "^6.0.3",
-    "jasmine-core": "~6.3.0",
+    "jasmine-core": "~7.0.2",
     "jasmine-spec-reporter": "~7.0.0",
     "karma": "~6.4.4",
     "karma-chrome-launcher": "~3.2.0",
