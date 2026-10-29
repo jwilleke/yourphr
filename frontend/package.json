@@ -96,7 +96,7 @@
     "storybook": "^10.6.3",
     "ts-node": "~9.1.1",
     "typescript": "~6.0.3",
-    "typescript-eslint": "8.71.2"
+    "typescript-eslint": "8.72.0"
   },
   "resolutions": {
     "webpack": "5.105.0",
