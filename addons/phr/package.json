@@ -45,7 +45,7 @@
     "typecheck": "tsc -p tsconfig.test.json"
   },
   "devDependencies": {
-    "@jwilleke/ngdpbase-types": "5.38.0",
+    "@jwilleke/ngdpbase-types": "5.39.0",
     "@medplum/fhirtypes": "5.2.7",
     "@types/node": "^24.19.1",
     "typescript": "^6.0.3",
