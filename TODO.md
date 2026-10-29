@@ -4,7 +4,7 @@ Open work in [jwilleke/yourphr](https://github.com/jwilleke/yourphr), ranked. Ge
 
 ## 🔴 P0 — Security & Critical
 
-- [#979](https://github.com/jwilleke/yourphr/issues/979) — [security] body-parser + multer — DoS advisories in the phr add-on lockfile (high, dev-only via ngdpbase-types)
+*None.*
 
 ## 🟣 Epics
 
@@ -80,6 +80,7 @@ Open work in [jwilleke/yourphr](https://github.com/jwilleke/yourphr), ranked. Ge
 
 - [#983](https://github.com/jwilleke/yourphr/issues/983) — [security] qs — stringify DoS in the frontend lockfile (medium, dev-only)
 - [#982](https://github.com/jwilleke/yourphr/issues/982) — [security] undici — 4 advisories in the frontend lockfile (3 high, 1 medium, dev-only)
+- [#979](https://github.com/jwilleke/yourphr/issues/979) — [security] body-parser + multer — DoS advisories in the phr add-on lockfile (high, dev-only via ngdpbase-types)
 - [#978](https://github.com/jwilleke/yourphr/issues/978) — [security] nodemailer — 5 addressparser and SMTP AUTH advisories (moderate, root, runtime)
 - [#977](https://github.com/jwilleke/yourphr/issues/977) — [security] re2js — quadratic-time DoS in lookbehind matching (high, root, dev-only)
 - [#896](https://github.com/jwilleke/yourphr/issues/896) — [security] katex — 1 open advisory in the root lockfile (low)
