@@ -106,7 +106,7 @@
     "@angular-devkit/build-angular/http-proxy-middleware": "^3.0.7",
     "webpack-dev-server/http-proxy-middleware": "^2.0.10",
     "piscina": "^5.2.0",
-    "undici": "^6.28.1",
+    "undici": "^6.29.1",
     "postcss": "^8.5.23",
     "fast-uri": "^3.1.9",
     "socket.io-parser": "^4.2.7",
@@ -128,7 +128,7 @@
     "engine.io": "^6.6.10",
     "@hono/node-server": "^2.0.12",
     "brace-expansion": "^2.1.7",
-    "qs": "^6.16.0",
+    "qs": "^6.16.1",
     "**/make-dir/semver": "^5.7.2"
   }
 }

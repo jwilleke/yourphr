@@ -96,6 +96,8 @@
     "vitest": "^5.0.5"
   },
   "overrides": {
-    "csv-parse": "7.0.2"
+    "csv-parse": "7.0.2",
+    "re2js": "^2.8.7",
+    "katex": "^0.18.2"
   }
 }
