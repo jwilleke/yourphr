@@ -60,6 +60,31 @@ What it means for yourPHR:
 - A commercial app vendor building on TEFCA IAS plus Epic ID is a signal that this is the scaled patient path at Epic. The direct route (per-organization SMART, see [#924](https://github.com/jwilleke/yourphr/issues/924)) remains the one that works today.
 - Add to the QHIN questions in __Next step__: whether MyChart Central is offered to IAS Providers in production, and through which QHINs.
 
+## Who is an IAS Provider today
+
+As of 2026-10-29, the RCE's [TEFCA for Individuals](https://rce.sequoiaproject.org/rce-tefca-for-individuals/) page lists __26 IAS Providers__.
+
+- __3 are bidirectional__ (they fetch records and also share them): Doctronic, Fasten Health, and Health 100 Personal Health Records.
+- __23 are request-only__ (they fetch, they don't share). Among them: b.well, Flexpa, HealthEx, Guava Health, SEQSTER, xCures, Consolidate Health, "SMART IAS", and several AI and legal-records companies.
+- __Not on the list:__ Unblock Health, which announced TEFCA access with Health Gorilla and CLEAR in 2024, and Evidation.
+
+How live it is:
+
+- IAS SOP v3.0 took effect 2026-08-03. After the rollout, IAS traffic broke in early October and the RCE declared it restored on 2026-10-26, with some networks still troubleshooting ([RCE status](https://rce.sequoiaproject.org/current-status-of-ias-sop-version-3-0/)).
+- The RCE connections map (last updated September 2026) showed only a few IAS Providers as live: Citizen.health, Doctronic, eHealth Technologies and Solverein.
+- __CLEAR__ recurs as the IAL2 identity verifier (xCures, Unblock Health).
+
+Epic's side:
+
+- __Register once.__ An IAS app contracts with a QHIN and registers once with __Epic Nexus__; its client ID then syncs to every Epic Nexus participant that supports FHIR-based IAS ([open.epic](https://open.epic.com/Home/Interoperate/TEFCA/IAS)). Compare the 522 × 2 per-organization activations on the direct route ([#924](https://github.com/jwilleke/yourphr/issues/924)).
+- __Precedent:__ HealthEx and Epic have turned on patient-directed access over TEFCA.
+
+What it means for yourPHR:
+
+- Every listed IAS Provider is a company with a contract. No free or open-source IAS Provider was found; yourPHR would be the first.
+- __Health 100 Personal Health Records__ is the closest match: a PHR, and one of only 3 bidirectional providers. Worth learning how it's structured and priced.
+- __"SMART IAS"__ is unidentified. If it's a shared IAS service for SMART apps, it could be a way in without yourPHR becoming an IAS Provider itself.
+
 ## Costs and catches
 
 - __Fees:__ who can charge whom.
@@ -82,6 +107,12 @@ What it means for yourPHR:
 
 An investigation, not a build: ask two QHINs (for example Epic Nexus and Health Gorilla), and the RCE, whether a free, open-source, self-hosted patient app can be an IAS Provider, on what terms and at what cost, and how identity proofing works for it. Record the answers here.
 
+Also ask:
+
+- Epic Nexus: whether register-once applies to a self-hosted app with one central IAS registration.
+- Health 100 Personal Health Records: how a PHR operates as a bidirectional IAS Provider.
+- The RCE: who or what "SMART IAS" is, and whether apps can use it.
+
 ## Sources
 
 - The Sequoia Project, RCE: <https://rce.sequoiaproject.org>
@@ -94,3 +125,9 @@ An investigation, not a build: ask two QHINs (for example Epic Nexus and Health 
 - RCE, frequently asked questions: <https://rce.sequoiaproject.org/rce/faqs/>
 - eHealth Exchange, TEFCA FAQs: <https://ehealthexchange.org/tefca-faqs/>
 - Fasten Health newsletter, "Epic ID and MyChart Central Support for TEFCA" (email, 2026-10-28)
+- RCE, TEFCA for Individuals (IAS Provider list): <https://rce.sequoiaproject.org/rce-tefca-for-individuals/>
+- RCE, current status of IAS SOP v3.0: <https://rce.sequoiaproject.org/current-status-of-ias-sop-version-3-0/>
+- RCE, TEFCA connections map: <https://rce.sequoiaproject.org/tefca-map-search/>
+- Health Gorilla, Unblock Health collaboration (2024): <https://healthgorilla.com/blog/unblock-health-and-health-gorilla-announce-collaboration-to-enhance-patient-data-access-through-tefca>
+- CMS, xCures pledge demo: <https://www.cms.gov/initiatives/health-technology-ecosystem/overview/pledge-demo-showcase/xcures>
+- Healthcare IT News, HealthEx and Epic patient-directed access: <https://www.healthcareitnews.com/news/healthex-epic-turn-patient-directed-access-medical-records>
