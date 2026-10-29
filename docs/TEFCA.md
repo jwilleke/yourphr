@@ -49,6 +49,17 @@ Epic describes an IAS app joining by contracting with a QHIN, getting an entry i
 | The patient has to know which hospitals hold their records | The __record locator finds them__ |
 | The patient signs in at each hospital's portal | The patient proves who they are __once__ |
 
+### Epic ID and MyChart Central in an IAS flow
+
+__MyChart Central__ is Epic's single sign-on for MyChart: one __Epic ID__ that is linked to a patient's MyChart accounts at several organizations. Fasten Health announced on 2026-10-28 that its TEFCA IAS flow supports it. The patient signs in once with their Epic ID, picks the healthcare organizations linked to their MyChart, and authorizes all of them to share records in one pass. Fasten describes it as available for testing, with limited production support.
+
+What it means for yourPHR:
+
+- It removes the last "sign in at each hospital" step for Epic organizations, which even dynamic client registration on the direct SMART route doesn't (one MyChart sign-in per organization).
+- It's reached through TEFCA IAS, so it carries the same contract, identity-proofing and cost questions below.
+- A commercial app vendor building on TEFCA IAS plus Epic ID is a signal that this is the scaled patient path at Epic. The direct route (per-organization SMART, see [#924](https://github.com/jwilleke/yourphr/issues/924)) remains the one that works today.
+- Add to the QHIN questions in __Next step__: whether MyChart Central is offered to IAS Providers in production, and through which QHINs.
+
 ## Costs and catches
 
 - __Fees:__ who can charge whom.
@@ -82,3 +93,4 @@ An investigation, not a build: ask two QHINs (for example Epic Nexus and Health 
 - RCE, 11th QHIN designated (Oracle Health): <https://rce.sequoiaproject.org/new-designated-qhin-new-sops-and-more/>
 - RCE, frequently asked questions: <https://rce.sequoiaproject.org/rce/faqs/>
 - eHealth Exchange, TEFCA FAQs: <https://ehealthexchange.org/tefca-faqs/>
+- Fasten Health newsletter, "Epic ID and MyChart Central Support for TEFCA" (email, 2026-10-28)
