@@ -80,7 +80,7 @@
     "dotenv": "^17.4.2",
     "fhirpath": "^5.1.1",
     "markdown-it": "^15.0.3",
-    "nodemailer": "^10.0.12"
+    "nodemailer": "^10.3.1"
   },
   "devDependencies": {
     "@levischuck/tiny-cbor": "^0.3.6",
@@ -90,7 +90,7 @@
     "@types/smtp-server": "^3.5.13",
     "@vitest/coverage-v8": "^5.0.5",
     "markdownlint-cli2": "^0.24.0",
-    "smtp-server": "^3.19.15",
+    "smtp-server": "^3.21.3",
     "tsx": "^4.19.2",
     "typescript": "^7.0.2",
     "vitest": "^5.0.5"
