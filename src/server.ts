@@ -276,6 +276,37 @@ function serveStatic(webDir: string, pathname: string, res: ServerResponse): voi
   createReadStream(file).pipe(res);
 }
 
+/** Reads a JSON body up to `maxBytes`. Over the cap, or not JSON, resolves undefined and sets `tooLarge` when the cap was the reason. */
+function readJsonBodyCapped(req: IncomingMessage, maxBytes: number): Promise<{ body?: Record<string, unknown>; tooLarge: boolean }> {
+  return new Promise((resolve) => {
+    const chunks: Buffer[] = [];
+    let size = 0;
+    let tooLarge = false;
+    req.on('data', (chunk: Buffer) => {
+      size += chunk.length;
+      if (size > maxBytes) {
+        tooLarge = true;
+        req.destroy();
+        return;
+      }
+      chunks.push(chunk);
+    });
+    req.on('end', () => {
+      if (tooLarge) {
+        resolve({ tooLarge: true });
+        return;
+      }
+      try {
+        resolve({ body: JSON.parse(Buffer.concat(chunks).toString('utf8')) as Record<string, unknown>, tooLarge: false });
+      } catch {
+        resolve({ tooLarge: false });
+      }
+    });
+    req.on('error', () => resolve({ tooLarge }));
+    req.on('close', () => { if (tooLarge) resolve({ tooLarge: true }); });
+  });
+}
+
 /** Reads a small JSON body; refuses anything over 64KB — sign-in bodies have no reason to be big. */
 function readJsonBody(req: IncomingMessage): Promise<Record<string, unknown> | undefined> {
   return new Promise((resolve) => {
@@ -960,6 +991,7 @@ export function createYourPhrServer(options: ServerOptions) {
           // the account itself (consent goes with it). Order matters — each door is asked in turn.
           if (engine.has('sources')) await engine.managers.sources.removeAll(ctx);
           await engine.managers.records.removeAll(ctx);
+          if (engine.has('health')) await engine.managers.health.removeForUser(ctx);
           if (engine.has('audit')) await engine.managers.audit.removeForUser(ctx);
           await users.deleteSelf(ctx);
           res.setHeader('Set-Cookie', sessionCookie('', 0, auth.secureCookies ?? false));
@@ -1007,6 +1039,35 @@ export function createYourPhrServer(options: ServerOptions) {
           jobType: url.searchParams.get('jobType') ?? undefined,
         };
         send(res, 200, {success: true, data: await engine.managers.jobs.forUser(ctx, query)});
+        return;
+      }
+
+      // Wearable samples (yourphr#314). Off unless yourphr.health.enabled, in which case the manager
+      // exists. A signed-in person may submit a batch. A device key is refused here: the device
+      // scope contract is not settled, and this route must not become a background upload.
+      if (auth && engine.has('health') && url.pathname === '/api/secure/health/samples' && req.method === 'POST') {
+        if (ctx.viaToken) {
+          send(res, 403, {success: false, error: 'a connected device cannot upload samples; device intake is not available'});
+          return;
+        }
+        if (engine.has('demo')) engine.managers.demo.refuseWrite(ctx, 'ingesting health samples');
+        const uploaded = await readJsonBodyCapped(req, 8 * 1024 * 1024);
+        if (uploaded.tooLarge) {
+          send(res, 413, {success: false, error: 'request body too large'});
+          return;
+        }
+        if (!uploaded.body) {
+          send(res, 400, {success: false, error: 'invalid request'});
+          return;
+        }
+        const body = uploaded.body;
+        send(res, 200, {success: true, data: await engine.managers.health.ingest(ctx, {
+          device: body['device'] as { device_id?: unknown; name?: unknown } | undefined,
+          samples: body['samples'],
+          anchors: body['anchors'],
+          resourceType: body['resourceType'],
+          entry: body['entry'],
+        })});
         return;
       }
 

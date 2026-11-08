@@ -445,8 +445,10 @@ export async function openStores(dataDir: string, env: Record<string, string | u
   // resolved path's filesystem and is yourphr#628.
   const appDbPath = config.getString('yourphr.database.location');
   const recordsDbPath = config.getString('yourphr.records.location');
-  // Raw connected-device samples (yourphr#805, #314). Nothing opens it yet; it is placed, guarded and backed up from here.
+  // Raw samples (yourphr#805, #314). Opened only when yourphr.health.enabled is on, under the
+  // same key as records.db. Off, the file is not created. Backups copy it when it exists.
   const phdSamplesDbPath = config.getString('yourphr.phd-samples.location');
+  const healthEnabled = config.getBool('yourphr.health.enabled');
   // yourphr#628: neither database may resolve onto NFS/SMB — checked where they will ACTUALLY live,
   // before the staged-restore swap or any open. The backup destination is not a database and is
   // never checked: it is meant to be on the NAS.
@@ -525,6 +527,14 @@ export async function openStores(dataDir: string, env: Record<string, string | u
   engine.register('agentTokens', new AgentTokensManager(engine, new SqliteAgentTokensProvider(db)));
   const recordsManager = new RecordsManager(engine, recordsProvider, new SqliteFavoritesProvider(db));
   engine.register('records', recordsManager);
+  // Sample ingest (yourphr#314). The flag is off unless an operator turns it on. The database
+  // opens with records' key and fails the boot if that key does not open the file — it is not
+  // retried without a key. A device credential still cannot write; see HealthManager.ingest.
+  if (healthEnabled) {
+    const { HealthManager } = await import('./app/managers/HealthManager.js');
+    const { SqlitePhdSamplesProvider } = await import('./app/providers/SqlitePhdSamplesProvider.js');
+    engine.register('health', new HealthManager(engine, new SqlitePhdSamplesProvider(phdSamplesDbPath, dbKey)));
+  }
   // Backups (yourphr#615): the coordinator over OPTIONAL storage; the records door is the exporter.
   engine.register('backups', new BackupManager(engine, backupProviderFor(config.getString('yourphr.backup.storage.provider')), { dataDir, exporter: recordsManager, alsoExport: [{ file: appDbPath, key: dbKey }, { file: phdSamplesDbPath, key: dbKey, optional: true }] }));
   // 7. Jobs and Sources (yourphr#612): the source client is an OPTIONAL capability — bound by

@@ -2,11 +2,11 @@
 
 For developers of a __mobile device app__ (a phone app that reads Apple Health or Google Health Connect) or a connected scale, cuff or meter that sends readings to a patient's yourPHR instance. This is what yourPHR guarantees today. The design and its decisions are in [2026-09-30-device-write-scope-and-consent-grant.md](../planning/2026-09-30-device-write-scope-and-consent-grant.md) ([#807](https://github.com/jwilleke/yourphr/issues/807)). Built in [#808](https://github.com/jwilleke/yourphr/issues/808) and [#809](https://github.com/jwilleke/yourphr/issues/809) as part of [#810](https://github.com/jwilleke/yourphr/issues/810).
 
-> __Status.__ Setup, keys, refresh, pausing and the write gate are live on `main`. The samples upload itself (`POST /api/secure/health/samples`, its body and the `sync-state` read) arrives with [#314](https://github.com/jwilleke/yourphr/issues/314) PR 1, and this page will describe it then. Until then those two routes answer `404` after the gate.
+> __Status.__ Setup, keys, refresh, pausing and the write gate are live. Sample *processing* for a signed-in session is described in [health-samples.md](health-samples.md) ([#314](https://github.com/jwilleke/yourphr/issues/314)). A device key still cannot upload. With `yourphr.health.enabled` off, the default, `POST /api/secure/health/samples` is `404`. With it on, that POST from a device key is `403`. `GET /api/secure/health/sync-state` is not a device route.
 
 ## What a device may do
 
-- __One write:__ add health samples (`POST /api/secure/health/samples`). One read: its own sync state (`GET /api/secure/health/sync-state`).
+- __No sample upload yet.__ The write gate names `POST /api/secure/health/samples`, and the read gate names `GET /api/secure/health/sync-state`, but a device key cannot use either. See [health-samples.md](health-samples.md).
 - __Nothing else.__ A device key reads nothing of the patient's record, cannot manage devices or keys, and cannot reach any other route. Every request it makes is recorded in the patient's access log under the name the patient gave it.
 - __For as long as the patient allows__, up to the instance's maximum (30 days by default). Only the patient, signed in, can extend it.
 - __Off by default.__ An operator turns it on with `yourphr.devices.enabled` in Admin → Configuration.

@@ -48,6 +48,8 @@
   "yourphr.auth.agent-token.renewable": true,
   "yourphr.auth.agent-token.max-renewals": 0,
   "yourphr.auth.agent-token.renew-window-hours": 6,
+  "_comment_health": "yourphr#314 — wearable sample storage. OFF by default, so phd-samples.db is created only when an operator turns this on. It uses the same encryption key as records.db. A signed-in session may submit samples; a connected-device key may not. Device and background intake stay unavailable until the device scope contract is settled. File import through ngdpbase ICE is not wired here: this process does not host ICE.",
+  "yourphr.health.enabled": false,
   "_comment_devices": "yourphr#807, #808 — connected devices (mobile device apps, scales): a patient grants one permission to ADD health samples, for a term they choose up to grant-max-days; the device holds a key (key-ttl-hours) and a refresh token that rotates on every use, and a spent one presented again revokes the grant. setup-code-minutes is how long the one-time code shown as a QR lives. max-per-user counts active and suspended grants (0 = no devices). OFF by default.",
   "yourphr.devices.enabled": false,
   "yourphr.devices.grant-max-days": 30,
