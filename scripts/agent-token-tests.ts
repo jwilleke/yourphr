@@ -171,6 +171,8 @@ async function main(): Promise<void> {
     check('and for its sync-state read', (await asAgent(deviceKey, '/api/secure/health/sync-state')).status === 200);
     check('TOOTH: a device key reads nothing of the record',
       (await asAgent(deviceKey, '/api/secure/medications/reconciled')).status === 403);
+    check('TOOTH: a device key cannot read the health charts',
+      (await asAgent(deviceKey, '/api/secure/health/series?metric_type=heart_rate')).status === 403);
     check('TOOTH: a device key cannot manage devices', (await asAgent(deviceKey, '/api/secure/account/devices')).status === 403);
     const reader = await mint(h.base, session, ['Medications']);
     const readerWrite = await asAgent(reader, '/api/secure/health/samples', 'POST');
