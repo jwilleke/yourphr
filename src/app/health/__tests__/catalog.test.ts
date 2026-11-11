@@ -104,13 +104,20 @@ describe('resolveStage', () => {
     expect(resolveStage(sleep, 'STAGE_TYPE_SLEEPING_LIGHT', 'health-connect')).toBe('93830-8');
     expect(resolveStage(sleep, 'STAGE_TYPE_SLEEPING_REM', 'health-connect')).toBe('93829-0');
     expect(resolveStage(sleep, 'STAGE_TYPE_AWAKE', 'health-connect')).toBe('93828-2');
+    expect(resolveStage(sleep, '4', 'health-connect')).toBe('93830-8');
+    expect(resolveStage(sleep, '5', 'health-connect')).toBe('93831-6');
+    expect(resolveStage(sleep, '6', 'health-connect')).toBe('93829-0');
+    expect(resolveStage(sleep, '1', 'health-connect')).toBe('93828-2');
+    expect(resolveStage(sleep, '3', 'health-connect')).toBe('93828-2');
   });
 
   it('leaves in-bed, unspecified, and the other vendor\'s numbers unmapped', () => {
     expect(resolveStage(sleep, '0', 'healthkit')).toBeUndefined();
     expect(resolveStage(sleep, 'asleep', 'healthkit')).toBeUndefined();
     expect(resolveStage(sleep, 'STAGE_TYPE_SLEEPING', 'health-connect')).toBeUndefined();
-    expect(resolveStage(sleep, '4', 'health-connect')).toBeUndefined();
+    expect(resolveStage(sleep, '2', 'health-connect')).toBeUndefined();
+    expect(resolveStage(sleep, '7', 'health-connect')).toBeUndefined();
+    expect(resolveStage(sleep, '4', 'healthkit')).not.toBe('93830-8');
     expect(resolveStage(sleep, 'dreaming', 'healthkit')).toBeUndefined();
     expect(resolveStage(sleep, '', 'healthkit')).toBeUndefined();
   });

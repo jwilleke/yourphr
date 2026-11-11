@@ -58,6 +58,17 @@ function base(id: string, metric: CatalogMetric, subject: string, localDay: stri
   };
 }
 
+/**
+ * Which device source owns the day's Observation.
+ * Steps belong to the source with the larger total. Every other series belongs to the source
+ * that just re-rolled the day. An empty day has no winner, so the latest source keeps the retraction.
+ */
+export function rollupSource(metricType: string, rows: HealthSampleRow[], latestSource: string): string {
+  if (metricType !== 'step_count' || rows.length === 0) return latestSource;
+  const source = winningSource(rows).kept.find((row) => row.sourceId)?.sourceId;
+  return source || latestSource;
+}
+
 /** Steps from two sources on one local day are not added. The larger total is kept. */
 export function winningSource(rows: HealthSampleRow[]): { kept: HealthSampleRow[]; discarded: string[] } {
   const groups = new Map<string, HealthSampleRow[]>();
@@ -197,20 +208,21 @@ export async function publishSamples(
     const stored = await writer.rowsForLocalDays(metricType, [...localDays]);
     for (const localDay of localDays) {
       const dayRows = stored.filter((row) => row.localDay === localDay && !row.deleted);
+      const target = rollupSource(metricType, dayRows, sourceId);
       if (metricType === SLEEP) {
         const written = sleepObservations(localDay, dayRows, subject);
         const present = new Set(written.map((obs) => obs.code?.coding?.[0]?.code));
-        for (const obs of written) await writer.save(sourceId, obs);
+        for (const obs of written) await writer.save(target, obs);
         const removed = new Set(rows
           .filter((row) => row.metricType === SLEEP && row.localDay === localDay && row.deleted && row.code)
           .map((row) => row.code));
         for (const code of removed) {
-          if (!present.has(code)) await writer.save(sourceId, retracted(SLEEP, localDay, code));
+          if (!present.has(code)) await writer.save(target, retracted(SLEEP, localDay, code));
         }
         continue;
       }
       const obs = dayRows.length > 0 ? dailyObservation(metricType, localDay, dayRows, subject) : retracted(metricType, localDay);
-      if (obs) await writer.save(sourceId, obs);
+      if (obs) await writer.save(target, obs);
     }
   }
 }

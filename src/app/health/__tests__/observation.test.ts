@@ -101,6 +101,27 @@ describe('toObservation', () => {
     });
   });
 
+  it('keeps a Health Connect key on the Health Connect system', () => {
+    const obs = toObservation(row({
+      adapter: 'health-connect',
+      vendorType: 'HeartRateRecord',
+      sourceName: 'Pixel Watch',
+      deviceName: 'Pixel Watch',
+    }));
+    const codings = obs.code?.coding ?? [];
+    expect(codings.find((coding) => coding.code === 'HeartRateRecord')).toMatchObject({
+      system: 'https://developer.android.com/health-and-fitness/guides/health-connect',
+    });
+    expect(codings.some((coding) => coding.system === 'https://developer.apple.com/documentation/healthkit')).toBe(false);
+  });
+
+  it('keeps a HealthKit key on the HealthKit system', () => {
+    const obs = toObservation(row());
+    expect(obs.code?.coding?.find((coding) => coding.code === 'HKQuantityTypeIdentifierHeartRate')).toMatchObject({
+      system: 'https://developer.apple.com/documentation/healthkit',
+    });
+  });
+
   it('keeps meta.source only when it is a URI', () => {
     const kept = toObservation(row({ sourceName: 'https://example.test/health' }));
     expect(kept.meta?.source).toBe('https://example.test/health');

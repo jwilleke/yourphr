@@ -4,6 +4,7 @@
  */
 import type { Bundle, Observation, ObservationComponent } from '@medplum/fhirtypes';
 import {
+  HC_TYPE_SYSTEM,
   HK_TYPE_SYSTEM,
   LOINC,
   OBS_CATEGORY,
@@ -50,7 +51,7 @@ export function serializeComponents(components: ObservationComponentValue[]): st
 
 export function toObservation(row: HealthSampleRow, subject?: string): Observation {
   const metric = lookupByCode(row.code);
-  const codeSystem = row.codeSystem || (row.code ? LOINC : HK_TYPE_SYSTEM);
+  const codeSystem = row.codeSystem || (row.code ? LOINC : vendorSystem(row.adapter));
   const codeValue = row.code || row.vendorType;
   const observation: Observation = {
     resourceType: 'Observation',
@@ -63,7 +64,7 @@ export function toObservation(row: HealthSampleRow, subject?: string): Observati
     code: codeValue
       ? {
           coding: [{
-            system: codeSystem,
+            ...(codeSystem ? { system: codeSystem } : {}),
             code: codeValue,
             ...(metric ? { display: metric.allowedValues.length ? codeableDisplay(metric, row.code) : metric.display } : {}),
           }],
@@ -120,13 +121,21 @@ export function toObservation(row: HealthSampleRow, subject?: string): Observati
   if (row.sourceName && isUri(row.sourceName)) {
     observation.meta = { ...(observation.meta ?? {}), source: row.sourceName };
   }
-  if (row.vendorType) {
-    const extra = { system: HK_TYPE_SYSTEM, code: row.vendorType };
-    if (observation.code?.coding && !observation.code.coding.some((c) => c.code === row.vendorType)) {
+  const vendor = vendorSystem(row.adapter);
+  if (row.vendorType && vendor) {
+    const extra = { system: vendor, code: row.vendorType };
+    if (observation.code?.coding && !observation.code.coding.some((c) => c.code === row.vendorType && c.system === vendor)) {
       observation.code.coding.push(extra);
     }
   }
   return observation;
+}
+
+/** A vendor key keeps the system of the adapter that sent it. A manual or FHIR row has no vendor system. */
+function vendorSystem(adapter: string): string | undefined {
+  if (adapter === 'healthkit') return HK_TYPE_SYSTEM;
+  if (adapter === 'health-connect') return HC_TYPE_SYSTEM;
+  return undefined;
 }
 
 function quantity(value: number, unit: string): NonNullable<Observation['valueQuantity']> {

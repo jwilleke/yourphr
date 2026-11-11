@@ -585,10 +585,14 @@ export class HealthManager extends BaseManager {
           let target = preferred;
           if (id && heldSource.has(id)) target = heldSource.get(id)!;
           else if (id) {
+            let existing = '';
             try {
-              const existing = asString((await this.engine.managers.records.detail(ctx, id))['source_id']);
-              if (existing) target = existing;
+              existing = asString((await this.engine.managers.records.detail(ctx, id))['source_id']);
             } catch { /* this day's observation does not exist yet */ }
+            if (existing && resource.status === 'entered-in-error') target = existing;
+            else if (existing && existing !== preferred) {
+              await this.engine.managers.records.releaseDeviceRollup(ctx, existing, id);
+            }
           }
           await this.engine.managers.records.saveDeviceRecord(ctx, target, resource as never);
           if (id) heldSource.set(id, target);

@@ -13,6 +13,7 @@ export const UCUM = 'http://unitsofmeasure.org';
 export const SNOMED = 'http://snomed.info/sct';
 export const OBS_CATEGORY = 'http://terminology.hl7.org/CodeSystem/observation-category';
 export const HK_TYPE_SYSTEM = 'https://developer.apple.com/documentation/healthkit';
+export const HC_TYPE_SYSTEM = 'https://developer.android.com/health-and-fitness/guides/health-connect';
 
 export type MetricKind = 'quantity' | 'codeable' | 'panel';
 export type ObservationCategory = 'vital-signs' | 'activity';
@@ -192,25 +193,25 @@ const CATALOG: CatalogMetric[] = [
         canonical: '93828-2',
         display: 'Awakening',
         healthKit: ['awake', '2', 'HKCategoryValueSleepAnalysisAwake'],
-        healthConnect: ['STAGE_TYPE_AWAKE', 'AWAKE', 'STAGE_TYPE_AWAKE_OUT_OF_BED', 'OUT_OF_BED', 'STAGE_TYPE_OUT_OF_BED'],
+        healthConnect: ['1', '3', 'STAGE_TYPE_AWAKE', 'AWAKE', 'STAGE_TYPE_AWAKE_OUT_OF_BED', 'OUT_OF_BED', 'STAGE_TYPE_OUT_OF_BED'],
       },
       {
         canonical: '93830-8',
         display: 'Light sleep',
         healthKit: ['asleepCore', '3', 'HKCategoryValueSleepAnalysisAsleepCore'],
-        healthConnect: ['STAGE_TYPE_SLEEPING_LIGHT', 'STAGE_TYPE_LIGHT', 'LIGHT'],
+        healthConnect: ['4', 'STAGE_TYPE_SLEEPING_LIGHT', 'STAGE_TYPE_LIGHT', 'LIGHT'],
       },
       {
         canonical: '93831-6',
         display: 'Deep sleep',
         healthKit: ['asleepDeep', '4', 'HKCategoryValueSleepAnalysisAsleepDeep'],
-        healthConnect: ['STAGE_TYPE_SLEEPING_DEEP', 'STAGE_TYPE_DEEP', 'DEEP'],
+        healthConnect: ['5', 'STAGE_TYPE_SLEEPING_DEEP', 'STAGE_TYPE_DEEP', 'DEEP'],
       },
       {
         canonical: '93829-0',
         display: 'REM sleep',
         healthKit: ['asleepREM', '5', 'HKCategoryValueSleepAnalysisAsleepREM'],
-        healthConnect: ['STAGE_TYPE_SLEEPING_REM', 'STAGE_TYPE_REM', 'REM'],
+        healthConnect: ['6', 'STAGE_TYPE_SLEEPING_REM', 'STAGE_TYPE_REM', 'REM'],
       },
     ],
     components: [],
@@ -283,8 +284,9 @@ export function normalizeCodeableValue(metric: CatalogMetric, value: string): st
 
 /**
  * Map a vendor stage token onto a LOINC stage code.
- * Numeric values are not shared: HealthKit `4` is deep sleep, and that number is not a Health Connect stage.
- * In bed and unspecified sleep are not one of the four night totals, so they stay unmapped.
+ * Numeric values are not shared. HealthKit `4` is deep sleep. Health Connect `4` is light sleep
+ * (`1` awake, `3` out of bed, `5` deep, `6` REM). Unspecified sleep (`2`) and awake-in-bed (`7`)
+ * are not one of the four night totals, so they stay unmapped.
  */
 export function resolveStage(metric: CatalogMetric, value: string, adapter: SampleAdapter): string | undefined {
   const canonical = normalizeCodeableValue(metric, value);

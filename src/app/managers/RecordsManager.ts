@@ -861,6 +861,20 @@ export class RecordsManager extends BaseManager {
    * savePatientRecord: a re-sent daily summary replaces that day's. A record another source holds
    * under the same id is refused by the store's collision rule, never overwritten.
    */
+  /**
+   * Drop a daily rollup so a later upload can write that same id into the source that now owns
+   * the day (yourphr#314). Only a `pghd-` Observation already held by one of the caller's device
+   * sources can move. A clinical record is left where it is.
+   */
+  async releaseDeviceRollup(ctx: ApiContext, sourceId: string, id: string): Promise<void> {
+    ctx.requireAuthenticated();
+    if (!id.startsWith('pghd-')) throw new ApiError(403, 'only a device rollup can move between device sources');
+    if (!(await this.engine.managers.sources.isDevice(ctx, sourceId))) throw new ApiError(403, 'records from a connected device go only into that device\'s own source');
+    const stored = await this.provider.read(this.who(ctx), 'Observation', id);
+    if (!stored || stored.sourceId !== sourceId) return;
+    await this.provider.removeRecord(this.who(ctx), 'Observation', id);
+  }
+
   async saveDeviceRecord(ctx: ApiContext, sourceId: string, resource: Resource): Promise<{ id: string; outcome: 'created' | 'updated' | 'unchanged' }> {
     ctx.requireAuthenticated();
     if (!(await this.engine.managers.sources.isDevice(ctx, sourceId))) throw new ApiError(403, 'records from a connected device go only into that device\'s own source');

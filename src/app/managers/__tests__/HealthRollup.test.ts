@@ -1,6 +1,8 @@
 /**
  * Daily and spot readings land in the record through saveDeviceRecord (yourphr#314).
- * Raw samples stay in phd-samples.db. Two step sources on one local day are not added together.
+ * Raw samples stay in phd-samples.db. Two step sources on one local day are not added together:
+ * the larger source total is kept, and the other source's steps are left out even when the
+ * intervals do not overlap. Other daily series average every sample, with no source priority.
  */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { mkdtempSync, rmSync } from 'node:fs';
@@ -95,8 +97,11 @@ describe('rollup through the device record door', () => {
       device: { device_id: 'watch' },
       samples: [steps('w1', 8000, '2026-08-24T15:00:00Z')],
     });
-    const daily = (await observations()).find((row) => row['source_resource_id'] === 'pghd-stepcount-2026-08-24');
-    const raw = (daily?.['resource_raw'] ?? {}) as { valueQuantity?: { value?: number }; note?: { text?: string }[] };
+    const dailies = (await observations()).filter((row) => row['source_resource_id'] === 'pghd-stepcount-2026-08-24');
+    expect(dailies).toHaveLength(1);
+    const daily = dailies[0]!;
+    expect(daily['source_id']).toBe(watch);
+    const raw = (daily['resource_raw'] ?? {}) as { valueQuantity?: { value?: number }; note?: { text?: string }[] };
     expect(raw.valueQuantity?.value).toBe(8000);
     expect(raw.note?.[0]?.text).toContain(phone);
     const rawRows = await health.list(jim, { metricTypes: ['step_count'] });
@@ -105,6 +110,40 @@ describe('rollup through the device record door', () => {
       metricTypes: ['step_count'], mode: 'day', startAfter: '2026-08-01T00:00:00Z', startBefore: '2026-09-01T00:00:00Z',
     });
     expect(chart.daily?.[0]?.value).toBe(8000);
+  });
+
+  it('averages heart rate across sources and keeps the day on the latest upload', async () => {
+    const phone = `source-${(await s.sources.addDeviceSource(jim, 'Phone')).id}`;
+    const watch = `source-${(await s.sources.addDeviceSource(jim, 'Watch')).id}`;
+    const tokens = s.engine.managers.agentTokens;
+    const phoneGrant = await tokens.createDeviceGrant(jim, { label: 'Phone', sourceId: phone, credentials: { password: PASSWORD }, request: req });
+    const watchGrant = await tokens.createDeviceGrant(jim, { label: 'Watch', sourceId: watch, credentials: { password: PASSWORD }, request: req });
+    const asDevice = (grantId: string, name: string) => ApiContext.agent('jim', {
+      id: grantId, name, scopes: ['Health samples (add)'], grantId,
+    }, s.engine);
+    const beat = (uuid: string, value: number) => ({
+      uuid, type: 'HKQuantityTypeIdentifierHeartRate', start: '2026-08-24T15:00:00Z', end: '2026-08-24T15:00:00Z', value, unit: 'count/min',
+    });
+    const health = s.engine.managers.health;
+    await health.ingest(asDevice(phoneGrant.grant.id, 'Phone'), { device: { device_id: 'phone' }, samples: [beat('p1', 60)] });
+    await health.ingest(asDevice(watchGrant.grant.id, 'Watch'), { device: { device_id: 'watch' }, samples: [beat('w1', 80)] });
+    const dailies = (await observations()).filter((row) => row['source_resource_id'] === 'pghd-heartrate-2026-08-24');
+    expect(dailies).toHaveLength(1);
+    expect(dailies[0]!['source_id']).toBe(watch);
+    const raw = (dailies[0]!['resource_raw'] ?? {}) as { valueQuantity?: { value?: number } };
+    expect(raw.valueQuantity?.value).toBe(70);
+  });
+
+  it('rewrites the day as entered-in-error when its only sample is deleted', async () => {
+    const health = s.engine.managers.health;
+    const sample = steps('s1', 100, '2026-08-24T15:00:00Z');
+    await health.ingest(jim, { device: { device_id: 'upload' }, samples: [sample] });
+    await health.ingest(jim, { device: { device_id: 'upload' }, samples: [{ ...sample, metadata: { deleted: true } }] });
+    const daily = (await observations()).find((row) => row['source_resource_id'] === 'pghd-stepcount-2026-08-24');
+    const raw = (daily?.['resource_raw'] ?? {}) as { status?: string };
+    expect(raw.status).toBe('entered-in-error');
+    const listed = await health.list(jim, { metricTypes: ['step_count'] });
+    expect(listed.total).toBe(0);
   });
 
   it('pairs blood-pressure halves that arrive in different batches', async () => {
