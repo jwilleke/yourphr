@@ -278,19 +278,32 @@ function serveStatic(webDir: string, pathname: string, res: ServerResponse): voi
 
 /** Reads a small JSON body; refuses anything over 64KB — sign-in bodies have no reason to be big. */
 function readJsonBody(req: IncomingMessage): Promise<Record<string, unknown> | undefined> {
+  return readJsonBodyLimited(req, 64 * 1024).then((body) => (body === 'too-large' ? undefined : body));
+}
+
+/** HealthKit ingest is a batch of samples, not a sign-in form — Go allowed 8 MiB. */
+const HEALTH_INGEST_MAX_BYTES = 8 * 1024 * 1024;
+
+function readJsonBodyLimited(
+  req: IncomingMessage,
+  maxBytes: number,
+): Promise<Record<string, unknown> | 'too-large' | undefined> {
   return new Promise((resolve) => {
     const chunks: Buffer[] = [];
     let size = 0;
+    let overflow = false;
     req.on('data', (chunk: Buffer) => {
       size += chunk.length;
-      if (size > 64 * 1024) {
+      if (size > maxBytes) {
+        overflow = true;
         req.destroy();
-        resolve(undefined);
+        resolve('too-large');
         return;
       }
       chunks.push(chunk);
     });
     req.on('end', () => {
+      if (overflow) return;
       try {
         resolve(JSON.parse(Buffer.concat(chunks).toString('utf8')) as Record<string, unknown>);
       } catch {
@@ -332,6 +345,12 @@ async function readUpload(req: IncomingMessage, maxBytes: number): Promise<{ fil
   const file = form.get('file');
   if (!file || typeof file === 'string') return { status: 400, error: 'the upload carried no file in the "file" field' };
   return { file: { filename: file.name, bytes: Buffer.from(await file.arrayBuffer()) } };
+}
+
+function csvQuery(url: URL, name: string): string[] {
+  const raw = url.searchParams.get(name);
+  if (!raw) return [];
+  return raw.split(',').map((s) => s.trim()).filter((s) => s !== '');
 }
 
 export function createYourPhrServer(options: ServerOptions) {
@@ -379,6 +398,9 @@ export function createYourPhrServer(options: ServerOptions) {
     }
     return authLimiter;
   };
+
+  /** HealthKit ingest: 60 batches per username per minute — the Go companion's budget. */
+  const healthIngestLimiter = new SimpleRateLimiter({max: 60, windowMs: 60_000});
 
 
   // Hashed once from the index.html this server serves (yourphr#813) — the file does not change under it.
@@ -960,6 +982,7 @@ export function createYourPhrServer(options: ServerOptions) {
           // the account itself (consent goes with it). Order matters — each door is asked in turn.
           if (engine.has('sources')) await engine.managers.sources.removeAll(ctx);
           await engine.managers.records.removeAll(ctx);
+          if (engine.has('health')) await engine.managers.health.removeForUser(ctx);
           if (engine.has('audit')) await engine.managers.audit.removeForUser(ctx);
           await users.deleteSelf(ctx);
           res.setHeader('Set-Cookie', sessionCookie('', 0, auth.secureCookies ?? false));
@@ -985,6 +1008,84 @@ export function createYourPhrServer(options: ServerOptions) {
           test_account: ctx.isTest,
           last_login: null, login_count: 0,
         }});
+        return;
+      }
+
+      // Wearable PGHD. A device grant or a signed-in session may POST. GETs of charts and detail are
+      // agent POST). GETs carry the Health access category so they are logged and an agent scoped
+      // to Health can read them later.
+      if (auth && engine.has('health') && url.pathname === '/api/secure/health/samples' && req.method === 'POST') {
+        if (engine.has('demo')) engine.managers.demo.refuseWrite(ctx, 'ingesting health samples');
+        const limited = healthIngestLimiter.consume(ctx.username);
+        if (!limited.allowed) {
+          res.setHeader('Retry-After', String(Math.ceil(limited.retryAfterMs / 1000)));
+          send(res, 429, {success: false, error: 'too many requests — try again shortly'});
+          return;
+        }
+        const body = await readJsonBodyLimited(req, HEALTH_INGEST_MAX_BYTES);
+        if (body === 'too-large') {
+          send(res, 413, {success: false, error: 'request body too large'});
+          return;
+        }
+        if (!body) {
+          send(res, 400, {success: false, error: 'invalid request'});
+          return;
+        }
+        send(res, 200, {success: true, data: await engine.managers.health.ingest(ctx, {
+          device: body['device'] as {device_id?: unknown; name?: unknown} | undefined,
+          samples: body['samples'],
+          anchors: body['anchors'],
+          resourceType: body['resourceType'],
+          entry: body['entry'],
+        })});
+        return;
+      }
+      if (auth && engine.has('health') && url.pathname === '/api/secure/health/samples' && req.method === 'GET') {
+        send(res, 200, {success: true, data: await engine.managers.health.list(ctx, {
+          codes: csvQuery(url, 'code'),
+          metricTypes: csvQuery(url, 'metric_type'),
+          vendorType: url.searchParams.get('vendor_type') ?? '',
+          startAfter: url.searchParams.get('start_after') ?? undefined,
+          startBefore: url.searchParams.get('start_before') ?? undefined,
+          limit: url.searchParams.get('limit') ?? undefined,
+          offset: url.searchParams.get('offset') ?? undefined,
+          sort: url.searchParams.get('sort') ?? undefined,
+        })});
+        return;
+      }
+      const healthObservation = url.pathname.match(/^\/api\/secure\/health\/observation\/([^/]+)$/);
+      if (auth && engine.has('health') && healthObservation && req.method === 'GET') {
+        send(res, 200, {success: true, data: await engine.managers.health.observation(ctx, decodeURIComponent(healthObservation[1]!))});
+        return;
+      }
+      if (auth && engine.has('health') && url.pathname === '/api/secure/health/bundle' && req.method === 'GET') {
+        send(res, 200, {success: true, data: await engine.managers.health.bundle(ctx, {
+          codes: csvQuery(url, 'code'),
+          metricTypes: csvQuery(url, 'metric_type'),
+          vendorType: url.searchParams.get('vendor_type') ?? '',
+          startAfter: url.searchParams.get('start_after') ?? undefined,
+          startBefore: url.searchParams.get('start_before') ?? undefined,
+        })});
+        return;
+      }
+      if (auth && engine.has('health') && url.pathname === '/api/secure/health/metrics' && req.method === 'GET') {
+        send(res, 200, {success: true, data: await engine.managers.health.metrics(ctx)});
+        return;
+      }
+      if (auth && engine.has('health') && url.pathname === '/api/secure/health/series' && req.method === 'GET') {
+        send(res, 200, {success: true, data: await engine.managers.health.series(ctx, {
+          codes: csvQuery(url, 'code'),
+          metricTypes: csvQuery(url, 'metric_type'),
+          vendorType: url.searchParams.get('vendor_type') ?? '',
+          startAfter: url.searchParams.get('start_after') ?? undefined,
+          startBefore: url.searchParams.get('start_before') ?? undefined,
+          maxPoints: url.searchParams.get('max_points') ?? undefined,
+          mode: url.searchParams.get('mode') ?? undefined,
+        })});
+        return;
+      }
+      if (auth && engine.has('health') && url.pathname === '/api/secure/health/sync-state' && req.method === 'GET') {
+        send(res, 200, {success: true, data: await engine.managers.health.syncState(ctx, url.searchParams.get('device_id') ?? undefined)});
         return;
       }
 

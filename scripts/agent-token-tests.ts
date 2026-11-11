@@ -45,6 +45,7 @@ async function boot(): Promise<Harness> {
     YOURPHR_AUTH_AGENT_TOKEN_ENABLED: 'true',
     YOURPHR_AUTH_SIGNUP_ENABLED: 'true',
     YOURPHR_DEVICES_ENABLED: 'true',
+    YOURPHR_HEALTH_ENABLED: 'true',
   });
   const server = createYourPhrServer({ engine: stores.engine, auth: {} }) as Server;
   await new Promise<void>((done) => server.listen(0, '127.0.0.1', done));
@@ -165,9 +166,9 @@ async function main(): Promise<void> {
     check('TOOTH: a setup code works once', again.status === 401);
 
     const deviceKey = keys.access_token ?? '';
-    check('the device key passes the gate for its one write (no route yet: 404, not 403)',
-      (await asAgent(deviceKey, '/api/secure/health/samples', 'POST')).status === 404);
-    check('and for its sync-state read', (await asAgent(deviceKey, '/api/secure/health/sync-state')).status === 404);
+    check('the device key passes the gate for its one write (empty body is 400, not 403)',
+      (await asAgent(deviceKey, '/api/secure/health/samples', 'POST')).status === 400);
+    check('and for its sync-state read', (await asAgent(deviceKey, '/api/secure/health/sync-state')).status === 200);
     check('TOOTH: a device key reads nothing of the record',
       (await asAgent(deviceKey, '/api/secure/medications/reconciled')).status === 403);
     check('TOOTH: a device key cannot manage devices', (await asAgent(deviceKey, '/api/secure/account/devices')).status === 403);

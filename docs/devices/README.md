@@ -5,13 +5,13 @@ Everything YourPHR knows about devices: the implants a patient records, and the 
 | Kind | Document | For | State |
 |---|---|---|---|
 | __Implants__ (stent, pacemaker, artificial joint) | [using-patient-entered-implants.md](using-patient-entered-implants.md) | Patients and operators | Live, including partial dates and the placement and removal rows under Procedures ([#882](https://github.com/jwilleke/yourphr/pull/882)) |
-| __Connected devices__ (Apple Health or Health Connect apps, scales, cuffs, meters) | [connected-devices.md](connected-devices.md): __the developer contract__ (setup code, claim, keys, refresh rotation, refusals, what pauses or ends a grant) | Developers of device apps | Setup, keys, refresh and pausing are live. The upload arrives with [#314](https://github.com/jwilleke/yourphr/issues/314) PR 1 |
+| __Connected devices__ (Apple Health or Health Connect apps, scales, cuffs, meters) | [connected-devices.md](connected-devices.md): __the developer contract__ (setup code, claim, keys, refresh rotation, refusals, what pauses or ends a grant, sample upload) | Developers of device apps | Setup, keys, refresh and pausing are live. Sample upload is behind `yourphr.health.enabled` |
 
 External equipment a patient reads by hand, such as a hearing aid, a CGM or a CPAP machine, is neither of these. Its readings go in through __Add record → A measurement__, with the equipment named under __Measured with__.
 
 ## Where the work stands
 
-- [#314](https://github.com/jwilleke/yourphr/issues/314): wearable and device data as patient-generated health data. Its prerequisites, epic [#810](https://github.com/jwilleke/yourphr/issues/810), are done. It is waiting on the contributor's first PR.
+- [#314](https://github.com/jwilleke/yourphr/issues/314): wearable and device data as patient-generated health data. Its prerequisites, epic [#810](https://github.com/jwilleke/yourphr/issues/810), are done. The upload and the daily rollup are the contributor's first branch.
 - Decided but not yet built: [#860](https://github.com/jwilleke/yourphr/issues/860) and [#862](https://github.com/jwilleke/yourphr/issues/862). A grant will last until the patient revokes it, and scopes will take SMART on FHIR v2 names (`patient/Observation.c`). The pause after 90 days without an upload ([#861](https://github.com/jwilleke/yourphr/issues/861)) is the default now, and takes full effect once grants outlast their 30-day term ([#860](https://github.com/jwilleke/yourphr/issues/860)). The developer contract describes what is live today and is updated when these land.
 
 ## Design and decisions
