@@ -2,7 +2,7 @@
 
 For developers of a __mobile device app__ (a phone app that reads Apple Health or Google Health Connect) or a connected scale, cuff or meter that sends readings to a patient's yourPHR instance. This is what yourPHR guarantees today. The design and its decisions are in [2026-09-30-device-write-scope-and-consent-grant.md](../planning/2026-09-30-device-write-scope-and-consent-grant.md) ([#807](https://github.com/jwilleke/yourphr/issues/807)). Built in [#808](https://github.com/jwilleke/yourphr/issues/808) and [#809](https://github.com/jwilleke/yourphr/issues/809) as part of [#810](https://github.com/jwilleke/yourphr/issues/810).
 
-> __Status.__ Setup, keys, refresh, pausing and the write gate are live on `main`. The samples upload itself (`POST /api/secure/health/samples`, its body and the `sync-state` read) arrives with [#314](https://github.com/jwilleke/yourphr/issues/314) PR 1, and this page will describe it then. Until then those two routes answer `404` after the gate.
+> __Status.__ Setup, keys, refresh, pausing and the write gate are live. Sample upload and the sync-state read answer only when an operator also turns on `yourphr.health.enabled` (off by default). Until then those two routes answer `404` after the gate.
 
 ## What a device may do
 
@@ -105,12 +105,55 @@ Refusals:
 
 The patient is reminded before the end (`yourphr.devices.notice-days`, 7 and 1 days by default) and can extend from Settings. Extending never needs anything from the app.
 
+## Uploading samples
+
+`POST <server>/secure/health/samples` with the access token. A signed-in session may call it too. A device key may not call the chart reads (`/samples` GET, `/series`, `/metrics`, `/bundle`, `/observation`).
+
+The body is either a vendor batch or a FHIR Bundle of Observations. At most 5,000 samples. A sample that fails validation is counted in `rejected` and does not abort the rest.
+
+```json
+{
+  "device": { "device_id": "iphone-1", "name": "Jim's iPhone" },
+  "samples": [
+    {
+      "uuid": "hr-1",
+      "type": "HKQuantityTypeIdentifierHeartRate",
+      "start": "2026-09-30T07:15:00-04:00",
+      "end": "2026-09-30T07:15:00-04:00",
+      "value": 72,
+      "unit": "count/min",
+      "source_name": "Apple Watch"
+    }
+  ],
+  "anchors": { "heart_rate": "opaque-anchor" }
+}
+```
+
+- `uuid` is the caller's id. Sending it again updates that sample. `metadata.deleted: true` removes it and rewrites the day it belonged to.
+- `type` is the vendor key (`HKQuantityTypeIdentifierHeartRate`, `HeartRateRecord`). A FHIR Observation may be sent instead, inside `samples` or as `Bundle.entry[].resource`.
+- `start` and `end` are RFC 3339 with an explicit offset (`2026-09-30T07:15:00-04:00` or `…Z`). Anything else is refused, never guessed in the server's timezone.
+- Health Connect sleep stages use Health Connect's own numbers and names (`4` is light sleep, `STAGE_TYPE_SLEEPING_LIGHT`). HealthKit's numbers are a different list (`4` is deep sleep) and are not accepted on a Health Connect type.
+- `anchors` is optional. Each value is an opaque string yourPHR stores and returns unchanged. At most 32.
+
+`200` data:
+
+```json
+{ "received": 1, "accepted": 1, "stored": 1, "duplicates": 0, "rejected": 0 }
+```
+
+`errors`, when present, is `{ "uuid", "type", "reason" }[]`, at most 50 reasons.
+
+### `GET <server>/secure/health/sync-state`
+
+The device's own anchors. Optional `device_id` limits the list. `200` data is an array of `{ "device_id", "metric_type", "anchor", "last_sample_end_time", "last_synced_at", "device_name" }`.
+
 ## Rules the data must follow
 
-Decided on [#314](https://github.com/jwilleke/yourphr/issues/314). The upload body itself comes with its PR 1:
+Decided on [#314](https://github.com/jwilleke/yourphr/issues/314):
 
-- __Every date-time is RFC 3339 with an explicit offset__ (`2026-09-30T07:15:00-04:00` or `…Z`). Anything else is refused with a message, never guessed in the server's timezone.
+- __Every date-time is RFC 3339 with an explicit offset.__ The rule above is the check.
 - What a device sends is recorded as __patient-generated health data (PGHD)__, credited to the device by the name the patient gave it, and never mixed with what a clinician recorded. See the published code system at <https://yourphr.org/fhir/CodeSystem/record-origin>.
+- High-frequency series (heart rate, steps, oxygen saturation) are kept raw and also written as one Observation per local day. Steps from two sources on the same local day keep the larger total and do not add the other source, even when the intervals do not overlap. Other daily series average every sample, with no source priority. Spot readings (blood pressure, weight, temperature) are stored as their own Observations.
 
 ## Storage in the app
 
