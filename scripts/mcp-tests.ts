@@ -46,6 +46,7 @@ async function boot(): Promise<Harness> {
   const stores = await openStores(dir, {
     YOURPHR_AUTH_AGENT_TOKEN_ENABLED: 'true',
     YOURPHR_AUTH_SIGNUP_ENABLED: 'true',
+    YOURPHR_HEALTH_ENABLED: 'true',
   });
   const server = createYourPhrServer({ engine: stores.engine, auth: {} }) as Server;
   await new Promise<void>((done) => server.listen(0, '127.0.0.1', done));
@@ -182,7 +183,8 @@ async function main(): Promise<void> {
     await signIn(h.base, 'dana');
     check('a patient can sign in and mint a token for an agent', jimSession !== '');
 
-    const jim = await mint(h.base, jimSession, ['Record search']);
+    await seedHealth(h.base, jimSession, 'jim-phone', 60);
+    const jim = await mint(h.base, jimSession, ['Record search', 'Health']);
     check('the mint returns a cleartext token, once', jim.token.startsWith('yphr_at_'), jim.token.slice(0, 12));
 
     // --- the handshake ---
@@ -199,6 +201,18 @@ async function main(): Promise<void> {
       toolNames.join(','));
     check('TOOTH: no write tool is offered — none exists to offer',
       !tools.some((t) => /create|update|delete|write|add/i.test(t.name)));
+
+    const healthCall = {
+      jsonrpc: '2.0', id: 2, method: 'tools/call',
+      params: { name: 'read_health_metric', arguments: { metric_type: 'resting_heart_rate', days: 7, mode: 'daily-stats' } },
+    };
+    const trend = toolText((await speak(h.base, jim.token, [HELLO, healthCall], 2)).find((r) => r.id === 2));
+    check('the agent reads the wearable trend the token was scoped to',
+      trend.includes('resting_heart_rate') && trend.includes('62'), trend.split('\n')[0] ?? '');
+    const noHealth = await mint(h.base, jimSession, ['Record search'], 'No health');
+    const healthRefused = toolText((await speak(h.base, noHealth.token, [HELLO, healthCall], 2)).find((r) => r.id === 2));
+    check('TOOTH: a token without Health is refused the wearable trend',
+      healthRefused.includes('Health'), healthRefused.split('\n')[0] ?? '');
 
     // --- the read it was given ---
     const found = toolText((await speak(h.base, jim.token, [HELLO, search(2, 'metformin')], 2)).find((r) => r.id === 2));
