@@ -49,6 +49,7 @@ import { PractitionerHistoryComponent } from './pages/practitioner-history/pract
 import { SettingsComponent } from './pages/settings/settings.component';
 import { SetupEncryptionKeyComponent } from './pages/setup-encryption-key/setup-encryption-key.component';
 import { GetEncryptionKeyWizardComponent } from './pages/get-encryption-key-wizard/get-encryption-key-wizard.component';
+import { HealthComponent } from './pages/health/health.component';
 
 @NgModule({ declarations: [
         AppComponent,
@@ -98,7 +99,7 @@ import { GetEncryptionKeyWizardComponent } from './pages/get-encryption-key-wiza
         IconsModule,
         DragDropModule,
         AdminBackLinkComponent,
-        NotificationBannerComponent], providers: [
+        NotificationBannerComponent, HealthComponent], providers: [
         {
             provide: HTTP_CLIENT_TOKEN,
             useClass: HttpClient,
