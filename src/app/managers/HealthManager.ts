@@ -272,6 +272,21 @@ function isObservation(input: HealthSampleInput): boolean {
   return asString(input.resourceType) === 'Observation' || (!!input.code && !input.type);
 }
 
+function isDeletedSample(input: HealthSampleInput): boolean {
+  if (asString(input.status) === 'entered-in-error') return true;
+  return input.metadata !== undefined && typeof input.metadata === 'object'
+    && (input.metadata as Record<string, unknown>).deleted === true;
+}
+
+/** A deletion that names the sample and does not carry a new interval. */
+function isBareTombstone(input: HealthSampleInput): boolean {
+  if (!isDeletedSample(input)) return false;
+  if (input.effectiveDateTime || input.start) return false;
+  const period = input.effectivePeriod;
+  if (period && typeof period === 'object' && (period as Record<string, unknown>).start) return false;
+  return true;
+}
+
 function buildFromObservation(input: HealthSampleInput): HealthSampleRow {
   const id = identifierOf(input);
   if (id.value === '') throw new Error('identifier or uuid is required');
@@ -554,6 +569,13 @@ export class HealthManager extends BaseManager {
     for (const raw of rawSamples) {
       const input = (raw && typeof raw === 'object' ? raw : {}) as HealthSampleInput;
       try {
+        // HealthKit reports a deletion as a UUID only. Keep the interval already stored so the
+        // day that held the sample is the day that gets rewritten.
+        if (isBareTombstone(input)) {
+          const sample = await this.storedTombstone(userId, input);
+          if (sample) accepted.push(sample);
+          continue;
+        }
         const sample = buildSample(input);
         sample.subject = subject;
         sample.sourceId = sourceId;
@@ -926,6 +948,15 @@ export class HealthManager extends BaseManager {
     const owned = existing ? `source-${existing.id}` : `source-${(await this.engine.managers.sources.addDeviceSource(ctx, 'Uploaded by you')).id}`;
     if (named && named !== owned) throw new ApiError(403, 'an upload writes only into its own source');
     return owned;
+  }
+
+  private async storedTombstone(userId: string, input: HealthSampleInput): Promise<HealthSampleRow | undefined> {
+    const id = identifierOf(input);
+    if (id.value === '') throw new Error('identifier or uuid is required');
+    const stored = await this.provider.sampleByExternalId(userId, id.system || 'urn:uuid', id.value);
+    if (!stored) return undefined;
+    // A new id, same as every other upsert. The conflict key is the identifier, not this id.
+    return { ...stored, id: randomBytes(12).toString('hex'), deleted: true };
   }
 
   private async pairBloodPressure(userId: string, rows: HealthSampleRow[]): Promise<HealthSampleRow[]> {

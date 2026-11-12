@@ -146,6 +146,8 @@ export abstract class BaseHealthProvider {
   abstract rowsForCorrelation(userId: string, correlationUuid: string): Promise<HealthSampleRow[]>;
   /** Non-deleted rows for one metric on the given local days. */
   abstract rowsForLocalDays(userId: string, metricType: string, localDays: string[]): Promise<HealthSampleRow[]>;
+  /** The stored sample for this identifier, including one already marked deleted. */
+  abstract sampleByExternalId(userId: string, identifierSystem: string, externalUuid: string): Promise<HealthSampleRow | undefined>;
   abstract listSyncStates(userId: string, deviceId: string): Promise<HealthSyncStateRow[]>;
   abstract removeForOwner(userId: string): Promise<void>;
 }

@@ -129,11 +129,11 @@ The body is either a vendor batch or a FHIR Bundle of Observations. At most 5,00
 }
 ```
 
-- `uuid` is the caller's id. Sending it again updates that sample. `metadata.deleted: true` removes it and rewrites the day it belonged to.
+- `uuid` is the caller's id. Sending it again updates that sample. `metadata.deleted: true` removes it and rewrites the day it belonged to. An Observation with `status: "entered-in-error"` and that same identifier, and no new time, removes it the same way: the stored start, end, and local day are kept. A deletion for an identifier that was never stored is ignored.
 - `type` is the vendor key (`HKQuantityTypeIdentifierHeartRate`, `HeartRateRecord`). A FHIR Observation may be sent instead, inside `samples` or as `Bundle.entry[].resource`.
 - `start` and `end` are RFC 3339 with an explicit offset (`2026-09-30T07:15:00-04:00` or `…Z`). Anything else is refused, never guessed in the server's timezone.
 - Health Connect sleep stages use Health Connect's own numbers and names (`4` is light sleep, `STAGE_TYPE_SLEEPING_LIGHT`). HealthKit's numbers are a different list (`4` is deep sleep) and are not accepted on a Health Connect type.
-- `anchors` is optional. Each value is an opaque string yourPHR stores and returns unchanged. At most 32.
+- `anchors` is optional. Each value is an opaque string yourPHR stores and returns unchanged, at most 1024 characters. A longer value is refused, and that refusal rejects the samples in the same request. At most 32 anchors.
 
 `200` data:
 
