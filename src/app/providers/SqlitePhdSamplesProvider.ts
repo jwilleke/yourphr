@@ -250,6 +250,13 @@ export class SqlitePhdSamplesProvider extends BaseHealthProvider {
     ).all(userId, correlationUuid) as SampleSqlRow[]).map(toSample);
   }
 
+  async sampleByExternalId(userId: string, identifierSystem: string, externalUuid: string): Promise<HealthSampleRow | undefined> {
+    const row = this.db.prepare(
+      'SELECT * FROM phd_samples WHERE user_id = ? AND identifier_system = ? AND external_uuid = ? LIMIT 1'
+    ).get(userId, identifierSystem, externalUuid) as SampleSqlRow | undefined;
+    return row ? toSample(row) : undefined;
+  }
+
   async rowsForLocalDays(userId: string, metricType: string, localDays: string[]): Promise<HealthSampleRow[]> {
     if (localDays.length === 0) return [];
     const marks = localDays.map(() => '?').join(',');

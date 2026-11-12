@@ -134,6 +134,34 @@ describe('rollup through the device record door', () => {
     expect(raw.valueQuantity?.value).toBe(70);
   });
 
+  it('keeps the stored day when a deletion names only the uuid', async () => {
+    const health = s.engine.managers.health;
+    await health.ingest(jim, {
+      device: { device_id: 'upload' },
+      samples: [
+        steps('s1', 100, '2026-08-24T15:00:00Z'),
+        steps('s2', 40, '2026-08-24T16:00:00Z'),
+      ],
+    });
+    const result = await health.ingest(jim, {
+      device: { device_id: 'upload' },
+      samples: [
+        { resourceType: 'Observation', status: 'entered-in-error', identifier: [{ system: 'urn:uuid', value: 's1' }] },
+        { resourceType: 'Observation', status: 'entered-in-error', identifier: [{ system: 'urn:uuid', value: 'never-stored' }] },
+      ],
+    });
+    expect(result.rejected).toBe(0);
+    expect(result.accepted).toBe(1);
+    const dailies = (await observations()).filter((row) => String(row['source_resource_id']).startsWith('pghd-stepcount-'));
+    expect(dailies.map((row) => row['source_resource_id'])).toEqual(['pghd-stepcount-2026-08-24']);
+    const raw = (dailies[0]?.['resource_raw'] ?? {}) as { valueQuantity?: { value?: number } };
+    expect(raw.valueQuantity?.value).toBe(40);
+    const listed = await health.list(jim, { metricTypes: ['step_count'] });
+    expect(listed.total).toBe(1);
+    expect(listed.samples[0]?.external_uuid).toBe('s2');
+    expect(listed.samples[0]?.start_time).toBe('2026-08-24T16:00:00Z');
+  });
+
   it('rewrites the day as entered-in-error when its only sample is deleted', async () => {
     const health = s.engine.managers.health;
     const sample = steps('s1', 100, '2026-08-24T15:00:00Z');
