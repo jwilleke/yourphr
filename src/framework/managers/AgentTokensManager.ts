@@ -734,6 +734,12 @@ export class AgentTokensManager extends BaseManager {
     return this.grantView(resumed, now);
   }
 
+  /** The device source a grant already owns. The sample body cannot name a different one. */
+  async sourceIdForGrant(grantId: string): Promise<string | undefined> {
+    const grant = await this.provider.getGrant(grantId);
+    return grant?.sourceId || undefined;
+  }
+
   /** A device key just wrote: when, for inactivity suspension (yourphr#809). */
   async recordDeviceUpload(grantId: string, now: number = Date.now()): Promise<void> {
     const grant = await this.provider.getGrant(grantId);

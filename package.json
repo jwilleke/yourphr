@@ -65,6 +65,7 @@
     "test:baseline": "tsx scripts/baseline-profile.ts",
     "test:baseline:compare": "tsx scripts/baseline-profile.ts --compare",
     "agent-tokens": "tsx scripts/agent-token-tests.ts",
+    "health-intake": "tsx scripts/health-intake-tests.ts",
     "mcp": "tsx scripts/mcp-server.ts",
     "mcp-tests": "tsx scripts/mcp-tests.ts",
     "lint:md": "markdownlint-cli2"
