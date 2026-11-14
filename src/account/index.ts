@@ -36,6 +36,7 @@ export const ACCESS_CATEGORIES = [
   'Record search',
   'Records (FHIR)',
   'Full export',
+  'Health',
 ] as const;
 
 export type AccessCategory = (typeof ACCESS_CATEGORIES)[number];
@@ -124,8 +125,13 @@ export function accessCategoryFor(pathname: string): string | undefined {
     '/api/secure/resources/search': 'Record search',
     '/api/secure/search': 'Record search',
     '/api/secure/resource/fhir': 'Records (FHIR)',
+    '/api/secure/health/metrics': 'Health',
+    '/api/secure/health/series': 'Health',
+    '/api/secure/health/samples': 'Health',
+    '/api/secure/health/bundle': 'Health',
   };
   if (exact[pathname]) return exact[pathname];
+  if (/^\/api\/secure\/health\/observation\/[^/]+$/.test(pathname)) return 'Health';
   if (/^\/api\/secure\/resource\/fhir\/[^/]+\/[^/]+$/.test(pathname)) return 'Records (FHIR)';
   // Both read FHIR resources and were served unlogged until the category check found them
   // (yourphr#798, Jim 2026-09-29: the existing category, so no new agent-token scope): a
