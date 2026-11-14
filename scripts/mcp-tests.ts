@@ -46,6 +46,7 @@ async function boot(): Promise<Harness> {
   const stores = await openStores(dir, {
     YOURPHR_AUTH_AGENT_TOKEN_ENABLED: 'true',
     YOURPHR_AUTH_SIGNUP_ENABLED: 'true',
+    YOURPHR_HEALTH_ENABLED: 'true',
   });
   const server = createYourPhrServer({ engine: stores.engine, auth: {} }) as Server;
   await new Promise<void>((done) => server.listen(0, '127.0.0.1', done));
@@ -81,6 +82,36 @@ async function mint(base: string, session: string, scopes: string[], name = 'Cla
   // The cleartext rides back once as `token`; the id lives on `record`, which is what revoke needs.
   const data = ((await res.json()) as { data?: { token?: string; record?: { id?: string } } }).data ?? {};
   return { token: data.token ?? '', id: data.record?.id ?? '' };
+}
+
+/**
+ * Wearable samples for one account, pushed through the REAL ingest route with the patient's session.
+ *
+ * Not written straight to the table, because what is being tested is what an agent can reach, and
+ * a row inserted behind the manager is a row whose code, category and unit were never normalized —
+ * the bridge would then be reading a shape the phone never produces.
+ */
+async function seedHealth(base: string, session: string, deviceId: string, restingHr: number): Promise<void> {
+  // Dated from NOW, not from a fixed calendar date: read_health_metric clamps its window to 365
+  // days, so a sample hard-coded to 2024 falls out of every query the moment the year turns and
+  // the harness starts reporting "no samples recorded" as a pass.
+  const samples = [0, 1, 2].map((day) => {
+    const start = new Date(Date.now() - (day + 1) * 86_400_000).toISOString();
+    return {
+      uuid: `${deviceId}-rhr-${day}`,
+      type: 'HKQuantityTypeIdentifierRestingHeartRate',
+      start, end: start,
+      value: restingHr + (2 - day),
+      unit: 'count/min',
+      source_name: 'Harness Health',
+      device_name: 'Harness iPhone',
+    };
+  });
+  await fetch(`${base}/api/secure/health/samples`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', authorization: `Bearer ${session}` },
+    body: JSON.stringify({ device: { device_id: deviceId, name: 'Harness iPhone' }, samples }),
+  });
 }
 
 /** Records for one account, written the way the app writes them, so the search index is real. */
@@ -152,7 +183,8 @@ async function main(): Promise<void> {
     await signIn(h.base, 'dana');
     check('a patient can sign in and mint a token for an agent', jimSession !== '');
 
-    const jim = await mint(h.base, jimSession, ['Record search']);
+    await seedHealth(h.base, jimSession, 'jim-phone', 60);
+    const jim = await mint(h.base, jimSession, ['Record search', 'Health']);
     check('the mint returns a cleartext token, once', jim.token.startsWith('yphr_at_'), jim.token.slice(0, 12));
 
     // --- the handshake ---
@@ -161,10 +193,26 @@ async function main(): Promise<void> {
     check('the bridge completes the MCP handshake',
       (init?.result?.['protocolVersion'] ?? '') === '2025-06-18');
     const tools = (hello.find((r) => r.id === 2)?.result?.['tools'] ?? []) as { name: string }[];
-    check('it offers exactly one tool, and it is search_records',
-      tools.length === 1 && tools[0]?.name === 'search_records', tools.map((t) => t.name).join(','));
+    // Two, because the record and the wearable trend are reached by two different routes.
+    // search_records runs over the FHIR resources a provider sent. Raw samples stay in phd-samples.db.
+    const toolNames = tools.map((t) => t.name).sort();
+    check('it offers exactly two tools: search_records and read_health_metric',
+      toolNames.length === 2 && toolNames[0] === 'read_health_metric' && toolNames[1] === 'search_records',
+      toolNames.join(','));
     check('TOOTH: no write tool is offered — none exists to offer',
       !tools.some((t) => /create|update|delete|write|add/i.test(t.name)));
+
+    const healthCall = {
+      jsonrpc: '2.0', id: 2, method: 'tools/call',
+      params: { name: 'read_health_metric', arguments: { metric_type: 'resting_heart_rate', days: 7, mode: 'daily-stats' } },
+    };
+    const trend = toolText((await speak(h.base, jim.token, [HELLO, healthCall], 2)).find((r) => r.id === 2));
+    check('the agent reads the wearable trend the token was scoped to',
+      trend.includes('resting_heart_rate') && trend.includes('62'), trend.split('\n')[0] ?? '');
+    const noHealth = await mint(h.base, jimSession, ['Record search'], 'No health');
+    const healthRefused = toolText((await speak(h.base, noHealth.token, [HELLO, healthCall], 2)).find((r) => r.id === 2));
+    check('TOOTH: a token without Health is refused the wearable trend',
+      healthRefused.includes('Health'), healthRefused.split('\n')[0] ?? '');
 
     // --- the read it was given ---
     const found = toolText((await speak(h.base, jim.token, [HELLO, search(2, 'metformin')], 2)).find((r) => r.id === 2));
