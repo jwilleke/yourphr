@@ -20,7 +20,7 @@ let jim: ApiContext;
 
 beforeEach(async () => {
   dir = mkdtempSync(join(tmpdir(), 'health-rollup-'));
-  s = await openStores(dir, { YOURPHR_HEALTH_ENABLED: 'true', YOURPHR_DEVICES_ENABLED: 'true' });
+  s = await openStores(dir, { YOURPHR_HEALTH_ENABLED: 'true', YOURPHR_DEVICES_ENABLED: 'true', YOURPHR_HEALTH_DEVICE_INTAKE_ENABLED: 'true' });
   await s.users.createUser(ApiContext.system('test', 'test', s.engine), 'jim', PASSWORD);
   jim = ApiContext.system('test', 'jim', s.engine);
 });

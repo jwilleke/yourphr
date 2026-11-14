@@ -46,6 +46,7 @@ async function boot(): Promise<Harness> {
     YOURPHR_AUTH_SIGNUP_ENABLED: 'true',
     YOURPHR_DEVICES_ENABLED: 'true',
     YOURPHR_HEALTH_ENABLED: 'true',
+    YOURPHR_HEALTH_DEVICE_INTAKE_ENABLED: 'true',
   });
   const server = createYourPhrServer({ engine: stores.engine, auth: {} }) as Server;
   await new Promise<void>((done) => server.listen(0, '127.0.0.1', done));

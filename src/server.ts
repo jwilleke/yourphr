@@ -402,13 +402,15 @@ export function createYourPhrServer(options: ServerOptions) {
   /** HealthKit ingest: 60 batches per username per minute — the Go companion's budget. */
   const healthIngestLimiter = new SimpleRateLimiter({max: 60, windowMs: 60_000});
 
-
   // Hashed once from the index.html this server serves (yourphr#813) — the file does not change under it.
   const reportOnly = reportOnlyForWebDir(options.webDir);
   return createServer(async (req: IncomingMessage, res: ServerResponse) => {
     try {
       const url = new URL(req.url ?? '/', 'http://localhost');
       const engine = await engineReady;
+      // yourphr#314: the manager can exist with health OFF, only so account deletion reaches a sample
+      // file left from when it was on. The routes exist only while health is on.
+      const healthOn = (): boolean => engine.has('health') && engine.managers.health.enabled;
       const web = engine.has('configuration') ? engine.managers.configuration : undefined;
       applySecurityHeaders(res, url.pathname, {
         connectSrc: web ? web.getStringList('yourphr.web.csp.connect-src') : [],
@@ -710,6 +712,13 @@ export function createYourPhrServer(options: ServerOptions) {
         const category = accessCategoryFor(url.pathname);
         if (category) await engine.managers.audit.record(ctx, category);
       }
+      // Device uploads (yourphr#314) are a second switch, yourphr.health.device-intake.enabled, off by
+      // default. Off, a device key's sample POST is refused here — before it is logged as an upload
+      // or stamped on its grant — and only a signed-in session can upload.
+      if (auth && agentRequest && req.method === 'POST' && url.pathname === '/api/secure/health/samples' && healthOn() && !engine.managers.health.deviceIntake) {
+        send(res, 403, {success: false, error: 'a connected device cannot upload samples; device intake is not enabled on this instance'});
+        return;
+      }
       // A connected device's write (yourphr#808): logged under the device's own name before it is
       // served, like a read, and stamped on its grant for inactivity suspension (yourphr#809).
       if (auth && agentRequest && req.method !== 'GET' && ctx.viaToken?.grantId) {
@@ -982,6 +991,8 @@ export function createYourPhrServer(options: ServerOptions) {
           // the account itself (consent goes with it). Order matters — each door is asked in turn.
           if (engine.has('sources')) await engine.managers.sources.removeAll(ctx);
           await engine.managers.records.removeAll(ctx);
+          // Health samples go too, even while health is off: the manager is registered whenever
+          // phd-samples.db exists, for exactly this (yourphr#314).
           if (engine.has('health')) await engine.managers.health.removeForUser(ctx);
           if (engine.has('audit')) await engine.managers.audit.removeForUser(ctx);
           await users.deleteSelf(ctx);
@@ -1011,10 +1022,11 @@ export function createYourPhrServer(options: ServerOptions) {
         return;
       }
 
-      // Wearable PGHD. A device grant or a signed-in session may POST. GETs of charts and detail are
-      // agent POST). GETs carry the Health access category so they are logged and an agent scoped
-      // to Health can read them later.
-      if (auth && engine.has('health') && url.pathname === '/api/secure/health/samples' && req.method === 'POST') {
+      // Wearable PGHD. A signed-in session may POST; a device grant may too, but only while
+      // yourphr.health.device-intake.enabled is on (refused at the agent gate above otherwise).
+      // GETs carry the Health access category so they are logged and an agent scoped to Health
+      // can read them later.
+      if (auth && healthOn() && url.pathname === '/api/secure/health/samples' && req.method === 'POST') {
         if (engine.has('demo')) engine.managers.demo.refuseWrite(ctx, 'ingesting health samples');
         const limited = healthIngestLimiter.consume(ctx.username);
         if (!limited.allowed) {
@@ -1040,7 +1052,7 @@ export function createYourPhrServer(options: ServerOptions) {
         })});
         return;
       }
-      if (auth && engine.has('health') && url.pathname === '/api/secure/health/samples' && req.method === 'GET') {
+      if (auth && healthOn() && url.pathname === '/api/secure/health/samples' && req.method === 'GET') {
         send(res, 200, {success: true, data: await engine.managers.health.list(ctx, {
           codes: csvQuery(url, 'code'),
           metricTypes: csvQuery(url, 'metric_type'),
@@ -1054,11 +1066,11 @@ export function createYourPhrServer(options: ServerOptions) {
         return;
       }
       const healthObservation = url.pathname.match(/^\/api\/secure\/health\/observation\/([^/]+)$/);
-      if (auth && engine.has('health') && healthObservation && req.method === 'GET') {
+      if (auth && healthOn() && healthObservation && req.method === 'GET') {
         send(res, 200, {success: true, data: await engine.managers.health.observation(ctx, decodeURIComponent(healthObservation[1]!))});
         return;
       }
-      if (auth && engine.has('health') && url.pathname === '/api/secure/health/bundle' && req.method === 'GET') {
+      if (auth && healthOn() && url.pathname === '/api/secure/health/bundle' && req.method === 'GET') {
         send(res, 200, {success: true, data: await engine.managers.health.bundle(ctx, {
           codes: csvQuery(url, 'code'),
           metricTypes: csvQuery(url, 'metric_type'),
@@ -1068,11 +1080,11 @@ export function createYourPhrServer(options: ServerOptions) {
         })});
         return;
       }
-      if (auth && engine.has('health') && url.pathname === '/api/secure/health/metrics' && req.method === 'GET') {
+      if (auth && healthOn() && url.pathname === '/api/secure/health/metrics' && req.method === 'GET') {
         send(res, 200, {success: true, data: await engine.managers.health.metrics(ctx)});
         return;
       }
-      if (auth && engine.has('health') && url.pathname === '/api/secure/health/series' && req.method === 'GET') {
+      if (auth && healthOn() && url.pathname === '/api/secure/health/series' && req.method === 'GET') {
         send(res, 200, {success: true, data: await engine.managers.health.series(ctx, {
           codes: csvQuery(url, 'code'),
           metricTypes: csvQuery(url, 'metric_type'),
@@ -1084,7 +1096,7 @@ export function createYourPhrServer(options: ServerOptions) {
         })});
         return;
       }
-      if (auth && engine.has('health') && url.pathname === '/api/secure/health/sync-state' && req.method === 'GET') {
+      if (auth && healthOn() && url.pathname === '/api/secure/health/sync-state' && req.method === 'GET') {
         send(res, 200, {success: true, data: await engine.managers.health.syncState(ctx, url.searchParams.get('device_id') ?? undefined)});
         return;
       }

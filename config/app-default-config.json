@@ -60,6 +60,8 @@
   "yourphr.devices.inactive-after-days": 90,
   "_comment_health": "yourphr#314 — connected-device samples. OFF by default, so phd-samples.db is created only when an operator turns this on. The device grant (yourphr.devices.enabled) is a separate switch: it lets a phone ask for permission, and this one is what stores the samples.",
   "yourphr.health.enabled": false,
+  "_comment_health_device_intake": "yourphr#314 — whether a connected device's key (yourphr.devices.enabled) may POST samples. OFF by default: only a signed-in session uploads, and a device or agent key gets 403. Has no effect while yourphr.health.enabled is off.",
+  "yourphr.health.device-intake.enabled": false,
   "yourphr.auth.password.min-length": 12,
   "yourphr.auth.trusted-proxies": [],
   "_comment_auth_rate_limit": "yourphr#647 — a per-IP FIXED WINDOW on the unauthenticated sign-in routes (/api/auth/signin and /api/auth/demo-signin). Separate from the throttle above, which counts FAILURES per account and per IP: this one counts REQUESTS, because demo sign-in runs a bcrypt verify for an anonymous caller who posts nothing, and a caller who never fails is not slowed by a failure counter. Setting max-requests to 0 or less turns it OFF, deliberately — an automated suite driving real logins from one address is the case that needs that switch. A non-positive window is a typo rather than an instruction, so it falls back to 60 seconds instead of reading as 'disable the backstop'. Counters are per PROCESS, so N replicas allow N times the budget.",

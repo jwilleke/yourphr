@@ -2,7 +2,7 @@
 
 For developers of a __mobile device app__ (a phone app that reads Apple Health or Google Health Connect) or a connected scale, cuff or meter that sends readings to a patient's yourPHR instance. This is what yourPHR guarantees today. The design and its decisions are in [2026-09-30-device-write-scope-and-consent-grant.md](../planning/2026-09-30-device-write-scope-and-consent-grant.md) ([#807](https://github.com/jwilleke/yourphr/issues/807)). Built in [#808](https://github.com/jwilleke/yourphr/issues/808) and [#809](https://github.com/jwilleke/yourphr/issues/809) as part of [#810](https://github.com/jwilleke/yourphr/issues/810).
 
-> __Status.__ Setup, keys, refresh, pausing and the write gate are live. Sample upload and the sync-state read answer only when an operator also turns on `yourphr.health.enabled` (off by default). Until then those two routes answer `404` after the gate.
+> __Status.__ Setup, keys, refresh, pausing and the write gate are live. Sample upload and the sync-state read answer only when an operator also turns on `yourphr.health.enabled` (off by default). Until then those two routes answer `404` after the gate. A device key may upload only when `yourphr.health.device-intake.enabled` is on as well (also off by default); with it off, a device's sample upload answers `403` and is not logged as an upload, and only a signed-in session can upload.
 
 ## What a device may do
 

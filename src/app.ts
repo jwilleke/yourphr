@@ -19,6 +19,7 @@
  * A tool with its own idea of where the data lives is how a migration lands in the wrong place and
  * reports success.
  */
+import { existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import Database from 'better-sqlite3-multiple-ciphers';
 import { FileConfigProvider } from './framework/providers/FileConfigProvider.js';
@@ -527,9 +528,17 @@ export async function openStores(dataDir: string, env: Record<string, string | u
   engine.register('agentTokens', new AgentTokensManager(engine, new SqliteAgentTokensProvider(db)));
   const recordsManager = new RecordsManager(engine, recordsProvider, new SqliteFavoritesProvider(db));
   engine.register('records', recordsManager);
-  // yourphr#314: the sample file is created when health is turned on, and not before.
-  if (config.getBool('yourphr.health.enabled')) {
-    engine.register('health', new HealthManager(engine, new SqlitePhdSamplesProvider(phdSamplesDbPath, dbKey)));
+  // yourphr#314: the sample file is created when health is turned on, and not before. With health
+  // off, a file left from when it was on still belongs to its accounts: the manager is registered
+  // (every health route stays absent) so deleting an account deletes its samples, and the file is
+  // opened only for that. Device uploads are a second switch, off by default.
+  const healthEnabled = config.getBool('yourphr.health.enabled');
+  if (healthEnabled || existsSync(phdSamplesDbPath)) {
+    const openSamples = (): SqlitePhdSamplesProvider => new SqlitePhdSamplesProvider(phdSamplesDbPath, dbKey);
+    engine.register('health', new HealthManager(engine, healthEnabled ? openSamples() : openSamples, {
+      enabled: healthEnabled,
+      deviceIntake: config.getBool('yourphr.health.device-intake.enabled'),
+    }));
   }
   // Backups (yourphr#615): the coordinator over OPTIONAL storage; the records door is the exporter.
   engine.register('backups', new BackupManager(engine, backupProviderFor(config.getString('yourphr.backup.storage.provider')), { dataDir, exporter: recordsManager, alsoExport: [{ file: appDbPath, key: dbKey }, { file: phdSamplesDbPath, key: dbKey, optional: true }] }));

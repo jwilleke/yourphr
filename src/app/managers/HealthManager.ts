@@ -504,6 +504,44 @@ function coarsenDaily(daily: HealthDailyBucket[], how: 'sum' | 'mean', startAfte
   });
 }
 
+const MAX_DEVICE_FIELD = 256;
+
+/** `device` is optional; present, it is an object whose fields are strings within their caps. 400 otherwise. */
+function parseDevice(raw: unknown): { id: string; name: string } {
+  if (raw === undefined || raw === null) return { id: '', name: '' };
+  if (typeof raw !== 'object' || Array.isArray(raw)) throw new ApiError(400, 'invalid request: device must be an object');
+  const rec = raw as Record<string, unknown>;
+  const field = (key: string, max: number): string => {
+    const value = rec[key];
+    if (value === undefined || value === null) return '';
+    if (typeof value !== 'string') throw new ApiError(400, `invalid request: device.${key} must be a string`);
+    if (value.length > max) throw new ApiError(400, `device.${key} is longer than ${max} characters`);
+    return value;
+  };
+  return { id: field('device_id', MAX_DEVICE_FIELD).trim(), name: field('name', MAX_TEXT) };
+}
+
+/**
+ * `anchors` is optional; present, it maps a metric to the sender's sync anchor. Every entry is
+ * checked here, before ingest writes anything, so a bad anchor cannot follow stored samples.
+ */
+function parseAnchors(raw: unknown): { metricType: string; anchor: string }[] {
+  if (raw === undefined || raw === null) return [];
+  if (typeof raw !== 'object' || Array.isArray(raw)) throw new ApiError(400, 'invalid request: anchors must be an object');
+  const entries = Object.entries(raw as Record<string, unknown>);
+  if (entries.length > MAX_ANCHORS) throw new ApiError(400, `at most ${MAX_ANCHORS} anchors`);
+  const out: { metricType: string; anchor: string }[] = [];
+  for (const [metricTypeRaw, anchorRaw] of entries) {
+    const metricType = metricTypeRaw.trim();
+    if (metricType === '') continue;
+    if (metricType.length > 64) throw new ApiError(400, 'anchor metric is longer than 64 characters');
+    if (typeof anchorRaw !== 'string') throw new ApiError(400, `invalid request: the anchor for ${metricType} must be a string`);
+    if (anchorRaw.length > MAX_ANCHOR) throw new ApiError(400, `anchor is longer than ${MAX_ANCHOR} characters`);
+    out.push({ metricType, anchor: anchorRaw });
+  }
+  return out;
+}
+
 function expandBundle(raw: unknown): unknown[] {
   if (!raw || typeof raw !== 'object') return [];
   const rec = raw as Record<string, unknown>;
@@ -511,22 +549,54 @@ function expandBundle(raw: unknown): unknown[] {
   return rec.entry.map((e) => (e && typeof e === 'object' ? (e as Record<string, unknown>).resource : undefined)).filter(Boolean);
 }
 
+/**
+ * `enabled` is yourphr.health.enabled. Off, the manager exists only when phd-samples.db is already
+ * on disk, and only so that deleting an account also deletes that account's samples: every route
+ * answers as if health were absent, and the file is opened only for that deletion.
+ * `deviceIntake` is yourphr.health.device-intake.enabled. Off, only a signed-in session uploads.
+ */
+export interface HealthManagerOptions {
+  enabled: boolean;
+  deviceIntake: boolean;
+}
+
 export class HealthManager extends BaseManager {
   readonly name = 'health' as const;
   override readonly dependsOn = [] as const;
+  readonly enabled: boolean;
+  readonly deviceIntake: boolean;
+  private opened: BaseHealthProvider | undefined;
 
-  constructor(engine: Engine, private readonly provider: BaseHealthProvider) {
+  constructor(
+    engine: Engine,
+    private readonly providerSource: BaseHealthProvider | (() => BaseHealthProvider),
+    options: HealthManagerOptions = { enabled: true, deviceIntake: false },
+  ) {
     super(engine);
+    this.enabled = options.enabled;
+    this.deviceIntake = options.enabled && options.deviceIntake;
+  }
+
+  /** Opened on first use. While health is off that is only an account deletion. */
+  private get provider(): BaseHealthProvider {
+    if (!this.opened) this.opened = typeof this.providerSource === 'function' ? this.providerSource() : this.providerSource;
+    return this.opened;
   }
 
   override async initialize(config: Record<string, unknown> = {}): Promise<void> {
-    await this.provider.initialize();
+    if (this.enabled) await this.provider.initialize();
     await super.initialize(config);
   }
 
   private who(ctx: ApiContext): string {
     ctx.requireAuthenticated();
     return ctx.username;
+  }
+
+  /** The account behind a health read or write. With health off there is no such route. */
+  private user(ctx: ApiContext): string {
+    if (!this.enabled) throw new ApiError(404, 'not found');
+    return this.who(ctx);
   }
 
   private async subjectFor(ctx: ApiContext): Promise<string> {
@@ -548,10 +618,15 @@ export class HealthManager extends BaseManager {
       entry?: unknown;
     }
   ): Promise<HealthSampleIngestResult> {
-    const userId = this.who(ctx);
-    const sourceId = await this.sourceFor(ctx, body);
-    const deviceId = asString(body.device?.device_id).trim() || sourceId;
-
+    const userId = this.user(ctx);
+    if (ctx.viaToken && !this.deviceIntake) {
+      throw new ApiError(403, 'a connected device cannot upload samples; device intake is not enabled on this instance');
+    }
+    // Everything the request carries is checked before anything is written — the device source,
+    // the raw rows, the Observations, the sync state. A refused request leaves nothing behind.
+    // (A single bad SAMPLE is not a refused request: it is reported in `errors` and skipped.)
+    const device = parseDevice(body.device);
+    const anchorEntries = parseAnchors(body.anchors);
     if (body.samples !== undefined && !Array.isArray(body.samples) && asString(body.resourceType) !== 'Bundle') {
       throw new ApiError(400, 'invalid request: samples must be an array');
     }
@@ -559,6 +634,9 @@ export class HealthManager extends BaseManager {
     if (rawSamples.length > HEALTH_SAMPLE_MAX_BATCH) {
       throw new ApiError(400, `batch contains ${rawSamples.length} samples; the maximum is ${HEALTH_SAMPLE_MAX_BATCH}`);
     }
+
+    const sourceId = await this.sourceFor(ctx, body);
+    const deviceId = device.id || sourceId;
 
     const accepted: HealthSampleRow[] = [];
     const errors: HealthSampleRejection[] = [];
@@ -623,27 +701,15 @@ export class HealthManager extends BaseManager {
       });
     }
     const now = new Date().toISOString();
-    const anchors = body.anchors && typeof body.anchors === 'object' && !Array.isArray(body.anchors)
-      ? body.anchors as Record<string, unknown>
-      : {};
-    const anchorEntries = Object.entries(anchors);
-    if (anchorEntries.length > MAX_ANCHORS) throw new ApiError(400, `at most ${MAX_ANCHORS} anchors`);
-    const syncRows = [];
-    for (const [metricTypeRaw, anchorRaw] of anchorEntries) {
-      const metricType = metricTypeRaw.trim();
-      if (metricType === '') continue;
-      const anchor = asString(anchorRaw);
-      if (anchor.length > MAX_ANCHOR) throw new ApiError(400, 'anchor is longer than 1024 characters');
-      syncRows.push({
-        userId,
-        deviceId,
-        metricType: cap(metricType, 'anchor metric', 64),
-        anchor,
-        lastSampleEndTime: latestEnd.get(metricType) ?? latestEnd.get(lookupByMetricType(metricType)?.metricType ?? '') ?? '',
-        lastSyncedAt: now,
-        deviceName: cap(asString(body.device?.name), 'device.name'),
-      });
-    }
+    const syncRows = anchorEntries.map(({ metricType, anchor }) => ({
+      userId,
+      deviceId,
+      metricType,
+      anchor,
+      lastSampleEndTime: latestEnd.get(metricType) ?? latestEnd.get(lookupByMetricType(metricType)?.metricType ?? '') ?? '',
+      lastSyncedAt: now,
+      deviceName: device.name,
+    }));
     await this.provider.upsertSyncStates(syncRows);
 
     return {
@@ -692,7 +758,7 @@ export class HealthManager extends BaseManager {
       sort?: unknown;
     }
   ): Promise<{ total: number; count: number; offset: number; samples: HealthSampleListItem[] }> {
-    const userId = this.who(ctx);
+    const userId = this.user(ctx);
     if (query.limit !== undefined && query.limit !== '' && !Number.isFinite(Number(query.limit))) {
       throw new ApiError(400, 'limit must be an integer');
     }
@@ -710,7 +776,7 @@ export class HealthManager extends BaseManager {
   }
 
   async observation(ctx: ApiContext, id: string): Promise<Observation> {
-    const userId = this.who(ctx);
+    const userId = this.user(ctx);
     const row = await this.provider.readSample(userId, id);
     if (!row) throw new ApiError(404, 'not found');
     return toObservation(row, row.subject || await this.subjectFor(ctx));
@@ -726,7 +792,7 @@ export class HealthManager extends BaseManager {
       startBefore?: unknown;
     }
   ): Promise<Bundle<Observation>> {
-    const userId = this.who(ctx);
+    const userId = this.user(ctx);
     const parsed = this.parseListQuery({ ...query, limit: HEALTH_SAMPLE_MAX_LIMIT, offset: 0, sort: 'asc' });
     parsed.limit = HEALTH_SAMPLE_MAX_LIMIT;
     const { samples } = await this.provider.listSamples(userId, parsed);
@@ -757,7 +823,7 @@ export class HealthManager extends BaseManager {
   }
 
   async metrics(ctx: ApiContext): Promise<{ last_synced_at?: string; metrics: HealthMetricSummary[] }> {
-    const userId = this.who(ctx);
+    const userId = this.user(ctx);
     const metrics = await this.provider.summarizeMetrics(userId);
     const states = await this.provider.listSyncStates(userId, '');
     let last: string | undefined;
@@ -779,7 +845,7 @@ export class HealthManager extends BaseManager {
       mode?: unknown;
     }
   ): Promise<HealthSeries> {
-    const userId = this.who(ctx);
+    const userId = this.user(ctx);
     const modeRaw = asString(query.mode).trim() || 'points';
     if (modeRaw !== 'points' && modeRaw !== 'day' && modeRaw !== 'daily-stats' && modeRaw !== 'stages') {
       throw new ApiError(400, 'mode must be points, day, daily-stats, or stages');
@@ -815,7 +881,7 @@ export class HealthManager extends BaseManager {
   }
 
   async syncState(ctx: ApiContext, deviceId?: string): Promise<HealthSyncStateView[]> {
-    const userId = this.who(ctx);
+    const userId = this.user(ctx);
     return (await this.provider.listSyncStates(userId, deviceId?.trim() ?? '')).map((s) => ({
       device_id: s.deviceId,
       metric_type: s.metricType,
@@ -826,12 +892,27 @@ export class HealthManager extends BaseManager {
     }));
   }
 
+  /**
+   * Account deletion. Runs whether or not health is on: samples stored while it was on are the
+   * account's data and go with it. With health off the file is opened for this and closed again.
+   */
   async removeForUser(ctx: ApiContext): Promise<void> {
-    await this.provider.removeForOwner(this.who(ctx));
+    const userId = this.who(ctx);
+    const provider = this.provider;
+    if (!this.enabled) await provider.initialize();
+    try {
+      await provider.removeForOwner(userId);
+    } finally {
+      if (!this.enabled) {
+        await provider.close();
+        this.opened = undefined;
+      }
+    }
   }
 
   override async shutdown(): Promise<void> {
-    await this.provider.close();
+    if (this.opened) await this.opened.close();
+    this.opened = undefined;
   }
 
   /** Charts read the daily and spot Observations. A long window sums steps and sleep and averages the daily means. */
