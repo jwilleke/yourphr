@@ -11,6 +11,7 @@ import {ClassifiedCondition} from '../../models/fasten/classified-condition';
 import {ClassifiedAllergy} from '../../models/fasten/classified-allergy';
 import {ResourceListItem} from '../../models/fasten/resource-list-item';
 import {displayFhirDate} from '../../../lib/utils/implant-date';
+import {groupSummaries} from '../health/health-metrics';
 
 // The palette a patient can pick a tile color from (matches the SCSS .tile-color-* classes).
 export const TILE_PALETTE = ['amber', 'blue', 'red', 'green', 'teal', 'purple', 'pink', 'gray']
@@ -32,7 +33,7 @@ export interface DashboardTile {
   // countKey tiles get their count from a classifier (not the summary resource counts): concerns/profile
   // from the condition classifier, allergies from the allergy classifier (so "no known allergy"
   // negations are excluded — #290).
-  countKey?: 'concerns' | 'profile' | 'allergies'
+  countKey?: 'concerns' | 'profile' | 'allergies' | 'health'
 }
 
 export const DEFAULT_TILES: DashboardTile[] = [
@@ -41,6 +42,7 @@ export const DEFAULT_TILES: DashboardTile[] = [
   {id: 'medications', label: 'Medications', clinicalLabel: 'Prescriptions & medication statements', icon: 'fa-solid fa-pills', route: '/medications', resourceTypes: ['MedicationRequest', 'MedicationStatement', 'Medication', 'MedicationAdministration', 'MedicationDispense'], count: 0, color: 'amber', unit: 'records'},
   {id: 'allergies', label: 'Allergies', clinicalLabel: 'Allergies & intolerances', icon: 'fa-solid fa-triangle-exclamation', route: '/allergies', resourceTypes: ['AllergyIntolerance'], count: 0, color: 'pink', unit: 'recorded', countKey: 'allergies'},
   {id: 'lab-results', label: 'Lab Results', clinicalLabel: 'Observations & diagnostic reports', icon: 'fa-solid fa-flask', route: '/labs', resourceTypes: ['Observation', 'DiagnosticReport'], count: 0, color: 'blue', unit: 'results'},
+  {id: 'health', label: 'Health', clinicalLabel: 'Wearables & device readings', icon: 'fa-solid fa-chart-line', route: '/health', resourceTypes: [], count: 0, color: 'red', unit: 'metrics', countKey: 'health'},
   {id: 'immunizations', label: 'Immunizations', clinicalLabel: 'Vaccinations', icon: 'fa-solid fa-syringe', route: '/immunizations', resourceTypes: ['Immunization'], count: 0, color: 'green', unit: 'on file'},
   {id: 'visits', label: 'Visits & Notes', clinicalLabel: 'Encounters', icon: 'fa-solid fa-notes-medical', route: '/medical-history', resourceTypes: ['Encounter'], count: 0, color: 'teal', unit: 'encounters'},
   {id: 'procedures', label: 'Procedures', clinicalLabel: 'Procedures & surgeries', icon: 'fa-solid fa-user-nurse', route: '/procedures', resourceTypes: ['Procedure'], count: 0, color: 'purple', unit: 'procedures'},
@@ -78,6 +80,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
   searching = false
 
   tiles: DashboardTile[] = []
+  /** False once the server says health is off (404 from /secure/health/metrics). */
+  healthAvailable = true
   customizing = false
   hasCustomOrder = false
   hasCustomColors = false
@@ -154,6 +158,17 @@ export class DashboardComponent implements OnInit, OnDestroy {
       next: (rows: ClassifiedAllergy[]) => {
         const real = (rows || []).filter((r) => !r.noKnown && r.state !== 'RuledOut')
         this.setTileCount('allergies', real.length)
+      },
+    })
+
+    // yourphr#314: health is off by default (yourphr.health.enabled), and then its routes answer 404.
+    // An instance without health shows no Health tile rather than one that opens an empty page.
+    this.fastenApi.getHealthMetrics().subscribe({
+      next: (catalog) => {
+        this.setTileCount('health', groupSummaries(catalog.metrics || []).length)
+      },
+      error: (err: {status?: number}) => {
+        if (err?.status === 404) this.hideHealthTile()
       },
     })
   }
@@ -239,6 +254,12 @@ export class DashboardComponent implements OnInit, OnDestroy {
     return 'fa-solid ' + (map[resourceType] || 'fa-file-lines')
   }
 
+  /** Health is not on for this instance: drop its tile, and keep it dropped across a reset. */
+  private hideHealthTile() {
+    this.healthAvailable = false
+    this.tiles = this.tiles.filter((tile) => tile.id !== 'health')
+  }
+
   private setTileCount(countKey: NonNullable<DashboardTile['countKey']>, count: number) {
     const tile = this.tiles.find((t) => t.countKey === countKey)
     if (tile) tile.count = count
@@ -300,6 +321,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.hasCustomOrder = false
     this.hasCustomColors = false
     const countsById = new Map(this.tiles.map((tile) => [tile.id, tile.count]))
-    this.tiles = DEFAULT_TILES.map((tile) => ({...tile, count: countsById.get(tile.id) ?? 0}))
+    this.tiles = DEFAULT_TILES
+      .filter((tile) => this.healthAvailable || tile.id !== 'health')
+      .map((tile) => ({...tile, count: countsById.get(tile.id) ?? 0}))
   }
 }
