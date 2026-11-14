@@ -2,8 +2,8 @@
   "schema": 1,
   "source": "https://github.com/jwilleke/mjs-project-template",
   "installed": "v1.15.0",
-  "installed_ref": "v1.15.0-3-gb6389e1",
-  "installed_at": "2026-10-29",
+  "installed_ref": "v1.15.0-6-g5def115",
+  "installed_at": "2026-11-14",
   "files": {
     ".claude/commands/pstatus.md": { "behavior": "overwrite", "sha256": "9f812e552e72e7522a2bd194e3b3d69329d4744b0dc764e7e05c900d88dca23c" },
     ".claude/commands/session-commit.md": { "behavior": "overwrite", "sha256": "2f38aa7347ea3a54e34245c92c518ccfc3667e058e52ad1023ea8f6ebf2a0e05" },
@@ -16,6 +16,6 @@
     "utility/set-version.mjs": { "behavior": "overwrite", "sha256": "292730d5df9c923f57dde984bc132ebfd2ba92fb83c9494f5b6ac3d0f6dcbc6c" },
     "utility/kit-sync.sh": { "behavior": "overwrite", "sha256": "e04e505e4531cf6101b7f0a3e09885299ca5e588c6cc9d0681cf6e97394c8ba9" },
     ".claude/commands/semver-kit.md": { "behavior": "overwrite-or-suffix", "sha256": "2a7aec587f39ce2e5ce63d921cc8565f6855f5f7f7b5d2ba70a29d6dee20d3ce" },
-    ".github/workflows/secret-scan.yml": { "behavior": "overwrite", "sha256": "6c10eb694093d05970a19320cba38e75ba94347bbcd04a58537e5b54a9791df3" }
+    ".github/workflows/secret-scan.yml": { "behavior": "overwrite", "sha256": "d202051588e8b018c3803d066ddd2014f8873d3a81fa4d99805b23b82fd3438e" }
   }
 }
