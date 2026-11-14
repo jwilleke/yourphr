@@ -1,0 +1,35 @@
+name: phr add-on
+
+# The phr add-on's own build, type check and tests (addons/phr), on every push
+# that touches it. Separate from the app's CI: yourPHR's main stack doesn't
+# build or ship addons/.
+
+on:
+  push:
+    paths:
+      - 'addons/phr/**'
+      - '.github/workflows/phr-addon-ci.yml'
+  pull_request:
+    paths:
+      - 'addons/phr/**'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: addons/phr
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24.x
+      - name: Install
+        run: npm ci
+      - name: Build
+        run: npm run build
+      - name: Type check and test
+        run: npm test

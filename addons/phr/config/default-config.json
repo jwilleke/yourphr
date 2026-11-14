@@ -1,0 +1,113 @@
+{
+  "_comment_phr": "yourPHR's phr add-on (jwilleke/yourphr#920). Merged into the site's configuration only while ngdpbase.addons.phr.enabled is true; the site's app-custom-config.json overrides any entry.",
+  "ngdpbase.addons.phr.enabled": false,
+  "_comment_phr_site_critical": "yourPHR can't work without phr: any failure to load puts the whole site in maintenance mode, and admins get the reason (operator decision 2026-10-18, ngdpbase#1883). A site may turn this off in its own configuration; it then owns that risk.",
+  "ngdpbase.addons.phr.site-critical": true,
+  "_comment_phr_database": "phr.db: health records under the site's database key (D2). encrypt \"required\": core never opens it without NGDPBASE_DATABASE_KEY (D3), and with site-critical the site goes into maintenance instead (ngdpbase#1860, #1883).",
+  "ngdpbase.addons.phr.database": {
+    "owner": "phr",
+    "ledgerTable": "phr_migrations",
+    "encrypt": "required"
+  },
+  "_comment_phr_vault": "One PHR vault per user (operator, 2026-10-15; ngdpbase#1559). owner, encrypt, defaultPrivate and shareMaxDays are phr's own and a site can't override them. encrypt is fixed when each user's vault is created. Booleans must be booleans: core refuses to load phr otherwise. Comments and footnotes are off on phr's categories (ngdpbase#1952): a user's notes about a record go into phr.db as patient-entered data, never into core's shared comment tabs. phr-pages holds phr's shared, non-PHI pages.",
+  "ngdpbase.system-category": {
+    "phr": {
+      "label": "PHR",
+      "description": "Personal health records and files",
+      "enabled": true,
+      "owner": "phr",
+      "storageLocation": {
+        "defaultstore": "pages/",
+        "privatestore": "pages/vaults/{user}/phr/"
+      },
+      "defaultPrivate": true,
+      "encrypt": true,
+      "shareMaxDays": 15,
+      "page-badge": {
+        "color": "bg-info",
+        "label": "PHR",
+        "title": "PHR entry"
+      },
+      "comments": false,
+      "footnotes": false
+    },
+    "phr-pages": {
+      "label": "phr-pages",
+      "description": "yourPHR's own pages (no health data in them: records are drawn per user from phr.db)",
+      "enabled": true,
+      "owner": "phr",
+      "storageLocation": {
+        "defaultstore": "pages/"
+      },
+      "comments": false,
+      "footnotes": false,
+      "page-badge": {
+        "color": "bg-info",
+        "label": "PHR",
+        "title": "yourPHR page"
+      }
+    }
+  },
+  "_comment_step_up": "No phr permission is marked \"step-up\": true (operator decision 2026-10-18): add-ons keep step-up off for now, because a form loses its fields across the fresh sign-in. Core's own step-up window is 60 minutes.",
+  "ngdpbase.permissions.definitions": {
+    "phr-read": {
+      "description": "Read one's own health records in the phr add-on (or a represented user's, under a proxy grant)",
+      "label": "See my health records",
+      "icon": "notes-medical",
+      "color": "#0d6efd",
+      "audit": {
+        "enabled": true,
+        "on-failure": "refuse",
+        "description": "Health records read: who, whose (owner), which kind and id; never content"
+      }
+    },
+    "phr-write": {
+      "description": "Add or update one's own health records in the phr add-on",
+      "label": "Add to my health records",
+      "icon": "notes-medical",
+      "color": "#0d6efd",
+      "audit": {
+        "enabled": true,
+        "on-failure": "refuse",
+        "description": "Health record added or updated: who, whose (owner), which kind and id; never content"
+      }
+    },
+    "phr-delete": {
+      "description": "Remove one's own health records in the phr add-on",
+      "label": "Remove from my health records",
+      "icon": "notes-medical",
+      "color": "#dc3545",
+      "audit": {
+        "enabled": true,
+        "on-failure": "refuse",
+        "description": "Health record removed: who, whose (owner), which kind and id"
+      }
+    }
+  },
+  "ngdpbase.access.policies": [
+    {
+      "id": "phr-access",
+      "name": "Health records",
+      "description": "Who may use phr at all: every user, through the role vault-owner that every account holds (ngdpbase#1539, operator 2026-10-24: a permission over a user's own records goes to vault-owner, never to site roles). Whose records a user may see is not decided here: phr reads each record's owner from storage and core decides (owner rule, then policy). The resource type becomes phr-record once phr declares it (ngdpbase#1823).",
+      "priority": 90,
+      "effect": "allow",
+      "subjects": [
+        {
+          "type": "role",
+          "value": "vault-owner"
+        }
+      ],
+      "resources": [
+        {
+          "type": "page",
+          "pattern": "*"
+        }
+      ],
+      "actions": [
+        "phr-read",
+        "phr-write",
+        "phr-delete"
+      ]
+    }
+  ]
+}

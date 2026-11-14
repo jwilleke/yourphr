@@ -179,3 +179,9 @@ e2e/.admin-pass
 
 # Credentials kept beside the docs for convenience; never committed.
 docs/creds/
+
+# ngdpbase add-on phr (#920): compiled in place from .ts; build output is not committed
+addons/*/**/*.js
+addons/*/**/*.js.map
+addons/*/.tsbuildinfo
+addons/*/node_modules/

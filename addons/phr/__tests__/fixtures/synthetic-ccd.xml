@@ -1,0 +1,207 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SYNTHETIC test document. Every person, place and value in it is made up. -->
+<ClinicalDocument xmlns="urn:hl7-org:v3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <realmCode code="US"/>
+  <typeId root="2.16.840.1.113883.1.3" extension="POCD_HD000040"/>
+  <templateId root="2.16.840.1.113883.10.20.22.1.1" extension="2015-08-01"/>
+  <templateId root="2.16.840.1.113883.10.20.22.1.2" extension="2015-08-01"/>
+  <id root="2.16.840.1.113883.19.5.99999.1" extension="synthetic-doc-1"/>
+  <code code="34133-9" codeSystem="2.16.840.1.113883.6.1" displayName="Summarization of Episode Note"/>
+  <title>Synthetic Continuity of Care Document</title>
+  <effectiveTime value="20240115103000-0500"/>
+  <confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25"/>
+  <languageCode code="en-US"/>
+  <recordTarget>
+    <patientRole>
+      <id root="2.16.840.1.113883.19.5.99999.2" extension="SYN-0001"/>
+      <addr use="HP"><streetAddressLine>1 Example Street</streetAddressLine><city>Testville</city><state>OH</state><postalCode>00000</postalCode><country>US</country></addr>
+      <telecom use="HP" value="tel:+1-555-555-0100"/>
+      <patient>
+        <name use="L"><given>Alex</given><family>Synthetic</family></name>
+        <administrativeGenderCode code="F" codeSystem="2.16.840.1.113883.5.1"/>
+        <birthTime value="19700101"/>
+      </patient>
+    </patientRole>
+  </recordTarget>
+  <author>
+    <time value="20240115103000-0500"/>
+    <assignedAuthor>
+      <id root="2.16.840.1.113883.4.6" extension="9999999999"/>
+      <assignedPerson><name><given>Pat</given><family>Example</family></name></assignedPerson>
+    </assignedAuthor>
+  </author>
+  <custodian>
+    <assignedCustodian><representedCustodianOrganization>
+      <id root="2.16.840.1.113883.19.5.99999.3"/>
+      <name>Synthetic Health Clinic</name>
+    </representedCustodianOrganization></assignedCustodian>
+  </custodian>
+  <component>
+    <structuredBody>
+      <component>
+        <section>
+          <templateId root="2.16.840.1.113883.10.20.22.2.6.1" extension="2015-08-01"/>
+          <code code="48765-2" codeSystem="2.16.840.1.113883.6.1" displayName="Allergies and adverse reactions"/>
+          <title>Allergies</title>
+          <text><table><tbody><tr><td>Penicillin</td><td>Hives</td></tr></tbody></table></text>
+          <entry typeCode="DRIV">
+            <act classCode="ACT" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.10.20.22.4.30" extension="2015-08-01"/>
+              <id root="2.16.840.1.113883.19.5.99999.10" extension="allergy-act-1"/>
+              <code code="CONC" codeSystem="2.16.840.1.113883.5.6"/>
+              <statusCode code="active"/>
+              <effectiveTime><low value="20100301"/></effectiveTime>
+              <entryRelationship typeCode="SUBJ">
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.22.4.7" extension="2014-06-09"/>
+                  <id root="2.16.840.1.113883.19.5.99999.10" extension="allergy-1"/>
+                  <code code="ASSERTION" codeSystem="2.16.840.1.113883.5.4"/>
+                  <statusCode code="completed"/>
+                  <effectiveTime><low value="20100301"/></effectiveTime>
+                  <value xsi:type="CD" code="416098002" codeSystem="2.16.840.1.113883.6.96" displayName="Allergy to drug"/>
+                  <participant typeCode="CSM">
+                    <participantRole classCode="MANU">
+                      <playingEntity classCode="MMAT">
+                        <code code="7980" codeSystem="2.16.840.1.113883.6.88" displayName="Penicillin G"/>
+                      </playingEntity>
+                    </participantRole>
+                  </participant>
+                </observation>
+              </entryRelationship>
+            </act>
+          </entry>
+        </section>
+      </component>
+      <component>
+        <section>
+          <templateId root="2.16.840.1.113883.10.20.22.2.5.1" extension="2015-08-01"/>
+          <code code="11450-4" codeSystem="2.16.840.1.113883.6.1" displayName="Problem list"/>
+          <title>Problems</title>
+          <text><list><item>Essential hypertension</item></list></text>
+          <entry typeCode="DRIV">
+            <act classCode="ACT" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.10.20.22.4.3" extension="2015-08-01"/>
+              <id root="2.16.840.1.113883.19.5.99999.11" extension="problem-act-1"/>
+              <code code="CONC" codeSystem="2.16.840.1.113883.5.6"/>
+              <statusCode code="active"/>
+              <effectiveTime><low value="20150610"/></effectiveTime>
+              <entryRelationship typeCode="SUBJ">
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.22.4.4" extension="2015-08-01"/>
+                  <id root="2.16.840.1.113883.19.5.99999.11" extension="problem-1"/>
+                  <code code="55607006" codeSystem="2.16.840.1.113883.6.96" displayName="Problem"/>
+                  <statusCode code="completed"/>
+                  <effectiveTime><low value="20150610"/></effectiveTime>
+                  <value xsi:type="CD" code="59621000" codeSystem="2.16.840.1.113883.6.96" displayName="Essential hypertension"/>
+                </observation>
+              </entryRelationship>
+            </act>
+          </entry>
+        </section>
+      </component>
+      <component>
+        <section>
+          <templateId root="2.16.840.1.113883.10.20.22.2.1.1" extension="2014-06-09"/>
+          <code code="10160-0" codeSystem="2.16.840.1.113883.6.1" displayName="History of medication use"/>
+          <title>Medications</title>
+          <text><list><item>Lisinopril 10 mg tablet, once daily</item></list></text>
+          <entry typeCode="DRIV">
+            <substanceAdministration classCode="SBADM" moodCode="INT">
+              <templateId root="2.16.840.1.113883.10.20.22.4.16" extension="2014-06-09"/>
+              <id root="2.16.840.1.113883.19.5.99999.12" extension="med-1"/>
+              <statusCode code="active"/>
+              <effectiveTime xsi:type="IVL_TS"><low value="20150610"/></effectiveTime>
+              <doseQuantity value="1"/>
+              <consumable>
+                <manufacturedProduct classCode="MANU">
+                  <templateId root="2.16.840.1.113883.10.20.22.4.23" extension="2014-06-09"/>
+                  <manufacturedMaterial>
+                    <code code="314076" codeSystem="2.16.840.1.113883.6.88" displayName="lisinopril 10 MG Oral Tablet"/>
+                  </manufacturedMaterial>
+                </manufacturedProduct>
+              </consumable>
+            </substanceAdministration>
+          </entry>
+        </section>
+      </component>
+      <component>
+        <section>
+          <templateId root="2.16.840.1.113883.10.20.22.2.2.1" extension="2015-08-01"/>
+          <code code="11369-6" codeSystem="2.16.840.1.113883.6.1" displayName="History of immunizations"/>
+          <title>Immunizations</title>
+          <text><list><item>Influenza vaccine, 2023-10-01</item></list></text>
+          <entry typeCode="DRIV">
+            <substanceAdministration classCode="SBADM" moodCode="EVN" negationInd="false">
+              <templateId root="2.16.840.1.113883.10.20.22.4.52" extension="2015-08-01"/>
+              <id root="2.16.840.1.113883.19.5.99999.13" extension="imm-1"/>
+              <statusCode code="completed"/>
+              <effectiveTime value="20231001"/>
+              <consumable>
+                <manufacturedProduct classCode="MANU">
+                  <templateId root="2.16.840.1.113883.10.20.22.4.54" extension="2014-06-09"/>
+                  <manufacturedMaterial>
+                    <code code="150" codeSystem="2.16.840.1.113883.12.292" displayName="Influenza, injectable, quadrivalent, preservative free"/>
+                  </manufacturedMaterial>
+                </manufacturedProduct>
+              </consumable>
+            </substanceAdministration>
+          </entry>
+        </section>
+      </component>
+      <component>
+        <section>
+          <templateId root="2.16.840.1.113883.10.20.22.2.3.1" extension="2015-08-01"/>
+          <code code="30954-2" codeSystem="2.16.840.1.113883.6.1" displayName="Relevant diagnostic tests and/or laboratory data"/>
+          <title>Results</title>
+          <text><table><tbody><tr><td>Hemoglobin A1c</td><td>5.6 %</td></tr></tbody></table></text>
+          <entry typeCode="DRIV">
+            <organizer classCode="BATTERY" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.10.20.22.4.1" extension="2015-08-01"/>
+              <id root="2.16.840.1.113883.19.5.99999.14" extension="result-panel-1"/>
+              <code code="4548-4" codeSystem="2.16.840.1.113883.6.1" displayName="Hemoglobin A1c/Hemoglobin.total in Blood"/>
+              <statusCode code="completed"/>
+              <effectiveTime value="20240110"/>
+              <component>
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.22.4.2" extension="2015-08-01"/>
+                  <id root="2.16.840.1.113883.19.5.99999.14" extension="result-1"/>
+                  <code code="4548-4" codeSystem="2.16.840.1.113883.6.1" displayName="Hemoglobin A1c/Hemoglobin.total in Blood"/>
+                  <statusCode code="completed"/>
+                  <effectiveTime value="20240110"/>
+                  <value xsi:type="PQ" value="5.6" unit="%"/>
+                </observation>
+              </component>
+            </organizer>
+          </entry>
+        </section>
+      </component>
+      <component>
+        <section>
+          <templateId root="2.16.840.1.113883.10.20.22.2.4.1" extension="2015-08-01"/>
+          <code code="8716-3" codeSystem="2.16.840.1.113883.6.1" displayName="Vital signs"/>
+          <title>Vital Signs</title>
+          <text><table><tbody><tr><td>Body weight</td><td>70 kg</td></tr></tbody></table></text>
+          <entry typeCode="DRIV">
+            <organizer classCode="CLUSTER" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.10.20.22.4.26" extension="2015-08-01"/>
+              <id root="2.16.840.1.113883.19.5.99999.15" extension="vitals-1"/>
+              <code code="46680005" codeSystem="2.16.840.1.113883.6.96" displayName="Vital signs"/>
+              <statusCode code="completed"/>
+              <effectiveTime value="20240115"/>
+              <component>
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.22.4.27" extension="2014-06-09"/>
+                  <id root="2.16.840.1.113883.19.5.99999.15" extension="weight-1"/>
+                  <code code="29463-7" codeSystem="2.16.840.1.113883.6.1" displayName="Body weight"/>
+                  <statusCode code="completed"/>
+                  <effectiveTime value="20240115"/>
+                  <value xsi:type="PQ" value="70" unit="kg"/>
+                </observation>
+              </component>
+            </organizer>
+          </entry>
+        </section>
+      </component>
+    </structuredBody>
+  </component>
+</ClinicalDocument>
