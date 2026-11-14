@@ -80,6 +80,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
   searching = false
 
   tiles: DashboardTile[] = []
+  /** False once the server says health is off (404 from /secure/health/metrics). */
+  healthAvailable = true
   customizing = false
   hasCustomOrder = false
   hasCustomColors = false
@@ -159,9 +161,14 @@ export class DashboardComponent implements OnInit, OnDestroy {
       },
     })
 
+    // yourphr#314: health is off by default (yourphr.health.enabled), and then its routes answer 404.
+    // An instance without health shows no Health tile rather than one that opens an empty page.
     this.fastenApi.getHealthMetrics().subscribe({
       next: (catalog) => {
         this.setTileCount('health', groupSummaries(catalog.metrics || []).length)
+      },
+      error: (err: {status?: number}) => {
+        if (err?.status === 404) this.hideHealthTile()
       },
     })
   }
@@ -247,6 +254,12 @@ export class DashboardComponent implements OnInit, OnDestroy {
     return 'fa-solid ' + (map[resourceType] || 'fa-file-lines')
   }
 
+  /** Health is not on for this instance: drop its tile, and keep it dropped across a reset. */
+  private hideHealthTile() {
+    this.healthAvailable = false
+    this.tiles = this.tiles.filter((tile) => tile.id !== 'health')
+  }
+
   private setTileCount(countKey: NonNullable<DashboardTile['countKey']>, count: number) {
     const tile = this.tiles.find((t) => t.countKey === countKey)
     if (tile) tile.count = count
@@ -308,6 +321,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.hasCustomOrder = false
     this.hasCustomColors = false
     const countsById = new Map(this.tiles.map((tile) => [tile.id, tile.count]))
-    this.tiles = DEFAULT_TILES.map((tile) => ({...tile, count: countsById.get(tile.id) ?? 0}))
+    this.tiles = DEFAULT_TILES
+      .filter((tile) => this.healthAvailable || tile.id !== 'health')
+      .map((tile) => ({...tile, count: countsById.get(tile.id) ?? 0}))
   }
 }

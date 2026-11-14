@@ -1,7 +1,7 @@
 import { waitForAsync, ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { DashboardComponent, DEFAULT_TILES } from './dashboard.component';
-import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import {RouterTestingModule} from '@angular/router/testing';
 import {RouterModule} from '@angular/router';
 import {HTTP_CLIENT_TOKEN} from '../../dependency-injection';
@@ -43,6 +43,30 @@ describe('DashboardComponent', () => {
   afterEach(() => {
     localStorage.removeItem('dashboard_tile_order');
     localStorage.removeItem('dashboard_tile_colors');
+  });
+
+  it('should hide the Health tile when the server has health turned off (404), also after a reset', () => {
+    const http = TestBed.inject(HttpTestingController);
+    expect(component.tiles.some((tile) => tile.id === 'health')).toBeTrue();
+    http.match((req) => req.url.endsWith('/secure/health/metrics'))
+      .forEach((req) => req.flush({success: false, error: 'not found'}, {status: 404, statusText: 'Not Found'}));
+    expect(component.tiles.some((tile) => tile.id === 'health')).toBeFalse();
+    component.resetTileOrder();
+    expect(component.tiles.some((tile) => tile.id === 'health')).toBeFalse();
+  });
+
+  it('should keep the Health tile and count its metrics when health is on', () => {
+    const http = TestBed.inject(HttpTestingController);
+    http.match((req) => req.url.endsWith('/secure/health/metrics'))
+      .forEach((req) => req.flush({success: true, data: {metrics: []}}));
+    expect(component.tiles.some((tile) => tile.id === 'health')).toBeTrue();
+  });
+
+  it('should keep the Health tile on an error that is not a 404', () => {
+    const http = TestBed.inject(HttpTestingController);
+    http.match((req) => req.url.endsWith('/secure/health/metrics'))
+      .forEach((req) => req.flush({success: false}, {status: 500, statusText: 'Server Error'}));
+    expect(component.tiles.some((tile) => tile.id === 'health')).toBeTrue();
   });
 
   it('should create', () => {
