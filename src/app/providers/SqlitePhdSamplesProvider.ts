@@ -407,11 +407,21 @@ export class SqlitePhdSamplesProvider extends BaseHealthProvider {
     series.total = (this.db.prepare(`SELECT COUNT(*) AS n FROM phd_samples WHERE user_id = ?${sql}`).get(userId, ...extra) as { n: number }).n;
     const unit = this.unitOf(userId, sql, extra);
     if (unit) series.unit = unit;
-    series.daily = this.db.prepare(
-      `SELECT local_day AS date, COALESCE(SUM(value_num), 0) AS value
+    // Per source, then the larger total for the day: adding a watch and a phone double-counts
+    // steps. The key matches rollup.ts sourceKey: the yourPHR source and the sender's device name.
+    const rows = this.db.prepare(
+      `SELECT local_day AS date,
+              source_id || ' / ' || CASE WHEN source_name != '' THEN source_name WHEN device_name != '' THEN device_name ELSE '' END AS source_key,
+              COALESCE(SUM(value_num), 0) AS value
        FROM phd_samples WHERE user_id = ?${sql}
-       GROUP BY local_day ORDER BY local_day ASC`
-    ).all(userId, ...extra) as HealthDailyBucket[];
+       GROUP BY local_day, source_key`
+    ).all(userId, ...extra) as { date: string; source_key: string; value: number }[];
+    const byDay = new Map<string, number>();
+    for (const row of rows) {
+      const prev = byDay.get(row.date);
+      if (prev === undefined || row.value > prev) byDay.set(row.date, row.value);
+    }
+    series.daily = [...byDay.entries()].sort((a, b) => a[0].localeCompare(b[0])).map(([date, value]) => ({ date, value }));
     return series;
   }
 

@@ -69,47 +69,84 @@ export function rollupSource(metricType: string, rows: HealthSampleRow[], latest
   return source || latestSource;
 }
 
-/** Steps from two sources on one local day are not added. The larger total is kept. */
-export function winningSource(rows: HealthSampleRow[]): { kept: HealthSampleRow[]; discarded: string[] } {
+/**
+ * Who produced the samples: the yourPHR source (one per device grant, or the session's
+ * "Uploaded by you") together with the name the sender wrote (Apple Watch, the phone).
+ * One upload can carry both a watch and a phone, and two grants can both say "Apple Watch";
+ * neither pair is added just because one half of the key matches.
+ * Two different names for the same physical device are not recognised.
+ */
+export function sourceKey(row: HealthSampleRow): string {
+  return [row.sourceId, row.sourceName || row.deviceName].filter(Boolean).join(' / ') || 'unknown';
+}
+
+/**
+ * Keep one source's rows for a local day.
+ *
+ * `sum` picks the larger total (steps). `count` picks the source with more
+ * samples, then the larger total. A tie breaks on the source key so the
+ * choice does not depend on row order. This does not detect overlapping
+ * intervals inside one source.
+ */
+export function selectSource(rows: HealthSampleRow[], prefer: 'sum' | 'count'): { kept: HealthSampleRow[]; discarded: string[] } {
   const groups = new Map<string, HealthSampleRow[]>();
   for (const row of rows) {
-    const key = row.sourceId || row.sourceName || row.deviceName || 'unknown';
+    const key = sourceKey(row);
     const list = groups.get(key) ?? [];
     list.push(row);
     groups.set(key, list);
   }
   if (groups.size <= 1) return { kept: rows, discarded: [] };
-  let best = '';
-  let bestSum = -Infinity;
+  let bestKey = '';
+  let bestPrimary = -Infinity;
+  let bestSecondary = -Infinity;
   for (const [key, list] of groups) {
     const sum = list.reduce((total, row) => total + (row.valueNum ?? 0), 0);
-    if (sum > bestSum) {
-      bestSum = sum;
-      best = key;
+    const primary = prefer === 'sum' ? sum : list.length;
+    const secondary = prefer === 'sum' ? list.length : sum;
+    const better = primary > bestPrimary
+      || (primary === bestPrimary && secondary > bestSecondary)
+      || (primary === bestPrimary && secondary === bestSecondary && (bestKey === '' || key < bestKey));
+    if (better) {
+      bestPrimary = primary;
+      bestSecondary = secondary;
+      bestKey = key;
     }
   }
   return {
-    kept: groups.get(best) ?? [],
-    discarded: [...groups.keys()].filter((key) => key !== best),
+    kept: groups.get(bestKey) ?? [],
+    discarded: [...groups.keys()].filter((key) => key !== bestKey).sort(),
   };
+}
+
+/** Steps from two sources on one local day are not added. The larger total is kept. */
+export function winningSource(rows: HealthSampleRow[]): { kept: HealthSampleRow[]; discarded: string[] } {
+  return selectSource(rows, 'sum');
+}
+
+function overlapNote(discarded: string[]): { text: string }[] | undefined {
+  if (discarded.length === 0) return undefined;
+  return [{ text: `A second source was not added: ${discarded.join(', ')}` }];
 }
 
 export function dailyObservation(metricType: string, localDay: string, rows: HealthSampleRow[], subject: string): Observation | undefined {
   const metric = lookupByMetricType(metricType);
   if (!metric || rows.length === 0) return undefined;
-  const offset = rows[0]?.tzOffset || 'Z';
+  // Steps from two sources are not added: the larger total is kept. Other daily series (heart
+  // rate, SpO2, HRV) average every sample across sources, as a mean of two devices is still a mean.
+  const { kept, discarded } = metricType === 'step_count' ? selectSource(rows, 'sum') : { kept: rows, discarded: [] as string[] };
+  if (kept.length === 0) return undefined;
+  const offset = kept[0]?.tzOffset || 'Z';
   const id = fhirId(['pghd', metricType, localDay]);
   const obs = base(id, metric, subject, localDay, offset);
+  const note = overlapNote(discarded);
+  if (note) obs.note = note;
   if (metricType === 'step_count') {
-    const { kept, discarded } = winningSource(rows);
     const total = kept.reduce((sum, row) => sum + (row.valueNum ?? 0), 0);
     obs.valueQuantity = quantity(total, metric.canonicalUnit);
-    if (discarded.length > 0) {
-      obs.note = [{ text: `A second source was not added: ${discarded.join(', ')}` }];
-    }
     return obs;
   }
-  const values = rows.map((row) => row.valueNum).filter((value): value is number => value != null);
+  const values = kept.map((row) => row.valueNum).filter((value): value is number => value != null);
   if (values.length === 0) return undefined;
   const sum = values.reduce((total, value) => total + value, 0);
   const mean = sum / values.length;
@@ -124,9 +161,12 @@ export function dailyObservation(metricType: string, localDay: string, rows: Hea
 export function sleepObservations(localDay: string, rows: HealthSampleRow[], subject: string): Observation[] {
   const metric = lookupByMetricType(SLEEP);
   if (!metric) return [];
-  const offset = rows[0]?.tzOffset || 'Z';
+  const { kept, discarded } = selectSource(rows, 'count');
+  if (kept.length === 0) return [];
+  const offset = kept[0]?.tzOffset || 'Z';
+  const note = overlapNote(discarded);
   const byCode = new Map<string, number>();
-  for (const row of rows) {
+  for (const row of kept) {
     if (!row.code || !metric.allowedValues.some((value) => value.canonical === row.code)) continue;
     const hours = (Date.parse(row.endTime) - Date.parse(row.startTime)) / 3_600_000;
     if (!Number.isFinite(hours) || hours <= 0) continue;
@@ -137,6 +177,7 @@ export function sleepObservations(localDay: string, rows: HealthSampleRow[], sub
     const obs = base(fhirId(['pghd', 'sleep', code, localDay]), metric, subject, localDay, offset, code);
     obs.code = { coding: [{ system: LOINC, code, display }] };
     obs.valueQuantity = quantity(hours, 'h');
+    if (note) obs.note = note;
     return obs;
   });
 }
