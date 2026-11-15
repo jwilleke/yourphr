@@ -58,6 +58,7 @@ const EXEMPT: Record<string, string> = {
   '/api/secure/admin/metrics': 'admin: sync metrics',
   '/api/secure/admin/instance': 'admin: instance settings',
   '/api/secure/admin/mail': 'admin: mail settings (#536)',
+  '/api/secure/admin/relay-status': 'admin: SMART relay readiness and health probe (#870)',
   '/api/secure/records/identities': 'which source identities the caller has confirmed as themselves — identity answers, not clinical content',
   '/api/secure/records/review': 'the caller\'s own records held for review before they join the chart',
   '/api/secure/admin/catalog': 'admin: the provider catalog',

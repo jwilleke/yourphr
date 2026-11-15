@@ -48,6 +48,13 @@ const POLL_INTERVAL_MS = 2_000;
 const POLL_TIMEOUT_MS = 10_000;
 /** /pending answers `{"code":"…"}` — anything near this size is not a relay talking. */
 const POLL_MAX_BYTES = 64 * 1024;
+/**
+ * The admin dashboard's reachability probe (yourphr#870). Short on purpose: the dashboard waits on
+ * it, and a relay that has not answered /healthz in three seconds is not one a connect can rely on.
+ */
+export const HEALTH_TIMEOUT_MS = 3_000;
+/** /healthz answers `ok`. */
+const HEALTH_MAX_BYTES = 4 * 1024;
 
 /** One resolved value plus where it came from — the admin card's whole point (the product's #402). */
 export interface ResolvedValue {
@@ -67,6 +74,14 @@ export interface RelayResolved {
   poll_url: ResolvedValue;
   /** value is ALWAYS '' — the secret is never echoed. */
   secret: ResolvedValue;
+}
+
+/** One /healthz probe of the relay this instance polls. `url` is the poll base already shown on the admin card. */
+export interface RelayHealth {
+  ok: boolean;
+  url: string;
+  status?: number;
+  error?: string;
 }
 
 export class RelayProvider {
@@ -133,7 +148,7 @@ export class RelayProvider {
     const base = pollUrl.value.replace(/\/+$/, '');
     const path = `/pending?state=${encodeURIComponent(state)}`;
     const headers = { 'X-Yourphr-Token': secret };
-    const get = this.pollGetter(base, pollUrl.source !== 'default');
+    const get = this.pollGetter(base, pollUrl.source !== 'default', POLL_TIMEOUT_MS, POLL_MAX_BYTES);
     const now = this.options.now ?? Date.now;
     const sleep = this.options.sleep ?? ((ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms)));
     const deadline = now() + pollSeconds * 1000;
@@ -165,16 +180,37 @@ export class RelayProvider {
   }
 
   /**
-   * The door for one poll. An operator-set relay is trusted at its configured origin only; the
+   * Whether the relay this instance polls answers `GET /healthz` (yourphr#870) — the admin
+   * dashboard's "configured but unreachable" warning. Goes through the same door as the poll, so it
+   * reaches exactly what a connect would reach: an operator-set relay (a cluster-internal service
+   * included) at its configured origin only, the project default through the SSRF guard. Never
+   * throws; never sends the shared secret (/healthz does not need it).
+   */
+  async checkHealth(timeoutMs = HEALTH_TIMEOUT_MS): Promise<RelayHealth> {
+    const pollUrl = this.resolved().poll_url;
+    const base = pollUrl.value.replace(/\/+$/, '');
+    let status: number;
+    try {
+      const get = this.pollGetter(base, pollUrl.source !== 'default', timeoutMs, HEALTH_MAX_BYTES);
+      status = (await get('/healthz', {})).status;
+    } catch (err) {
+      return { ok: false, url: base, error: (err as Error).message };
+    }
+    if (status !== 200) return { ok: false, url: base, status, error: `the relay answered ${status} to /healthz` };
+    return { ok: true, url: base, status };
+  }
+
+  /**
+   * The door for one request. An operator-set relay is trusted at its configured origin only; the
    * project default gets the guarded client. See the header for why.
    */
-  private pollGetter(base: string, operatorSet: boolean): (path: string, headers: Record<string, string>) => Promise<{ status: number; body: Buffer }> {
+  private pollGetter(base: string, operatorSet: boolean, timeoutMs: number, maxBytes: number): (path: string, headers: Record<string, string>) => Promise<{ status: number; body: Buffer }> {
     if (!operatorSet) {
-      return (path, headers) => this.http.get(`${base}${path}`, { headers, timeoutMs: POLL_TIMEOUT_MS });
+      return (path, headers) => this.http.get(`${base}${path}`, { headers, timeoutMs, maxBytes });
     }
     let service: InternalServiceHttp;
     try {
-      service = new InternalServiceHttp(base, { timeoutMs: POLL_TIMEOUT_MS, maxBytes: POLL_MAX_BYTES });
+      service = new InternalServiceHttp(base, { timeoutMs, maxBytes });
     } catch (err) {
       throw new ApiError(502, `the configured relay address is not usable: ${(err as Error).message}`, { error_code: 'relay_poll_failed' });
     }

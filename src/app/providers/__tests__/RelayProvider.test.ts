@@ -152,3 +152,53 @@ describe('RelayProvider — which door the poll uses (yourphr#749)', () => {
     expect(calls).toEqual([`${DEFAULT_PUBLIC_RELAY}/pending?state=st`]);
   });
 });
+
+describe('RelayProvider — checkHealth, the dashboard\'s reachability probe (yourphr#870)', () => {
+  it('a configured relay answering /healthz 200 is healthy, and the probe carries no secret', async () => {
+    answers = [{ status: 200, body: 'ok' }];
+    const relay = await boot({ 'yourphr.relay.url': base, 'yourphr.relay.secret': 's3cret' });
+    expect(await relay.checkHealth()).toEqual({ ok: true, url: base, status: 200 });
+    expect(seen).toEqual([{ path: '/healthz', token: undefined }]);
+  });
+
+  it('a non-200 answer is unhealthy, with the status said', async () => {
+    answers = [{ status: 503 }];
+    const relay = await boot({ 'yourphr.relay.url': `${base}/`, 'yourphr.relay.secret': 's' });
+    expect(await relay.checkHealth()).toEqual({ ok: false, url: base, status: 503, error: 'the relay answered 503 to /healthz' });
+  });
+
+  it('a relay that never answers is unhealthy within the timeout — it does not hang the caller', async () => {
+    const silent = createServer(() => { /* never answers */ });
+    await new Promise<void>((r) => silent.listen(0, '127.0.0.1', r));
+    const address = silent.address();
+    const silentBase = `http://127.0.0.1:${typeof address === 'object' && address ? address.port : 0}`;
+    try {
+      const relay = await boot({ 'yourphr.relay.url': silentBase, 'yourphr.relay.secret': 's' });
+      const started = Date.now();
+      const health = await relay.checkHealth(100);
+      expect(health).toMatchObject({ ok: false, url: silentBase });
+      expect(health.error).toBeTruthy();
+      expect(Date.now() - started).toBeLessThan(2_000);
+    } finally {
+      silent.closeAllConnections();
+      silent.close();
+    }
+  });
+
+  it('an unusable configured address is unhealthy, not a throw', async () => {
+    const relay = await boot({ 'yourphr.relay.url': 'relay:8080', 'yourphr.relay.secret': 's' });
+    expect(await relay.checkHealth()).toMatchObject({ ok: false, error: expect.stringContaining('not usable') });
+  });
+
+  it('the project default relay is probed through the guarded client, with a short timeout', async () => {
+    const calls: { url: string; timeoutMs?: number }[] = [];
+    const guarded = new OutboundHttp();
+    guarded.get = async (url: string, options?: { timeoutMs?: number }) => {
+      calls.push({ url, timeoutMs: options?.timeoutMs });
+      return { status: 200, body: Buffer.from('ok'), headers: {}, url } as never;
+    };
+    const relay = await boot({ 'yourphr.relay.secret': 's' }, {}, guarded);
+    expect(await relay.checkHealth()).toMatchObject({ ok: true, url: DEFAULT_PUBLIC_RELAY });
+    expect(calls).toEqual([{ url: `${DEFAULT_PUBLIC_RELAY}/healthz`, timeoutMs: 3_000 }]);
+  });
+});

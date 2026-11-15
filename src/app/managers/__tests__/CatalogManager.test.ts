@@ -327,3 +327,86 @@ describe('a confidential source refreshes with its catalog entry\'s secret (your
     expect(client.refreshSecrets).toEqual(['the-secret']);
   });
 });
+
+describe('relay readiness: the startup log and the admin dashboard (yourphr#870)', () => {
+  type Relay = import('../../providers/RelayProvider.js').RelayProvider;
+  /** A scripted relay: resolution and readiness as the spec says; /healthz answered without a network. */
+  function fakeRelay(opts: { secret: boolean; urls: boolean; health?: { ok: boolean; status?: number; error?: string } }): { relay: Relay; probes: number } {
+    const state = { probes: 0 };
+    const url = opts.urls ? 'http://yourphr-relay.yourphr.svc:8080' : 'https://relay.nerdsbythehour.com';
+    const relay = {
+      ready: () => opts.secret,
+      callbackUrl: () => `${url}/callback`,
+      resolved: () => ({
+        callback_url: `${url}/callback`, configured: opts.secret, ready: opts.secret,
+        public_url: { value: url, source: opts.urls ? 'configured' : 'default' },
+        poll_url: { value: url, source: opts.urls ? 'configured' : 'default' },
+        secret: { value: '', source: opts.secret ? 'configured' : 'unset' },
+      }),
+      checkHealth: async () => { state.probes += 1; return { url, ...(opts.health ?? { ok: true, status: 200 }) }; },
+    } as unknown as Relay;
+    return { relay, get probes() { return state.probes; } };
+  }
+
+  async function withRelay(relay: Relay | undefined, entries: CatalogWrite[]): Promise<void> {
+    catalog = new CatalogManager(engine, provider, client, { log: (l) => lines.push(l), ...(relay ? { relay } : {}) });
+    for (const e of entries) await catalog.createEntry(seed, e);
+  }
+
+  it('SMART providers and no relay configured: a startup warning naming every missing setting', async () => {
+    await withRelay(fakeRelay({ secret: false, urls: false }).relay, [PROD, SANDBOX]);
+    const warning = await catalog.noticeRelayReadiness();
+    expect(warning).toMatchObject({ code: 'relay_not_configured', missing: ['yourphr.relay.public-url', 'yourphr.relay.url', 'YOURPHR_RELAY_SECRET'] });
+    expect(lines).toEqual(['relay: the provider catalog has 2 enabled SMART provider(s) but no SMART relay is configured, so every provider connect will fail — set yourphr.relay.public-url, yourphr.relay.url, YOURPHR_RELAY_SECRET (yourphr#870)']);
+  });
+
+  it('URLs set but no secret: the warning names only the secret', async () => {
+    await withRelay(fakeRelay({ secret: false, urls: true }).relay, [PROD]);
+    expect(await catalog.noticeRelayReadiness()).toMatchObject({ missing: ['YOURPHR_RELAY_SECRET'] });
+    expect(lines[0]).toContain('set YOURPHR_RELAY_SECRET (yourphr#870)');
+  });
+
+  it('no relay wired at all is the same warning', async () => {
+    await withRelay(undefined, [PROD]);
+    expect(await catalog.noticeRelayReadiness()).toMatchObject({ code: 'relay_not_configured', missing: ['yourphr.relay.public-url', 'yourphr.relay.url', 'YOURPHR_RELAY_SECRET'] });
+  });
+
+  it('no enabled providers: no warning, at startup or on the dashboard, and no probe', async () => {
+    const fake = fakeRelay({ secret: false, urls: false });
+    await withRelay(fake.relay, [{ ...PROD, enabled: false }]);
+    expect(await catalog.noticeRelayReadiness()).toBeNull();
+    expect(lines).toEqual([]);
+    expect(await catalog.relayStatus(admin)).toEqual({ smart_providers: 0, ready: false, health: null, warning: null });
+    expect(fake.probes).toBe(0);
+  });
+
+  it('dashboard, not configured: the warning without a probe', async () => {
+    const fake = fakeRelay({ secret: false, urls: false });
+    await withRelay(fake.relay, [PROD]);
+    expect(await catalog.relayStatus(admin)).toMatchObject({ smart_providers: 1, ready: false, health: null, warning: { code: 'relay_not_configured' } });
+    expect(fake.probes).toBe(0);
+  });
+
+  it('dashboard, configured but unreachable: relay_unreachable with the reason', async () => {
+    const fake = fakeRelay({ secret: true, urls: true, health: { ok: false, error: 'connect ECONNREFUSED' } });
+    await withRelay(fake.relay, [PROD]);
+    expect(await catalog.noticeRelayReadiness()).toBeNull(); // the boot check is configuration only
+    const status = await catalog.relayStatus(admin);
+    expect(status).toMatchObject({ smart_providers: 1, ready: true, health: { ok: false }, warning: { code: 'relay_unreachable' } });
+    expect(status.warning?.message).toBe('the SMART relay at http://yourphr-relay.yourphr.svc:8080 did not answer its health check (connect ECONNREFUSED), so provider connects will fail until it is reachable');
+    expect(fake.probes).toBe(1);
+  });
+
+  it('dashboard, configured and healthy: no warning', async () => {
+    const fake = fakeRelay({ secret: true, urls: true });
+    await withRelay(fake.relay, [PROD]);
+    expect(await catalog.noticeRelayReadiness()).toBeNull();
+    expect(await catalog.relayStatus(admin)).toEqual({ smart_providers: 1, ready: true, health: { ok: true, status: 200, url: 'http://yourphr-relay.yourphr.svc:8080' }, warning: null });
+    expect(lines).toEqual([]);
+  });
+
+  it('the dashboard status is the admin\'s', async () => {
+    await withRelay(fakeRelay({ secret: true, urls: true }).relay, [PROD]);
+    await expect(catalog.relayStatus(alice)).rejects.toMatchObject({ status: 403 });
+  });
+});

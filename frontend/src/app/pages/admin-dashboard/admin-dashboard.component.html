@@ -255,12 +255,36 @@
             <i class="fas" [ngClass]="relayExpanded ? 'fa-chevron-down' : 'fa-chevron-right'"></i>&nbsp;
             <i class="fas fa-exchange-alt"></i>&nbsp; SMART OAuth Relay
           </h6>
-          @if (relayConfig) {
+          @if (relayStatus?.warning?.code === 'relay_unreachable') {
+            <span class="badge text-bg-warning">Unreachable</span>
+          } @else if (relayConfig) {
             <span class="badge" [ngClass]="relayConfig.ready ? 'text-bg-success' : 'text-bg-danger'">
               {{ relayConfig.ready ? 'Ready' : 'Not ready' }}
             </span>
           }
         </div>
+        <!-- #870: shown expanded or not — every provider connect fails until this is fixed. -->
+        @if (relayStatus?.warning; as warning) {
+          <div class="card-body pd-b-0" id="relay-warning">
+            @if (warning.code === 'relay_unreachable') {
+              <div class="alert alert-warning" role="alert">
+                <i class="fas fa-exclamation-triangle"></i>&nbsp;
+                <strong>The SMART relay is not answering.</strong>
+                <code>{{ relayStatus?.health?.url }}</code> did not answer its health check
+                @if (relayStatus?.health?.error) { ({{ relayStatus?.health?.error }})}, so provider connections will fail until it is reachable.
+              </div>
+            } @else {
+              <div class="alert alert-danger" role="alert">
+                <i class="fas fa-exclamation-triangle"></i>&nbsp;
+                <strong>No SMART relay is configured.</strong>
+                {{ relayStatus?.smart_providers }} provider(s) in the catalog are enabled, but every connection will fail until you set
+                @for (name of warning.missing ?? []; track name; let last = $last) {
+                  <code>{{ name }}</code>@if (!last) {, }
+                }.
+              </div>
+            }
+          </div>
+        }
         @if (relayExpanded) {
           <div class="card-body" id="relay-card-body">
             <p class="tx-gray-500 mg-b-15">
