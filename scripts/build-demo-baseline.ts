@@ -65,7 +65,8 @@ async function main(): Promise<void> {
 
   const demoUser = 'demo';
   const sys = ApiContext.system('baseline-build', 'admin', app.engine);
-  await app.users.createUser(sys, demoUser, 'replaced-at-startup-by-demo-provisioning');
+  // A test account (yourphr#919): everything it holds is synthetic sandbox data.
+  await app.users.createUser(sys, demoUser, 'replaced-at-startup-by-demo-provisioning', 'user', { isTest: true });
 
   await app.sources.add(ApiContext.system('baseline-build', demoUser, app.engine), {
     userId: demoUser, display: 'Sample Regional Health', fhirBaseUrl: fakeBase, tokenUrl: `${fakeBase}/token`,
@@ -85,6 +86,7 @@ async function main(): Promise<void> {
   cpSync(join(dir, 'spike.db'), join(outDir, BASELINE_APP));
   cpSync(join(dir, 'records.db'), join(outDir, BASELINE_RECORDS));
   withoutAdmin(join(outDir, BASELINE_APP));
+  demoIsTestAccount(join(outDir, BASELINE_APP), demoUser);
   rmSync(dir, { recursive: true, force: true });
 
   if (!baselineIsPresent(outDir)) throw new Error(`baseline: nothing usable was written to ${outDir}`);
@@ -149,6 +151,17 @@ function withoutAdmin(appDb: string): void {
     db.exec('VACUUM');
     const left = db.prepare("SELECT count(*) AS n FROM auth_users WHERE lower(username) = 'admin'").get() as { n: number };
     if (left.n !== 0) throw new Error('baseline: the build admin is still in the baseline');
+  } finally {
+    db.close();
+  }
+}
+
+/** Fails the build unless the demo account ships as a test account (yourphr#919) — it holds a sandbox source. */
+function demoIsTestAccount(appDb: string, username: string): void {
+  const db = new Database(appDb);
+  try {
+    const row = db.prepare('SELECT is_test FROM auth_users WHERE username = ?').get(username) as { is_test: number } | undefined;
+    if (row?.is_test !== 1) throw new Error(`baseline: ${username} is not a test account, but it holds the demo's sandbox data`);
   } finally {
     db.close();
   }

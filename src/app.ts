@@ -637,7 +637,9 @@ export async function assembleApp(dataDir: string, options: { seeds?: CatalogWri
   // The demo credential (yourphr#643): generated here, so a public demo's one-click entrance works
   // on a fresh instance with nobody choosing a password. Idempotent, and does nothing at all when
   // demo mode is off. Never fatal — a demo with no way in is a log line, not a refused startup.
-  await engine.managers.demo.provision();
+  // yourphr#919: marking the demo account a test account settles the mismatch the boot check just
+  // raised for its sandbox source, so the check runs again rather than leaving the notice standing.
+  if ((await engine.managers.demo.provision()).markedTest && engine.has('sources')) await sources.noticeTestAccountMismatches();
 
   // Provision-then-preserve.
   if (options.seeds) {

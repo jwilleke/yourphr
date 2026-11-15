@@ -104,6 +104,7 @@ Order matters, and it is fixed in `assembleApp` ([`src/app.ts`](../../src/app.ts
 - If they do not match, or none is configured, it generates 24 random bytes, sets them as the account's password, and writes them to the config key. A freshly restored baseline is exactly this case, so a reset needs no operator step.
 - The account is updated first and the config second. If the config write fails, the next start sees a mismatch and heals itself. A mismatch is never treated as "no password needed".
 - The patient account must already exist; provisioning only logs if it does not. The baseline holds it. On a demo without a baseline, the operator creates `demo` in Admin → Users and restarts.
+- It marks the patient account as a test account ([#919](https://github.com/jwilleke/yourphr/issues/919)) if it is not one yet, because everything it holds is sandbox data. The users manager logs the one change. It never marks an account holding any role but `user`, so the operator's `admin` and the read-only demo admin are left alone. When it changes the flag, the boot check for sources in the wrong kind of account runs again, so that notice clears on the same start.
 - The demo admin account is created here if missing, then provisioned the same way, only when `yourphr.demo.admin.enabled` is on.
 - Provisioning never stops the server from starting. A demo with no way in is a log line.
 
@@ -170,6 +171,7 @@ __`refuseUnlessRead(ctx, method, path)`: the demo admin changes nothing__ ([#644
 - __It goes through the ordinary sync path:__ a source is connected to a local FHIR server over the corpus, and the worker imports it. Writing rows straight into the database would build a baseline no code path could produce.
 - __It holds no working password, and no `admin`.__ The demo password is provisioned at startup. The build's own `admin` (created by `assembleApp`, its password lost with the build directory) is deleted from the baseline, and the build fails if it is still there ([#886](https://github.com/jwilleke/yourphr/issues/886)).
 - __It is plaintext,__ because it ships in a public image (see the reset's encryption refusal).
+- __The demo account is a test account__ ([#919](https://github.com/jwilleke/yourphr/issues/919)): it holds a sandbox source, and the build fails if the account is not marked.
 - The build fails if the sync produced no records: an empty demo is the bug this exists to prevent ([#494](https://github.com/jwilleke/yourphr/issues/494)).
 
 ### The reset
@@ -198,6 +200,7 @@ It lives among the providers because it opens the database file directly, and th
 
 - __Same image as production.__ It follows releases through the shared `flux-system:yourphr` image policy; see [`docs/deployment/deployment-contract.md`](../deployment/deployment-contract.md).
 - __No encryption keys,__ because the reset refuses an encrypted database. Its records are synthetic only.
+- __No backups, and no backup notice.__ Without a backup key, backups are unavailable, which is expected on a demo: the reset is its restore. So in demo mode the admin home and the Database page do not show the "Backups are unavailable" notice or the backup failures it causes (`DemoManager.quietsBackupNotice`). A demo that is given a backup key shows its backup health as usual.
 - __Its own PVC.__
 - __Settings are on the volume,__ in `config/app-custom-config.json`, set through Admin → Configuration. Environment variables carry only bootstrap values and secrets: the relay secret comes from the `demo-yourphr-relay` Secret.
 
