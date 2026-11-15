@@ -233,6 +233,10 @@ describe('UsersManager — the test-account flag (yourphr#919, ngdpbase#1805)', 
     await expect(users.setTest(admin, 'ghost', true)).rejects.toMatchObject({ status: 404 });
     await users.setTest(admin, 'alice', false);
     expect(await users.isTest('alice')).toBe(false);
+    // A system principal (demo provisioning) may set it, as it may create an account; logged the same way.
+    await users.setTest(ApiContext.system('demo-provisioning', 'alice', engine), 'alice', true);
+    expect(await users.isTest('alice')).toBe(true);
+    expect(lines).toContain('demo-provisioning changed alice: test account false -> true');
   });
 
   it('a session carries it into the request context, read live: unmarking takes effect on the next request', async () => {

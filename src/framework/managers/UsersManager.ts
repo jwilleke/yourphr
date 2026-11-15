@@ -166,10 +166,11 @@ export class UsersManager extends BaseManager {
   /**
    * An admin marks or unmarks a test account (yourphr#919, ngdpbase#1805). An attribute, not a
    * role: it decides which providers the account sees (sandbox, never production), nothing more.
-   * Logged only when it changes, with the value, as ngdpbase records it on user-edit.
+   * Logged only when it changes, with the value, as ngdpbase records it on user-edit. A system
+   * principal (demo provisioning, yourphr#919) may set it too, as it may create an account.
    */
   async setTest(ctx: ApiContext, username: string, isTest: boolean): Promise<void> {
-    ctx.require('user-edit');
+    if (ctx.system === '') ctx.require('user-edit');
     const stored = await this.provider.get(username);
     if (!stored) throw new ApiError(404, 'no such user');
     const was = stored.isTest;

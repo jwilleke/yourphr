@@ -1543,6 +1543,10 @@ export function createYourPhrServer(options: ServerOptions) {
         // Go's DatabaseInfoResponse over this stack's two files — a view composed from the doors,
         // each of which answers for its own storage (yourphr#619). No manager reads another's file.
         if (url.pathname === '/api/secure/admin/database' && req.method === 'GET') {
+          const backupsUnavailable = backups?.unavailable() ?? 'no backup storage is configured on this instance';
+          // A keyless demo cannot back up by design, so neither the notice nor the failures it causes
+          // are shown there — on the admin home or the Database page (DemoManager.quietsBackupNotice).
+          const quiet = engine.has('demo') && engine.managers.demo.quietsBackupNotice(backupsUnavailable);
           const app = engine.managers.database.storage(ctx);
           const phi = engine.managers.records.storage(ctx);
           send(res, 200, {success: true, data: {
@@ -1565,9 +1569,9 @@ export function createYourPhrServer(options: ServerOptions) {
             backup_destination: backups?.destination() ?? '',
             backups: backups ? (await backups.list(ctx)).map((b) => ({name: b.name, size_bytes: b.sizeBytes, modified: b.modified})) : [],
             schedule: backups?.schedule(),
-            backup_health: backups?.health(),
+            backup_health: quiet ? undefined : backups?.health(),
             allowed_backup_roots: [],
-            backups_unavailable: backups?.unavailable() ?? 'no backup storage is configured on this instance',
+            backups_unavailable: quiet ? '' : backupsUnavailable,
           }});
           return;
         }

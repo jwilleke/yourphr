@@ -310,6 +310,11 @@ async function main(): Promise<void> {
     demoEntry.status === 200 && !!demoToken && demoMe.data.username === 'demo' && demoMe.data.demo_account === true
       && (await publicInfo())['demo.enabled'] === true && !('demo.username' in (await publicInfo())),
     `status ${demoEntry.status}`);
+  // yourphr#919: the demo account holds sandbox data, so provisioning makes it a test account. And a
+  // demo that WAS given a backup key keeps its ordinary backup health — only a keyless demo is quiet.
+  const demoDbInfo = (await (await fetch(`${base}/api/secure/admin/database`, authed(adminToken))).json()) as { data: Record<string, unknown> };
+  check('demo provisioning marks the demo account a test account, and a demo with a backup key still reports backup health',
+    (await app.users.isTest('demo')) && demoDbInfo.data['backups_unavailable'] === '' && demoDbInfo.data['backup_health'] !== undefined);
 
   // yourphr#496: the demo account is SHARED, so a visitor connecting their own real provider would
   // put their records in front of the next visitor. Refused at the first step, and at the door.

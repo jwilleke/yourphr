@@ -30,8 +30,8 @@ async function boot(custom: Record<string, ConfigValue> = {}): Promise<void> {
   engine = new Engine();
   provider = new FakeConfigProvider(custom);
   config = new ConfigurationManager(engine, provider);
-  users = new UsersManager(engine, new FakeUsersProvider(), new PasswordAuthProvider());
   lines = [];
+  users = new UsersManager(engine, new FakeUsersProvider(), new PasswordAuthProvider(), { log: (l) => lines.push(l) });
   demo = new DemoManager(engine, (l) => lines.push(l));
   engine
     .register('configuration', config)
@@ -194,5 +194,54 @@ describe('DemoManager — the shared demo account (yourphr#643)', () => {
   it('does not restrict an account named demo on an instance that never opted in', async () => {
     const namesake = ApiContext.from({ username: 'demo', role: 'user' }, engine);
     expect(() => demo.refuseConnect(namesake)).not.toThrow();
+  });
+});
+
+describe('DemoManager — the demo account is a test account (yourphr#919)', () => {
+  it('marks the demo account as a test account at provisioning, once, with one log line', async () => {
+    await boot({ [ENABLED_KEY]: true });
+    await createDemoAccount();
+    expect(await users.isTest('demo')).toBe(false);
+
+    expect(await demo.provision()).toEqual({ markedTest: true });
+    expect(await users.isTest('demo')).toBe(true);
+    expect(lines.filter((l) => l.includes('test account'))).toEqual(['demo-provisioning changed demo: test account false -> true']);
+
+    // Idempotent: the next start changes nothing and says nothing more about it.
+    const before = lines.length;
+    expect(await demo.provision()).toEqual({ markedTest: false });
+    expect(lines.slice(before).filter((l) => l.includes('test account'))).toEqual([]);
+  });
+
+  it('leaves an account alone on an instance that never opted in', async () => {
+    await createDemoAccount();
+    expect(await demo.provision()).toEqual({ markedTest: false });
+    expect(await users.isTest('demo')).toBe(false);
+  });
+
+  it('never marks the read-only demo admin, nor an admin the demo username points at', async () => {
+    await boot({ [ENABLED_KEY]: true, 'yourphr.demo.admin.enabled': true });
+    await createDemoAccount();
+    await demo.provision();
+    expect(await users.isTest('demo')).toBe(true);
+    expect(await users.isTest('demoadmin')).toBe(false);
+
+    // A mis-set username naming the operator's own admin: refused, and said so.
+    await boot({ [ENABLED_KEY]: true, [USERNAME_KEY]: 'ops' });
+    await users.createUser(ApiContext.system('test', 'admin', engine), 'ops', PW, 'admin');
+    expect(await demo.provision()).toEqual({ markedTest: false });
+    expect(await users.isTest('ops')).toBe(false);
+    expect(lines.join('\n')).toContain('"ops" holds the admin role, so it was not marked as a test account');
+  });
+});
+
+describe('DemoManager — the backup notice on a keyless demo', () => {
+  const reason = 'Backups are unavailable: no backup encryption key is set (YOURPHR_BACKUP_ENCRYPTION_KEY).';
+
+  it('quiets it on a demo that cannot back up, and only there', async () => {
+    expect(demo.quietsBackupNotice(reason)).toBe(false);   // an ordinary install keeps the warning
+    await boot({ [ENABLED_KEY]: true });
+    expect(demo.quietsBackupNotice(reason)).toBe(true);
+    expect(demo.quietsBackupNotice('')).toBe(false);      // a demo that was given a key shows its ordinary health
   });
 });

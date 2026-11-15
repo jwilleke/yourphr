@@ -241,9 +241,10 @@ export class DemoManager extends BaseManager {
    * happen is treating a mismatch as "no password required", which is why signIn() refuses rather
    * than falling back.
    */
-  async provision(): Promise<void> {
-    if (!this.enabled) return;
+  async provision(): Promise<{ markedTest: boolean }> {
+    if (!this.enabled) return { markedTest: false };
     await this.provisionOne(this.username, PASSWORD_KEY, USERNAME_KEY, 'demo credential');
+    const markedTest = await this.ensureTestAccount();
     // The read-only admin (yourphr#644), after the demo account and only if its own flag is on.
     // Its account is CREATED here when missing, unlike the demo account: the demo's records make it
     // something an operator seeds deliberately, while this one holds nothing and exists only to be
@@ -252,6 +253,39 @@ export class DemoManager extends BaseManager {
       await this.ensureAdminAccount();
       await this.provisionOne(this.adminUsername, ADMIN_PASSWORD_KEY, ADMIN_USERNAME_KEY, 'demo admin');
     }
+    return { markedTest };
+  }
+
+  /**
+   * The demo account is a TEST account (yourphr#919): everything it holds is synthetic sandbox
+   * data, and the instance keeps test data and real data in separate accounts. The baseline is
+   * built that way; this makes sure of it at every start, for a baseline built before it was, or an
+   * account seeded by hand. Only the patient account, and only while it holds the ordinary user
+   * role — never the operator's admin or the read-only demo admin. Idempotent: true only when it
+   * changed the flag, which the users manager logs.
+   */
+  private async ensureTestAccount(): Promise<boolean> {
+    const username = this.username;
+    const users = this.engine.managers.users;
+    if (username === '' || (await users.isTest(username))) return false;
+    const role = await users.roleOf(username);
+    if (role === undefined) return false; // no such account: provisionOne has already said so
+    if (role !== 'user') {
+      this.log(`demo mode: ${JSON.stringify(username)} holds the ${role} role, so it was not marked as a test account`);
+      return false;
+    }
+    await users.setTest(ApiContext.system('demo-provisioning', username, this.engine), username, true);
+    return true;
+  }
+
+  /**
+   * Whether the admin screens leave out the backup notice: on a demo that cannot back up. A demo
+   * runs without keys by design (its baseline ships plaintext in a public image, and the reset is
+   * its restore), so "backups are unavailable" there is the expected state, not a fault to raise.
+   * A demo an operator did give a backup key keeps the ordinary notice and health.
+   */
+  quietsBackupNotice(backupsUnavailable: string): boolean {
+    return this.enabled && backupsUnavailable !== '';
   }
 
   /** Create the read-only admin if this instance does not have it yet, with a throwaway password
