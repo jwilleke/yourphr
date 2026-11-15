@@ -20,7 +20,7 @@ import { validateUrl } from '../../http/index.js';
 import { type BaseCatalogProvider, type CatalogEntry, type CatalogFields, type ProviderEnvironment } from '../providers/BaseCatalogProvider.js';
 import { type BaseSourceClientProvider, SourceClientError } from '../providers/BaseSourceClientProvider.js';
 import { catalogEntryShape, connectableShape, connectionPolicy, normalizeConsentPolicy, normalizePreConnectProfile } from '../../catalog/index.js';
-import { LOGIN_WAIT_SECONDS, RELAY_POLL_SECONDS, type RelayProvider } from '../providers/RelayProvider.js';
+import { LOGIN_WAIT_SECONDS, POLL_URL_KEY, PUBLIC_URL_KEY, RELAY_POLL_SECONDS, type RelayHealth, type RelayProvider } from '../providers/RelayProvider.js';
 import { resourceTypesFromScopes } from '../../migrate/index.js';
 import { encodeCapability, narrowTypes } from '../../sources/capability.js';
 import { sourceShape } from './SourcesManager.js';
@@ -66,6 +66,22 @@ export interface CatalogOptions {
 }
 
 const MANAGE = 'admin role required to manage the provider catalog';
+
+/** The relay warning an operator sees at startup and on the admin dashboard (yourphr#870). */
+export interface RelayWarning {
+  code: 'relay_not_configured' | 'relay_unreachable';
+  message: string;
+  /** For relay_not_configured: the settings still to set, by config key or environment variable. */
+  missing?: string[];
+}
+
+/** The admin dashboard's relay status (yourphr#870). health is null when no probe was made. */
+export interface RelayStatus {
+  smart_providers: number;
+  ready: boolean;
+  health: RelayHealth | null;
+  warning: RelayWarning | null;
+}
 
 /** The one kind of provider an account may connect (yourphr#919): sandbox for a test account, production otherwise. */
 function environmentFor(ctx: ApiContext): ProviderEnvironment {
@@ -232,6 +248,73 @@ export class CatalogManager extends BaseManager {
   relayResolved(): Record<string, unknown> {
     if (!this.options.relay) return { callback_url: '', configured: false, ready: false, public_url: '', poll_url: '', secret: '' };
     return this.options.relay.resolved() as unknown as Record<string, unknown>;
+  }
+
+  // --- relay readiness (yourphr#870) ------------------------------------------------------------
+  //
+  // A catalog of SMART providers with no relay this instance can poll is a deployment where every
+  // connect fails — and until #870 the operator found out only when a patient pressed Connect.
+  // Said at startup (the log) and on the admin dashboard (relayStatus), never on a member's page.
+
+  /** Enabled catalog entries — every one is a SMART provider a member could press Connect on. */
+  private async smartProviderCount(): Promise<number> {
+    return (await this.provider.list()).filter((e) => e.enabled).length;
+  }
+
+  /** The relay settings still unset, named the way the operator sets them. */
+  private missingRelaySettings(): string[] {
+    if (!this.options.relay) return [PUBLIC_URL_KEY, POLL_URL_KEY, 'YOURPHR_RELAY_SECRET'];
+    const r = this.options.relay.resolved();
+    const missing: string[] = [];
+    // A URL is only "missing" when neither is set: one inherits the other, and the project default
+    // stands in when both are blank.
+    if (r.public_url.source === 'default') missing.push(PUBLIC_URL_KEY);
+    if (r.poll_url.source === 'default') missing.push(POLL_URL_KEY);
+    if (r.secret.source === 'unset') missing.push('YOURPHR_RELAY_SECRET');
+    return missing;
+  }
+
+  private relayReady(): boolean {
+    return this.options.relay?.ready() ?? false;
+  }
+
+  private notConfiguredWarning(providers: number): RelayWarning {
+    const missing = this.missingRelaySettings();
+    return {
+      code: 'relay_not_configured',
+      message: `the provider catalog has ${providers} enabled SMART provider(s) but no SMART relay is configured, so every provider connect will fail — set ${missing.join(', ')}`,
+      missing,
+    };
+  }
+
+  /**
+   * The startup check: logs a warning (and returns it) when the catalog has enabled SMART providers
+   * but the relay cannot complete a connect. Configuration only — no network at boot.
+   */
+  async noticeRelayReadiness(): Promise<RelayWarning | null> {
+    const providers = await this.smartProviderCount();
+    if (providers === 0 || this.relayReady()) return null;
+    const warning = this.notConfiguredWarning(providers);
+    this.options.log?.(`relay: ${warning.message} (yourphr#870)`);
+    return warning;
+  }
+
+  /**
+   * The admin dashboard's relay status: not configured (with providers), or configured but its
+   * /healthz does not answer within a short timeout. No providers, no warning — and no probe.
+   */
+  async relayStatus(ctx: ApiContext): Promise<RelayStatus> {
+    this.manage(ctx);
+    const providers = await this.smartProviderCount();
+    const ready = this.relayReady();
+    if (providers === 0) return { smart_providers: 0, ready, health: null, warning: null };
+    if (!ready || !this.options.relay) return { smart_providers: providers, ready, health: null, warning: this.notConfiguredWarning(providers) };
+    const health = await this.options.relay.checkHealth();
+    const warning: RelayWarning | null = health.ok ? null : {
+      code: 'relay_unreachable',
+      message: `the SMART relay at ${health.url} did not answer its health check (${health.error ?? 'no answer'}), so provider connects will fail until it is reachable`,
+    };
+    return { smart_providers: providers, ready, health, warning };
   }
 
   /**

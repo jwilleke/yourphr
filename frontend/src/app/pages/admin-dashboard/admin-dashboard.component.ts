@@ -3,7 +3,7 @@ import {CommonModule} from '@angular/common';
 import {FormsModule} from '@angular/forms';
 import {RouterModule} from '@angular/router';
 import {FastenApiService} from '../../services/fasten-api.service';
-import {RelayConfig, RelayResolvedValue} from '../../models/fasten/relay-config';
+import {RelayConfig, RelayResolvedValue, RelayStatus} from '../../models/fasten/relay-config';
 import {InstanceSettings} from '../../models/fasten/instance-settings';
 import {BackupHealth} from '../../models/fasten/database-info';
 import {AdminMetrics, RecentSyncJob} from '../../models/fasten/admin-metrics';
@@ -37,6 +37,11 @@ export class AdminDashboardComponent implements OnInit {
   // never hidden by collapsing.
   relayExpanded = false;
 
+  // Relay readiness (#870): a warning shown whether or not the card is expanded, when the catalog
+  // has SMART providers but the relay is not configured or does not answer its health check. Loaded
+  // separately from the config so a slow probe never holds the card, and a failed lookup shows nothing.
+  relayStatus: RelayStatus | null = null;
+
   // Instance operator contact — who runs this deployment (privacy / wipe / help).
   instance: InstanceSettings = {name: '', contact_email: '', contact_url: ''};
   instanceLoading = false;
@@ -65,6 +70,10 @@ export class AdminDashboardComponent implements OnInit {
       (cfg) => { this.relayConfig = cfg },
       (_err) => { this.relayError = 'Could not load the relay configuration.'; this.relayLoading = false },
       () => { this.relayLoading = false },
+    );
+    this.fastenApi.getRelayStatus().subscribe(
+      (status) => { this.relayStatus = status },
+      () => { this.relayStatus = null },
     );
 
     this.instanceLoading = true;

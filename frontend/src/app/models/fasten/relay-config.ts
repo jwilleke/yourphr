@@ -40,3 +40,29 @@ export interface RelayConfig {
   // Presence and provenance of the shared secret. `value` is ALWAYS empty — never echoed.
   secret: RelayResolvedValue;
 }
+
+// The admin dashboard's relay warning, served by GET /secure/admin/relay-status (#870): the catalog
+// has enabled SMART providers but the relay is not configured, or it is configured and its
+// /healthz did not answer. Both mean every provider connect will fail.
+export interface RelayWarning {
+  code: 'relay_not_configured' | 'relay_unreachable';
+  message: string;
+  // relay_not_configured only: the settings still to set (config key or environment variable).
+  missing?: string[];
+}
+
+export interface RelayHealth {
+  ok: boolean;
+  // The poll URL that was probed (already shown on the relay card).
+  url: string;
+  status?: number;
+  error?: string;
+}
+
+export interface RelayStatus {
+  smart_providers: number;
+  ready: boolean;
+  // null when no probe was made (no providers, or the relay is not configured).
+  health: RelayHealth | null;
+  warning: RelayWarning | null;
+}

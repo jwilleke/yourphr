@@ -1523,6 +1523,12 @@ export function createYourPhrServer(options: ServerOptions) {
           send(res, 200, {success: true, data: await engine.managers.sources.adminMetrics(ctx)});
           return;
         }
+        // SMART relay status (yourphr#870): the dashboard's warning when the catalog has SMART
+        // providers but the relay is not configured, or is configured and its /healthz does not answer.
+        if (engine.has('catalog') && url.pathname === '/api/secure/admin/relay-status' && req.method === 'GET') {
+          send(res, 200, {success: true, data: await engine.managers.catalog.relayStatus(ctx)});
+          return;
+        }
         // Outbound mail (yourphr#536): what it would do, and a test message that proves the relay.
         if (engine.has('email') && url.pathname === '/api/secure/admin/mail' && req.method === 'GET') {
           send(res, 200, {success: true, data: engine.managers.email.status(ctx)});

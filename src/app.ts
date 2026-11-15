@@ -590,6 +590,9 @@ export async function openStores(dataDir: string, env: Record<string, string | u
   await records.noticeIfSearchIndexStale();
   // yourphr#919: sources whose kind does not match their account's test-account flag.
   if (engine.has('sources')) await engine.managers.sources.noticeTestAccountMismatches();
+  // yourphr#870: a catalog of SMART providers with no relay to complete a connect — said at boot,
+  // not discovered when a patient presses Connect. The server's boot only; CLI tools stay quiet.
+  if (options.startup) await catalog.noticeRelayReadiness();
   // yourphr#869: with maintenance off, no stored maintenance notice may stand — they say what was
   // true when written, and an "on" one left behind told every member the system was down.
   if (!config.getBool(MAINTENANCE_ENABLED_KEY) && engine.has('notifications')) await engine.managers.notifications.clearMaintenanceNotices();

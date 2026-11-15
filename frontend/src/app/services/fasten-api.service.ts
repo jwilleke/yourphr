@@ -44,7 +44,7 @@ import { fetchEventSource } from '@microsoft/fetch-event-source';
 import {BackgroundJob, BackgroundJobSyncData} from '../models/fasten/background-job';
 import {SupportRequest} from '../models/fasten/support-request';
 import {SmartAuthorizeResponse} from '../models/fasten/smart-authorize';
-import {RelayConfig} from '../models/fasten/relay-config';
+import {RelayConfig, RelayStatus} from '../models/fasten/relay-config';
 import {InstanceSettings} from '../models/fasten/instance-settings';
 import {AdminConfig, RevealedConfigValue} from '../models/fasten/admin-config';
 import {LegalDocument} from '../models/fasten/legal-document';
@@ -633,6 +633,13 @@ export class FastenApiService {
   getRelayConfig(): Observable<RelayConfig> {
     return this._httpClient.get<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/source/relay-config`)
       .pipe(map((response: ResponseWrapper) => response.data as RelayConfig));
+  }
+
+  // getRelayStatus (admin, #870) — whether the relay can actually serve the catalog's SMART
+  // providers: not configured, or configured but its /healthz does not answer (short server timeout).
+  getRelayStatus(): Observable<RelayStatus> {
+    return this._httpClient.get<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/admin/relay-status`)
+      .pipe(map((response: ResponseWrapper) => response.data as RelayStatus));
   }
 
   // Admin Instance card — operator contact for this deployment (persisted next to the DB).

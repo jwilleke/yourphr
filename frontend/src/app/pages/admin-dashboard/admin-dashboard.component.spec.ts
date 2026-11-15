@@ -4,7 +4,7 @@ import {of, throwError} from 'rxjs';
 
 import {AdminDashboardComponent} from './admin-dashboard.component';
 import {FastenApiService} from '../../services/fasten-api.service';
-import {RelayConfig} from '../../models/fasten/relay-config';
+import {RelayConfig, RelayStatus} from '../../models/fasten/relay-config';
 import {InstanceSettings} from '../../models/fasten/instance-settings';
 
 // A fully-configured relay: both URLs set explicitly, secret present.
@@ -38,6 +38,8 @@ function setup(
   relay: any,
   opts: {
     relayFail?: boolean;
+    relayStatus?: RelayStatus;
+    relayStatusFail?: boolean;
     instance?: InstanceSettings;
     instanceFail?: boolean;
     backupHealth?: {ok: boolean; summary: string; last_error?: string; schedule_enabled?: boolean; consecutive_failures?: number; failing_stale?: boolean};
@@ -59,6 +61,9 @@ function setup(
       provide: FastenApiService,
       useValue: {
         getRelayConfig: () => opts.relayFail ? throwError(() => new Error('boom')) : of(relay),
+        getRelayStatus: () => opts.relayStatusFail
+          ? throwError(() => new Error('boom'))
+          : of(opts.relayStatus ?? {smart_providers: 0, ready: relay?.ready ?? false, health: null, warning: null}),
         getInstanceSettings: () => opts.instanceFail ? throwError(() => new Error('boom')) : of(instance),
         setInstanceSettings: (s: InstanceSettings) => of(s),
         getMailStatus: () => of({enabled: true, provider: 'smtp', from: 'phr@example.org', destination: 'relay.example.org:587 (STARTTLS required)', problems: []}),
@@ -220,5 +225,48 @@ describe('AdminDashboardComponent', () => {
     expect(text).toContain('Could not load the relay configuration');
     const hrefs = Array.from(fixture.nativeElement.querySelectorAll('a[href]')).map((a: any) => a.getAttribute('href'));
     expect(hrefs).toContain('/admin/database');
+  });
+  // #870: the relay warning shows whether or not the card is expanded.
+  describe('relay readiness warning (#870)', () => {
+    it('warns, naming the settings, when providers are enabled but no relay is configured', () => {
+      const fixture = setup(DEFAULTED_RELAY, {relayStatus: {
+        smart_providers: 2, ready: false, health: null,
+        warning: {code: 'relay_not_configured', message: 'm', missing: ['yourphr.relay.public-url', 'yourphr.relay.url', 'YOURPHR_RELAY_SECRET']},
+      }});
+      const warning = fixture.nativeElement.querySelector('#relay-warning');
+      expect(warning).withContext('visible while the card is collapsed').not.toBeNull();
+      expect(warning.querySelector('.alert-danger')).not.toBeNull();
+      expect(warning.textContent).toContain('No SMART relay is configured');
+      expect(warning.textContent).toContain('2 provider(s)');
+      expect(warning.textContent).toContain('yourphr.relay.public-url');
+      expect(warning.textContent).toContain('yourphr.relay.url');
+      expect(warning.textContent).toContain('YOURPHR_RELAY_SECRET');
+    });
+
+    it('warns and badges Unreachable when the relay is configured but its health check fails', () => {
+      const fixture = setup(READY_RELAY, {relayStatus: {
+        smart_providers: 1, ready: true,
+        health: {ok: false, url: 'http://yourphr-relay.yourphr.svc:8080', error: 'connect ECONNREFUSED'},
+        warning: {code: 'relay_unreachable', message: 'm'},
+      }});
+      const warning = fixture.nativeElement.querySelector('#relay-warning');
+      expect(warning.querySelector('.alert-warning')).not.toBeNull();
+      expect(warning.textContent).toContain('The SMART relay is not answering');
+      expect(warning.textContent).toContain('http://yourphr-relay.yourphr.svc:8080');
+      expect(warning.textContent).toContain('connect ECONNREFUSED');
+      expect(fixture.nativeElement.querySelector('[aria-controls="relay-card-body"] .badge').textContent).toContain('Unreachable');
+    });
+
+    it('shows nothing when the relay is healthy', () => {
+      const fixture = setup(READY_RELAY, {relayStatus: {smart_providers: 1, ready: true, health: {ok: true, url: 'x', status: 200}, warning: null}});
+      expect(fixture.nativeElement.querySelector('#relay-warning')).toBeNull();
+      expect(fixture.nativeElement.querySelector('[aria-controls="relay-card-body"] .badge').textContent).toContain('Ready');
+    });
+
+    it('shows nothing, and keeps the dashboard, when the status lookup fails', () => {
+      const fixture = setup(READY_RELAY, {relayStatusFail: true});
+      expect(fixture.nativeElement.querySelector('#relay-warning')).toBeNull();
+      expect(fixture.nativeElement.textContent).toContain('SMART OAuth Relay');
+    });
   });
 });
