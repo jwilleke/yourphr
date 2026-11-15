@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.22.1](https://github.com/jwilleke/yourphr/compare/v3.22.0...v3.22.1) (2026-11-15)
+
+__The demo account is a test account, and the demo no longer warns about backups.__
+
+### Bug Fixes
+
+- __The demo account is marked as a test account__ ([#1009](https://github.com/jwilleke/yourphr/pull/1009)): the demo's `demo` account holds the baseline's sandbox source, so since 3.21.0 the boot check flagged it as a source in the wrong kind of account. The baseline now creates `demo` as a test account, and demo startup marks it that way every time it starts, so the warning no longer appears.
+- __The demo no longer shows "Backups are unavailable"__ ([#1009](https://github.com/jwilleke/yourphr/pull/1009)): a demo runs without encryption keys by design (the baseline is plaintext), so that notice always fired. In demo mode, when backups are unavailable, the admin home and the Database page no longer show the notice. Ordinary installs, and a demo given a backup key, are unchanged.
+
 ## [3.22.0](https://github.com/jwilleke/yourphr/compare/v3.21.0...v3.22.0) (2026-11-15)
 
 __Your watch and phone data, in your record, and a clear warning when a provider connection can't work.__
