@@ -1,5 +1,29 @@
 # Changelog
 
+## [3.22.0](https://github.com/jwilleke/yourphr/compare/v3.21.0...v3.22.0) (2026-11-15)
+
+__Your watch and phone data, in your record, and a clear warning when a provider connection can't work.__
+
+### Features
+
+- __Wearable data comes into your record__ ([#314](https://github.com/jwilleke/yourphr/issues/314), [#1000](https://github.com/jwilleke/yourphr/pull/1000)): a connected device (such as a phone app reading a watch) can send heart rate, steps, sleep and other readings. The raw readings are kept in their own database, and each day becomes one daily summary in your record. When a watch and a phone both send steps or sleep for the same day, one source is kept instead of adding them together, so steps aren't counted twice. A device's key may only add readings, not read your chart. This is off unless the admin turns on `yourphr.health.enabled`.
+- __Trends on the Health page__ ([#1003](https://github.com/jwilleke/yourphr/pull/1003)): the Health page shows your wearable trends and where each reading came from. When health data is off, the dashboard no longer shows a Health tile that opens an empty page.
+- __Your AI assistant can read your wearable trends__ ([#1002](https://github.com/jwilleke/yourphr/pull/1002)): a new `read_health_metric` tool lets an assistant you've connected answer questions about sleep or heart rate from your device data, instead of answering as if it weren't there. A token without Health access can't use it.
+- __A warning when provider connections can't work__ ([#870](https://github.com/jwilleke/yourphr/issues/870), [#1005](https://github.com/jwilleke/yourphr/pull/1005)): until now an admin found out the SMART relay was missing only when a patient pressed Connect and it failed. Now, if providers are turned on but the relay isn't set up, the server says so once at startup, naming the missing settings. The admin dashboard gains a relay card that warns when the relay isn't configured or doesn't answer, and shows "Unreachable".
+
+### Bug Fixes
+
+- __Configuration no longer promises every change applies at once__ ([#921](https://github.com/jwilleke/yourphr/issues/921), [#624](https://github.com/jwilleke/yourphr/issues/624)): a few settings are read only when the server starts (such as password minimum length), so changing them on screen did nothing until a restart. Those settings are now marked "after a restart".
+- __Notification links say where they go__ ([#919](https://github.com/jwilleke/yourphr/issues/919)): "Go there" now reads, for example, "Go to Admin → Users", and the test-account notice clears as soon as the account is fixed, without a restart.
+- __The version shown in the footer ignores add-on release tags__, so it always names a yourPHR release.
+
+### Internal
+
+- The phr ngdpbase add-on (`addons/phr`) is now in main ([#1004](https://github.com/jwilleke/yourphr/pull/1004)). It doesn't change the running app.
+- Project kit synced to v1.15.0 ([#998](https://github.com/jwilleke/yourphr/pull/998)).
+- Dependency updates, including security fixes for nodemailer, storybook, vitest, vite, zod, undici, qs and others.
+- Documentation: planning notes for the move to ngdpbase, EHR vendor and TEFCA notes, and a glossary.
+
 ## [3.21.0](https://github.com/jwilleke/yourphr/compare/v3.20.1...v3.21.0) (2026-10-14)
 
 __Test accounts: test data and real data never share an account.__
