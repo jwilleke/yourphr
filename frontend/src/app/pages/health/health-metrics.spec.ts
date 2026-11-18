@@ -79,9 +79,23 @@ describe('groupSummaries', () => {
 describe('seriesMode', () => {
   it('maps visualizations onto the series endpoint modes', () => {
     expect(seriesMode('line')).toBe('daily-stats');
+    expect(seriesMode('line', '30d')).toBe('daily-stats');
+    expect(seriesMode('line', '90d')).toBe('daily-stats');
+    expect(seriesMode('line', 'all')).toBe('daily-stats');
     expect(seriesMode('dual-line')).toBe('points');
+    expect(seriesMode('dual-line', '30d')).toBe('points');
     expect(seriesMode('bar-daily')).toBe('day');
+    expect(seriesMode('bar-daily', '30d')).toBe('day');
     expect(seriesMode('sleep-stages')).toBe('stages');
+    expect(seriesMode('sleep-stages', '5d')).toBe('stages');
+  });
+
+  it('uses stored samples for a window of five days or less', () => {
+    expect(seriesMode('line', '24h')).toBe('points');
+    expect(seriesMode('line', '5d')).toBe('points');
+    expect(seriesMode('bar-daily', '24h')).toBe('points');
+    expect(seriesMode('bar-daily', '5d')).toBe('points');
+    expect(seriesMode('sleep-stages', '24h')).toBe('stages');
   });
 });
 
