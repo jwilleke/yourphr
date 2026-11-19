@@ -67,7 +67,7 @@
     "@angular-eslint/builder": "22.6.0",
     "@angular/cli": "^22.2.7",
     "@angular/compiler-cli": "^22.2.1",
-    "@angular/language-service": "^22.2.3",
+    "@angular/language-service": "^22.2.6",
     "@compodoc/compodoc": "^2.0.0",
     "@eslint/js": "^10",
     "@playwright/test": "^1.64.1",
