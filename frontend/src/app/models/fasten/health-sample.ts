@@ -100,6 +100,7 @@ export interface HealthSeriesQuery {
   vendorType?: string
   startAfter?: string
   startBefore?: string
+  maxPoints?: number
   mode?: 'points' | 'day' | 'daily-stats' | 'stages'
 }
 

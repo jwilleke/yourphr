@@ -43,6 +43,7 @@ import {
   LOINC_BP_SYS,
   MetricDef,
   parseStoredWeightUnit,
+  SAMPLE_SERIES_MAX_POINTS,
   seriesMode,
   SLEEP_AWAKE,
   SLEEP_DEEP,
@@ -515,9 +516,10 @@ export class HealthComponent implements OnInit, OnDestroy {
 
   private loadChart(entry: CatalogEntry): void {
     const bounds = this.queryWindow();
-    const mode = seriesMode(entry.def.viz);
+    const mode = seriesMode(entry.def.viz, this.range);
+    const maxPoints = mode === 'points' ? SAMPLE_SERIES_MAX_POINTS : undefined;
     if (entry.def.viz === 'dual-line') {
-      this.fastenApi.getHealthSeries({codes: entry.def.codes, mode, ...bounds}).pipe(
+      this.fastenApi.getHealthSeries({codes: entry.def.codes, mode, maxPoints, ...bounds}).pipe(
         catchError(() => of(emptySeries())),
       ).subscribe({
         next: (series) => {
@@ -535,6 +537,7 @@ export class HealthComponent implements OnInit, OnDestroy {
       codes: entry.def.codes.length ? entry.def.codes : undefined,
       vendorType: entry.def.vendorType,
       mode,
+      maxPoints,
       ...bounds,
     }).subscribe({
       next: (series) => {
@@ -580,6 +583,20 @@ export class HealthComponent implements OnInit, OnDestroy {
     };
     if (def.viz === 'bar-daily') {
       this.chartType = 'bar';
+      const timed = toTimePoints(series.points || [], convert);
+      if (timed.length > 0) {
+        this.hasChartData = true;
+        this.chartData = {
+          datasets: [{
+            label: def.label,
+            data: timed,
+            backgroundColor: INDIGO,
+            maxBarThickness: 40,
+          }],
+        };
+        this.chartOptions = this.chartOptionsFor('bar', this.seriesUnit || def.unit || '', false, true);
+        return;
+      }
       const data = toDayPoints(series.daily || [], convert);
       this.hasChartData = data.length > 0;
       this.chartData = {
@@ -679,9 +696,10 @@ export class HealthComponent implements OnInit, OnDestroy {
     this.chartOptions = this.chartOptionsFor('line', 'mmHg');
   }
 
-  private chartOptionsFor(kind: 'line' | 'bar', unit: string, stacked = false): ChartConfiguration['options'] {
+  private chartOptionsFor(kind: 'line' | 'bar', unit: string, stacked = false, intraday = false): ChartConfiguration['options'] {
     return defaultChartOptions(kind, unit, {
       stacked,
+      intraday,
       range: this.range,
       windowStart: this.windowStart,
       windowEnd: this.windowEnd,
@@ -809,9 +827,9 @@ function formatTickMs(ms: number, range: RangePreset): string {
   return d.toLocaleDateString(undefined, {month: 'short', day: 'numeric'});
 }
 
-function formatTooltipTime(ms: number, kind: 'line' | 'bar'): string {
+function formatTooltipTime(ms: number, kind: 'line' | 'bar', intraday = false): string {
   const d = new Date(ms);
-  if (kind === 'bar') {
+  if (kind === 'bar' && !intraday) {
     return d.toLocaleDateString(undefined, {weekday: 'short', month: 'short', day: 'numeric'});
   }
   return d.toLocaleString(undefined, {month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'});
@@ -846,7 +864,7 @@ export function sleepAsleepTotal(items: SleepTooltipItem[]): number {
 function defaultChartOptions(
   kind: 'line' | 'bar',
   unit: string,
-  args: {stacked?: boolean, range: RangePreset, windowStart: Date | null, windowEnd: Date},
+  args: {stacked?: boolean, intraday?: boolean, range: RangePreset, windowStart: Date | null, windowEnd: Date},
 ): ChartConfiguration['options'] {
   const stacked = !!args.stacked;
   const bounds = timeAxisBounds(args.range, args.windowStart, args.windowEnd);
@@ -863,7 +881,7 @@ function defaultChartOptions(
           title: (items) => {
             const x = items[0]?.parsed?.x;
             if (x == null || Number.isNaN(x)) return '';
-            return formatTooltipTime(x, kind);
+            return formatTooltipTime(x, kind, args.intraday);
           },
           label: (ctx) => {
             const value = ctx.parsed.y;

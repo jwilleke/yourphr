@@ -26,7 +26,7 @@ import {
   type SampleAdapter,
 } from '../health/catalog.js';
 import { parseOffsetTimestamp, type Stamped } from '../health/time.js';
-import { isHighFrequency, publishSamples, type RollupWriter } from '../health/rollup.js';
+import { publishSamples, type RollupWriter } from '../health/rollup.js';
 import { DEVICE_PLATFORM_TYPE } from './SourcesManager.js';
 import { serializeComponents, toBundle, toObservation, type ObservationComponentValue } from '../health/observation.js';
 import {
@@ -479,6 +479,11 @@ function parseComponentsSafe(raw: string): ObservationComponentValue[] {
   }
 }
 
+function hasSeriesReadings(series: HealthSeries): boolean {
+  if (series.daily?.length || series.points?.length || series.nights?.length) return true;
+  return !!series.components && Object.values(series.components).some((points) => points.length > 0);
+}
+
 /** A window longer than 45 days is weeks; longer than 180 is months. Steps and sleep add. Rates average the daily means. */
 function coarsenDaily(daily: HealthDailyBucket[], how: 'sum' | 'mean', startAfter?: string, startBefore?: string): HealthDailyBucket[] {
   if (!startAfter || !startBefore || daily.length === 0) return daily;
@@ -864,10 +869,12 @@ export class HealthManager extends BaseManager {
       startBefore = until.toISOString().replace(/\.\d{3}Z$/, 'Z');
       startAfter = new Date(until.getTime() - SERIES_DEFAULT_DAYS * 24 * 60 * 60 * 1000).toISOString().replace(/\.\d{3}Z$/, 'Z');
     }
-    const metric = lookupByCode(resolved.codes[0] ?? '') ?? lookupByMetricType((query.metricTypes ?? [])[0] ?? '');
-    const detailPoints = modeRaw === 'points' && (!metric || isHighFrequency(metric.metricType));
-    if (this.engine.has('records') && !detailPoints) {
-      return this.seriesFromObservations(ctx, resolved.codes, modeRaw as HealthSeriesMode, startAfter, startBefore);
+    // Points are the stored samples. Daily, stage, and daily-stats charts read the rolled Observations
+    // when those exist. A series that was never rolled up — heart-rate variability synced before its
+    // metric type was recognized — still has every sample, so the chart reads those.
+    if (this.engine.has('records') && modeRaw !== 'points') {
+      const rolled = await this.seriesFromObservations(ctx, resolved.codes, modeRaw as HealthSeriesMode, startAfter, startBefore);
+      if (hasSeriesReadings(rolled)) return rolled;
     }
     return this.provider.querySeries(userId, {
       codes: resolved.codes,

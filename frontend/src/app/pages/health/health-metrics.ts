@@ -189,11 +189,17 @@ export function groupSummaries(summaries: HealthMetricSummary[]): CatalogEntry[]
   return entries;
 }
 
-export function seriesMode(viz: VizKind): 'points' | 'day' | 'daily-stats' | 'stages' {
-  if (viz === 'bar-daily') return 'day';
+/** Server ceiling for a points series. A short window asks for every sample up to this. */
+export const SAMPLE_SERIES_MAX_POINTS = 2000;
+
+const SAMPLE_LEVEL_RANGES = new Set(['24h', '5d']);
+
+export function seriesMode(viz: VizKind, range?: string): 'points' | 'day' | 'daily-stats' | 'stages' {
+  const detail = !!range && SAMPLE_LEVEL_RANGES.has(range);
+  if (viz === 'bar-daily') return detail ? 'points' : 'day';
   if (viz === 'sleep-stages') return 'stages';
   if (viz === 'dual-line') return 'points';
-  if (viz === 'line') return 'daily-stats';
+  if (viz === 'line') return detail ? 'points' : 'daily-stats';
   return 'points';
 }
 

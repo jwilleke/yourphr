@@ -117,6 +117,7 @@ export class FastenApiService {
     if (query.vendorType) params['vendor_type'] = query.vendorType
     if (query.startAfter) params['start_after'] = query.startAfter
     if (query.startBefore) params['start_before'] = query.startBefore
+    if (query.maxPoints != null) params['max_points'] = String(query.maxPoints)
     if (query.mode) params['mode'] = query.mode
     return this._httpClient.get<any>(`${GetEndpointAbsolutePath(globalThis.location, environment.fasten_api_endpoint_base)}/secure/health/series`, {params})
       .pipe(

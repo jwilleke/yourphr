@@ -174,6 +174,83 @@ describe('rollup through the device record door', () => {
     expect(listed.total).toBe(0);
   });
 
+  it('charts a spot reading at its sample time when points are requested', async () => {
+    const health = s.engine.managers.health;
+    await health.ingest(jim, {
+      device: { device_id: 'scale' },
+      samples: [{
+        uuid: 'w1',
+        type: 'HKQuantityTypeIdentifierBodyMass',
+        start: '2026-08-24T08:15:00Z',
+        end: '2026-08-24T08:15:00Z',
+        value: 70,
+        unit: 'kg',
+      }],
+    });
+    const series = await health.series(jim, {
+      metricTypes: ['body_mass'],
+      mode: 'points',
+      startAfter: '2026-08-01T00:00:00Z',
+      startBefore: '2026-09-01T00:00:00Z',
+    });
+    expect(series.points?.map((point) => point.t)).toEqual(['2026-08-24T08:15:00Z']);
+    expect(series.points?.[0]?.v).toBeCloseTo(70, 5);
+  });
+
+  it('charts heart-rate variability from samples when no daily observation was written', async () => {
+    const health = s.engine.managers.health;
+    await health.ingest(jim, {
+      device: { device_id: 'watch' },
+      samples: [
+        {
+          uuid: 'hrv-1',
+          type: 'HKQuantityTypeIdentifierHeartRateVariabilitySDNN',
+          start: '2026-08-24T06:00:00Z',
+          end: '2026-08-24T06:00:00Z',
+          value: 40,
+          unit: 'ms',
+        },
+        {
+          uuid: 'hrv-2',
+          type: 'HKQuantityTypeIdentifierHeartRateVariabilitySDNN',
+          start: '2026-08-24T18:00:00Z',
+          end: '2026-08-24T18:00:00Z',
+          value: 44,
+          unit: 'ms',
+        },
+      ],
+    });
+    const rolled = (await observations()).find((row) => row['source_resource_id'] === 'pghd-heartratevariabilitysdnn-2026-08-24');
+    await s.engine.managers.records.releaseDeviceRollup(jim, String(rolled?.['source_id'] ?? ''), 'pghd-heartratevariabilitysdnn-2026-08-24');
+    const series = await health.series(jim, {
+      metricTypes: ['heart_rate_variability_sdnn'],
+      mode: 'daily-stats',
+      startAfter: '2026-08-01T00:00:00Z',
+      startBefore: '2026-09-01T00:00:00Z',
+    });
+    expect(series.daily).toEqual([
+      { date: '2026-08-24', value: 42, min: 40, max: 44, n: 2 },
+    ]);
+  });
+
+  it('rolls heart-rate variability into a daily observation', async () => {
+    const health = s.engine.managers.health;
+    await health.ingest(jim, {
+      device: { device_id: 'watch' },
+      samples: [{
+        uuid: 'hrv-1',
+        type: 'HKQuantityTypeIdentifierHeartRateVariabilitySDNN',
+        start: '2026-08-24T06:00:00Z',
+        end: '2026-08-24T06:00:00Z',
+        value: 42,
+        unit: 'ms',
+      }],
+    });
+    const daily = (await observations()).find((row) => row['source_resource_id'] === 'pghd-heartratevariabilitysdnn-2026-08-24');
+    const raw = (daily?.['resource_raw'] ?? {}) as { valueQuantity?: { value?: number; code?: string } };
+    expect(raw.valueQuantity).toMatchObject({ value: 42, code: 'ms' });
+  });
+
   it('pairs blood-pressure halves that arrive in different batches', async () => {
     const health = s.engine.managers.health;
     const half = (uuid: string, type: string, value: number) => ({

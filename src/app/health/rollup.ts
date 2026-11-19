@@ -7,7 +7,14 @@ import { LOINC, OBS_CATEGORY, UCUM, lookupByMetricType, type CatalogMetric } fro
 import { offsetMinutes } from './time.js';
 import type { HealthSampleRow } from '../providers/BaseHealthProvider.js';
 
-const HIGH_FREQUENCY = new Set(['heart_rate', 'resting_heart_rate', 'heart_rate_variability', 'step_count', 'oxygen_saturation']);
+const HIGH_FREQUENCY = new Set([
+  'heart_rate',
+  'resting_heart_rate',
+  'heart_rate_variability',
+  'heart_rate_variability_sdnn',
+  'step_count',
+  'oxygen_saturation',
+]);
 const SPOT = new Set(['blood_pressure', 'body_mass', 'body_temperature']);
 const SLEEP = 'sleep_stage';
 
