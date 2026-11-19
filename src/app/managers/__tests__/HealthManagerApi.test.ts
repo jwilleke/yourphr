@@ -595,14 +595,14 @@ describe('series', () => {
       });
       const window = { startAfter: '2026-08-24T00:00:00Z', startBefore: '2026-08-26T00:00:00Z' };
       const weight = await health.series(jim, { metricTypes: ['body_mass'], ...window });
-      // Compared by time: the order the Observations come back in is the records store's, not the chart's.
+      // Points keep the sample time. Compared by time in case the store returns them out of order.
       const byTime = [...(weight.points ?? [])].sort((a, b) => a.t.localeCompare(b.t));
-      expect(byTime.map((p) => [p.t, Math.round(p.v)])).toEqual([['2026-08-24T00:00:00Z', 68], ['2026-08-25T00:00:00Z', 69]]);
+      expect(byTime.map((p) => [p.t, Math.round(p.v)])).toEqual([['2026-08-24T08:00:00Z', 68], ['2026-08-25T08:00:00Z', 69]]);
 
       const pressure = await health.series(jim, { metricTypes: ['blood_pressure'], ...window });
       expect(pressure.points).toBeUndefined();
-      expect(pressure.components?.['8480-6']).toEqual([{ t: '2026-08-24T00:00:00Z', v: 120 }]);
-      expect(pressure.components?.['8462-4']).toEqual([{ t: '2026-08-24T00:00:00Z', v: 80 }]);
+      expect(pressure.components?.['8480-6']).toEqual([{ t: '2026-08-24T09:00:00Z', v: 120 }]);
+      expect(pressure.components?.['8462-4']).toEqual([{ t: '2026-08-24T09:00:00Z', v: 80 }]);
 
       const sleep = await health.series(jim, { metricTypes: ['sleep_stage'], mode: 'stages', ...window });
       expect(sleep.nights).toHaveLength(1);
