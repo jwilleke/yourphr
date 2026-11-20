@@ -107,7 +107,7 @@ The patient is reminded before the end (`yourphr.devices.notice-days`, 7 and 1 d
 
 ## Uploading samples
 
-`POST <server>/secure/health/samples` with the access token. A signed-in session may call it too. A device key may not call the chart reads (`/samples` GET, `/series`, `/metrics`, `/bundle`, `/observation`).
+`POST <server>/secure/health/samples` with the access token. A signed-in session may call it too. A device key may not call the chart reads (`/samples` GET, `/series`, `/metrics`, `/bundle`, `/observation`). The agent gate refuses them first, and the health manager refuses them again with `403` before it reads `phd-samples.db` ([#1020](https://github.com/jwilleke/yourphr/issues/1020)), so no other way into the manager reads the raw samples either.
 
 The body is either a vendor batch or a FHIR Bundle of Observations. At most 5,000 samples. A sample that fails validation is counted in `rejected` and does not abort the rest.
 

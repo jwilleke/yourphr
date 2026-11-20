@@ -28,6 +28,7 @@ import {
 import { parseOffsetTimestamp, type Stamped } from '../health/time.js';
 import { isHighFrequency, publishSamples, type RollupWriter } from '../health/rollup.js';
 import { DEVICE_PLATFORM_TYPE } from './SourcesManager.js';
+import type { AccessCategory } from '../../account/index.js';
 import { serializeComponents, toBundle, toObservation, type ObservationComponentValue } from '../health/observation.js';
 import {
   HEALTH_SAMPLE_DEFAULT_LIMIT,
@@ -140,6 +141,8 @@ const MAX_TEXT = 200;
 const MAX_ANCHORS = 32;
 const MAX_ANCHOR = 1024;
 const SERIES_DEFAULT_DAYS = 30;
+/** The access category every health read is logged and scoped under (src/account accessCategoryFor). */
+const HEALTH_READ_CATEGORY: AccessCategory = 'Health';
 
 function cap(value: string, field: string, max = MAX_TEXT): string {
   if (value.length > max) throw new Error(`${field} is longer than ${max} characters`);
@@ -599,6 +602,19 @@ export class HealthManager extends BaseManager {
     return this.who(ctx);
   }
 
+  /**
+   * The account behind a read of the stored samples (yourphr#1020). Same owner rule as the
+   * records reads — always ctx.username, nothing in the request names another account — and an
+   * agent needs its token's Health scope here too, not only at the HTTP gate, so the samples store
+   * gives the same answer as the rolled Observations whoever calls the manager. A connected
+   * device's key carries only the device scopes, so it reads nothing.
+   */
+  private reader(ctx: ApiContext): string {
+    const userId = this.user(ctx);
+    if (!ctx.canRead(HEALTH_READ_CATEGORY)) throw new ApiError(403, `this token was not given access to ${HEALTH_READ_CATEGORY}`);
+    return userId;
+  }
+
   private async subjectFor(ctx: ApiContext): Promise<string> {
     if (!this.engine.has('records') || !this.engine.has('sources')) return '';
     try {
@@ -758,7 +774,7 @@ export class HealthManager extends BaseManager {
       sort?: unknown;
     }
   ): Promise<{ total: number; count: number; offset: number; samples: HealthSampleListItem[] }> {
-    const userId = this.user(ctx);
+    const userId = this.reader(ctx);
     if (query.limit !== undefined && query.limit !== '' && !Number.isFinite(Number(query.limit))) {
       throw new ApiError(400, 'limit must be an integer');
     }
@@ -776,7 +792,7 @@ export class HealthManager extends BaseManager {
   }
 
   async observation(ctx: ApiContext, id: string): Promise<Observation> {
-    const userId = this.user(ctx);
+    const userId = this.reader(ctx);
     const row = await this.provider.readSample(userId, id);
     if (!row) throw new ApiError(404, 'not found');
     return toObservation(row, row.subject || await this.subjectFor(ctx));
@@ -792,7 +808,7 @@ export class HealthManager extends BaseManager {
       startBefore?: unknown;
     }
   ): Promise<Bundle<Observation>> {
-    const userId = this.user(ctx);
+    const userId = this.reader(ctx);
     const parsed = this.parseListQuery({ ...query, limit: HEALTH_SAMPLE_MAX_LIMIT, offset: 0, sort: 'asc' });
     parsed.limit = HEALTH_SAMPLE_MAX_LIMIT;
     const { samples } = await this.provider.listSamples(userId, parsed);
@@ -823,7 +839,7 @@ export class HealthManager extends BaseManager {
   }
 
   async metrics(ctx: ApiContext): Promise<{ last_synced_at?: string; metrics: HealthMetricSummary[] }> {
-    const userId = this.user(ctx);
+    const userId = this.reader(ctx);
     const metrics = await this.provider.summarizeMetrics(userId);
     const states = await this.provider.listSyncStates(userId, '');
     let last: string | undefined;
@@ -845,7 +861,7 @@ export class HealthManager extends BaseManager {
       mode?: unknown;
     }
   ): Promise<HealthSeries> {
-    const userId = this.user(ctx);
+    const userId = this.reader(ctx);
     const modeRaw = asString(query.mode).trim() || 'points';
     if (modeRaw !== 'points' && modeRaw !== 'day' && modeRaw !== 'daily-stats' && modeRaw !== 'stages') {
       throw new ApiError(400, 'mode must be points, day, daily-stats, or stages');
