@@ -1,18 +1,18 @@
 # Running the dev servers
 
-Local development runs __two processes__: the Go API and the Angular dev server. The frontend dev server proxies `/api` to the backend, so you browse the SPA on `:4200` and it talks to the API on `:9090`.
+Local development runs __two processes__: the TypeScript API server and the Angular dev server. The frontend dev server proxies `/api` to the backend, so you browse the SPA on `:4200` and it talks to the API on `:9090` (the port `.env.dev.example` sets).
 
 ## Prerequisites
 
-- __`.env`__ at the repo root (gitignored; `cp .env.dev.example .env`). It sets the backend listen port and dev settings (encryption off, no converter sidecar). `make serve-backend` reads it from the working directory.
+- __`.env`__ at the repo root (gitignored; `cp .env.dev.example .env`). It sets the backend listen port and dev settings (encryption off, no converter sidecar). `make serve-server` reads it from the working directory.
 
 ## Start
 
 In two terminals:
 
 ```bash
-make serve-backend      # Go API on :9090 (reads ./.env, --debug)
-make serve-frontend     # ng serve on :4200; proxies /api -> :9090 (sandbox mode)
+make serve-server       # API on :9090 (reads ./.env)
+make serve-frontend     # ng serve on :4200; proxies /api to the API's port (sandbox mode)
 ```
 
 Then open __<http://localhost:4200>__.
@@ -25,13 +25,13 @@ By default `ng serve` binds to `localhost` only. To reach the dev app from anoth
 make serve-frontend-lan   # ng serve on 0.0.0.0 (+ --disable-host-check), still :4200
 ```
 
-Then browse to `http://<this-host-ip>:4200` from the other device. The backend already listens on all interfaces (`:9090`), so no change is needed there.
+Then browse to `http://<this-host-ip>:4200` from the other device. The backend already listens on all interfaces, so no change is needed there.
 
 `--disable-host-check` accepts the LAN IP as the `Host` header (it turns off the dev server's DNS-rebinding protection). __Dev-only, trusted networks only__ — don't expose it on an untrusted network.
 
 ## Notes
 
-- __Ports:__ backend __9090__ (`YOURPHR_WEB_LISTEN_PORT` in `.env` — the `ng serve` dev proxy forwards `/api` here), frontend __4200__.
+- __Ports:__ backend __9090__ (`YOURPHR_WEB_LISTEN_PORT` in `.env`), frontend __4200__. The dev proxy, `frontend/proxy.conf.mjs`, reads the backend port the way the server does: the environment first, then `<YOURPHR_FAST_STORAGE>/.env`, then `./.env`, then `yourphr.web.listen.port` (8080) in `config/app-default-config.json` ([#1017](https://github.com/jwilleke/yourphr/issues/1017)). Change the port in one place and both follow. `PORT=9090` in `set_env.sh` and `.env.docker.example` is something else: the host port Docker publishes the container's 8080 on.
 - __Sandbox mode:__ the frontend dev server defaults to __sandbox__ (talks only to synthetic-data test servers). `prod` mode talks to real servers; pick the build config with `-c` (e.g. `make build-frontend-prod`).
 - __Version:__ the footer shows `dev-<version>` (e.g. `dev-1.12.0`) via the public `/api/version` endpoint.
 - __Dev data:__ synthetic patient logins live in the local dev SQLite DB (persists on disk between restarts). See [Dev test accounts](#dev-test-accounts).

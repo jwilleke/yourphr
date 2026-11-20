@@ -239,7 +239,7 @@
           "options": {
             "hmr": true,
             "liveReload": true,
-            "proxyConfig": "proxy.conf.json",
+            "proxyConfig": "proxy.conf.mjs",
             "buildTarget": "fastenhealth:build"
           },
           "configurations": {

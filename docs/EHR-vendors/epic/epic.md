@@ -89,7 +89,7 @@ Everything yourPHR syncs from Epic qualifies in R4 except `MedicationStatement` 
 
 ### Prerequisites
 
-- A running YourPHR instance (dev: `make serve-backend` + `make serve-frontend`).
+- A running YourPHR instance (dev: `make serve-server` + `make serve-frontend`).
 - A free Epic developer account at <https://fhir.epic.com>.
 - Browser popups allowed for your YourPHR origin (login opens in a popup).
 

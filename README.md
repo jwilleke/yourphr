@@ -157,8 +157,8 @@ Requires a local clone, Node 24 and the frontend's toolchain.
 
 ```bash
 cp .env.dev.example .env
-make serve-server      # the API on :8080
-make serve-frontend    # the Angular dev server, proxying to it
+make serve-server      # the API on :9090 from .env (:8080 without it)
+make serve-frontend    # the Angular dev server on :4200, proxying /api to whichever port that is
 ```
 
 `make test` runs both suites; `make test-e2e` builds the app and drives a real browser over it.
