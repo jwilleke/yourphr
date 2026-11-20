@@ -128,7 +128,7 @@ cp .env.dev.example .env
 
 ```bash
 # .env — bootstrap and secrets only; every other setting is Admin -> Configuration
-YOURPHR_WEB_LISTEN_PORT=9090          # frontend/proxy.conf.json proxies /api here
+YOURPHR_WEB_LISTEN_PORT=9090          # the API's port; frontend/proxy.conf.mjs reads it too (8080 if unset)
 YOURPHR_FAST_STORAGE=./data           # the databases, the config store, the signing key
 ```
 
@@ -146,7 +146,7 @@ make serve-frontend
 make serve-server
 ```
 
-Open `http://localhost:4200`. The frontend dev server proxies API requests to the backend.
+Open `http://localhost:4200`. The frontend dev server proxies `/api` to the backend. `frontend/proxy.conf.mjs` finds the port the way the server does: `YOURPHR_WEB_LISTEN_PORT` from the environment, `<YOURPHR_FAST_STORAGE>/.env` or `./.env`, otherwise `yourphr.web.listen.port` (8080) in `config/app-default-config.json`. There is no port to keep in step by hand.
 
 *Modes:* YourPHR runs in __sandbox__ (talks only to synthetic-data test servers — the default for dev) or __prod__ (real servers).
 
