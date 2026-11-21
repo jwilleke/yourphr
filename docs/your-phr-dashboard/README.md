@@ -51,7 +51,7 @@ The __medications-widget__ and __Current Medications page__ use the backend *rec
 
 | Wire field | FHIR source | Coded companion |
 | --- | --- | --- |
-| `frequency` | `dosageInstruction[]` / `dosage[]`: `timing.code` (text/display, e.g. GTS `BID`), else `timing.repeat` (frequency/period/periodUnit, `when`, `dayOfWeek`, `timeOfDay`), plus `asNeeded[x]` / R5 `asNeededFor` — every instruction, joined with `; ` | `dosageInstruction[]` (timing code + repeat, route, site, method, `doseAndRate` Quantities) |
+| `frequency` | `dosageInstruction[]` / `dosage[]`: `timing.code` (text/display, e.g. GTS `BID`), else `timing.repeat` (frequency/period/periodUnit, `when`, `dayOfWeek`, `timeOfDay`), plus `asNeeded[x]` / R5 `asNeededFor` — every instruction, joined with semicolons | `dosageInstruction[]` (timing code + repeat, route, site, method, `doseAndRate` Quantities) |
 | `sig` | `Dosage.text` and `patientInstruction`; with neither, the coded dose, route and frequency read back | `dosageInstruction[]` |
 | `purpose` | `reasonCode[]` text/display; `reasonReference[]` → the referenced Condition's `code`, else the reference `display`; R5 `reason[]` | `reasons[]` (`concept` with SNOMED/ICD-10 codings, `reference`) |
 | `prescriber` | `MedicationRequest.requester` / `MedicationStatement.informationSource` → Practitioner name, Organization name, PractitionerRole display, else the reference `display`. A Patient/RelatedPerson is never a prescriber | `prescriberReference` (reference, type, display, NPI identifier) |
