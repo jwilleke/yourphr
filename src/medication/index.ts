@@ -36,6 +36,12 @@ export interface Contributor {
 }
 
 export interface ReconciledMedication {
+  /**
+   * The row's identity: the dedup key it was grouped under (`rxnorm:<code>`, `text:<name>` or
+   * `self:<type>/<id>`). Unique within one answer by construction, and stable across calls for the
+   * same records, so the page can key its expanded rows on it (yourphr#1025).
+   */
+  key: string;
   name: string;
   rxNormCode: string;
   state: MedState;
@@ -132,7 +138,7 @@ function resolveState(contributors: Contributor[]): { state: MedState; conflict:
 }
 
 export function reconcile(inputs: MedInput[]): ReconciledMedication[] {
-  const groups = new Map<string, { name: string; code: string; contributors: Contributor[] }>();
+  const groups = new Map<string, { key: string; name: string; code: string; contributors: Contributor[] }>();
 
   for (const input of inputs) {
     const raw = input.resource as Raw;
@@ -147,7 +153,7 @@ export function reconcile(inputs: MedInput[]): ReconciledMedication[] {
 
     let group = groups.get(key);
     if (!group) {
-      group = { name: name || `Unnamed medication`, code, contributors: [] };
+      group = { key, name: name || `Unnamed medication`, code, contributors: [] };
       groups.set(key, group);
     }
     if (group.name === 'Unnamed medication' && name !== '') group.name = name;
@@ -171,6 +177,7 @@ export function reconcile(inputs: MedInput[]): ReconciledMedication[] {
     const { state, conflict } = resolveState(ordered);
     const dose = ordered.map((c) => c.dose).find((d) => d !== '') ?? '';
     rows.push({
+      key: group.key,
       name: group.name,
       rxNormCode: group.code,
       state,
@@ -186,4 +193,48 @@ export function reconcile(inputs: MedInput[]): ReconciledMedication[] {
   const band = (r: ReconciledMedication) => (r.state === 'Active' ? 0 : r.stateConflict ? 1 : r.state === 'Suspended' ? 2 : r.state === 'Unknown' ? 3 : 4);
   rows.sort((a, b) => band(a) - band(b) || a.name.localeCompare(b.name));
   return rows;
+}
+
+/** A contributor as the medications page reads it: `sourceResourceId` is the record's id. */
+export interface WireContributor extends Contributor {
+  sourceResourceId: string;
+}
+
+/**
+ * The shape GET /api/secure/medications/reconciled sends (yourphr#1025).
+ *
+ * The Angular page was written against the Go contract (`frontend/src/app/models/fasten/
+ * reconciled-medication.ts`): it reads `key`, `title`, `lastActivity` and
+ * `contributors[].sourceResourceId`, none of which the TypeScript reconciler produced, so every name
+ * was blank, one click expanded every row, and the last-activity sort did nothing. This is the ONE
+ * place the two are reconciled. It is additive: `name`, `sourceIds` and `contributors[].id` stay,
+ * because agents and the MCP server read the same route.
+ *
+ * Fields the frontend model has and the reconciler has no source for (`patientDisplay`,
+ * `strength`, `frequency`, `sig`, `purpose`, `prescriber`, `provenance`, `originalCodings`) are
+ * left out rather than invented; the page already falls back (`patientDisplay || title`, `'—'`).
+ */
+export interface WireMedication extends Omit<ReconciledMedication, 'contributors'> {
+  title: string;
+  /** The latest contributor date, as the record wrote it; absent when no contributor is dated. */
+  lastActivity?: string;
+  contributors: WireContributor[];
+}
+
+export function toWireMedication(med: ReconciledMedication): WireMedication {
+  let lastActivity: string | undefined;
+  let latest = -Infinity;
+  for (const c of med.contributors) {
+    const t = c.date ? Date.parse(c.date) : NaN;
+    if (!Number.isNaN(t) && t > latest) {
+      latest = t;
+      lastActivity = c.date;
+    }
+  }
+  return {
+    ...med,
+    title: med.name,
+    ...(lastActivity !== undefined ? { lastActivity } : {}),
+    contributors: med.contributors.map((c) => ({ ...c, sourceResourceId: c.id })),
+  };
 }

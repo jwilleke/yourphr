@@ -37,6 +37,7 @@ import {SqliteRecordsProvider} from './app/providers/SqliteRecordsProvider.js';
 import {PatientEntryError, buildPatientRecord, type PatientEntryRequest} from './patient-entry/index.js';
 import {backgroundJobShape} from './framework/managers/JobsManager.js';
 import {renderIpsHtml} from './ips/render.js';
+import {toWireMedication} from './medication/index.js';
 
 /**
  * The session cookie. HttpOnly throughout: the Angular app (yourphr#118 Phase 2b) never sees a
@@ -1408,7 +1409,8 @@ export function createYourPhrServer(options: ServerOptions) {
       }
 
       if (url.pathname === '/api/secure/medications/reconciled' && req.method === 'GET') {
-        send(res, 200, {success: true, data: await engine.managers.records.medications(ctx)});
+        // Mapped to the page's contract here, at the wire, and nowhere else (yourphr#1025).
+        send(res, 200, {success: true, data: (await engine.managers.records.medications(ctx)).map(toWireMedication)});
         return;
       }
 

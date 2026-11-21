@@ -190,9 +190,17 @@ async function main(): Promise<void> {
   const adminFound = (await (await fetch(`${base}/api/secure/resources/search?q=lisinopril`, authed(adminToken))).json()) as { data: unknown[] };
   check('find anything by words: a member finds their own record by a word in it, with a snippet; another account finds nothing (yourphr#599)',
     found.data.length >= 1 && found.data[0]!.title.includes('Lisinopril') && /\[Lisinopril\]/.test(found.data[0]!.snippet) && adminFound.data.length === 0);
-  const meds = (await (await fetch(`${base}/api/secure/medications/reconciled`, authed(aliceToken))).json()) as { data: { name: string; state: string }[] };
+  type WireMed = { name: string; state: string; key?: string; title?: string; lastActivity?: string; contributors?: { id: string; sourceResourceId?: string; resourceType: string }[] };
+  const meds = (await (await fetch(`${base}/api/secure/medications/reconciled`, authed(aliceToken))).json()) as { data: WireMed[] };
   check('medications/reconciled serves the reconciled list over the wire',
     meds.data.length === 1 && meds.data[0]!.name === 'Lisinopril 10 MG' && meds.data[0]!.state === 'Active');
+  // yourphr#1025: the fields the medications page actually reads (frontend/src/app/models/fasten/
+  // reconciled-medication.ts). Without them every name was blank and one click expanded every row.
+  const wireMed = meds.data[0];
+  check('medications/reconciled carries the page\'s contract: a key, the title, and contributors[].sourceResourceId (yourphr#1025)',
+    !!wireMed && typeof wireMed.key === 'string' && wireMed.key !== '' && wireMed.title === 'Lisinopril 10 MG'
+      && (wireMed.lastActivity === undefined || !Number.isNaN(Date.parse(wireMed.lastActivity)))
+      && !!wireMed.contributors?.length && wireMed.contributors.every((c) => typeof c.sourceResourceId === 'string' && c.sourceResourceId === c.id && c.id !== ''));
 
   const ips = (await (await fetch(`${base}/api/secure/summary/ips`, authed(aliceToken))).json()) as { data: { type: string; entry: unknown[] } };
   check('summary/ips serves the IPS document bundle', ips.data.type === 'document' && ips.data.entry.length > 1);

@@ -7,7 +7,7 @@
  *
  *   npm run medication
  */
-import { reconcile, RXNORM, type MedInput } from '../src/medication/index.js';
+import { reconcile, RXNORM, toWireMedication, type MedInput } from '../src/medication/index.js';
 import type { Resource } from '@medplum/fhirtypes';
 
 const results: { name: string; ok: boolean; detail: string }[] = [];
@@ -21,7 +21,7 @@ const med = (over: Record<string, unknown>, sourceId = 'src-a'): MedInput =>
 
 function main(): void {
   // --- dedup: RxNorm beats text; exact text merges; nameless never merges ---
-  const rows1 = reconcile([
+  const rows1Inputs = (): MedInput[] => [
     med({ resourceType: 'MedicationRequest', id: 'r1', status: 'active', authoredOn: '2024-01-01',
       medicationCodeableConcept: { text: 'Lisinopril 10 MG Oral Tablet', coding: [{ system: RXNORM, code: '314076' }] } }),
     med({ resourceType: 'MedicationDispense', id: 'd1', status: 'completed',
@@ -32,7 +32,8 @@ function main(): void {
       medicationCodeableConcept: { text: '  metformin   500 mg ' } }, 'src-b'),
     med({ resourceType: 'MedicationRequest', id: 'n1', status: 'active' }),
     med({ resourceType: 'MedicationRequest', id: 'n2', status: 'active' }),
-  ]);
+  ];
+  const rows1 = reconcile(rows1Inputs());
   check('same RxNorm code merges across types and sources despite different text',
     rows1.filter((r) => r.rxNormCode === '314076').length === 1 &&
     rows1.find((r) => r.rxNormCode === '314076')!.sourceIds.join(',') === 'src-a,src-b');
@@ -96,6 +97,27 @@ function main(): void {
   ]);
   check('the list is patient-first ordered: Active before Unknown before Past',
     order.map((r) => r.name).join('|') === 'Beta active|Alpha unknown|Zeta past');
+
+  // --- the wire contract the medications page reads (yourphr#1025) ---
+  const keys = rows1.map((r) => r.key);
+  check('every row has a key, unique within the answer — nameless rows included',
+    keys.every((k) => typeof k === 'string' && k !== '') && new Set(keys).size === keys.length
+      && rows1.find((r) => r.rxNormCode === '314076')!.key === 'rxnorm:314076');
+  check('the key is stable across calls for the same records',
+    reconcile(rows1Inputs()).map((r) => r.key).join('|') === keys.join('|'));
+  const wire = rows1.map(toWireMedication);
+  const lisinopril = wire.find((r) => r.rxNormCode === '314076')!;
+  check('the wire row carries title (from name), lastActivity (latest dated contributor) and contributors[].sourceResourceId',
+    wire.every((r) => r.title === r.name && r.title !== '') && lisinopril.lastActivity === '2024-01-01'
+      && lisinopril.contributors.map((c) => c.sourceResourceId).join(',') === 'r1,d1');
+  check('no dated contributor means no lastActivity, not an invented one; the old fields stay for agents',
+    wire.find((r) => r.name.toLowerCase().startsWith('metformin'))!.lastActivity === undefined
+      && lisinopril.name === 'Lisinopril 10 MG Oral Tablet' && lisinopril.contributors[0]!.id === 'r1' && lisinopril.sourceIds.length === 2);
+  const latest = toWireMedication(reconcile([
+    med({ resourceType: 'MedicationRequest', id: 'l1', status: 'active', authoredOn: '2023-02-01', medicationCodeableConcept: { text: 'Z' } }),
+    med({ resourceType: 'MedicationDispense', id: 'l2', status: 'completed', whenHandedOver: '2025-03-04T10:00:00Z', medicationCodeableConcept: { text: 'Z' } }),
+  ])[0]!);
+  check('lastActivity is the latest of the contributor dates, whatever their type', latest.lastActivity === '2025-03-04T10:00:00Z');
 
   const failed = results.filter((r) => !r.ok);
   console.log(`\n${results.length - failed.length}/${results.length} checks passed`);
