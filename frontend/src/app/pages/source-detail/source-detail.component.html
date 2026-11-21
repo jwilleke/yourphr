@@ -9,7 +9,7 @@
               <div class="col-xs-2 col-sm-2 col-md-1">
                 <div class="">
                   <div class="patient-image-wrap">
-                    <img [src]="'assets/sources/'+$safeNavigationMigration(selectedSource?.brand_id)+'.png'"
+                    <img imageFallback [src]="'assets/sources/'+$safeNavigationMigration(selectedSource?.brand_id)+'.png'"
                       alt="{{selectedSource?.endpoint_id}}"
                       class="img-fluid">
                   </div>

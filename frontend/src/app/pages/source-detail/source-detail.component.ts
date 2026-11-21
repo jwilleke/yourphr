@@ -49,14 +49,26 @@ export class SourceDetailComponent implements OnInit {
     this.selectedTotalElements = this.resourceTypeCounts[resourceType]
   }
 
+  // A source is "external" (has a brand logo) only when it carries a real brand id.
+  // Manual and uploaded sources have no brand_id (or the all-zero placeholder), and
+  // asking for assets/sources/undefined.png would render a broken image (#1025).
   isExternal(){
-    return this.selectedSource?.brand_id != '00000000-0000-0000-0000-000000000000';
+    const brandId = this.selectedSource?.brand_id
+    return !!brandId && brandId != '00000000-0000-0000-0000-000000000000';
   }
 
   //functions to call on patient
-  getPatientName(){
-    // @ts-ignore
-    return `${getPath(this.selectedPatient?.resource_raw, 'name.0.family')}, ${(getPath(this.selectedPatient?.resource_raw, 'name.0.given')||[]).join(' ')}`
+  // "Family, Given" when the Patient has structured name parts, otherwise name[0].text,
+  // otherwise empty. A Patient with no name (e.g. the "Added by you" Patient, which
+  // carries identifiers only) must not render as "undefined, " (#1025).
+  getPatientName(): string {
+    const raw = this.selectedPatient?.resource_raw
+    const family: string = getPath(raw, 'name.0.family') || ''
+    const givenRaw: unknown = getPath(raw, 'name.0.given')
+    const given: string = (Array.isArray(givenRaw) ? givenRaw : []).filter(Boolean).join(' ')
+    if (family && given) { return `${family}, ${given}` }
+    if (family || given) { return family || given }
+    return getPath(raw, 'name.0.text') || ''
   }
   getPatientGender(){
     return getPath(this.selectedPatient?.resource_raw, 'gender')
