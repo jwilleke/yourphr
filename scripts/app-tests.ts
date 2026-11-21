@@ -146,6 +146,25 @@ async function main(): Promise<void> {
   const conditions = (await (await fetch(`${base}/api/secure/resource/fhir?sourceResourceType=Condition`, authed(aliceToken))).json()) as { data: unknown[] };
   check('signed-in record read returns the synced records', conditions.data.length === 3);
 
+  // yourphr#1025: the lab report page and the report header ask for ONE record with
+  // ?sourceResourceID=, and the generic datatable pages with ?page= (zero-based, 20 rows a page).
+  // Both were ignored, so every report link opened the same report and every page was page one.
+  {
+    type Row = { source_id: string; source_resource_id: string };
+    const condRows = conditions.data as Row[];
+    const wanted = condRows[1]!;
+    const one = (await (await fetch(`${base}/api/secure/resource/fhir?sourceResourceType=Condition&sourceID=${wanted.source_id}&sourceResourceID=${encodeURIComponent(wanted.source_resource_id)}`, authed(aliceToken))).json()) as { data: Row[] };
+    const missing = (await (await fetch(`${base}/api/secure/resource/fhir?sourceResourceType=Condition&sourceResourceID=no-such-id`, authed(aliceToken))).json()) as { data: Row[] };
+    check('?sourceResourceID returns only the record asked for, not the first of its type (yourphr#1025)',
+      one.data.length === 1 && one.data[0]!.source_resource_id === wanted.source_resource_id && missing.data.length === 0);
+    const page0 = (await (await fetch(`${base}/api/secure/resource/fhir?sourceResourceType=Condition&page=0`, authed(aliceToken))).json()) as { data: Row[] };
+    const page1 = (await (await fetch(`${base}/api/secure/resource/fhir?sourceResourceType=Condition&page=1`, authed(aliceToken))).json()) as { data: Row[] };
+    const pageBad = await fetch(`${base}/api/secure/resource/fhir?sourceResourceType=Condition&page=-1`, authed(aliceToken));
+    check('?page is an offset of 20 rows: page 0 holds all 3, page 1 is empty, a bad page is refused (yourphr#1025)',
+      page0.data.length === 3 && page0.data.map((r) => r.source_resource_id).join() === condRows.map((r) => r.source_resource_id).join()
+        && page1.data.length === 0 && pageBad.status === 400);
+  }
+
   // --- the two calls every page makes (yourphr#593) ---
   type Job = { id: string; user_id: string; job_type: string; job_status: string; created_at: string; data: { source_id: string; summary: { outcome: string; total_resources: number } } };
   const aliceJobs = (await (await fetch(`${base}/api/secure/jobs`, authed(aliceToken))).json()) as { data: Job[] };
@@ -171,9 +190,17 @@ async function main(): Promise<void> {
   const adminFound = (await (await fetch(`${base}/api/secure/resources/search?q=lisinopril`, authed(adminToken))).json()) as { data: unknown[] };
   check('find anything by words: a member finds their own record by a word in it, with a snippet; another account finds nothing (yourphr#599)',
     found.data.length >= 1 && found.data[0]!.title.includes('Lisinopril') && /\[Lisinopril\]/.test(found.data[0]!.snippet) && adminFound.data.length === 0);
-  const meds = (await (await fetch(`${base}/api/secure/medications/reconciled`, authed(aliceToken))).json()) as { data: { name: string; state: string }[] };
+  type WireMed = { name: string; state: string; key?: string; title?: string; lastActivity?: string; contributors?: { id: string; sourceResourceId?: string; resourceType: string }[] };
+  const meds = (await (await fetch(`${base}/api/secure/medications/reconciled`, authed(aliceToken))).json()) as { data: WireMed[] };
   check('medications/reconciled serves the reconciled list over the wire',
     meds.data.length === 1 && meds.data[0]!.name === 'Lisinopril 10 MG' && meds.data[0]!.state === 'Active');
+  // yourphr#1025: the fields the medications page actually reads (frontend/src/app/models/fasten/
+  // reconciled-medication.ts). Without them every name was blank and one click expanded every row.
+  const wireMed = meds.data[0];
+  check('medications/reconciled carries the page\'s contract: a key, the title, and contributors[].sourceResourceId (yourphr#1025)',
+    !!wireMed && typeof wireMed.key === 'string' && wireMed.key !== '' && wireMed.title === 'Lisinopril 10 MG'
+      && (wireMed.lastActivity === undefined || !Number.isNaN(Date.parse(wireMed.lastActivity)))
+      && !!wireMed.contributors?.length && wireMed.contributors.every((c) => typeof c.sourceResourceId === 'string' && c.sourceResourceId === c.id && c.id !== ''));
 
   const ips = (await (await fetch(`${base}/api/secure/summary/ips`, authed(aliceToken))).json()) as { data: { type: string; entry: unknown[] } };
   check('summary/ips serves the IPS document bundle', ips.data.type === 'document' && ips.data.entry.length > 1);

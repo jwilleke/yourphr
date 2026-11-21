@@ -47,7 +47,7 @@ Full rationale and decisions: `docs/your-phr-dashboard/per-profile-dashboards-br
 
 ## The legible exemplar: medications
 
-The __medications-widget__ and __Current Medications page__ use the backend *reconciled* model (`GET /api/secure/medications/reconciled`, `backend/pkg/medication`) rather than rendering raw FHIR. That model is the pattern the rest of the dashboard should follow — it derives a single legible row per drug with `title`, plain `state` (Active/Past), `dose`, `frequency`, `sig`, __`purpose`__ (what it's for), and `prescriber`, merging evidence from `MedicationStatement`/`Request`/`Dispense` + the referenced `Medication`.
+The __medications-widget__ and __Current Medications page__ use the backend *reconciled* model (`GET /api/secure/medications/reconciled`, `src/medication/index.ts`) rather than rendering raw FHIR. That model is the pattern the rest of the dashboard should follow — it derives a single legible row per drug, merging evidence from `MedicationStatement`/`Request`/`Dispense`. The route sends each row through `toWireMedication()`, the one place the server shape is mapped to the page's contract (`frontend/src/app/models/fasten/reconciled-medication.ts`): a unique `key`, `title`, plain `state` (Active/Suspended/Past/Unknown), `dose`, `lastActivity` (latest contributor date) and `contributors[].sourceResourceId` (yourphr#1025). The Go-era `frequency`, `sig`, __`purpose`__, `prescriber` and `strength` have no source in the TypeScript reconciler yet and are absent; the page shows a dash.
 
 This is the difference between "MedicationStatement / unknown / active" and "Lisinopril — a blood-pressure medicine, 1 tablet daily."
 

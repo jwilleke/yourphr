@@ -1,5 +1,8 @@
-// Mirrors the backend pkg/medication.ReconciledMedication contract returned by
-// GET /api/secure/medications/reconciled. Hand-maintained (this endpoint is not tygo-exported).
+// The contract returned by GET /api/secure/medications/reconciled. The server maps its reconciled
+// rows to this shape in ONE place, toWireMedication() in src/medication/index.ts (yourphr#1025);
+// change the two together. Hand-maintained. Fields marked optional that the server has no source for
+// (patientDisplay, strength, frequency, sig, purpose, prescriber, provenance, originalCodings) are
+// absent today and the page falls back for each.
 
 export interface MedicationCoding {
   system?: string;

@@ -543,3 +543,45 @@ describe('RecordsManager — the one door, scoped to whoever is asking', () => {
     await expect(records.searchText(ApiContext.anonymous(engine), 'metformin')).rejects.toMatchObject({ status: 401 });
   });
 });
+
+describe('RecordsManager.list — one record by id, and pages (yourphr#1025)', () => {
+  it('returns only the record with the requested id, not the first of its type', async () => {
+    const rows = await records.list(alice, 'Observation', {resourceId: 'o2'});
+    expect(rows.map(r => r['source_resource_id'])).toEqual(['o2']);
+    expect(rows[0]).toMatchObject({source_id: 'source-1', source_resource_type: 'Observation'});
+  });
+
+  it('returns nothing for an unknown id, another source, another type, or another person', async () => {
+    expect(await records.list(alice, 'Observation', {resourceId: 'nope'})).toEqual([]);
+    expect(await records.list(alice, 'Observation', {resourceId: 'o2', sourceId: 'source-2'})).toEqual([]);
+    expect(await records.list(alice, 'Condition', {resourceId: 'o2'})).toEqual([]);
+    expect(await records.list(bob, 'Observation', {resourceId: 'o2'})).toEqual([]);
+    expect(await records.list(alice, 'Observation', {resourceId: 'o3', sourceId: 'source-2'})).toHaveLength(1);
+  });
+
+  it('keeps a record that awaits review out of the by-id answer', async () => {
+    provider.seed('alice', 'source-1', {...obs('o4', '718-7', 'Hemoglobin', '2024-06-10'), meta: {tag: [{system: 'https://yourphr.org/fhir/CodeSystem/record-origin', code: 'needs-review'}]}} as Resource);
+    expect(await records.list(alice, 'Observation', {resourceId: 'o4'})).toEqual([]);
+  });
+
+  it('finds a projected implant Procedure by its parent-scoped id', async () => {
+    provider.seed('alice', 'source-2', {
+      resourceType: 'Device', id: 'stent', type: {text: 'Synthetic stent'}, patient: {reference: 'Patient/self'}, meta: {profile: [US_CORE_IMPLANTABLE_DEVICE]},
+      contained: [{resourceType: 'Procedure', id: 'placement', status: 'completed', code: {text: 'Implant placement'}, performedDateTime: '2020', subject: {reference: 'Patient/self'}, focalDevice: [{manipulated: {reference: '#'}}]}],
+    } as Resource);
+    const rows = await records.list(alice, 'Procedure', {resourceId: 'stent#placement'});
+    expect(rows.map(r => r['source_resource_id'])).toEqual(['stent#placement']);
+  });
+
+  it('pages by offset and limit over what the person can see, and without them returns everything', async () => {
+    const all = await records.list(alice, 'Observation');
+    expect(all).toHaveLength(3);
+    const pages = [
+      await records.list(alice, 'Observation', {offset: 0, limit: 2}),
+      await records.list(alice, 'Observation', {offset: 2, limit: 2}),
+      await records.list(alice, 'Observation', {offset: 4, limit: 2}),
+    ];
+    expect(pages.map(p => p.length)).toEqual([2, 1, 0]);
+    expect(pages.flat()).toEqual(all);
+  });
+});
