@@ -9,6 +9,7 @@ import { ConfigurationManager } from '../../../framework/ConfigurationManager.js
 import { PolicyManager } from '../../../framework/managers/PolicyManager.js';
 import { FakeConfigProvider } from '../../../framework/providers/__tests__/FakeConfigProvider.js';
 import { US_CORE_IMPLANTABLE_DEVICE } from '../../../patient-entry/shared.js';
+import { NEEDS_REVIEW, RECORD_ORIGIN } from '../../../patient-entry/index.js';
 
 const LOINC = 'http://loinc.org';
 const SNOMED = 'http://snomed.info/sct';
@@ -416,6 +417,25 @@ describe('RecordsManager — the one door, scoped to whoever is asking', () => {
     expect(await records.conditions(bob)).toEqual([]);
     expect(await records.allergies(alice)).toEqual([]);
     expect(await records.medications(alice)).toEqual([]);
+  });
+
+  it('medications resolve their Medication, prescriber and reason within the record\'s own source, chart records only', async () => {
+    const RX = 'http://www.nlm.nih.gov/research/umls/rxnorm';
+    provider.seed('alice', 'source-1', { resourceType: 'Medication', id: 'm1', code: { text: 'Lisinopril 10 MG Oral Tablet', coding: [{ system: RX, code: '314076' }] },
+      ingredient: [{ itemCodeableConcept: { text: 'Lisinopril' }, strength: { numerator: { value: 10, unit: 'mg', system: 'http://unitsofmeasure.org', code: 'mg' }, denominator: { value: 1, unit: 'TAB' } } }] } as Resource);
+    provider.seed('alice', 'source-1', { resourceType: 'Practitioner', id: 'pr1', name: [{ given: ['Ada'], family: 'Okafor' }] } as Resource);
+    provider.seed('alice', 'source-2', { resourceType: 'Practitioner', id: 'pr2', name: [{ given: ['Other'], family: 'Source' }] } as Resource);
+    provider.seed('alice', 'source-1', { resourceType: 'Condition', id: 'c9', meta: { tag: [{ system: RECORD_ORIGIN, code: NEEDS_REVIEW }] }, code: { text: 'Unreviewed' } } as Resource);
+    provider.seed('alice', 'source-1', { resourceType: 'MedicationRequest', id: 'mr1', status: 'active',
+      medicationReference: { reference: 'Medication/m1' }, requester: { reference: 'Practitioner/pr1' },
+      reasonReference: [{ reference: 'Condition/c1' }, { reference: 'Condition/c9', display: 'Awaiting review' }] } as Resource);
+    provider.seed('alice', 'source-1', { resourceType: 'MedicationStatement', id: 'ms1', status: 'active',
+      medicationCodeableConcept: { text: 'Aspirin 81 MG Oral Tablet' }, informationSource: { reference: 'Practitioner/pr2', display: 'Dr. As Written' } } as Resource);
+    const meds = await records.medications(alice);
+    expect(meds.find((m) => m.rxNormCode === '314076')).toMatchObject({ name: 'Lisinopril 10 MG Oral Tablet', strength: '10 mg', prescriber: 'Ada Okafor', purpose: 'Hypertension; Awaiting review' });
+    // pr2 lives in another source: never borrowed — the reference's own display is used instead.
+    expect(meds.find((m) => m.name.startsWith('Aspirin'))).toMatchObject({ prescriber: 'Dr. As Written', strength: '81 mg' });
+    expect(await records.medications(bob)).toEqual([]);
   });
 
   it('provenance names the source through the app-supplied display, or the raw id, or this instance', async () => {

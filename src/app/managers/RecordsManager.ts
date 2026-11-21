@@ -26,6 +26,7 @@ import { reconcileConditions, type ClassifiedCondition, type InputResource } fro
 import { classifyAllergies, type ClassifiedAllergy } from '../../allergies/index.js';
 import { classifyImmunizations, type ClassifiedImmunization } from '../../immunizations/index.js';
 import { reconcile as reconcileMedications, type MedInput, type ReconciledMedication } from '../../medication/index.js';
+import { referencesToResolve } from '../../medication/details.js';
 import { buildIps, type IpsDocument } from '../../ips/index.js';
 import type { RecordProvenance } from '../../provenance/index.js';
 import { dateFor, toResourceFhir } from '../../server.js';
@@ -353,11 +354,32 @@ export class RecordsManager extends BaseManager {
   async allergies(ctx: ApiContext): Promise<ClassifiedAllergy[]> { return classifyAllergies(await this.inputs(ctx, 'AllergyIntolerance')); }
   async immunizations(ctx: ApiContext): Promise<ClassifiedImmunization[]> { return classifyImmunizations(await this.inputs(ctx, 'Immunization')); }
 
+  /**
+   * The reconciled medication list. Each record's references (its Medication, the prescriber, the
+   * reason's Condition) are read once and resolved only within the record's OWN source and only from
+   * chart records: a same-id resource from another source, or one awaiting review, is never used —
+   * an unresolved reference falls back to its display, which is safe; a wrong name is not.
+   */
   async medications(ctx: ApiContext): Promise<ReconciledMedication[]> {
-    const inputs: MedInput[] = [];
+    const userId = this.who(ctx);
+    const rows: StoredRecord[] = [];
     for (const type of ['MedicationRequest', 'MedicationStatement', 'MedicationDispense']) {
-      for (const r of this.chartOnly(await this.provider.list(this.who(ctx), { resourceType: type }))) inputs.push({ resource: r.resource, sourceId: r.sourceId });
+      rows.push(...this.chartOnly(await this.provider.list(userId, { resourceType: type })));
     }
+    const fetched = new Map<string, StoredRecord | undefined>();
+    for (const ref of new Set(rows.flatMap((r) => referencesToResolve(r.resource as unknown as Record<string, unknown>)))) {
+      const [type, id] = ref.split('/') as [string, string];
+      const stored = await this.provider.read(userId, type, id);
+      fetched.set(ref, stored && !RecordsManager.needsReview(stored.resource) ? stored : undefined);
+    }
+    const inputs: MedInput[] = rows.map((r) => ({
+      resource: r.resource,
+      sourceId: r.sourceId,
+      resolve: (ref) => {
+        const hit = fetched.get(ref);
+        return hit && hit.sourceId === r.sourceId ? (hit.resource as unknown as Record<string, unknown>) : undefined;
+      },
+    }));
     return reconcileMedications(inputs);
   }
 
