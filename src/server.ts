@@ -118,6 +118,13 @@ export interface ServerOptions {
  * None is hard; all are invisible until the screen renders wrong, which is exactly why this had to
  * be built rather than reasoned about.
  */
+/**
+ * Rows per page of GET /api/secure/resource/fhir?page=N. 20 is the Go backend's
+ * `pkg.ResourceListPageSize` and the `[limit]` the generic FHIR datatable pages by
+ * (datatable-generic-resource.component.html); the two must agree or pages overlap or skip rows.
+ */
+export const RESOURCE_LIST_PAGE_SIZE = 20;
+
 export function toResourceFhir(resource: Resource, sourceId: string): Record<string, unknown> {
   return {
     source_id: sourceId,
@@ -1878,16 +1885,30 @@ export function createYourPhrServer(options: ServerOptions) {
         }
       }
 
-      // GET /api/secure/resource/fhir?sourceResourceType=Condition[&sourceID=…]
+      // GET /api/secure/resource/fhir?sourceResourceType=Condition[&sourceID=…][&sourceResourceID=…][&page=…]
+      // `sourceResourceID` narrows to the one record with that id; `page` is zero-based and returns
+      // RESOURCE_LIST_PAGE_SIZE rows starting at page × size, as the Go handler did (yourphr#1025).
+      // With neither, the whole list comes back as before.
       if (url.pathname === '/api/secure/resource/fhir' && req.method === 'GET') {
         const resourceType = url.searchParams.get('sourceResourceType');
         if (!resourceType) {
           send(res, 400, {success: false, error: 'sourceResourceType is required'});
           return;
         }
+        const pageParam = url.searchParams.get('page');
+        let page: number | undefined;
+        if (pageParam !== null && pageParam !== '') {
+          page = Number(pageParam);
+          if (!Number.isInteger(page) || page < 0) {
+            send(res, 400, {success: false, error: 'page must be a non-negative integer'});
+            return;
+          }
+        }
         const rows = await engine.managers.records.list(ctx, resourceType, {
-          limit: Number(url.searchParams.get('limit') ?? 100000),
-          sourceId: url.searchParams.get('sourceID') ?? undefined,
+          limit: page === undefined ? Number(url.searchParams.get('limit') ?? 100000) : RESOURCE_LIST_PAGE_SIZE,
+          offset: page === undefined ? undefined : page * RESOURCE_LIST_PAGE_SIZE,
+          sourceId: url.searchParams.get('sourceID') || undefined,
+          resourceId: url.searchParams.get('sourceResourceID') || undefined,
         });
         send(res, 200, {success: true, data: rows.map(attributed)});
         return;

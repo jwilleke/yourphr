@@ -241,10 +241,30 @@ export class RecordsManager extends BaseManager {
 
   // --- the record pages ---
 
-  /** GET /resource/fhir?sourceResourceType=…[&sourceID=…] — YourPHR's resource_fhir rows. */
-  async list(ctx: ApiContext, resourceType: string, options: { limit?: number; sourceId?: string } = {}): Promise<Record<string, unknown>[]> {
+  /**
+   * GET /resource/fhir?sourceResourceType=…[&sourceID=…][&sourceResourceID=…][&page=…] — YourPHR's
+   * resource_fhir rows.
+   *
+   * `resourceId` narrows the list to the one record of that type with that id (yourphr#1025): the
+   * lab report page and the report header ask for one record this way, and used to be handed every
+   * record of the type and show the first. `offset` skips that many rows AFTER the review filter and
+   * the implant projection, so a page is a page of what the person can actually see.
+   */
+  async list(ctx: ApiContext, resourceType: string, options: { limit?: number; offset?: number; sourceId?: string; resourceId?: string } = {}): Promise<Record<string, unknown>[]> {
     const userId = this.who(ctx);
-    const bundle = await this.provider.search(userId, { resourceType: resourceType as never, count: options.limit ?? 100000, total: 'accurate' });
+    if (options.resourceId !== undefined) {
+      // One record by type and id: read it directly rather than loading the whole type. An implant
+      // Procedure has no row of its own (its id is `<device>#<n>`), so that one case takes the full
+      // path below and is picked out of the projected rows.
+      const stored = await this.provider.read(userId, resourceType, options.resourceId);
+      if (stored) {
+        if (RecordsManager.needsReview(stored.resource)) return [];
+        if (options.sourceId && stored.sourceId !== options.sourceId) return [];
+        return (options.offset ?? 0) > 0 ? [] : [toResourceFhir(stored.resource, stored.sourceId)];
+      }
+      if (!(resourceType === 'Procedure' && options.resourceId.includes('#'))) return [];
+    }
+    const bundle = await this.provider.search(userId, { resourceType: resourceType as never, count: Math.max(0, options.offset ?? 0) + (options.limit ?? 100000), total: 'accurate' });
     const sourceOf = await this.provider.sourceOf(userId, resourceType);
     const rows = (bundle.entry ?? [])
       .map((e) => e.resource as Resource)
@@ -258,7 +278,9 @@ export class RecordsManager extends BaseManager {
         }
       }
     }
-    return rows.slice(0, options.limit ?? 100000);
+    const wanted = options.resourceId === undefined ? rows : rows.filter((r) => r['source_resource_id'] === options.resourceId);
+    const offset = Math.max(0, options.offset ?? 0);
+    return wanted.slice(offset, offset + (options.limit ?? 100000));
   }
 
   /** GET /resource/fhir/:source/:id — addressed by id without its type, as YourPHR does. */
