@@ -15,6 +15,11 @@
  *     Active > Suspended > Past priority), and every contributor stays visible as evidence.
  */
 import type { Resource } from '@medplum/fhirtypes';
+import { conceptText } from '../conditions/index.js';
+import type { Coding } from '../conditions/index.js';
+import { medicationConcept, medicationDetails, type MedicationDetails, type Resolver } from './details.js';
+
+export type { Resolver } from './details.js';
 
 export const RXNORM = 'http://www.nlm.nih.gov/research/umls/rxnorm';
 
@@ -23,9 +28,20 @@ export type MedState = 'Active' | 'Suspended' | 'Past' | 'Unknown';
 export interface MedInput {
   resource: Resource;
   sourceId: string;
+  /**
+   * Resolves the record's references (Medication, Practitioner, Organization, Condition) within
+   * its own source. Optional: without it only contained resources and reference displays are used.
+   */
+  resolve?: Resolver;
 }
 
-export interface Contributor {
+/**
+ * One record's evidence. Beyond the reconciler's own fields it carries what the record says about
+ * frequency, sig, purpose, prescriber and strength — the legible line AND the FHIR behind it
+ * (`dosageInstruction`, `reasons`, `prescriberReference`, `ingredients`, `medication`), codings
+ * intact, every one omitted when the record is silent (src/medication/details.ts).
+ */
+export interface Contributor extends MedicationDetails {
   resourceType: string;
   id: string;
   sourceId: string;
@@ -51,18 +67,29 @@ export interface ReconciledMedication {
   /** Distinct sources that said anything about this drug. */
   sourceIds: string[];
   contributors: Contributor[];
+  /** Per-unit strength, e.g. "325 mg" — from Medication.ingredient, else read off the drug name. */
+  strength?: string;
+  /** Frequency in words, from Dosage.timing (code, else repeat) and asNeeded. */
+  frequency?: string;
+  /** Instructions: Dosage.text / patientInstruction, else the coded dose, route and frequency. */
+  sig?: string;
+  /** Why it is taken: reasonCode text, or the referenced Condition's name, or the reference display. */
+  purpose?: string;
+  /** Who prescribed it: requester (Request) / informationSource (Statement), resolved when possible. */
+  prescriber?: string;
+  /** Every coding (system, code, display) the contributors gave the drug — RxNorm, NDC, SNOMED — as recorded. */
+  originalCodings?: Coding[];
+  /** The FHIR behind `frequency`/`sig`, from the same contributor. */
+  dosageInstruction?: MedicationDetails['dosageInstruction'];
+  /** The FHIR behind `purpose`, from the same contributor. */
+  reasons?: MedicationDetails['reasons'];
+  /** The FHIR behind `prescriber`, from the same contributor. */
+  prescriberReference?: MedicationDetails['prescriberReference'];
+  /** The FHIR behind `strength` (Medication.ingredient), from the same contributor. */
+  ingredients?: MedicationDetails['ingredients'];
 }
 
 type Raw = Record<string, any>;
-
-function conceptText(cc: Raw | undefined): string {
-  if (!cc) return '';
-  if (typeof cc['text'] === 'string' && cc['text'] !== '') return cc['text'];
-  for (const coding of cc['coding'] ?? []) {
-    if (coding?.display) return coding.display;
-  }
-  return '';
-}
 
 function rxCode(cc: Raw | undefined): string {
   for (const coding of cc?.['coding'] ?? []) {
@@ -102,9 +129,6 @@ function dateOf(resource: Raw): string {
   return resource['authoredOn'] ?? resource['effectiveDateTime'] ?? resource['whenHandedOver'] ?? resource['dateAsserted'] ?? '';
 }
 
-function medConcept(resource: Raw): Raw | undefined {
-  return resource['medicationCodeableConcept'];
-}
 
 const TYPE_PRECEDENCE: Record<string, number> = {
   MedicationRequest: 0,
@@ -146,7 +170,7 @@ export function reconcile(inputs: MedInput[]): ReconciledMedication[] {
     const type = raw['resourceType'];
     if (!(type in TYPE_PRECEDENCE)) continue;
 
-    const concept = medConcept(raw);
+    const concept = medicationConcept(raw, input.resolve);
     const name = conceptText(concept) || '';
     const code = rxCode(concept);
     const key = dedupKey(name, code, `${type}/${raw['id']}`);
@@ -166,6 +190,7 @@ export function reconcile(inputs: MedInput[]): ReconciledMedication[] {
       state: stateOf(raw),
       date: dateOf(raw),
       dose: doseOf(raw),
+      ...medicationDetails(raw, input.resolve),
     });
   }
 
@@ -176,6 +201,20 @@ export function reconcile(inputs: MedInput[]): ReconciledMedication[] {
     );
     const { state, conflict } = resolveState(ordered);
     const dose = ordered.map((c) => c.dose).find((d) => d !== '') ?? '';
+    // Each detail follows the same precedence as dose — the first contributor that states it — and
+    // its FHIR comes from that same contributor, so the line and the codes never disagree.
+    const first = (has: (c: Contributor) => unknown): Contributor | undefined => ordered.find((c) => has(c));
+    const byDosage = first((c) => c.frequency || c.sig);
+    const byReason = first((c) => c.purpose);
+    const byPrescriber = first((c) => c.prescriber);
+    const byStrength = first((c) => c.strength);
+    const codings = new Map<string, Coding>();
+    for (const c of ordered) {
+      for (const coding of c.medication?.coding ?? []) {
+        const k = `${coding.system ?? ''}|${coding.code ?? ''}|${coding.code ? '' : coding.display ?? ''}`;
+        if (!codings.has(k)) codings.set(k, coding);
+      }
+    }
     rows.push({
       key: group.key,
       name: group.name,
@@ -185,6 +224,16 @@ export function reconcile(inputs: MedInput[]): ReconciledMedication[] {
       dose,
       sourceIds: [...new Set(ordered.map((c) => c.sourceId).filter(Boolean))],
       contributors: ordered,
+      ...(byStrength?.strength ? { strength: byStrength.strength } : {}),
+      ...(byDosage?.frequency ? { frequency: byDosage.frequency } : {}),
+      ...(byDosage?.sig ? { sig: byDosage.sig } : {}),
+      ...(byReason?.purpose ? { purpose: byReason.purpose } : {}),
+      ...(byPrescriber?.prescriber ? { prescriber: byPrescriber.prescriber } : {}),
+      ...(codings.size ? { originalCodings: [...codings.values()] } : {}),
+      ...(byDosage?.dosageInstruction ? { dosageInstruction: byDosage.dosageInstruction } : {}),
+      ...(byReason?.reasons ? { reasons: byReason.reasons } : {}),
+      ...(byPrescriber?.prescriberReference ? { prescriberReference: byPrescriber.prescriberReference } : {}),
+      ...(byStrength?.ingredients ? { ingredients: byStrength.ingredients } : {}),
     });
   }
 
@@ -210,9 +259,11 @@ export interface WireContributor extends Contributor {
  * place the two are reconciled. It is additive: `name`, `sourceIds` and `contributors[].id` stay,
  * because agents and the MCP server read the same route.
  *
- * Fields the frontend model has and the reconciler has no source for (`patientDisplay`,
- * `strength`, `frequency`, `sig`, `purpose`, `prescriber`, `provenance`, `originalCodings`) are
- * left out rather than invented; the page already falls back (`patientDisplay || title`, `'—'`).
+ * `strength`, `frequency`, `sig`, `purpose`, `prescriber` and `originalCodings` come from the FHIR
+ * (src/medication/details.ts), each with its coded companion (`ingredients`, `dosageInstruction`,
+ * `reasons`, `prescriberReference`) and each omitted when the records are silent. Still absent, with
+ * no source here: `patientDisplay` (RxTerms) and `provenance`; the page falls back
+ * (`patientDisplay || title`, `'—'`).
  */
 export interface WireMedication extends Omit<ReconciledMedication, 'contributors'> {
   title: string;
