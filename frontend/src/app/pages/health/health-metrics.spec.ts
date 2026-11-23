@@ -90,11 +90,12 @@ describe('seriesMode', () => {
     expect(seriesMode('sleep-stages', '5d')).toBe('stages');
   });
 
-  it('uses stored samples for a window of five days or less', () => {
+  it('uses stored samples for a window of five days or less, with daily totals as hourly sums', () => {
     expect(seriesMode('line', '24h')).toBe('points');
     expect(seriesMode('line', '5d')).toBe('points');
-    expect(seriesMode('bar-daily', '24h')).toBe('points');
-    expect(seriesMode('bar-daily', '5d')).toBe('points');
+    expect(seriesMode('bar-daily', '24h')).toBe('hour');
+    expect(seriesMode('bar-daily', '5d')).toBe('hour');
+    expect(seriesMode('bar-daily', '90d')).toBe('day');
     expect(seriesMode('sleep-stages', '24h')).toBe('stages');
   });
 });

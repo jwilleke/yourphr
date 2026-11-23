@@ -249,7 +249,7 @@ describe('reads', () => {
 
   it('refuses a series without a metric and an unknown mode', async () => {
     await expect(health.series(jim, {})).rejects.toThrow(/code, metric_type, or vendor_type/);
-    await expect(health.series(jim, { metricTypes: ['heart_rate'], mode: 'weekly' })).rejects.toThrow(/points, day, daily-stats, or stages/);
+    await expect(health.series(jim, { metricTypes: ['heart_rate'], mode: 'weekly' })).rejects.toThrow(/points, hour, day, daily-stats, or stages/);
   });
 
   it('an account\'s samples go when the account does', async () => {

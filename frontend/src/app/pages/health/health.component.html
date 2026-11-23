@@ -104,7 +104,7 @@
                 <span *ngIf="seriesStats?.max != null">Max {{ formatChartStat(seriesStats.max) }}</span>
                 <span *ngIf="seriesStats?.avg != null">Avg {{ formatChartStat(seriesStats.avg) }}</span>
                 <span>Samples {{ seriesTotal | number }}</span>
-                <span *ngIf="downsampled" class="tx-gray-600">averaged to fit the chart</span>
+                <span *ngIf="downsampled" class="tx-gray-600">Summarized: samples averaged to fit the chart</span>
               </div>
             </ng-container>
 

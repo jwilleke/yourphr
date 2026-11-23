@@ -264,6 +264,21 @@ describe('SqlitePhdSamplesProvider storage', () => {
       expect(out.daily).toEqual([{ date: '2026-08-24', value: 8000 }, { date: '2026-08-25', value: 40 }]);
     });
 
+    it('sums steps per UTC hour, keeps the larger source each hour, and splits :59 from :00', async () => {
+      await provider.insertSamples('jim', [
+        sample({ id: 'w1', externalUuid: 'w1', sourceName: 'Watch', startTime: '2026-08-24T15:00:00Z', valueNum: 100 }),
+        sample({ id: 'w2', externalUuid: 'w2', sourceName: 'Watch', startTime: '2026-08-24T15:59:00Z', valueNum: 50 }),
+        sample({ id: 'p1', externalUuid: 'p1', sourceName: 'Phone', startTime: '2026-08-24T15:30:00Z', valueNum: 120 }),
+        sample({ id: 'p2', externalUuid: 'p2', sourceName: 'Phone', startTime: '2026-08-24T16:00:00Z', valueNum: 30 }),
+      ]);
+      const out = await provider.querySeries('jim', seriesQuery({ metricTypes: ['step_count'], mode: 'hour' }));
+      expect(out).toMatchObject({ total: 4, downsampled: false, unit: '{steps}' });
+      expect(out.points).toEqual([
+        { t: '2026-08-24T15:00:00Z', v: 150 },
+        { t: '2026-08-24T16:00:00Z', v: 30 },
+      ]);
+    });
+
     it('reports per-day mean, minimum, maximum and count', async () => {
       await provider.insertSamples('jim', [
         sample({ id: 'a', externalUuid: 'a', valueNum: 60 }),

@@ -459,7 +459,7 @@ describe('HealthComponent', () => {
     expect(query?.maxPoints).toBeUndefined();
   });
 
-  it('places short-window step bars at each sample time', () => {
+  it('draws short-window steps as hourly bars centred on each hour', () => {
     const steps: HealthMetricSummary = {
       code: '55423-8',
       metric_type: 'step_count',
@@ -478,7 +478,7 @@ describe('HealthComponent', () => {
       downsampled: false,
       points: [
         {t: '2026-08-24T15:00:00Z', v: 120},
-        {t: '2026-08-24T16:30:00Z', v: 80},
+        {t: '2026-08-24T16:00:00Z', v: 80},
       ],
     }));
     fixture = TestBed.createComponent(HealthComponent);
@@ -486,20 +486,48 @@ describe('HealthComponent', () => {
     fixture.detectChanges();
 
     const query = mockApi.getHealthSeries.calls.mostRecent().args[0];
-    expect(query?.mode).toBe('points');
-    expect(query?.maxPoints).toBe(2000);
+    expect(query?.mode).toBe('hour');
+    expect(query?.maxPoints).toBeUndefined();
     expect(component.chartType).toBe('bar');
+    expect(component.hasChartData).toBeTrue();
     const data = component.chartData.datasets[0].data as {x: number, y: number}[];
-    expect(data.map((point) => point.x)).toEqual([
-      Date.parse('2026-08-24T15:00:00Z'),
-      Date.parse('2026-08-24T16:30:00Z'),
+    expect(data).toEqual([
+      {x: Date.parse('2026-08-24T15:30:00Z'), y: 120},
+      {x: Date.parse('2026-08-24T16:30:00Z'), y: 80},
     ]);
     const title = component.chartOptions?.plugins?.tooltip?.callbacks?.title as
       ((items: {parsed?: {x?: number}}[]) => string) | undefined;
-    const at = Date.parse('2026-08-24T15:00:00Z');
-    expect(title?.([{parsed: {x: at}}])).toBe(
-      new Date(at).toLocaleString(undefined, {month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'}),
+    const start = new Date('2026-08-24T15:00:00Z');
+    const end = new Date('2026-08-24T16:00:00Z');
+    expect(title?.([{parsed: {x: data[0].x}}])).toBe(
+      `${start.toLocaleString(undefined, {month: 'short', day: 'numeric', hour: 'numeric'})} - ${end.toLocaleTimeString(undefined, {hour: 'numeric'})}`,
     );
+  });
+
+  it('never draws a downsampled hourly series as step bars', () => {
+    const steps: HealthMetricSummary = {
+      code: '55423-8',
+      metric_type: 'step_count',
+      vendor_type: 'HKQuantityTypeIdentifierStepCount',
+      unit: 'count',
+      value_num: 200,
+      latest_at: '2026-08-24T16:30:00Z',
+      earliest_at: '2026-08-01T00:00:00Z',
+      sample_count: 2,
+    };
+    mockApi.getHealthMetrics.and.returnValue(of({metrics: [steps]}));
+    mockApi.getHealthSeries.and.returnValue(of({
+      metric_type: 'step_count',
+      unit: 'count',
+      total: 5000,
+      downsampled: true,
+      points: [{t: '2026-08-24T15:00:00Z', v: 12.5}],
+    }));
+    fixture = TestBed.createComponent(HealthComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+
+    expect(component.hasChartData).toBeFalse();
   });
 
   it('places daily bars on the same linear time axis so missing days leave a gap', () => {
@@ -527,9 +555,11 @@ describe('HealthComponent', () => {
     fixture = TestBed.createComponent(HealthComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
-    const windowStart = Date.parse('2026-08-21T00:00:00Z');
+    component.setRange('30d');
+    const windowStart = Date.parse('2026-08-01T00:00:00Z');
     component.onSliderInput(String(windowStart));
 
+    expect(mockApi.getHealthSeries.calls.mostRecent().args[0]?.mode).toBe('day');
     const data = component.chartData.datasets[0].data as {x: number, y: number}[];
     expect(component.chartType).toBe('bar');
     expect(data[0].x).toBe(utcDayMs('2026-08-21'));

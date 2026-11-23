@@ -502,7 +502,7 @@ describe('series', () => {
   it('refuses a mode it does not know, a query that names nothing, and a max_points that is not a number', async () => {
     await withHealth(async (s, jim) => {
       const health = s.engine.managers.health;
-      await expect(health.series(jim, { metricTypes: ['step_count'], mode: 'weekly' })).rejects.toMatchObject({ status: 400, message: 'mode must be points, day, daily-stats, or stages' });
+      await expect(health.series(jim, { metricTypes: ['step_count'], mode: 'weekly' })).rejects.toMatchObject({ status: 400, message: 'mode must be points, hour, day, daily-stats, or stages' });
       await expect(health.series(jim, {})).rejects.toMatchObject({ status: 400, message: 'code, metric_type, or vendor_type is required' });
       await expect(health.series(jim, { metricTypes: ['step_count'], maxPoints: 'lots' })).rejects.toMatchObject({ status: 400 });
       await expect(health.series(jim, { metricTypes: ['step_count'], startAfter: 'yesterday' })).rejects.toMatchObject({ status: 400 });
@@ -561,6 +561,26 @@ describe('series', () => {
     });
   });
 
+  it('charts hourly steps from the samples without adding a watch and a phone in the same hour', async () => {
+    await withHealth(async (s, jim) => {
+      const health = s.engine.managers.health;
+      await health.ingest(jim, {
+        samples: [
+          hk(STEPS, 'w1', 100, 'count', '2026-08-24T15:05:00Z', { source_name: 'Watch' }),
+          hk(STEPS, 'w2', 50, 'count', '2026-08-24T15:40:00Z', { source_name: 'Watch' }),
+          hk(STEPS, 'p1', 120, 'count', '2026-08-24T15:20:00Z'),
+          hk(STEPS, 'p2', 30, 'count', '2026-08-24T16:10:00Z'),
+        ],
+      });
+      const hourly = await health.series(jim, { metricTypes: ['step_count'], mode: 'hour', startAfter: '2026-08-24T12:00:00Z', startBefore: '2026-08-25T12:00:00Z' });
+      expect(hourly.downsampled).toBe(false);
+      expect(hourly.points).toEqual([
+        { t: '2026-08-24T15:00:00Z', v: 150 },
+        { t: '2026-08-24T16:00:00Z', v: 30 },
+      ]);
+    });
+  });
+
   it('averages the daily means over a long window for daily-stats, with the day\'s minimum and maximum', async () => {
     await withHealth(async (s, jim) => {
       const health = s.engine.managers.health;
@@ -595,14 +615,14 @@ describe('series', () => {
       });
       const window = { startAfter: '2026-08-24T00:00:00Z', startBefore: '2026-08-26T00:00:00Z' };
       const weight = await health.series(jim, { metricTypes: ['body_mass'], ...window });
-      // Points keep the sample time. Compared by time in case the store returns them out of order.
+      // Compared by time: the order the Observations come back in is the records store's, not the chart's.
       const byTime = [...(weight.points ?? [])].sort((a, b) => a.t.localeCompare(b.t));
-      expect(byTime.map((p) => [p.t, Math.round(p.v)])).toEqual([['2026-08-24T08:00:00Z', 68], ['2026-08-25T08:00:00Z', 69]]);
+      expect(byTime.map((p) => [p.t, Math.round(p.v)])).toEqual([['2026-08-24T00:00:00Z', 68], ['2026-08-25T00:00:00Z', 69]]);
 
       const pressure = await health.series(jim, { metricTypes: ['blood_pressure'], ...window });
       expect(pressure.points).toBeUndefined();
-      expect(pressure.components?.['8480-6']).toEqual([{ t: '2026-08-24T09:00:00Z', v: 120 }]);
-      expect(pressure.components?.['8462-4']).toEqual([{ t: '2026-08-24T09:00:00Z', v: 80 }]);
+      expect(pressure.components?.['8480-6']).toEqual([{ t: '2026-08-24T00:00:00Z', v: 120 }]);
+      expect(pressure.components?.['8462-4']).toEqual([{ t: '2026-08-24T00:00:00Z', v: 80 }]);
 
       const sleep = await health.series(jim, { metricTypes: ['sleep_stage'], mode: 'stages', ...window });
       expect(sleep.nights).toHaveLength(1);

@@ -155,6 +155,16 @@ Decided on [#314](https://github.com/jwilleke/yourphr/issues/314):
 - What a device sends is recorded as __patient-generated health data (PGHD)__, credited to the device by the name the patient gave it, and never mixed with what a clinician recorded. See the published code system at <https://yourphr.org/fhir/CodeSystem/record-origin>.
 - High-frequency series (heart rate, steps, oxygen saturation) are kept raw and also written as one Observation per local day. Steps from two sources on the same local day keep the larger total and do not add the other source, even when the intervals do not overlap. Other daily series average every sample, with no source priority. Spot readings (blood pressure, weight, temperature) are stored as their own Observations.
 
+## Charts
+
+`GET <server>/secure/health/series` takes `mode=points`, `hour`, `day`, `daily-stats` or `stages`. The Health page picks the mode from the chart and the range:
+
+- __24h and 5d.__ Line charts for high-frequency series (heart rate, resting heart rate, heart-rate variability, oxygen saturation) read the raw samples with `mode=points`, up to 2000 points. Above that the server averages them into time buckets and sets `downsampled`, and the chart says it is summarized.
+- __Steps at 24h and 5d__ use `mode=hour`: one bar per hour, summed per source. Each hour keeps the larger source total, the same rule as the daily total, so a watch and a phone are not added together. Step bars are never drawn from averaged values.
+- __Spot readings__ (weight, blood pressure, temperature) always come from their Observations in the record, at every range.
+- __30d, 90d and all__ read the daily Observations (`day`, `daily-stats`, `stages`).
+- __Time zones.__ The 24h and 5d windows are rolling windows of UTC instants ending now, and hourly step bars are UTC hours. Those match local hours except in zones with a 30- or 45-minute offset. Daily buckets use the local day the sample was recorded in.
+
 ## Storage in the app
 
 - Keep the refresh token in the platform's secure store (iOS Keychain, Android Keystore-backed storage), never in plain preferences, logs or crash reports.
