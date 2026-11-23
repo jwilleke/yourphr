@@ -53,6 +53,7 @@ Start with the section that fits what you're doing.
 
 | Document | What it covers |
 |---|---|
+| [Developer guides](./guides/README.md) | How to change the code, one area per guide: managers, configuration, API, security, storage, FHIR records, devices, testing, build and release |
 | [Dev servers](./development/devserver.md) | Running yourPHR locally |
 | [Testing and test data](./development/testing-and-data.md) | Test suites and synthetic data |
 | [Test sandboxes](./development/test-sandboxes.md) | Vendor sandboxes and their test patients |
