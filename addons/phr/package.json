@@ -46,15 +46,15 @@
   },
   "devDependencies": {
     "@jwilleke/ngdpbase-types": "5.39.0",
-    "@medplum/fhirtypes": "5.2.7",
+    "@medplum/fhirtypes": "5.2.18",
     "@types/node": "^24.19.1",
     "typescript": "^6.0.3",
     "vitest": "5.0.5"
   },
   "dependencies": {
-    "@medplum/ccda": "5.2.7",
-    "@medplum/core": "5.2.7",
-    "@medplum/definitions": "5.2.7",
+    "@medplum/ccda": "5.2.18",
+    "@medplum/core": "5.2.18",
+    "@medplum/definitions": "5.2.18",
     "fhirpath": "5.2.1"
   },
   "bundleDependencies": [
