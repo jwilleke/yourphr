@@ -46,7 +46,7 @@ Device limits: `yourphr.devices.grant-max-days`, `key-ttl-hours`, `setup-code-mi
 
 ## How you know you are done
 
-- `npm run health-intake` and `npm run agent-tokens` pass, and the unit tests under `src/app/managers/__tests__/` (`HealthSamples`, `HealthIntakeGuards`, `HealthReadAccess`, `HealthRollup`, `DeviceRecords`, and for [#991](https://github.com/jwilleke/yourphr/issues/991) `HealthNeedsDatabaseKey`, `HealthRetry` and `HealthUnattendedProof`) and `src/framework/managers/__tests__/DeviceGrants.test.ts`.
+- `npm run health-intake` and `npm run agent-tokens` pass, and the unit tests under `src/app/managers/__tests__/` (`HealthSamples`, `HealthIntakeGuards`, `HealthReadAccess`, `HealthRollup`, `DeviceRecords`, and for [#991](https://github.com/jwilleke/yourphr/issues/991) `HealthNeedsDatabaseKey` and `HealthRetry`), plus `npm run health-unattended` (signed-out upload, revoked device, cross-patient, restore, no unlocked copies) and `src/framework/managers/__tests__/DeviceGrants.test.ts`.
 - The E2E journey `e2e/21-connected-devices.spec.ts` still passes when the UI changed.
 
 ## See also
