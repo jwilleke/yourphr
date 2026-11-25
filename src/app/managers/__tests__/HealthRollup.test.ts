@@ -174,6 +174,77 @@ describe('rollup through the device record door', () => {
     expect(listed.total).toBe(0);
   });
 
+  it('charts a spot weight and blood pressure held only in the record at 24h and 5d', async () => {
+    const scale = `source-${(await s.sources.addDeviceSource(jim, 'Scale')).id}`;
+    const records = s.engine.managers.records;
+    await records.saveDeviceRecord(jim, scale, {
+      resourceType: 'Observation',
+      id: 'pghd-weight-1',
+      status: 'final',
+      code: { coding: [{ system: 'http://loinc.org', code: '29463-7' }] },
+      effectiveDateTime: '2026-08-24T08:15:00Z',
+      valueQuantity: { value: 70, unit: 'kg', system: 'http://unitsofmeasure.org', code: 'kg' },
+    });
+    await records.saveDeviceRecord(jim, scale, {
+      resourceType: 'Observation',
+      id: 'pghd-bp-1',
+      status: 'final',
+      code: { coding: [{ system: 'http://loinc.org', code: '85354-9' }] },
+      effectiveDateTime: '2026-08-24T09:00:00Z',
+      component: [
+        { code: { coding: [{ system: 'http://loinc.org', code: '8480-6' }] }, valueQuantity: { value: 120, unit: 'mmHg' } },
+        { code: { coding: [{ system: 'http://loinc.org', code: '8462-4' }] }, valueQuantity: { value: 80, unit: 'mmHg' } },
+      ],
+    });
+    const health = s.engine.managers.health;
+    expect((await health.list(jim, {})).total).toBe(0);
+    const windows = [
+      { startAfter: '2026-08-24T06:00:00Z', startBefore: '2026-08-25T06:00:00Z' },
+      { startAfter: '2026-08-20T06:00:00Z', startBefore: '2026-08-25T06:00:00Z' },
+    ];
+    for (const window of windows) {
+      const weight = await health.series(jim, { metricTypes: ['body_mass'], mode: 'points', ...window });
+      expect(weight.points).toEqual([{ t: '2026-08-24T00:00:00Z', v: 70 }]);
+      const pressure = await health.series(jim, { metricTypes: ['blood_pressure'], mode: 'points', ...window });
+      expect(pressure.components?.['8480-6']).toEqual([{ t: '2026-08-24T00:00:00Z', v: 120 }]);
+      expect(pressure.components?.['8462-4']).toEqual([{ t: '2026-08-24T00:00:00Z', v: 80 }]);
+    }
+  });
+
+  it('reads heart-rate variability points from the samples and weight points from the record', async () => {
+    const health = s.engine.managers.health;
+    await health.ingest(jim, {
+      device: { device_id: 'watch' },
+      samples: [
+        { uuid: 'hrv-1', type: 'HKQuantityTypeIdentifierHeartRateVariabilitySDNN', start: '2026-08-24T06:00:00Z', end: '2026-08-24T06:00:00Z', value: 40, unit: 'ms' },
+        { uuid: 'w1', type: 'HKQuantityTypeIdentifierBodyMass', start: '2026-08-24T08:15:00Z', end: '2026-08-24T08:15:00Z', value: 70, unit: 'kg' },
+      ],
+    });
+    const window = { startAfter: '2026-08-24T00:00:00Z', startBefore: '2026-08-25T00:00:00Z' };
+    const hrv = await health.series(jim, { metricTypes: ['heart_rate_variability_sdnn'], mode: 'points', ...window });
+    expect(hrv.points).toEqual([{ t: '2026-08-24T06:00:00Z', v: 40 }]);
+    const weight = await health.series(jim, { metricTypes: ['body_mass'], mode: 'points', ...window });
+    expect(weight.points?.map((point) => point.t)).toEqual(['2026-08-24T00:00:00Z']);
+  });
+
+  it('rolls heart-rate variability into a daily observation', async () => {
+    const health = s.engine.managers.health;
+    await health.ingest(jim, {
+      device: { device_id: 'watch' },
+      samples: [{
+        uuid: 'hrv-1',
+        type: 'HKQuantityTypeIdentifierHeartRateVariabilitySDNN',
+        start: '2026-08-24T06:00:00Z',
+        end: '2026-08-24T06:00:00Z',
+        value: 42,
+        unit: 'ms',
+      }],
+    });
+    const daily = (await observations()).find((row) => row['source_resource_id'] === 'pghd-heartratevariabilitysdnn-2026-08-24');
+    const raw = (daily?.['resource_raw'] ?? {}) as { valueQuantity?: { value?: number; code?: string } };
+    expect(raw.valueQuantity).toMatchObject({ value: 42, code: 'ms' });
+  });
+
   it('pairs blood-pressure halves that arrive in different batches', async () => {
     const health = s.engine.managers.health;
     const half = (uuid: string, type: string, value: number) => ({

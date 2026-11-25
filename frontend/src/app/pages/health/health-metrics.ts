@@ -1,4 +1,4 @@
-import {HealthMetricSummary} from '../../models/fasten/health-sample';
+import {HealthMetricSummary, HealthSeriesQuery} from '../../models/fasten/health-sample';
 
 export type VizKind = 'line' | 'dual-line' | 'bar-daily' | 'sleep-stages' | 'table';
 
@@ -189,11 +189,23 @@ export function groupSummaries(summaries: HealthMetricSummary[]): CatalogEntry[]
   return entries;
 }
 
-export function seriesMode(viz: VizKind): 'points' | 'day' | 'daily-stats' | 'stages' {
-  if (viz === 'bar-daily') return 'day';
+/** Server ceiling for a points series. A short window asks for every sample up to this. */
+export const SAMPLE_SERIES_MAX_POINTS = 2000;
+
+/**
+ * Ranges that read stored samples. 24h and 5d are rolling windows of UTC instants ending now, and
+ * hourly step bars are UTC hours; longer ranges use daily buckets grouped by the local day.
+ */
+const SAMPLE_LEVEL_RANGES = new Set(['24h', '5d']);
+
+export type SeriesMode = NonNullable<HealthSeriesQuery['mode']>;
+
+export function seriesMode(viz: VizKind, range?: string): SeriesMode {
+  const detail = !!range && SAMPLE_LEVEL_RANGES.has(range);
+  if (viz === 'bar-daily') return detail ? 'hour' : 'day';
   if (viz === 'sleep-stages') return 'stages';
   if (viz === 'dual-line') return 'points';
-  if (viz === 'line') return 'daily-stats';
+  if (viz === 'line') return detail ? 'points' : 'daily-stats';
   return 'points';
 }
 

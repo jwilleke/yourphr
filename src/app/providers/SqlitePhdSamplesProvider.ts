@@ -22,6 +22,9 @@ import {
 
 export const PHD_LEDGER_TABLE = 'phd_schema_migrations';
 
+/** Matches rollup.ts sourceKey: the yourPHR source and the sender's device name. */
+const SOURCE_KEY_SQL = `source_id || ' / ' || CASE WHEN source_name != '' THEN source_name WHEN device_name != '' THEN device_name ELSE '' END`;
+
 export const PHD_MIGRATIONS: Migration[] = [
   {
     id: '20261008140000',
@@ -324,6 +327,7 @@ export class SqlitePhdSamplesProvider extends BaseHealthProvider {
       ...(query.codes[0] ? { code: query.codes[0] } : {}),
       ...(query.metricTypes[0] ? { metric_type: query.metricTypes[0] } : {}),
     };
+    if (query.mode === 'hour') return this.seriesHour(userId, sql, extra, series);
     if (query.mode === 'day') return this.seriesDay(userId, sql, extra, series);
     if (query.mode === 'daily-stats') return this.seriesDailyStats(userId, sql, extra, series);
     if (query.mode === 'stages') return this.seriesStages(userId, sql, extra, series);
@@ -407,22 +411,35 @@ export class SqlitePhdSamplesProvider extends BaseHealthProvider {
     series.total = (this.db.prepare(`SELECT COUNT(*) AS n FROM phd_samples WHERE user_id = ?${sql}`).get(userId, ...extra) as { n: number }).n;
     const unit = this.unitOf(userId, sql, extra);
     if (unit) series.unit = unit;
-    // Per source, then the larger total for the day: adding a watch and a phone double-counts
-    // steps. The key matches rollup.ts sourceKey: the yourPHR source and the sender's device name.
-    const rows = this.db.prepare(
-      `SELECT local_day AS date,
-              source_id || ' / ' || CASE WHEN source_name != '' THEN source_name WHEN device_name != '' THEN device_name ELSE '' END AS source_key,
-              COALESCE(SUM(value_num), 0) AS value
-       FROM phd_samples WHERE user_id = ?${sql}
-       GROUP BY local_day, source_key`
-    ).all(userId, ...extra) as { date: string; source_key: string; value: number }[];
-    const byDay = new Map<string, number>();
-    for (const row of rows) {
-      const prev = byDay.get(row.date);
-      if (prev === undefined || row.value > prev) byDay.set(row.date, row.value);
-    }
-    series.daily = [...byDay.entries()].sort((a, b) => a[0].localeCompare(b[0])).map(([date, value]) => ({ date, value }));
+    series.daily = this.largerSourceSums(userId, sql, extra, 'local_day').map(([date, value]) => ({ date, value }));
     return series;
+  }
+
+  private seriesHour(userId: string, sql: string, extra: unknown[], series: HealthSeries): HealthSeries {
+    series.total = (this.db.prepare(`SELECT COUNT(*) AS n FROM phd_samples WHERE user_id = ?${sql}`).get(userId, ...extra) as { n: number }).n;
+    const unit = this.unitOf(userId, sql, extra);
+    if (unit) series.unit = unit;
+    series.points = this.largerSourceSums(userId, sql, extra, `strftime('%Y-%m-%dT%H:00:00Z', start_time)`)
+      .map(([t, v]) => ({ t, v }));
+    return series;
+  }
+
+  /**
+   * Per source, then the larger total for each bucket: adding a watch and a phone double-counts
+   * steps. `bucket` is a trusted SQL expression, never a request value.
+   */
+  private largerSourceSums(userId: string, sql: string, extra: unknown[], bucket: string): [string, number][] {
+    const rows = this.db.prepare(
+      `SELECT ${bucket} AS bucket, ${SOURCE_KEY_SQL} AS source_key, COALESCE(SUM(value_num), 0) AS value
+       FROM phd_samples WHERE user_id = ?${sql}
+       GROUP BY bucket, source_key`
+    ).all(userId, ...extra) as { bucket: string; source_key: string; value: number }[];
+    const byBucket = new Map<string, number>();
+    for (const row of rows) {
+      const prev = byBucket.get(row.bucket);
+      if (prev === undefined || row.value > prev) byBucket.set(row.bucket, row.value);
+    }
+    return [...byBucket.entries()].sort((a, b) => a[0].localeCompare(b[0]));
   }
 
   private seriesDailyStats(userId: string, sql: string, extra: unknown[], series: HealthSeries): HealthSeries {

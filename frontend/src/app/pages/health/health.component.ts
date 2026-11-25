@@ -43,6 +43,8 @@ import {
   LOINC_BP_SYS,
   MetricDef,
   parseStoredWeightUnit,
+  SAMPLE_SERIES_MAX_POINTS,
+  SeriesMode,
   seriesMode,
   SLEEP_AWAKE,
   SLEEP_DEEP,
@@ -367,7 +369,7 @@ export class HealthComponent implements OnInit, OnDestroy {
       this.tableRows = toTableRows(entry.def, this.rawSamples, this.weightUnit);
       return;
     }
-    if (this.rawSeries) this.applySeries(entry.def, this.rawSeries);
+    if (this.rawSeries) this.applySeries(entry.def, this.rawSeries, seriesMode(entry.def.viz, this.range));
   }
 
   get showWeightUnits(): boolean {
@@ -515,9 +517,10 @@ export class HealthComponent implements OnInit, OnDestroy {
 
   private loadChart(entry: CatalogEntry): void {
     const bounds = this.queryWindow();
-    const mode = seriesMode(entry.def.viz);
+    const mode = seriesMode(entry.def.viz, this.range);
+    const maxPoints = mode === 'points' ? SAMPLE_SERIES_MAX_POINTS : undefined;
     if (entry.def.viz === 'dual-line') {
-      this.fastenApi.getHealthSeries({codes: entry.def.codes, mode, ...bounds}).pipe(
+      this.fastenApi.getHealthSeries({codes: entry.def.codes, mode, maxPoints, ...bounds}).pipe(
         catchError(() => of(emptySeries())),
       ).subscribe({
         next: (series) => {
@@ -535,10 +538,11 @@ export class HealthComponent implements OnInit, OnDestroy {
       codes: entry.def.codes.length ? entry.def.codes : undefined,
       vendorType: entry.def.vendorType,
       mode,
+      maxPoints,
       ...bounds,
     }).subscribe({
       next: (series) => {
-        this.applySeries(entry.def, series);
+        this.applySeries(entry.def, series, mode);
         this.detailLoading = false;
       },
       error: () => { this.detailLoading = false; },
@@ -567,7 +571,7 @@ export class HealthComponent implements OnInit, OnDestroy {
     });
   }
 
-  private applySeries(def: MetricDef, series: HealthSeries): void {
+  private applySeries(def: MetricDef, series: HealthSeries, mode: SeriesMode): void {
     this.rawSeries = series;
     this.seriesTotal = series.total || 0;
     this.seriesStats = convertStats(series.stats, def, this.weightUnit);
@@ -580,6 +584,21 @@ export class HealthComponent implements OnInit, OnDestroy {
     };
     if (def.viz === 'bar-daily') {
       this.chartType = 'bar';
+      if (mode === 'hour') {
+        // Averaged values are not totals, so a downsampled series is never drawn as bars.
+        const data = series.downsampled ? [] : toHourPoints(series.points || [], convert);
+        this.hasChartData = data.length > 0;
+        this.chartData = {
+          datasets: [{
+            label: def.label,
+            data,
+            backgroundColor: INDIGO,
+            maxBarThickness: 40,
+          }],
+        };
+        this.chartOptions = this.chartOptionsFor('bar', this.seriesUnit || def.unit || '', false, true);
+        return;
+      }
       const data = toDayPoints(series.daily || [], convert);
       this.hasChartData = data.length > 0;
       this.chartData = {
@@ -679,9 +698,10 @@ export class HealthComponent implements OnInit, OnDestroy {
     this.chartOptions = this.chartOptionsFor('line', 'mmHg');
   }
 
-  private chartOptionsFor(kind: 'line' | 'bar', unit: string, stacked = false): ChartConfiguration['options'] {
+  private chartOptionsFor(kind: 'line' | 'bar', unit: string, stacked = false, hourly = false): ChartConfiguration['options'] {
     return defaultChartOptions(kind, unit, {
       stacked,
+      hourly,
       range: this.range,
       windowStart: this.windowStart,
       windowEnd: this.windowEnd,
@@ -738,6 +758,13 @@ export function toTimePoints(points: HealthSeriesPoint[], convert: (v: number) =
   return points
     .map((p) => ({x: Date.parse(p.t), y: convert(p.v)}))
     .filter((p) => Number.isFinite(p.x) && Number.isFinite(p.y));
+}
+
+const HALF_HOUR_MS = 30 * 60 * 1000;
+
+/** Hourly buckets start on the hour. Plot each at the half hour so the bar sits over its hour. */
+export function toHourPoints(points: HealthSeriesPoint[], convert: (v: number) => number = (v) => v): HealthChartPoint[] {
+  return toTimePoints(points, convert).map((p) => ({x: p.x + HALF_HOUR_MS, y: p.y}));
 }
 
 export function toDayPoints(days: {date: string, value: number}[], convert: (v: number) => number = (v) => v): HealthChartPoint[] {
@@ -809,7 +836,13 @@ function formatTickMs(ms: number, range: RangePreset): string {
   return d.toLocaleDateString(undefined, {month: 'short', day: 'numeric'});
 }
 
-function formatTooltipTime(ms: number, kind: 'line' | 'bar'): string {
+function formatTooltipTime(ms: number, kind: 'line' | 'bar', hourly = false): string {
+  if (kind === 'bar' && hourly) {
+    const start = new Date(ms - HALF_HOUR_MS);
+    const end = new Date(start.getTime() + 2 * HALF_HOUR_MS);
+    const from = start.toLocaleString(undefined, {month: 'short', day: 'numeric', hour: 'numeric'});
+    return `${from} - ${end.toLocaleTimeString(undefined, {hour: 'numeric'})}`;
+  }
   const d = new Date(ms);
   if (kind === 'bar') {
     return d.toLocaleDateString(undefined, {weekday: 'short', month: 'short', day: 'numeric'});
@@ -846,7 +879,7 @@ export function sleepAsleepTotal(items: SleepTooltipItem[]): number {
 function defaultChartOptions(
   kind: 'line' | 'bar',
   unit: string,
-  args: {stacked?: boolean, range: RangePreset, windowStart: Date | null, windowEnd: Date},
+  args: {stacked?: boolean, hourly?: boolean, range: RangePreset, windowStart: Date | null, windowEnd: Date},
 ): ChartConfiguration['options'] {
   const stacked = !!args.stacked;
   const bounds = timeAxisBounds(args.range, args.windowStart, args.windowEnd);
@@ -863,7 +896,7 @@ function defaultChartOptions(
           title: (items) => {
             const x = items[0]?.parsed?.x;
             if (x == null || Number.isNaN(x)) return '';
-            return formatTooltipTime(x, kind);
+            return formatTooltipTime(x, kind, args.hourly);
           },
           label: (ctx) => {
             const value = ctx.parsed.y;

@@ -863,8 +863,8 @@ export class HealthManager extends BaseManager {
   ): Promise<HealthSeries> {
     const userId = this.reader(ctx);
     const modeRaw = asString(query.mode).trim() || 'points';
-    if (modeRaw !== 'points' && modeRaw !== 'day' && modeRaw !== 'daily-stats' && modeRaw !== 'stages') {
-      throw new ApiError(400, 'mode must be points, day, daily-stats, or stages');
+    if (modeRaw !== 'points' && modeRaw !== 'hour' && modeRaw !== 'day' && modeRaw !== 'daily-stats' && modeRaw !== 'stages') {
+      throw new ApiError(400, 'mode must be points, hour, day, daily-stats, or stages');
     }
     const resolved = codesForQuery(query.metricTypes ?? [], query.codes ?? [], query.vendorType ?? '');
     if (resolved.codes.length === 0 && resolved.vendorType === '') {
@@ -880,9 +880,10 @@ export class HealthManager extends BaseManager {
       startBefore = until.toISOString().replace(/\.\d{3}Z$/, 'Z');
       startAfter = new Date(until.getTime() - SERIES_DEFAULT_DAYS * 24 * 60 * 60 * 1000).toISOString().replace(/\.\d{3}Z$/, 'Z');
     }
+    // The record holds daily rollups only, so hourly sums always read the samples.
     const metric = lookupByCode(resolved.codes[0] ?? '') ?? lookupByMetricType((query.metricTypes ?? [])[0] ?? '');
-    const detailPoints = modeRaw === 'points' && (!metric || isHighFrequency(metric.metricType));
-    if (this.engine.has('records') && !detailPoints) {
+    const fromSamples = modeRaw === 'hour' || (modeRaw === 'points' && (!metric || isHighFrequency(metric.metricType)));
+    if (this.engine.has('records') && !fromSamples) {
       return this.seriesFromObservations(ctx, resolved.codes, modeRaw as HealthSeriesMode, startAfter, startBefore);
     }
     return this.provider.querySeries(userId, {

@@ -9,7 +9,8 @@ export const HEALTH_SERIES_DEFAULT_POINTS = 400;
 export const HEALTH_SERIES_MAX_POINTS = 2000;
 export const HEALTH_SAMPLE_INSERT_BATCH = 250;
 
-export type HealthSeriesMode = 'points' | 'day' | 'daily-stats' | 'stages';
+/** `hour` returns `points`, one per UTC hour, each the larger source's SUM for that hour. */
+export type HealthSeriesMode = 'points' | 'hour' | 'day' | 'daily-stats' | 'stages';
 
 export interface HealthComponentValue {
   code: string;

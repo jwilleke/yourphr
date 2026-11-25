@@ -502,7 +502,7 @@ describe('series', () => {
   it('refuses a mode it does not know, a query that names nothing, and a max_points that is not a number', async () => {
     await withHealth(async (s, jim) => {
       const health = s.engine.managers.health;
-      await expect(health.series(jim, { metricTypes: ['step_count'], mode: 'weekly' })).rejects.toMatchObject({ status: 400, message: 'mode must be points, day, daily-stats, or stages' });
+      await expect(health.series(jim, { metricTypes: ['step_count'], mode: 'weekly' })).rejects.toMatchObject({ status: 400, message: 'mode must be points, hour, day, daily-stats, or stages' });
       await expect(health.series(jim, {})).rejects.toMatchObject({ status: 400, message: 'code, metric_type, or vendor_type is required' });
       await expect(health.series(jim, { metricTypes: ['step_count'], maxPoints: 'lots' })).rejects.toMatchObject({ status: 400 });
       await expect(health.series(jim, { metricTypes: ['step_count'], startAfter: 'yesterday' })).rejects.toMatchObject({ status: 400 });
@@ -558,6 +558,26 @@ describe('series', () => {
 
       const monthly = await health.series(jim, { metricTypes: ['step_count'], mode: 'day', startAfter: '2026-06-01T00:00:00Z', startBefore: '2027-01-01T00:00:00Z' });
       expect(monthly.daily).toEqual([{ date: '2026-06-01', value: 105000, n: 14 }]);
+    });
+  });
+
+  it('charts hourly steps from the samples without adding a watch and a phone in the same hour', async () => {
+    await withHealth(async (s, jim) => {
+      const health = s.engine.managers.health;
+      await health.ingest(jim, {
+        samples: [
+          hk(STEPS, 'w1', 100, 'count', '2026-08-24T15:05:00Z', { source_name: 'Watch' }),
+          hk(STEPS, 'w2', 50, 'count', '2026-08-24T15:40:00Z', { source_name: 'Watch' }),
+          hk(STEPS, 'p1', 120, 'count', '2026-08-24T15:20:00Z'),
+          hk(STEPS, 'p2', 30, 'count', '2026-08-24T16:10:00Z'),
+        ],
+      });
+      const hourly = await health.series(jim, { metricTypes: ['step_count'], mode: 'hour', startAfter: '2026-08-24T12:00:00Z', startBefore: '2026-08-25T12:00:00Z' });
+      expect(hourly.downsampled).toBe(false);
+      expect(hourly.points).toEqual([
+        { t: '2026-08-24T15:00:00Z', v: 150 },
+        { t: '2026-08-24T16:00:00Z', v: 30 },
+      ]);
     });
   });
 

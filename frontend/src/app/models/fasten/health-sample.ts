@@ -100,7 +100,8 @@ export interface HealthSeriesQuery {
   vendorType?: string
   startAfter?: string
   startBefore?: string
-  mode?: 'points' | 'day' | 'daily-stats' | 'stages'
+  maxPoints?: number
+  mode?: 'points' | 'hour' | 'day' | 'daily-stats' | 'stages'
 }
 
 export interface HealthSampleQuery {

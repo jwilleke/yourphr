@@ -16,7 +16,7 @@ __Storage model — decided, recorded on [#314](https://github.com/jwilleke/your
 - __Spot readings__ (blood pressure, weight, temperature) go straight in as Observations, as home vitals do today. Only high-frequency data (heart rate, steps, watch SpO₂) is rolled up.
 - __Timestamps__ are RFC 3339 with an explicit offset, or refused (Jim, 2026-09-30). Each sample keeps its original offset alongside its UTC instant.
 - __Weekly and monthly__ views are summed from daily on read, not stored.
-- __Detail on request:__ an aggregate covers a window; drilling in reads that window from `phd-samples.db` (as points, or as an Observation with `valueSampledData`), with its own access-log line.
+- __Detail on request:__ an aggregate covers a window; drilling in reads that window from `phd-samples.db` (as points, or as an Observation with `valueSampledData`), with its own access-log line. What the Health page reads at each range is in [connected-devices.md § Charts](../devices/connected-devices.md#charts).
 - __Late, edited or deleted samples__ re-roll their day and __update__ that day's Observation, so its history shows the change. The rollup is where cross-source de-duplication (M4), local-time day bucketing (M3) and blood-pressure pairing (M1) are solved once.
 - __Retention__ of raw samples can later be an operator setting; daily Observations are kept.
 - __The FHIR claim, stated precisely:__ R4 fully supports this representation — Observation with `performer`/`device`/Provenance, `SampledData`; HL7's Physical Activity IG models daily summary Observations — but it prescribes no storage. The side store plus rollup is our design. R4 has no standard PGHD tag code; a `meta.tag` for it would be a YourPHR code.
