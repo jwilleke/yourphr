@@ -17,6 +17,7 @@ The server side of connected devices: a phone app reading Apple Health or Health
 - A device's only write is `POST /api/secure/health/samples` (`writeCategoryFor`); its only read is `GET /api/secure/health/sync-state`. Each is logged under the device's own name before it is served, and each upload is stamped on the grant (`AgentTokensManager.recordDeviceUpload`) for inactivity.
 - `HealthManager` acts for `ctx.username` only; nothing in the body names the account. It refuses a device key on every chart read itself, as well as the agent gate refusing it first ([#1020](https://github.com/jwilleke/yourphr/issues/1020)).
 - Every time is RFC 3339 with an explicit offset; anything else is refused, never read in the server's time zone (`src/app/health/time.ts`).
+- Raw readings and the daily Observations are locked with the server's database key, the same as every record, so a device can upload while the patient is signed out. The device key only authorizes; it is never an encryption key. The threat model and its decision are in [security-developer-guide.md](security-developer-guide.md#health-data-at-rest-and-uploads-while-the-patient-is-signed-out) ([#991](https://github.com/jwilleke/yourphr/issues/991)).
 - Device data is PGHD: tagged with `PGHD_TAG`, credited to the device, filed under the device's own source, never mixed with clinician records.
 
 ## The code
