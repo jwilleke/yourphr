@@ -170,6 +170,12 @@ Decided on [#314](https://github.com/jwilleke/yourphr/issues/314):
 - Keep the refresh token in the platform's secure store (iOS Keychain, Android Keystore-backed storage), never in plain preferences, logs or crash reports.
 - Keep the access token in memory when you can. It is short-lived by design.
 - Store `server` with the tokens. One app can hold permissions to more than one patient's server.
+- Keep readings that are waiting to upload in an encrypted queue, with its key in the same secure store. Remove a reading from the queue only after the upload that carried it answered `200`.
+- Uploads happen when the phone's system lets the app run. Never promise the person real-time delivery.
+
+## How the server protects readings
+
+The server stores readings locked with its own database key, the same as every record, so an upload works while the patient is signed out. Your access token only proves the device may add readings; it is not an encryption key. Each reading you send is kept as it arrived, and that stored copy is its original. ([#991](https://github.com/jwilleke/yourphr/issues/991))
 
 ## Related
 
