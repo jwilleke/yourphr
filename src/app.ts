@@ -72,6 +72,7 @@ import { FilesystemBackupProvider } from './framework/providers/FilesystemBackup
 import { NullBackupProvider, type BaseBackupProvider } from './framework/providers/BaseBackupProvider.js';
 import { BACKUP_SUFFIXES, STAGED_APP, STAGED_PHD_SAMPLES, STAGED_RECORDS } from './app/providers/sqlite-backup.js';
 import { appLog, VALID_LEVELS } from './log/index.js';
+import { envNameFor } from './config/index.js';
 import { refreshRedactedSecrets } from './log/redact.js';
 import { createYourPhrServer, toResourceFhir } from './server.js';
 import { SqliteFhirRepository } from './SqliteFhirRepository.js';
@@ -409,6 +410,18 @@ async function sourceClientFor(name: string, env: Record<string, string | undefi
  * compact, reindex) opens the same stores, often beside a running server; replacing files under it
  * leaves the server on deleted inodes and its view diverged from the disk. Off unless asked for.
  */
+/**
+ * Whether health may turn on (yourphr#991): only with the database key set, so raw readings and
+ * their daily Observations are never stored unlocked. A wanted-but-refused switch is logged once,
+ * at boot, without the key's value.
+ */
+export function healthAllowed(wanted: boolean, databaseKey: string, log: (line: string) => void): boolean {
+  if (!wanted) return false;
+  if (databaseKey !== '') return true;
+  log(`yourphr.health.enabled is on, but ${envNameFor('yourphr.database.encryption.key')} is not set — health stays off, because wearable readings are never stored unlocked (yourphr#991). Set the key and restart to turn it on.`);
+  return false;
+}
+
 export async function openStores(dataDir: string, env: Record<string, string | undefined> = process.env, options: { startup?: boolean } = {}): Promise<Stores> {
   // 1. Config — everything below reads it, so the engine and its first manager come first.
   // The configuration capability is the BOOTSTRAP LAYER (yourphr#621): the one capability NOT
@@ -532,7 +545,10 @@ export async function openStores(dataDir: string, env: Record<string, string | u
   // off, a file left from when it was on still belongs to its accounts: the manager is registered
   // (every health route stays absent) so deleting an account deletes its samples, and the file is
   // opened only for that. Device uploads are a second switch, off by default.
-  const healthEnabled = config.getBool('yourphr.health.enabled');
+  // yourphr#991: no unlocked fallback. Wearable readings are written while the patient is signed
+  // out, under the database key; with that key empty they would land in the clear, so health stays
+  // off (every route absent, no samples file created) and the operator is told why.
+  const healthEnabled = healthAllowed(config.getBool('yourphr.health.enabled'), dbKey, (line) => appLog.error(line));
   if (healthEnabled || existsSync(phdSamplesDbPath)) {
     const openSamples = (): SqlitePhdSamplesProvider => new SqlitePhdSamplesProvider(phdSamplesDbPath, dbKey);
     engine.register('health', new HealthManager(engine, healthEnabled ? openSamples() : openSamples, {

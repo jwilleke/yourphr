@@ -58,7 +58,7 @@
   "yourphr.devices.notice-days": [7, 1],
   "_comment_devices_inactive": "yourphr#809 — a device permission with no upload for this many days is PAUSED (not revoked): its keys stop, the patient is told, and can resume or remove it. Counted from the last upload, or from when it was granted or last resumed. Read on every hourly pass.",
   "yourphr.devices.inactive-after-days": 90,
-  "_comment_health": "yourphr#314 — connected-device samples. OFF by default, so phd-samples.db is created only when an operator turns this on. The device grant (yourphr.devices.enabled) is a separate switch: it lets a phone ask for permission, and this one is what stores the samples.",
+  "_comment_health": "yourphr#314 — connected-device samples. OFF by default, so phd-samples.db is created only when an operator turns this on. Needs YOURPHR_DATABASE_ENCRYPTION_KEY: with it empty this is refused at start (yourphr#991). The device grant (yourphr.devices.enabled) is a separate switch: it lets a phone ask for permission, and this one is what stores the samples.",
   "yourphr.health.enabled": false,
   "_comment_health_device_intake": "yourphr#314 — whether a connected device's key (yourphr.devices.enabled) may POST samples. OFF by default: only a signed-in session uploads, and a device or agent key gets 403. Has no effect while yourphr.health.enabled is off.",
   "yourphr.health.device-intake.enabled": false,

@@ -46,6 +46,7 @@ async function boot(): Promise<Harness> {
     YOURPHR_AUTH_SIGNUP_ENABLED: 'true',
     YOURPHR_DEVICES_ENABLED: 'true',
     YOURPHR_HEALTH_ENABLED: 'true',
+    YOURPHR_DATABASE_ENCRYPTION_KEY: 'unit-key',
     YOURPHR_HEALTH_DEVICE_INTAKE_ENABLED: 'true',
   });
   const server = createYourPhrServer({ engine: stores.engine, auth: {} }) as Server;

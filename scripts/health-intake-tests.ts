@@ -35,7 +35,7 @@ type Env = Record<string, string>;
 interface Harness { base: string; stores: Stores; close: () => Promise<void> }
 
 async function boot(dir: string, env: Env): Promise<Harness> {
-  const stores = await openStores(dir, { YOURPHR_AUTH_SIGNUP_ENABLED: 'true', YOURPHR_AUTH_AGENT_TOKEN_ENABLED: 'true', ...env });
+  const stores = await openStores(dir, { YOURPHR_DATABASE_ENCRYPTION_KEY: 'unit-key', YOURPHR_AUTH_SIGNUP_ENABLED: 'true', YOURPHR_AUTH_AGENT_TOKEN_ENABLED: 'true', ...env });
   const server = createYourPhrServer({ engine: stores.engine, auth: {} }) as Server;
   await new Promise<void>((done) => server.listen(0, '127.0.0.1', done));
   const base = `http://127.0.0.1:${(server.address() as { port: number }).port}`;

@@ -22,7 +22,7 @@ const steps = (uuid: string, value: number, start: string, sourceName = 'Phone')
 
 async function withHealth(fn: (s: Stores, ctxOf: (u: string) => ApiContext) => Promise<void>, env: Record<string, string> = { YOURPHR_HEALTH_ENABLED: 'true' }): Promise<void> {
   const dir = mkdtempSync(join(tmpdir(), 'health-samples-'));
-  const stores = await openStores(dir, env);
+  const stores = await openStores(dir, { YOURPHR_DATABASE_ENCRYPTION_KEY: 'unit-key', ...env });
   try {
     await fn(stores, (u) => ApiContext.system('test', u, stores.engine));
   } finally {
@@ -34,7 +34,7 @@ async function withHealth(fn: (s: Stores, ctxOf: (u: string) => ApiContext) => P
 describe('health samples stay off until enabled (yourphr#314)', () => {
   it('does not create phd-samples.db when the flag is off', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'health-off-'));
-    const stores = await openStores(dir, {});
+    const stores = await openStores(dir, { YOURPHR_DATABASE_ENCRYPTION_KEY: 'unit-key' });
     try {
       expect(stores.engine.has('health')).toBe(false);
       expect(existsSync(join(dir, 'phd-samples.db'))).toBe(false);

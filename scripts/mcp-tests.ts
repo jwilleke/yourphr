@@ -47,6 +47,7 @@ async function boot(): Promise<Harness> {
     YOURPHR_AUTH_AGENT_TOKEN_ENABLED: 'true',
     YOURPHR_AUTH_SIGNUP_ENABLED: 'true',
     YOURPHR_HEALTH_ENABLED: 'true',
+    YOURPHR_DATABASE_ENCRYPTION_KEY: 'unit-key',
   });
   const server = createYourPhrServer({ engine: stores.engine, auth: {} }) as Server;
   await new Promise<void>((done) => server.listen(0, '127.0.0.1', done));
@@ -116,7 +117,7 @@ async function seedHealth(base: string, session: string, deviceId: string, resti
 
 /** Records for one account, written the way the app writes them, so the search index is real. */
 async function seed(file: string, userId: string, sourceId: string, extra: Resource): Promise<void> {
-  const repo = new SqliteFhirRepository({ file, userId, sourceId });
+  const repo = new SqliteFhirRepository({ file, userId, sourceId, key: 'unit-key' });
   await repo.createResource({
     resourceType: 'MedicationRequest', id: `${userId}-m1`, status: 'active', intent: 'order',
     medicationCodeableConcept: { text: 'Metformin hydrochloride 500 MG Oral Tablet' },

@@ -55,7 +55,7 @@ Decided 2026-11-25 for [#991](https://github.com/jwilleke/yourphr/issues/991) ([
 - Wearable readings are locked with the server's database key (`yourphr.database.encryption.key`), the same key as every record. A connected device can upload while the patient is signed out because no patient key is needed.
 - The threat model: the key protects a stolen disk, or a backup taken without the key. It does not protect against the operator or anyone with shell access to the server. The operator is trusted.
 - A device's key authorizes a write. It is never used as an encryption key, and nothing is derived from it.
-- No unlocked fallback: health data must not be stored while the database key is empty. The start-up check that enforces this is planned in the memo (PR 2).
+- No unlocked fallback: with `yourphr.database.encryption.key` empty, `yourphr.health.enabled` is refused at start (`healthAllowed` in `src/app.ts`). Every health route stays absent, no samples file is created, and the log says why.
 - Per-person locking (ngdpbase [#1811](https://github.com/jwilleke/ngdpbase/issues/1811), [#1812](https://github.com/jwilleke/ngdpbase/issues/1812)) is deferred. If it ever comes, the device contract stays the same and only the server's storage step changes.
 
 ## Other guards
