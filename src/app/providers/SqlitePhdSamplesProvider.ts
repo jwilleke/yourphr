@@ -226,8 +226,18 @@ export class SqlitePhdSamplesProvider extends BaseHealthProvider {
         ).changes;
       }
     });
-    for (let i = 0; i < rows.length; i += HEALTH_SAMPLE_INSERT_BATCH) {
-      write(rows.slice(i, i + HEALTH_SAMPLE_INSERT_BATCH));
+    // yourphr#991: one upload's raw rows land together or not at all. The chunks are savepoints
+    // inside one outer transaction, so a failure part-way leaves no half of the upload behind.
+    const all = this.db.transaction((batchRows: HealthSampleRow[]) => {
+      for (let i = 0; i < batchRows.length; i += HEALTH_SAMPLE_INSERT_BATCH) {
+        write(batchRows.slice(i, i + HEALTH_SAMPLE_INSERT_BATCH));
+      }
+    });
+    try {
+      all(rows);
+    } catch (err) {
+      stored = 0;
+      throw err;
     }
     return stored;
   }

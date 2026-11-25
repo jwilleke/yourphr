@@ -558,6 +558,33 @@ function expandBundle(raw: unknown): unknown[] {
  * answers as if health were absent, and the file is opened only for that deletion.
  * `deviceIntake` is yourphr.health.device-intake.enabled. Off, only a signed-in session uploads.
  */
+/** How long a device waits before sending an upload again after the store could not take it (yourphr#991). */
+export const HEALTH_STORE_RETRY_AFTER_SECONDS = 60;
+
+/**
+ * A failure of the storage itself (busy, locked, full, I/O, unopenable): SQLite's own error codes.
+ * Anything else is a bug and stays a 500, so a device is never told to retry a request that will
+ * never succeed.
+ */
+export function isStoreUnavailable(err: unknown): boolean {
+  const code = (err as { code?: unknown } | null)?.code;
+  return typeof code === 'string' && /^SQLITE_(BUSY|LOCKED|FULL|IOERR|CANTOPEN|NOTADB|READONLY|PROTOCOL|NOMEM|INTERRUPT)/.test(code);
+}
+
+/**
+ * The answer to an upload the store could not take (yourphr#991): 503 with Retry-After. The device
+ * keeps its queue and sends the same readings again; their uuids make that an update, the daily
+ * Observations are rebuilt from the raw rows, and the sync anchors were not advanced, so nothing
+ * is lost or counted twice.
+ */
+export function storeUnavailable(cause: unknown): ApiError {
+  const err = new ApiError(503, 'the samples could not be saved right now — send the same upload again later; nothing is counted twice', {
+    retry_after_seconds: HEALTH_STORE_RETRY_AFTER_SECONDS,
+  });
+  (err as Error & { cause?: unknown }).cause = cause;
+  return err;
+}
+
 export interface HealthManagerOptions {
   enabled: boolean;
   deviceIntake: boolean;
@@ -651,6 +678,28 @@ export class HealthManager extends BaseManager {
       throw new ApiError(400, `batch contains ${rawSamples.length} samples; the maximum is ${HEALTH_SAMPLE_MAX_BATCH}`);
     }
 
+    try {
+      return await this.store(ctx, userId, device, anchorEntries, rawSamples, body);
+    } catch (err) {
+      if (err instanceof ApiError || !isStoreUnavailable(err)) throw err;
+      throw storeUnavailable(err);
+    }
+  }
+
+  /**
+   * The writing half of an ingest, in an order that makes a retry safe (yourphr#991): the raw rows
+   * first (one transaction), then the daily Observations rebuilt from those rows, and the device's
+   * sync anchors LAST. A failure anywhere leaves the anchors where they were, so the device sends
+   * the same readings again; the uuids make that an update and the rebuild heals a half-written day.
+   */
+  private async store(
+    ctx: ApiContext,
+    userId: string,
+    device: ReturnType<typeof parseDevice>,
+    anchorEntries: ReturnType<typeof parseAnchors>,
+    rawSamples: unknown[],
+    body: Parameters<HealthManager['ingest']>[1],
+  ): Promise<HealthSampleIngestResult> {
     const sourceId = await this.sourceFor(ctx, body);
     const deviceId = device.id || sourceId;
 

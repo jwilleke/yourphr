@@ -68,6 +68,7 @@ Send it on every call as `Authorization: Bearer yphr_at_…`. Never in a query s
 
 - `401` from an upload means the key is dead (expired, rotated, or the permission ended). Refresh. If the refresh is refused, stop and tell the person.
 - `403` means this key may not do that. It is a bug in the app, not something to retry.
+- `503` with `Retry-After` from an upload means the server could not save it right now. Nothing from that upload counts yet. Keep the readings queued, wait the seconds `Retry-After` gives, and send the same upload again, with the same `uuid`s and anchors ([#991](https://github.com/jwilleke/yourphr/issues/991)).
 
 ## Staying connected: `POST <server>/device/token`
 
@@ -142,6 +143,8 @@ The body is either a vendor batch or a FHIR Bundle of Observations. At most 5,00
 ```
 
 `errors`, when present, is `{ "uuid", "type", "reason" }[]`, at most 50 reasons.
+
+Only a `200` means the readings are stored. Remove them from your queue then, not before. Sending an upload again after a `503`, a timeout or a lost connection is always safe: each `uuid` is stored once, the day it belongs to is rebuilt, and the anchors move only when an upload succeeds.
 
 ### `GET <server>/secure/health/sync-state`
 
