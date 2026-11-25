@@ -7,18 +7,17 @@
  * - Sending the same upload again stores each reading once and rebuilds the day it belongs to.
  * - A bug that is not a store failure stays a 500: a device is never told to retry it.
  *
+ * The Retry-After header and the operator's log line are checked over the wire in
+ * scripts/health-intake-tests.ts (`check:boundary` refuses fetch under src/).
+ *
  * Synthetic values only.
  */
-import { randomBytes } from 'node:crypto';
 import { mkdtempSync, rmSync } from 'node:fs';
-import type { Server } from 'node:http';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { openStores, type Stores } from '../../../app.js';
 import { ApiContext } from '../../../framework/ApiContext.js';
-import { createYourPhrServer } from '../../../server.js';
-import { appLog } from '../../../log/index.js';
 import { HEALTH_STORE_RETRY_AFTER_SECONDS, isStoreUnavailable } from '../HealthManager.js';
 
 const KEY = { YOURPHR_DATABASE_ENCRYPTION_KEY: 'unit-key', YOURPHR_HEALTH_ENABLED: 'true' };
@@ -140,40 +139,6 @@ describe('a store failure during an upload', () => {
       provider.insertSamples = vi.fn().mockRejectedValue(new TypeError('synthetic bug'));
       await expect(s.engine.managers.health.ingest(jim, upload)).rejects.toBeInstanceOf(TypeError);
     } finally {
-      await s.close();
-    }
-  });
-});
-
-describe('over HTTP', () => {
-  it('answers 503 with a Retry-After header, and logs the cause for the operator', async () => {
-    const s = await openStores(tempDir(), { ...KEY, YOURPHR_AUTH_SIGNUP_ENABLED: 'true' });
-    const server = createYourPhrServer({ engine: s.engine, auth: {} }) as Server;
-    await new Promise<void>((done) => server.listen(0, '127.0.0.1', done));
-    const base = `http://127.0.0.1:${(server.address() as { port: number }).port}`;
-    const password = randomBytes(18).toString('base64url');
-    try {
-      const json = { 'content-type': 'application/json' };
-      await fetch(`${base}/api/auth/signup`, { method: 'POST', headers: json, body: JSON.stringify({ username: 'jim', password }) });
-      const session = ((await (await fetch(`${base}/api/auth/signin`, { method: 'POST', headers: json, body: JSON.stringify({ username: 'jim', password }) })).json()) as { data?: string }).data ?? '';
-      expect(session).not.toBe('');
-
-      const provider = providerOf(s);
-      const real = provider.insertSamples.bind(provider);
-      provider.insertSamples = vi.fn().mockRejectedValueOnce(sqliteError('SQLITE_BUSY')).mockImplementation(real);
-      const warn = vi.spyOn(appLog, 'warn').mockImplementation(() => {});
-      const post = () => fetch(`${base}/api/secure/health/samples`, { method: 'POST', headers: { ...json, authorization: `Bearer ${session}` }, body: JSON.stringify(upload) });
-
-      const busy = await post();
-      expect(busy.status).toBe(503);
-      expect(busy.headers.get('retry-after')).toBe(String(HEALTH_STORE_RETRY_AFTER_SECONDS));
-      expect(await busy.json()).toMatchObject({ success: false, retry_after_seconds: HEALTH_STORE_RETRY_AFTER_SECONDS });
-      expect(warn.mock.calls.some(([line]) => /request deferred POST \/api\/secure\/health\/samples: SqliteError SQLITE_BUSY/.test(String(line)))).toBe(true);
-
-      const ok = await post();
-      expect(ok.status).toBe(200);
-    } finally {
-      await new Promise<void>((done) => server.close(() => done()));
       await s.close();
     }
   });

@@ -89,7 +89,7 @@ jobs:
         run: npm run auth
       - name: Agent tokens — the delegated-read gate (yourphr#695)
         run: npm run agent-tokens
-      - name: Health intake over the wire — refused uploads write nothing, deletion reaches samples, device-intake switch (yourphr#314)
+      - name: Health intake over the wire — refused uploads write nothing, deletion reaches samples, device-intake switch (yourphr#314) and retry-later (yourphr#991)
         run: npm run health-intake
       - name: MCP bridge — one patient's records, over the agent-token surface (yourphr#657)
         run: npm run mcp-tests
