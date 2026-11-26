@@ -1,6 +1,6 @@
 # Deployment & configuration
 
-YourPHR is __deployment-agnostic__. It is a single Go binary that serves the compiled Angular app and stores everything in an embedded __SQLite__ database — __no required external services__. Run it however suits you: `docker compose`, a plain `docker run`, a bare-metal binary, or Kubernetes. The same configuration interface works for all of them, so nothing here depends on any particular orchestrator (the maintainer's instance happens to use Flux/GitOps in a separate repo — that is *one option*, not a requirement).
+YourPHR is __deployment-agnostic__. It is a Node.js server that serves the compiled Angular app and stores everything in embedded __SQLite__ databases — __no required external services__. Run it however suits you: `docker compose`, a plain `docker run`, a bare-metal Node process, or Kubernetes. The same configuration interface works for all of them, so nothing here depends on any particular orchestrator (the maintainer's instance happens to use Flux/GitOps in a separate repo — that is *one option*, not a requirement).
 
 The published image is __public and multi-arch__: `ghcr.io/jwilleke/yourphr` (tags `:main`, `:main-<run#>`, and release tags like `:v1.2.0`).
 
@@ -48,8 +48,8 @@ docker run -p 8080:8080 -v "$(pwd)/data:/opt/yourphr/data" ghcr.io/jwilleke/your
 
 Open `http://localhost:8080` and complete the first-run setup. On first run YourPHR is __secure by default__:
 
-- The __JWT signing key auto-generates__ and is persisted (0600) at `<db-dir>/.jwt_issuer_key` — zero config ([#102](https://github.com/jwilleke/yourphr/issues/102)). There is no default key. Upstream Fasten's *known public placeholder* is still recognised and rejected, because older deployment guides hand it to you.
-- The __encryption keys__ — `YOURPHR_DATABASE_ENCRYPTION_KEY` and `YOURPHR_BACKUP_ENCRYPTION_KEY` — are supplied by you, before the first start. See [Encryption keys](#encryption-keys).
+- The __session signing key__ (`YOURPHR_SESSION_SECRET`) auto-generates on first start into `<data>/.env` (mode `0600`) if you do not supply one, and is reused on later starts ([#815](https://github.com/jwilleke/yourphr/issues/815)). There is no default key and no `.jwt_issuer_key` file. Rotating it signs everyone out.
+- The __encryption keys__ — `YOURPHR_DATABASE_ENCRYPTION_KEY` and `YOURPHR_BACKUP_ENCRYPTION_KEY` — are supplied by you, before the first start. See [Encryption keys](#encryption-keys). Backups always need the backup key; they are never refused because the databases are encrypted.
 
 ### The first account is the owner of the instance
 
@@ -111,7 +111,7 @@ kubectl exec deploy/<name> -n <namespace> -- cat /opt/yourphr/data/.admin_bootst
 
 Generated rather than supplied on purpose: a password you set ends up in a secret store, a `.env`, or a CI log, and tends to be reused across instances. A generated one is unique per instance, rotates whenever the database is rebuilt, and lives in exactly one place.
 
-__The file deletes itself__ after that admin's first successful sign-in — the data root is exactly what a backup contains, so a credential left there would ride inside every later archive. Store the password in your password manager when you read it; a backup taken before your first login is the only one that carries it.
+__The file deletes itself__ after that admin's first successful sign-in. Store the password in your password manager when you read it. A backup does not include this file, or anything else in `.env`; it is removed so it does not sit on the data volume longer than it has to.
 
 Provisioning only ever acts on an __empty__ user table. It never re-provisions, never overwrites an account, and never changes an existing password — so leaving the variables set is safe, and every restart after the first does nothing.
 
@@ -239,13 +239,11 @@ Any config key can be set as an env var: prefix __`YOURPHR_`__, uppercase the ke
 
 | Config key | Env var |
 |---|---|
-| `database.encryption.key` | `YOURPHR_DATABASE_ENCRYPTION_KEY` |
-| `jwt.issuer.key` | `YOURPHR_JWT_ISSUER_KEY` |
-| `web.listen.port` | `YOURPHR_WEB_LISTEN_PORT` |
-| `web.environment_name` | `YOURPHR_WEB_ENVIRONMENT_NAME` |
-| `log.level` | `YOURPHR_LOG_LEVEL` |
-| `cda_converter.enabled` | `YOURPHR_CDA_CONVERTER_ENABLED` |
-| `web.smart_connect.login_wait_seconds` | `YOURPHR_WEB_SMART_CONNECT_LOGIN_WAIT_SECONDS` |
+| `yourphr.database.encryption.key` | `YOURPHR_DATABASE_ENCRYPTION_KEY` |
+| `yourphr.backup.encryption.key` | `YOURPHR_BACKUP_ENCRYPTION_KEY` |
+| `yourphr.auth.session.secret` | `YOURPHR_SESSION_SECRET` |
+| `yourphr.web.listen.port` | `YOURPHR_WEB_LISTEN_PORT` |
+| `yourphr.web.environment-name` | `YOURPHR_WEB_ENVIRONMENT_NAME` |
 
 ## Configuration reference
 
@@ -260,9 +258,9 @@ Any config key can be set as an env var: prefix __`YOURPHR_`__, uppercase the ke
 | `web.smart_connect.login_wait_seconds` | `240` | How long the SMART-on-FHIR connect flow waits for the user to finish logging in at the provider before timing out. Served to the frontend, so changing it needs __no frontend rebuild__ — raise it for slow provider logins (e.g. CMS Blue Button). |
 | `database.type` | `sqlite` | Only SQLite is supported; Postgres is present but __broken__. |
 | `yourphr.database.location` | `${YOURPHR_FAST_STORAGE}/spike.db` | The app database. `yourphr.records.location` holds the records; both compose from the storage root, so mounting that one volume persists everything. |
-| `database.encryption.enabled` | `true` | DB-at-rest encryption (encrypted SQLite build). |
-| `database.encryption.key` | *(unset — required)* | Set on first-run setup or via `YOURPHR_DATABASE_ENCRYPTION_KEY` (≥10 chars). |
-| `jwt.issuer.key` | *(public placeholder — auto-gen)* | Auto-generates a strong key if unset; override with `YOURPHR_JWT_ISSUER_KEY` (`openssl rand -hex 32`). Never use the committed default in production. |
+| `yourphr.database.encryption.key` | *(empty)* | When set (as `YOURPHR_DATABASE_ENCRYPTION_KEY`), the databases are encrypted at rest with SQLite3 Multiple Ciphers. When empty, they are stored in the clear. There is no `database.encryption.enabled` flag. |
+| `yourphr.backup.encryption.key` | *(empty)* | Required to write or restore a backup (`YOURPHR_BACKUP_ENCRYPTION_KEY`). Independent of the database key. |
+| `yourphr.auth.session.secret` | *(generated)* | Signs session tokens (`YOURPHR_SESSION_SECRET`). Generated into `<data>/.env` on first start if unset. There is no `jwt.issuer.key`. |
 | `jwt.session_ttl_minutes` | `60` | Browser session sliding window (#445). Cookie Max-Age and JWT `exp` extension length. Env: `YOURPHR_JWT_SESSION_TTL_MINUTES`. |
 | `jwt.session_absolute_hours` | `12` | Hard cap from first login (`session_start`); no further renew after this. Env: `YOURPHR_JWT_SESSION_ABSOLUTE_HOURS`. |
 | `jwt.session_renew_if_remaining_minutes` | `30` | Renew session JWT/cookie on authenticated API calls when less than this much lifetime remains. Env: `YOURPHR_JWT_SESSION_RENEW_IF_REMAINING_MINUTES`. |
@@ -313,29 +311,33 @@ There is nothing to configure. No retention window, because nothing accumulates:
 
 There are __two distinct kinds__ — don't conflate them:
 
-1. __Operator/server secrets__ (deployment-level, one set): the __DB encryption key__ (required while encryption is on) and an optional pinned __JWT key__. Supply via `YOURPHR_*` env or `.env_custom` — never in a committed file.
-2. __Per-user OAuth credentials__ (runtime, per user *and* per connected source): when a user connects a SMART source they enter their own `client_id`/`client_secret` in the UI. These live in the `source_credentials` table ([#286](https://github.com/jwilleke/yourphr/issues/286)) — __not__ an env var or file, because they are dynamic per-user data, not server config. They are never serialized to the browser (`json:"-"`).
+1. __Operator/server secrets__ (deployment-level, one set): the __database encryption key__, the __backup encryption key__, the session secret and the passkey signing key. Supply via `YOURPHR_*` environment variables or `<data>/.env` — never in a committed file. See [Encryption keys](#encryption-keys).
+2. __Per-user OAuth credentials__ (runtime, per user *and* per connected source): when a user connects a SMART source they enter their own `client_id`/`client_secret` in the UI. These live in the app database (`spike.db`) — __not__ an env var or file, because they are dynamic per-user data, not server config. They are never serialized to the browser.
 
-   Their protection at rest is __whole-database encryption, not per-column__ — so they are encrypted only when `database.encryption.enabled` is on. It is __on by default__, but an instance that wants working backups has to turn it off. See the risk note below.
+   Their protection at rest is __whole-database encryption, not per-column__ — so they are encrypted when `YOURPHR_DATABASE_ENCRYPTION_KEY` is set, and in the clear when it is empty. Backups of those same rows are always encrypted with the backup key. See the risk note below.
 
 ### What the data volume holds
 
-The instance data root (`storage.data_dir`, [#451](https://github.com/jwilleke/yourphr/issues/451) — the volume you mount and back up) contains, in one place:
+The data directory (`YOURPHR_FAST_STORAGE`; `/opt/yourphr/data` in the published image — the volume you mount) contains, in one place:
 
-| | |
+| Path | What it holds |
 |---|---|
-| `db/fasten.db` | every imported record, plus `source_credentials`: OAuth __access and refresh tokens__ and `client_secret` for each connected provider |
-| `.jwt_issuer_key` | the generated HS256 session signing key (0600) |
-| `config/app-custom-config.json` | instance settings, and any secret an operator chooses to set there (0600) |
-| `backups/` | database snapshots, if a local destination is used |
+| `records.db` | every imported medical record, with history and the search index |
+| `spike.db` | accounts, sources, OAuth __access and refresh tokens__ and `client_secret` for each connected provider, the catalog, jobs, passkey rows, the access log |
+| `phd-samples.db` | raw connected-device samples, when health has been turned on |
+| `config/app-custom-config.json` | instance settings overrides, and any secret an operator chooses to set there (mode `0600`) |
+| `.env` | the encryption keys, `YOURPHR_SESSION_SECRET`, `YOURPHR_CREDENTIALS_KEY`, and any other environment-owned secret kept on the volume (mode `0600`) |
+| `.admin_bootstrap_password` | the first admin's generated password, until that admin signs in |
+| `notifications/` | in-app notices |
+| `backups/` | backup files, only if the destination was left at the default on this volume |
 
-__Treat this volume as the crown jewels.__ A stored refresh token is not historical data — it grants *ongoing* access to that patient's records at Epic, CMS or Medicare until revoked. Anyone who can read the volume can use them.
+__Treat this volume as the crown jewels.__ A stored refresh token is not historical data — it grants *ongoing* access to that patient's records at a hospital or CMS until revoked. Anyone who can read an unencrypted volume, or an encrypted volume *and* its database key, can use them.
 
 Practical consequences:
 
-- __With `database.encryption.enabled` off (the default), all of the above is cleartext on disk.__ A copied PVC, a snapshot, a decommissioned disk, or a `kubectl cp` of the data dir yields live provider credentials.
-- __Backups are cleartext too__, and they are the copy most likely to leave the machine — a NAS, another host, cold storage. See [#461](https://github.com/jwilleke/yourphr/issues/461).
-- An operator __may__ set secrets through Admin → Configuration, which writes them to `app-custom-config.json` on this volume. That is supported and adds little marginal risk given what is already here — but it is a choice, and the alternative is to keep secrets in `YOURPHR_*` env (or reference them from the config with `${VAR}`, [#460](https://github.com/jwilleke/yourphr/issues/460)) so they live in your secret manager instead.
+- __When `YOURPHR_DATABASE_ENCRYPTION_KEY` is empty, the databases are cleartext on disk.__ A copied PVC, a snapshot, a decommissioned disk, or a copy of the data dir yields live provider credentials. When the key is set, the databases are encrypted with SQLite3 Multiple Ciphers; `.env`, the settings file and notification files are still ordinary files.
+- __Backups are always encrypted__ with `YOURPHR_BACKUP_ENCRYPTION_KEY`, which is required. They are the copy most likely to leave the machine — a NAS, another host, cold storage — and that key is the only thing that opens them. See [`../recovery/`](../recovery/).
+- An operator __may__ set secrets through Admin → Configuration, which writes them to `app-custom-config.json` on this volume. That is supported — but those values travel in a backup, unlike secrets kept only in `.env`. The alternative is to keep secrets in `YOURPHR_*` env so they live in your secret manager instead.
 
 ### Privacy Policy and Terms of Service
 
@@ -358,24 +360,21 @@ Every served document carries a digest (`sha256:…` over the Markdown) shown at
 
 __If you have CMS Blue Button production approval, PP/ToS changes need CMS pre-approval first__ ([#367](https://github.com/jwilleke/yourphr/issues/367) context in [`../cms-bluebutton-production-access.md`](../EHR-vendors/cms-medicare/cms-bluebutton-production-access.md)). That applies to an override on an approved instance as much as to the shipped text.
 
-### Should a production instance enable `database.encryption.enabled`?
+### Should a production instance set a database encryption key?
 
-__Eventually yes — today, only with your eyes open.__ Turning it on refuses backup *and* restore ([#367](https://github.com/jwilleke/yourphr/issues/367)), because a `VACUUM INTO` snapshot of an encrypted database would be written in plaintext. So the choice today is:
+__Yes, and also set a backup key.__ The two are independent. There is no `database.encryption.enabled` flag and no `YOURPHR_DATABASE_ENCRYPTION_ENABLED` variable. Encryption is on when `YOURPHR_DATABASE_ENCRYPTION_KEY` is set, and off when it is empty (the shipped default). Backups are always encrypted, and are refused only when `YOURPHR_BACKUP_ENCRYPTION_KEY` is missing — not because the databases are encrypted.
 
-| | At rest | Backups | Suits |
-|---|---|---|---|
-| `enabled: true` (default) | encrypted | __refused__ | An instance on hardware you do not control (VPS, shared host, cloud disk), where disclosure is the bigger fear |
-| `enabled: false` | cleartext | work | An instance whose disk you physically control, where losing records is the bigger fear |
+| | Databases on disk | Backups |
+|---|---|---|
+| Both keys set (recommended) | encrypted | encrypted, restorable |
+| Backup key only | cleartext | encrypted, restorable |
+| Database key only, or neither | encrypted or cleartext | __refused__ |
 
-For most self-hosters on their own hardware, __losing the records is a worse outcome than a stolen disk__. If that describes your instance, set `YOURPHR_DATABASE_ENCRYPTION_ENABLED=false` explicitly so backups work. If your instance runs somewhere you would not leave an unlocked filing cabinet — a rented VPS, a cloud volume, a laptop that travels — keep the default and accept that you have no backups until [#461](https://github.com/jwilleke/yourphr/issues/461) lands, which removes the trade by encrypting the backup artifact itself.
+Do not turn the database key off "so backups work". That trade was a limitation of the Go stack ([#367](https://github.com/jwilleke/yourphr/issues/367)) and does not apply now.
 
-Either way, treat the volume as sensitive: with encryption off it is cleartext, and with encryption on you have no backup to fall back on.
+The database key lives, by default, in `<data>/.env` on the same volume as the databases. That means at-rest encryption no longer protects against someone who copies the whole volume. It still protects the databases on a disk that is discarded without the `.env`, and the backup key still protects every file that leaves the volume. Keep a copy of both keys off the instance, and prove the copy with a [restore drill](../recovery/data-recovery.md).
 
-If you turn encryption off so that backups work, then __prove they work__: [`../recovery/data-recovery.md`](../recovery/data-recovery.md). Choosing "records matter more than a stolen disk" and then never testing a restore gets you the downside of both.
-
-__Why `true` is the default,__ despite requiring an operator-supplied key with no fallback (a generated key stored next to the database protects against nothing). It is not a security recommendation — it is what a stock Docker install already *has*. The image shipped a baked `config.yaml` with encryption on for years, so those installs set a key at first-run and their database is encrypted. Defaulting to `false` when `config.yaml` was removed would have left every one of them unopenable ([#470](https://github.com/jwilleke/yourphr/issues/470)). Deployments that run unencrypted must now say so explicitly; every `.env.*.example` template does.
-
-Turning encryption __on__ for an existing plaintext database does not work either — that migration is [#363](https://github.com/jwilleke/yourphr/issues/363).
+Turning encryption __on__ for an existing cleartext database is a separate migration ([#363](https://github.com/jwilleke/yourphr/issues/363)); do not assume you can just set the key under an already-written file.
 
 ## Sandbox provider credentials
 
