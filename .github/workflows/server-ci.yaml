@@ -91,6 +91,8 @@ jobs:
         run: npm run agent-tokens
       - name: Health intake over the wire — refused uploads write nothing, deletion reaches samples, device-intake switch (yourphr#314) and retry-later (yourphr#991)
         run: npm run health-intake
+      - name: Unattended device uploads — signed out, revoked, cross-patient, restore, no unlocked copies (yourphr#991)
+        run: npm run health-unattended
       - name: MCP bridge — one patient's records, over the agent-token surface (yourphr#657)
         run: npm run mcp-tests
       - name: Configuration system (precedence, overlay, refusals)
