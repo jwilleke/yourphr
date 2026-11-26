@@ -9,6 +9,7 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { openStores, type Stores } from '../../../app.js';
+import { TEST_DATABASE_KEY } from './testDatabaseKey.js';
 import { ApiContext } from '../../../framework/ApiContext.js';
 
 const PASSWORD = 'a-long-enough-password';
@@ -20,7 +21,7 @@ let jim: ApiContext;
 
 beforeEach(async () => {
   dir = mkdtempSync(join(tmpdir(), 'health-rollup-'));
-  s = await openStores(dir, { YOURPHR_DATABASE_ENCRYPTION_KEY: 'unit-key', YOURPHR_HEALTH_ENABLED: 'true', YOURPHR_DEVICES_ENABLED: 'true', YOURPHR_HEALTH_DEVICE_INTAKE_ENABLED: 'true' });
+  s = await openStores(dir, { YOURPHR_DATABASE_ENCRYPTION_KEY: TEST_DATABASE_KEY, YOURPHR_HEALTH_ENABLED: 'true', YOURPHR_DEVICES_ENABLED: 'true', YOURPHR_HEALTH_DEVICE_INTAKE_ENABLED: 'true' });
   await s.users.createUser(ApiContext.system('test', 'test', s.engine), 'jim', PASSWORD);
   jim = ApiContext.system('test', 'jim', s.engine);
 });

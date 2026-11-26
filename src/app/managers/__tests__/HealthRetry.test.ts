@@ -19,8 +19,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { openStores, type Stores } from '../../../app.js';
 import { ApiContext } from '../../../framework/ApiContext.js';
 import { HEALTH_STORE_RETRY_AFTER_SECONDS, isStoreUnavailable } from '../HealthManager.js';
+import { TEST_DATABASE_KEY } from './testDatabaseKey.js';
 
-const KEY = { YOURPHR_DATABASE_ENCRYPTION_KEY: 'unit-key', YOURPHR_HEALTH_ENABLED: 'true' };
+const KEY = { YOURPHR_DATABASE_ENCRYPTION_KEY: TEST_DATABASE_KEY, YOURPHR_HEALTH_ENABLED: 'true' };
 const dirs: string[] = [];
 afterEach(() => {
   vi.restoreAllMocks();
