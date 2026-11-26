@@ -255,7 +255,7 @@ Any config key can be set as an env var: prefix __`YOURPHR_`__, uppercase the ke
 | `web.listen.host` | `0.0.0.0` | Bind address. |
 | `web.listen.basepath` | `""` | Sub-path when behind a reverse proxy (e.g. `/phr`). |
 | `web.listen.https.enabled` | `false` | Serve HTTPS with a self-generated CA (see the README HTTPS section). |
-| `web.environment_name` | `""` | Deployment label in the UI footer (`demo-1.18.2`, `prod-1.18.2`, …). Same release image for every instance — set per env (e.g. `demo` / `prod` / `dev`). Empty → frontend build-time default. |
+| `web.environment_name` | `yourPHR` | Deployment label in the UI footer (`demo-1.18.2`, `willeke-1.18.2`, …). Same release image for every instance — set per env (e.g. `demo` / `willeke`). It is a label only, never a feature flag: it does not put the instance into "sandbox mode" ([#674](https://github.com/jwilleke/yourphr/issues/674)). Empty shows the version alone, with no compiled-in fallback. |
 | `web.allow_unsafe_endpoints` | `false` | __Never enable in production__ — exposes unauthenticated API access. |
 | `web.smart_connect.login_wait_seconds` | `240` | How long the SMART-on-FHIR connect flow waits for the user to finish logging in at the provider before timing out. Served to the frontend, so changing it needs __no frontend rebuild__ — raise it for slow provider logins (e.g. CMS Blue Button). |
 | `database.type` | `sqlite` | Only SQLite is supported; Postgres is present but __broken__. |

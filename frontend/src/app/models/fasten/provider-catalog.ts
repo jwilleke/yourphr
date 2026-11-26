@@ -5,6 +5,8 @@
 export interface ConnectableProvider {
   id: string;
   display: string;
+  /** production or sandbox — the catalog entry's own environment, not the instance name (yourphr#674). */
+  environment?: string;
   brand_logo_url?: string;
   /** PP/ToS opt-in required before connect (default true for all medical sources). */
   requires_user_consent?: boolean;

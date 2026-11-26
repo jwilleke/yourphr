@@ -54,6 +54,8 @@ export function connectableShape(entry: CatalogEntry): Record<string, unknown> {
   return {
     id: String(entry.id),
     display: patientFacingDisplay(entry),
+    // Sandbox-ness is a property of the provider, not the instance name (yourphr#674).
+    environment: entry.environment,
     brand_logo_url: entry.brandLogoUrl,
     requires_user_consent: policy.requiresUserConsent,
     pre_connect_profile: policy.preConnectProfile,

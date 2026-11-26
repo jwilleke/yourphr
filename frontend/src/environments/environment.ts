@@ -14,9 +14,6 @@ export const environment = {
   //when environment_desktop=true, we can use the postMessage api to communicate with the desktop app (otherwise use redirects)
   popup_source_auth: false,
 
-  // the environment name, `sandbox`, `prod`, `beta`
-  environment_name: "sandbox",
-
   //specify the connect gateway server that we're going to use to authenticate against all our source/providers. Must not have trailing slash
 
   //used to specify the api server that we're going to use (can be relative or absolute). Must not have trailing slash

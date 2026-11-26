@@ -145,10 +145,11 @@ describe('CatalogManager — the admin curates', () => {
     await catalog.createEntry(admin, { ...PROD, display: 'Off', enabled: false });
     const tester = ApiContext.from({ username: 'tester', role: 'user', isTest: true }, engine);
     expect((await catalog.connectable(tester)).map((e) => e['display'])).toEqual(['Sandbox']);
+    expect((await catalog.connectable(tester))[0]).toMatchObject({ environment: 'sandbox' });
     // The admin is a real account like any other: no sandbox from it.
     expect((await catalog.connectable(admin)).map((e) => e['display'])).toEqual(['Big Hospital']);
     expect((await catalog.connectable(alice)).map((e) => e['display'])).toEqual(['Big Hospital']);
-    expect((await catalog.connectable(alice))[0]).toMatchObject({ id: '1', requires_user_consent: true, pre_connect_profile: 'generic', medicare_class: false });
+    expect((await catalog.connectable(alice))[0]).toMatchObject({ id: '1', requires_user_consent: true, pre_connect_profile: 'generic', medicare_class: false, environment: 'production' });
     expect(await catalog.remove(admin, '2')).toBe(true);
     expect(await catalog.remove(admin, '2')).toBe(false);
     expect((await catalog.list(admin)).map((e) => e['display'])).toEqual(['Big Hospital', 'Off']);

@@ -72,6 +72,7 @@ Admin responses include `has_client_secret` (bool), never the secret value.
 | Field | Meaning |
 |---|---|
 | `id`, `display`, `brand_logo_url` | Picker |
+| `environment` | `production` or `sandbox` — the entry's own environment, not the instance name. The Sources page keys its sandbox safety notice and per-entry "Sandbox credentials only" label off this field ([#674](https://github.com/jwilleke/yourphr/issues/674)). |
 | `requires_user_consent` | PP/ToS required before connect (default true) |
 | `pre_connect_profile` | Resolved: `none` \| `generic` \| `medicare` |
 | `medicare_class` | CMS Blue Button-class (attribution; production label __Medicare__) |

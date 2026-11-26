@@ -4,7 +4,6 @@ import {FastenApiService} from '../../services/fasten-api.service';
 import {Source} from '../../models/fasten/source';
 import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 import {ActivatedRoute} from '@angular/router';
-import {environment} from '../../../environments/environment';
 import {CDAConverterStatus} from '../../models/fasten/cda-converter-status';
 import {PatientAccessBrand} from '../../models/patient-access-brands';
 import {extractErrorFromResponse} from '../../../lib/utils/error_extract';
@@ -43,8 +42,6 @@ export class SourceListItem {
 })
 export class MedicalSourcesComponent implements OnInit {
   loading = false
-
-  environment_name = environment.environment_name
 
   uploadedFile: File[] = []
   uploadErrorMsg = ""
@@ -157,6 +154,17 @@ export class MedicalSourcesComponent implements OnInit {
   get showMedicareAttribution(): boolean {
     return this.connectableProviders.some((p) => !!p.medicare_class || p.pre_connect_profile === 'medicare')
       && this.medicareAttributions.length > 0
+  }
+
+  // The sandbox safety claim keys off the providers on this list, never the instance display name
+  // (yourphr#674). A test account's connectable list is sandbox entries only; a real account's is
+  // production only — so this is true exactly when the patient is about to connect a sandbox.
+  get hasSandboxProviders(): boolean {
+    return this.connectableProviders.some((p) => this.isSandboxProvider(p))
+  }
+
+  isSandboxProvider(provider: ConnectableProvider): boolean {
+    return provider?.environment === 'sandbox'
   }
 
   // Connects an admin-configured provider by id. The patient never sees or sends a client_id/secret.

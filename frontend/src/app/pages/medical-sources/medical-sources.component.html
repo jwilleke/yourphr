@@ -16,15 +16,6 @@
         Some sources may require frequent re-connection, as background refresh has not been implemented yet.
         <br/>
         If you have feedback regarding healthcare sources, please <a href="https://github.com/jwilleke/yourphr/issues" externalLink>file a ticket <i class="fab fa-github"></i></a>
-
-        @if (environment_name == 'sandbox') {
-          <span>
-            <br/>
-            <br/>
-            In <strong>Sandbox mode</strong> YourPHR cannot access real patient information. You must use Sandbox credentials when authenticating to healthcare sources.
-            <a href="https://yourphr.org" externalLink>These credentials are available in our Sandbox Guide</a>
-          </span>
-        }
       </div>
 
       @if (showConnectedList) {
@@ -111,6 +102,15 @@
       -->
       <div class="az-content-label mg-b-5 mg-t-40">Connect a provider</div>
 
+      <!-- Sandbox-ness is per provider (yourphr#674), not the instance's display name. Shown when
+      the list the patient is about to use includes a sandbox catalog entry. -->
+      @if (hasSandboxProviders) {
+        <div class="alert alert-info mg-b-15" role="status" data-sandbox-notice>
+          In <strong>Sandbox mode</strong> YourPHR cannot access real patient information. You must use Sandbox credentials when authenticating to healthcare sources.
+          <a href="https://yourphr.org" externalLink>These credentials are available in our Sandbox Guide</a>
+        </div>
+      }
+
       @if (connectErrorMsg) {
         <div class="alert alert-danger mt-2" role="alert">
           <strong>Error:</strong> {{connectErrorMsg}}
@@ -169,6 +169,9 @@
                   <span><i class="fas fa-plug mg-r-5"></i> {{provider.display}}</span>
                 }
               </button>
+              @if (isSandboxProvider(provider)) {
+                <p class="tx-gray-500 tx-12 mg-t-5 mg-b-0" data-sandbox-provider-label>Sandbox credentials only</p>
+              }
               @if (needsLegalConsent(provider)) {
                 <p class="tx-gray-500 tx-12 mg-t-5 mg-b-0">
                   Requires consent —
