@@ -51,6 +51,7 @@ const EXEMPT: Record<string, string> = {
   '/api/secure/admin/database': 'admin: database size, integrity and backups',
   '/api/secure/admin/database/browse': 'admin: server folders for a backup destination',
   '/api/secure/admin/database/search-index': 'admin: the search index version and rebuild progress — counts, no records',
+  '/api/secure/account/sessions': 'account: the person\'s own signed-in sessions — when each started and was last renewed, no record content (yourphr#814)',
   '/api/secure/account/sign-in-methods': 'account: the person\'s own passkeys and whether a password is set — no record content (yourphr#876)',
   '/api/secure/admin/config': 'admin: configuration snapshot',
   '/api/secure/admin/config/reveal/x': 'admin: one configuration value',

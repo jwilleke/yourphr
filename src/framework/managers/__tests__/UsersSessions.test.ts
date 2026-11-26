@@ -251,6 +251,78 @@ describe('UsersManager — the test-account flag (yourphr#919, ngdpbase#1805)', 
   });
 });
 
+describe('SessionsManager — server-side sessions: signing out ends the session (yourphr#814)', () => {
+  const tokenOf = async (at: number): Promise<string> => ((await sessions.signIn('alice', { password: PW }, REQ, at)) as { token: string }).token;
+  const ctxOf = async (token: string, at: number): Promise<ApiContext> => {
+    const v = await sessions.verify(token, at);
+    if (!v.ok) throw new Error('not signed in');
+    return ApiContext.from(v.principal, engine);
+  };
+
+  it('a token is rejected after sign-out, even though its signature and expiry are still good', async () => {
+    await users.createUser(sys, 'alice', PW);
+    const t = await tokenOf(1000);
+    expect((await sessions.verify(t, 1010)).ok).toBe(true);
+    expect(await sessions.signOut(t)).toBe(true);
+    expect((await sessions.verify(t, 1011)).ok).toBe(false);
+    expect(await sessions.signOut(t)).toBe(false); // already ended: quiet
+  });
+
+  it('a renewed token names the same session, so signing out with either ends both', async () => {
+    await users.createUser(sys, 'alice', PW);
+    const t = await tokenOf(1000);
+    const renewed = (await sessions.verify(t, 1060)) as { ok: true; renewed: string };
+    expect(renewed.renewed).toBeTruthy();
+    await sessions.signOut(t);
+    expect((await sessions.verify(renewed.renewed, 1070)).ok).toBe(false);
+  });
+
+  it('one device signing out leaves the others; a forged or garbage token ends nothing', async () => {
+    await users.createUser(sys, 'alice', PW);
+    const a = await tokenOf(1000);
+    const b = await tokenOf(1001);
+    expect(await sessions.signOut('garbage')).toBe(false);
+    const [payload] = b.split('.');
+    expect(await sessions.signOut(`${payload}.${Buffer.alloc(32).toString('base64url')}`)).toBe(false);
+    await sessions.signOut(a);
+    expect((await sessions.verify(a, 1010)).ok).toBe(false);
+    expect((await sessions.verify(b, 1010)).ok).toBe(true);
+  });
+
+  it('lists the caller\'s own live sessions, marks the current one, and ends one by id — never someone else\'s', async () => {
+    await users.createUser(sys, 'alice', PW);
+    await users.createUser(sys, 'bob', PW);
+    const a1 = await tokenOf(1000);
+    const a2 = await tokenOf(1001);
+    const bob = ((await sessions.signIn('bob', { password: PW }, REQ, 1002)) as { token: string }).token;
+    const alice = await ctxOf(a1, 1010);
+    const list = await sessions.listSessions(alice, 1010);
+    expect(list).toHaveLength(2);
+    expect(list.filter((x) => x.current)).toHaveLength(1);
+    expect(list.find((x) => x.current)!.id).toBe(alice.sessionId);
+    const other = list.find((x) => !x.current)!;
+    const bobCtx = await ctxOf(bob, 1010);
+    await expect(sessions.revokeSession(bobCtx, other.id)).rejects.toMatchObject({ status: 404 });
+    await expect(sessions.revokeSession(alice, 'no-such-session')).rejects.toMatchObject({ status: 404 });
+    await sessions.revokeSession(alice, other.id);
+    expect((await sessions.verify(a2, 1011)).ok).toBe(false);
+    expect((await sessions.verify(a1, 1011)).ok).toBe(true);
+    // past their expiry, sessions drop out of the list
+    expect(await sessions.listSessions(alice, 1000 + 100)).toHaveLength(0);
+  });
+
+  it('sign-out-everywhere and deleting the account remove every record; an agent context may not list them', async () => {
+    await users.createUser(sys, 'alice', PW);
+    const t = await tokenOf(1000);
+    const alice = await ctxOf(t, 1010);
+    await sessions.revokeAll(alice);
+    expect(await sessions.listSessions(ApiContext.from({ username: 'alice', role: 'user' }, engine), 1010)).toHaveLength(0);
+    const agent = ApiContext.agent('alice', { id: 'x', name: 'bot', scopes: [] }, engine);
+    await expect(sessions.listSessions(agent, 1010)).rejects.toMatchObject({ status: 403 });
+    await expect(sessions.revokeSession(agent, 'x')).rejects.toMatchObject({ status: 403 });
+  });
+});
+
 describe('SessionsManager — sign-in, tokens, revocation, throttling, cardinality', () => {
   it('signs in with a token carrying the generation; wrong password and unknown account get the one generic error', async () => {
     await users.createUser(sys, 'alice', PW);

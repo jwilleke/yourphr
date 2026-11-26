@@ -34,6 +34,7 @@ import { UsersManager, BOOTSTRAP_ADMIN_USERNAME } from './framework/managers/Use
 import { SessionsManager } from './framework/managers/SessionsManager.js';
 import { SqliteCredentialsProvider } from './framework/providers/SqliteCredentialsProvider.js';
 import { SqliteUsersProvider } from './framework/providers/SqliteUsersProvider.js';
+import { SqliteSessionsProvider } from './framework/providers/SqliteSessionsProvider.js';
 import { PasswordAuthProvider } from './framework/providers/PasswordAuthProvider.js';
 import { CatalogManager, type CatalogWrite } from './app/managers/CatalogManager.js';
 import { SqliteCatalogProvider } from './app/providers/SqliteCatalogProvider.js';
@@ -299,6 +300,24 @@ const APP_MIGRATIONS: Migration[] = [
       if (!columns.includes('is_test')) addColumnWithDefault(db, 'auth_users', 'is_test', 'INTEGER', 0);
     },
   },
+  {
+    id: '20261126120000',
+    description: 'auth_sessions (yourphr#814) — a server-side record per signed-in session, so signing out ends it',
+    up: (db) => {
+      // Frozen copy of the shape at this date; SqliteSessionsProvider keeps the current one. Starts
+      // empty: tokens minted before this carry no session id and are refused, so everyone signs in once.
+      db.exec(`CREATE TABLE IF NOT EXISTS auth_sessions (
+        sid TEXT PRIMARY KEY,
+        username TEXT NOT NULL,
+        generation INTEGER NOT NULL,
+        created_at INTEGER NOT NULL,
+        last_seen_at INTEGER NOT NULL,
+        expires_at INTEGER NOT NULL,
+        cap_at INTEGER NOT NULL
+      )`);
+      db.exec('CREATE INDEX IF NOT EXISTS idx_auth_sessions_username ON auth_sessions(username)');
+    },
+  },
 ];
 
 /**
@@ -494,6 +513,8 @@ export async function openStores(dataDir: string, env: Record<string, string | u
   // database, passwords by the scrypt provider, the factor list from configuration.
   const users = new UsersManager(engineRef(), new SqliteUsersProvider(db), new PasswordAuthProvider(), { log: (line) => appLog.info(line) });
   const sessions = new SessionsManager(engineRef(), [new PasswordAuthProvider()], {
+    // yourphr#814: a record per session in the encrypted app database, so signing out ends it.
+    store: new SqliteSessionsProvider(db),
     // yourphr#815: the persisted key bootstrap-env guarantees, so a restart keeps everyone signed in.
     // Empty only where nothing ran the bootstrap (the harnesses, which pass their own env).
     sessionKey: config.getString('yourphr.auth.session.secret') !== '' ? Buffer.from(config.getString('yourphr.auth.session.secret'), 'utf8') : randomBytes(32),

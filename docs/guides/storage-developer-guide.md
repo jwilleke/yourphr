@@ -14,7 +14,7 @@ Where yourPHR's data lives, who may open it, and how its schema changes. All thr
 
 | Data | Where | Key | Opened by |
 | --- | --- | --- | --- |
-| Accounts, sessions' token generations, agent tokens and device grants, credentials (passkeys), sources, provider catalog, jobs, favorites, glossary cache, consent, the access log | the app database, `yourphr.database.location` (default `${YOURPHR_FAST_STORAGE}/spike.db`) | `yourphr.database.encryption.key` | `SqliteDatabaseProvider` (`DatabaseManager`) and the providers built over its handle in `src/app.ts` |
+| Accounts, sessions (the token generations and, since [#814](https://github.com/jwilleke/yourphr/issues/814), a record per signed-in session in `auth_sessions`), agent tokens and device grants, credentials (passkeys), sources, provider catalog, jobs, favorites, glossary cache, consent, the access log | the app database, `yourphr.database.location` (default `${YOURPHR_FAST_STORAGE}/spike.db`) | `yourphr.database.encryption.key` | `SqliteDatabaseProvider` (`DatabaseManager`) and the providers built over its handle in `src/app.ts` |
 | FHIR records, their history and the search index | `yourphr.records.location` (default `${YOURPHR_FAST_STORAGE}/records.db`) | the same key | `SqliteRecordsProvider` over `SqliteFhirRepository` (`RecordsManager`) |
 | Raw connected-device samples | `yourphr.phd-samples.location` (default `${YOURPHR_FAST_STORAGE}/phd-samples.db`); opened only while `yourphr.health.enabled` is on | the same key | `SqlitePhdSamplesProvider` (`HealthManager`) |
 | Instance overrides | `<data>/config/app-custom-config.json` | none | `FileConfigProvider` |
