@@ -43,7 +43,7 @@
     "@swimlane/ngx-datatable": "^25.1.0",
     "@types/fhir": "^0.0.44",
     "asmcrypto.js": "^2.3.2",
-    "bootstrap": "^5.3.8",
+    "bootstrap": "^5.3.9",
     "chart.js": "^4.6.1",
     "dwv": "^0.31.0",
     "fhirpath": "^3.3.0",
