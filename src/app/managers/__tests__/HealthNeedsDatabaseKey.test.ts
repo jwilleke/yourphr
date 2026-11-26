@@ -9,6 +9,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { healthAllowed, openStores } from '../../../app.js';
+import { TEST_DATABASE_KEY } from './testDatabaseKey.js';
 import { appLog } from '../../../log/index.js';
 
 const dirs: string[] = [];
@@ -62,7 +63,7 @@ describe('openStores with health on', () => {
   it('with a database key: health and device intake turn on as configured', async () => {
     const dir = tempDir();
     const s = await openStores(dir, {
-      YOURPHR_DATABASE_ENCRYPTION_KEY: 'unit-key',
+      YOURPHR_DATABASE_ENCRYPTION_KEY: TEST_DATABASE_KEY,
       YOURPHR_HEALTH_ENABLED: 'true',
       YOURPHR_HEALTH_DEVICE_INTAKE_ENABLED: 'true',
     });

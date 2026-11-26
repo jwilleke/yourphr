@@ -7,6 +7,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { openStores, type Stores } from '../../../app.js';
+import { TEST_DATABASE_KEY } from './testDatabaseKey.js';
 import { ApiContext } from '../../../framework/ApiContext.js';
 import { HEALTH_SAMPLE_MAX_BATCH, HEALTH_SAMPLE_MAX_REPORTED_ERRORS } from '../HealthManager.js';
 
@@ -25,7 +26,7 @@ const SLEEP = 'HKCategoryTypeIdentifierSleepAnalysis';
 
 async function withHealth(fn: (s: Stores, jim: ApiContext) => Promise<void>): Promise<void> {
   const dir = mkdtempSync(join(tmpdir(), 'health-api-'));
-  const stores = await openStores(dir, { YOURPHR_DATABASE_ENCRYPTION_KEY: 'unit-key', YOURPHR_HEALTH_ENABLED: 'true' });
+  const stores = await openStores(dir, { YOURPHR_DATABASE_ENCRYPTION_KEY: TEST_DATABASE_KEY, YOURPHR_HEALTH_ENABLED: 'true' });
   try {
     await fn(stores, ApiContext.system('test', 'jim', stores.engine));
   } finally {
@@ -45,7 +46,7 @@ describe('the flag off', () => {
   it('registers no health manager, opens no phd-samples.db, and stays off for an explicit false', async () => {
     for (const env of [{}, { YOURPHR_HEALTH_ENABLED: 'false' }]) {
       const dir = mkdtempSync(join(tmpdir(), 'health-off-'));
-      const stores = await openStores(dir, { YOURPHR_DATABASE_ENCRYPTION_KEY: 'unit-key', ...env });
+      const stores = await openStores(dir, { YOURPHR_DATABASE_ENCRYPTION_KEY: TEST_DATABASE_KEY, ...env });
       try {
         expect(stores.engine.has('health')).toBe(false);
         expect(existsSync(join(dir, 'phd-samples.db'))).toBe(false);
@@ -58,7 +59,7 @@ describe('the flag off', () => {
 
   it('creates phd-samples.db once the flag is on', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'health-on-'));
-    const stores = await openStores(dir, { YOURPHR_DATABASE_ENCRYPTION_KEY: 'unit-key', YOURPHR_HEALTH_ENABLED: 'true' });
+    const stores = await openStores(dir, { YOURPHR_DATABASE_ENCRYPTION_KEY: TEST_DATABASE_KEY, YOURPHR_HEALTH_ENABLED: 'true' });
     try {
       expect(stores.engine.has('health')).toBe(true);
       expect(existsSync(join(dir, 'phd-samples.db'))).toBe(true);

@@ -15,6 +15,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { openStores, type Stores } from '../../../app.js';
+import { TEST_DATABASE_KEY } from './testDatabaseKey.js';
 import { ApiContext } from '../../../framework/ApiContext.js';
 
 const dirs: string[] = [];
@@ -60,7 +61,7 @@ describe('a refused ingest writes nothing', () => {
     ['a device id that is not a string', { device: { device_id: 7 } }, /device.device_id must be a string/],
     ['samples that are not a list', { samples: 'nope' }, /samples must be an array/],
   ])('refuses %s with 400, before writing any sample, Observation, source or sync state', async (_label, bad, message) => {
-    const s = await openStores(tempDir(), { YOURPHR_DATABASE_ENCRYPTION_KEY: 'unit-key', YOURPHR_HEALTH_ENABLED: 'true' });
+    const s = await openStores(tempDir(), { YOURPHR_DATABASE_ENCRYPTION_KEY: TEST_DATABASE_KEY, YOURPHR_HEALTH_ENABLED: 'true' });
     try {
       const jim = ApiContext.system('test', 'jim', s.engine);
       await expect(s.engine.managers.health.ingest(jim, { samples: [step('s1'), step('s2', 50)], ...bad } as never))
@@ -72,7 +73,7 @@ describe('a refused ingest writes nothing', () => {
   });
 
   it('stores the same batch once the input is good, and reads null device and anchors as absent', async () => {
-    const s = await openStores(tempDir(), { YOURPHR_DATABASE_ENCRYPTION_KEY: 'unit-key', YOURPHR_HEALTH_ENABLED: 'true' });
+    const s = await openStores(tempDir(), { YOURPHR_DATABASE_ENCRYPTION_KEY: TEST_DATABASE_KEY, YOURPHR_HEALTH_ENABLED: 'true' });
     try {
       const jim = ApiContext.system('test', 'jim', s.engine);
       const health = s.engine.managers.health;
@@ -94,7 +95,7 @@ describe('a refused ingest writes nothing', () => {
 describe('health off, with a samples file left from when it was on', () => {
   async function seeded(): Promise<string> {
     const dir = tempDir();
-    const on = await openStores(dir, { YOURPHR_DATABASE_ENCRYPTION_KEY: 'unit-key', YOURPHR_HEALTH_ENABLED: 'true' });
+    const on = await openStores(dir, { YOURPHR_DATABASE_ENCRYPTION_KEY: TEST_DATABASE_KEY, YOURPHR_HEALTH_ENABLED: 'true' });
     try {
       for (const who of ['jim', 'molly']) {
         await on.engine.managers.health.ingest(ApiContext.system('test', who, on.engine), {
@@ -108,7 +109,7 @@ describe('health off, with a samples file left from when it was on', () => {
   }
 
   it('registers the manager disabled, answering 404 to every read and write', async () => {
-    const off = await openStores(await seeded(), { YOURPHR_DATABASE_ENCRYPTION_KEY: 'unit-key' });
+    const off = await openStores(await seeded(), { YOURPHR_DATABASE_ENCRYPTION_KEY: TEST_DATABASE_KEY });
     try {
       const health = off.engine.managers.health;
       expect(off.engine.has('health')).toBe(true);
@@ -133,14 +134,14 @@ describe('health off, with a samples file left from when it was on', () => {
 
   it('deletes the account\'s samples and sync state, and nobody else\'s, and can do it twice', async () => {
     const dir = await seeded();
-    const off = await openStores(dir, { YOURPHR_DATABASE_ENCRYPTION_KEY: 'unit-key' });
+    const off = await openStores(dir, { YOURPHR_DATABASE_ENCRYPTION_KEY: TEST_DATABASE_KEY });
     try {
       await off.engine.managers.health.removeForUser(ApiContext.system('test', 'jim', off.engine));
       await off.engine.managers.health.removeForUser(ApiContext.system('test', 'jim', off.engine));
     } finally {
       await off.close();
     }
-    const after = await openStores(dir, { YOURPHR_DATABASE_ENCRYPTION_KEY: 'unit-key', YOURPHR_HEALTH_ENABLED: 'true' });
+    const after = await openStores(dir, { YOURPHR_DATABASE_ENCRYPTION_KEY: TEST_DATABASE_KEY, YOURPHR_HEALTH_ENABLED: 'true' });
     try {
       expect(await footprint(after, 'jim')).toMatchObject({ samples: 0, syncStates: 0 });
       expect(await footprint(after, 'molly')).toMatchObject({ samples: 2, syncStates: 1 });
@@ -150,7 +151,7 @@ describe('health off, with a samples file left from when it was on', () => {
   });
 
   it('refuses an anonymous deletion', async () => {
-    const off = await openStores(await seeded(), { YOURPHR_DATABASE_ENCRYPTION_KEY: 'unit-key' });
+    const off = await openStores(await seeded(), { YOURPHR_DATABASE_ENCRYPTION_KEY: TEST_DATABASE_KEY });
     try {
       await expect(off.engine.managers.health.removeForUser(ApiContext.anonymous(off.engine))).rejects.toMatchObject({ status: 401 });
     } finally {
@@ -159,7 +160,7 @@ describe('health off, with a samples file left from when it was on', () => {
   });
 
   it('with no samples file, registers nothing and creates no file', async () => {
-    const s = await openStores(tempDir(), { YOURPHR_DATABASE_ENCRYPTION_KEY: 'unit-key' });
+    const s = await openStores(tempDir(), { YOURPHR_DATABASE_ENCRYPTION_KEY: TEST_DATABASE_KEY });
     try {
       expect(s.engine.has('health')).toBe(false);
       expect(existsSync(s.engine.managers.configuration.getString('yourphr.phd-samples.location'))).toBe(false);
@@ -171,7 +172,7 @@ describe('health off, with a samples file left from when it was on', () => {
 
 describe('device intake (yourphr.health.device-intake.enabled)', () => {
   it('is off by default: a device credential is refused with 403 before anything is written', async () => {
-    const s = await openStores(tempDir(), { YOURPHR_DATABASE_ENCRYPTION_KEY: 'unit-key', YOURPHR_HEALTH_ENABLED: 'true' });
+    const s = await openStores(tempDir(), { YOURPHR_DATABASE_ENCRYPTION_KEY: TEST_DATABASE_KEY, YOURPHR_HEALTH_ENABLED: 'true' });
     try {
       expect(s.engine.managers.health.deviceIntake).toBe(false);
       await expect(s.engine.managers.health.ingest(device(s), { samples: [step('d1')] }))
@@ -183,7 +184,7 @@ describe('device intake (yourphr.health.device-intake.enabled)', () => {
   });
 
   it('on, a credential without a device grant is still refused', async () => {
-    const s = await openStores(tempDir(), { YOURPHR_DATABASE_ENCRYPTION_KEY: 'unit-key', YOURPHR_HEALTH_ENABLED: 'true', YOURPHR_HEALTH_DEVICE_INTAKE_ENABLED: 'true' });
+    const s = await openStores(tempDir(), { YOURPHR_DATABASE_ENCRYPTION_KEY: TEST_DATABASE_KEY, YOURPHR_HEALTH_ENABLED: 'true', YOURPHR_HEALTH_DEVICE_INTAKE_ENABLED: 'true' });
     try {
       expect(s.engine.managers.health.deviceIntake).toBe(true);
       const agent = ApiContext.agent('jim', { id: 'tok', name: 'Agent', scopes: ['Medications'] }, s.engine);
@@ -195,8 +196,8 @@ describe('device intake (yourphr.health.device-intake.enabled)', () => {
 
   it('has no effect while health itself is off', async () => {
     const dir = tempDir();
-    await (await openStores(dir, { YOURPHR_DATABASE_ENCRYPTION_KEY: 'unit-key', YOURPHR_HEALTH_ENABLED: 'true' })).close();
-    const s = await openStores(dir, { YOURPHR_DATABASE_ENCRYPTION_KEY: 'unit-key', YOURPHR_HEALTH_DEVICE_INTAKE_ENABLED: 'true' });
+    await (await openStores(dir, { YOURPHR_DATABASE_ENCRYPTION_KEY: TEST_DATABASE_KEY, YOURPHR_HEALTH_ENABLED: 'true' })).close();
+    const s = await openStores(dir, { YOURPHR_DATABASE_ENCRYPTION_KEY: TEST_DATABASE_KEY, YOURPHR_HEALTH_DEVICE_INTAKE_ENABLED: 'true' });
     try {
       expect(s.engine.managers.health.enabled).toBe(false);
       expect(s.engine.managers.health.deviceIntake).toBe(false);
