@@ -21,6 +21,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { Server } from 'node:http';
 import { openStores, type Stores } from '../src/app.js';
+import { TEST_DATABASE_KEY } from '../src/app/managers/__tests__/testDatabaseKey.js';
 import { createYourPhrServer } from '../src/server.js';
 
 const results: { name: string; ok: boolean; detail: string }[] = [];
@@ -46,6 +47,7 @@ async function boot(): Promise<Harness> {
     YOURPHR_AUTH_SIGNUP_ENABLED: 'true',
     YOURPHR_DEVICES_ENABLED: 'true',
     YOURPHR_HEALTH_ENABLED: 'true',
+    YOURPHR_DATABASE_ENCRYPTION_KEY: TEST_DATABASE_KEY,
     YOURPHR_HEALTH_DEVICE_INTAKE_ENABLED: 'true',
   });
   const server = createYourPhrServer({ engine: stores.engine, auth: {} }) as Server;

@@ -15,6 +15,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { openStores, type Stores } from '../../../app.js';
+import { TEST_DATABASE_KEY } from './testDatabaseKey.js';
 import { ApiContext } from '../../../framework/ApiContext.js';
 
 const HEART = 'HKQuantityTypeIdentifierHeartRate';
@@ -26,7 +27,7 @@ const heart = (uuid: string, value: number, start: string) => ({
 
 async function withTwoPeople(fn: (s: Stores) => Promise<void>): Promise<void> {
   const dir = mkdtempSync(join(tmpdir(), 'health-read-access-'));
-  const s = await openStores(dir, { YOURPHR_HEALTH_ENABLED: 'true' });
+  const s = await openStores(dir, { YOURPHR_DATABASE_ENCRYPTION_KEY: TEST_DATABASE_KEY, YOURPHR_HEALTH_ENABLED: 'true' });
   try {
     const health = s.engine.managers.health;
     await health.ingest(ApiContext.system('test', 'jim', s.engine), {
