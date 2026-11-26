@@ -11,7 +11,9 @@
  * - DELETE /api/secure/account/me removes the account's samples from phd-samples.db even while
  *   yourphr.health.enabled is off, and leaves other accounts' samples alone;
  * - yourphr.health.device-intake.enabled is its own switch, off by default: a device key's upload
- *   is 403 and is not logged as an upload, while a signed-in session still uploads.
+ *   is 403 and is not logged as an upload, while a signed-in session still uploads;
+ * - a store failure during an upload answers 503 with a Retry-After header, logs its cause for the
+ *   operator, and the same upload sent again succeeds (yourphr#991).
  *
  * A harness rather than a vitest file for the reason scripts/agent-token-tests.ts gives:
  * `check:boundary` refuses `fetch` under src/. Synthetic values only.
@@ -24,6 +26,8 @@ import { openStores, type Stores } from '../src/app.js';
 import { TEST_DATABASE_KEY } from '../src/app/managers/__tests__/testDatabaseKey.js';
 import { ApiContext } from '../src/framework/ApiContext.js';
 import { createYourPhrServer } from '../src/server.js';
+import { HEALTH_STORE_RETRY_AFTER_SECONDS } from '../src/app/managers/HealthManager.js';
+import { appLog } from '../src/log/index.js';
 
 const results: { name: string; ok: boolean; detail: string }[] = [];
 function check(name: string, ok: boolean, detail = ''): void {
@@ -211,10 +215,47 @@ async function deviceIntakeSwitch(): Promise<void> {
   }
 }
 
+async function retryLater(): Promise<void> {
+  console.log('\n-- a store failure during an upload is 503 + Retry-After, and the retry lands (yourphr#991)');
+  const dir = mkdtempSync(join(tmpdir(), 'yourphr-health-retry-'));
+  const h = await boot(dir, { YOURPHR_HEALTH_ENABLED: 'true' });
+  const realWarn = appLog.warn.bind(appLog);
+  const warned: string[] = [];
+  try {
+    const session = await signIn(h.base);
+    const provider = (h.stores.engine.managers.health as unknown as { provider: { insertSamples: (...a: unknown[]) => Promise<number> } }).provider;
+    const real = provider.insertSamples.bind(provider);
+    let failOnce = true;
+    provider.insertSamples = async (...a: unknown[]) => {
+      if (failOnce) { failOnce = false; throw Object.assign(new Error('synthetic SQLITE_BUSY'), { name: 'SqliteError', code: 'SQLITE_BUSY' }); }
+      return real(...a);
+    };
+    appLog.warn = (line: string) => { warned.push(line); };
+    const body = { samples: [step('r1'), step('r2', 50)], anchors: { step_count: 'a1' } };
+    const busy = await call(h.base, session, '/api/secure/health/samples', 'POST', body);
+    const busyBody = (await busy.json()) as { retry_after_seconds?: number };
+    check('busy store: 503', busy.status === 503, String(busy.status));
+    check('busy store: Retry-After header', busy.headers.get('retry-after') === String(HEALTH_STORE_RETRY_AFTER_SECONDS), String(busy.headers.get('retry-after')));
+    check('busy store: retry_after_seconds in the body', busyBody.retry_after_seconds === HEALTH_STORE_RETRY_AFTER_SECONDS);
+    check('busy store: the cause is in the operator log', warned.some((line) => /request deferred POST \/api\/secure\/health\/samples: SqliteError SQLITE_BUSY/.test(line)), warned.join(' | '));
+    // The "Uploaded by you" source is found or made before the store is touched; it holds no reading
+    // and the retry reuses it (one source after the retry, below).
+    check('busy store: no reading or Observation stored, anchors not moved', (await footprint(h.stores)) === 'samples=0 observations=0 uploadSources=1 syncStates=0', await footprint(h.stores));
+    const ok = await call(h.base, session, '/api/secure/health/samples', 'POST', body);
+    check('the same upload again: 200', ok.status === 200, String(ok.status));
+    check('the same upload again: stored once', (await footprint(h.stores)) === 'samples=2 observations=1 uploadSources=1 syncStates=1', await footprint(h.stores));
+  } finally {
+    appLog.warn = realWarn;
+    await h.close();
+    rmSync(dir, { recursive: true, force: true });
+  }
+}
+
 async function main(): Promise<void> {
   await refusedWritesNothing();
   await deletionReachesSamples();
   await deviceIntakeSwitch();
+  await retryLater();
   const failed = results.filter((r) => !r.ok);
   console.log(`\n${results.length - failed.length}/${results.length} checks passed`);
   if (failed.length) process.exit(1);

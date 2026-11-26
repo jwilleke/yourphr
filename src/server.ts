@@ -1964,6 +1964,14 @@ export function createYourPhrServer(options: ServerOptions) {
       // The one error boundary: a guard's refusal in the envelope, everything else a 500 that
       // reaches the caller rather than vanishing — the lesson of the product repo's #527.
       if (err instanceof ApiError) {
+        // A refusal that asks the caller to come back (yourphr#991: the samples store was busy or
+        // unavailable) carries its wait as Retry-After, and its cause goes to the operator's log.
+        const retryAfter = err.extra['retry_after_seconds'];
+        if (typeof retryAfter === 'number') res.setHeader('Retry-After', String(retryAfter));
+        const cause = (err as Error & { cause?: unknown }).cause as Error | undefined;
+        if (err.status === 503 && cause) {
+          appLog.warn(`request deferred ${req.method ?? ''} ${(req.url ?? '/').split('?')[0] ?? '/'}: ${cause.name ?? 'Error'}${(cause as { code?: unknown }).code ? ` ${String((cause as { code?: unknown }).code)}` : ''}: ${String(cause.message ?? cause).slice(0, 300)}`);
+        }
         send(res, err.status, {success: false, error: err.message, ...err.extra});
         return;
       }
