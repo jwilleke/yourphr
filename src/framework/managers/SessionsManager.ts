@@ -10,8 +10,11 @@
  * AuthResult carries the token generation into the session claims, so a password change or a
  * sign-out-everywhere ends the session mid-flight. Sliding TTL with an absolute cap (yourphr#445).
  *
- * Tokens are HMAC-signed claims under a per-process key; the counter is in the database, which
- * is what makes revocation real.
+ * Tokens are HMAC-signed claims under the instance's session key; the counter is in the database,
+ * which is what makes "sign out everywhere" real. Since yourphr#814 every token also names a
+ * server-side session record (`sid`), as ngdpbase's express-session store does: a token is good
+ * only while its record exists, so signing out ends THAT session at once, on the server, rather
+ * than only clearing the browser's cookie.
  */
 import { createHmac, randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
 import { BaseManager, type BackupData } from '../BaseManager.js';
@@ -22,6 +25,7 @@ import type { BaseAuthProvider } from '../providers/BaseAuthProvider.js';
 import type { BaseCredentialsProvider, CredentialRecord, RejectedCredential } from '../providers/BaseCredentialsProvider.js';
 import { PasskeyAuthProvider, relyingPartyFrom } from '../providers/PasskeyAuthProvider.js';
 import { boundedNumber } from '../ConfigurationManager.js';
+import { MemorySessionsProvider, type BaseSessionsProvider, type SessionRecord } from '../providers/BaseSessionsProvider.js';
 
 declare module '../Engine.js' {
   interface ManagerRegistry {
@@ -38,7 +42,8 @@ export const GENERIC_SIGNIN_ERROR = 'invalid username or password';
  */
 export const THROTTLED_SIGNIN_ERROR = 'Too many attempts. Wait a few minutes and try again.';
 
-export interface SessionClaims { u: string; g: number; iat: number; exp: number; cap: number }
+/** `sid` (yourphr#814) names the server-side session record; a token without one is refused. */
+export interface SessionClaims { u: string; sid: string; g: number; iat: number; exp: number; cap: number }
 export interface SessionPolicy { slidingSeconds: number; absoluteSeconds: number }
 export interface ThrottlePolicy { maxFailures: number; windowSeconds: number }
 export const DefaultSessionPolicy: SessionPolicy = { slidingSeconds: 60 * 60, absoluteSeconds: 12 * 60 * 60 };
@@ -61,7 +66,7 @@ export function decodeToken(key: Buffer, token: string): SessionClaims | undefin
   if (signature.length !== expected.length || !timingSafeEqual(signature, expected)) return undefined;
   try {
     const claims = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8')) as SessionClaims;
-    if (typeof claims.u !== 'string' || typeof claims.g !== 'number' || typeof claims.exp !== 'number' || typeof claims.cap !== 'number') return undefined;
+    if (typeof claims.u !== 'string' || typeof claims.sid !== 'string' || claims.sid === '' || typeof claims.g !== 'number' || typeof claims.exp !== 'number' || typeof claims.cap !== 'number') return undefined;
     return claims;
   } catch {
     return undefined;
@@ -94,6 +99,11 @@ export function clientIp(remoteAddr: string, xffHeader: string | undefined, trus
 }
 
 export interface SessionsOptions {
+  /**
+   * Where session records live (yourphr#814). The app passes the SQLite store over the encrypted
+   * app database; absent, they are kept in memory, so a restart signs everyone out (fails closed).
+   */
+  store?: BaseSessionsProvider;
   /** Per-process; a restart ends every session, which is the intended posture for a family box. */
   sessionKey?: Buffer;
   session?: SessionPolicy;
@@ -114,6 +124,9 @@ export interface SessionsOptions {
 }
 
 export interface PasskeySettings { enabled: boolean; baseUrl: string; rpName: string }
+
+/** A session as its owner sees it (yourphr#814). `id` is the session id; it is not a credential on its own. */
+export interface SessionView { id: string; created_at: string; last_seen_at: string; expires_at: string; current: boolean }
 
 /** A credential as its owner sees it — never the secret. ngdpbase's CredentialView. */
 export type CredentialView = Omit<CredentialRecord, 'secret'>;
@@ -140,6 +153,7 @@ export class SessionsManager extends BaseManager {
   override readonly dependsOn = ['users'] as const;
   readonly throttle: Throttle;
   private readonly sessionKey: Buffer;
+  private readonly store: BaseSessionsProvider;
   private readonly policy: SessionPolicy;
   private readonly trustedProxies: string[];
   private readonly factors: string[];
@@ -161,6 +175,7 @@ export class SessionsManager extends BaseManager {
     super(engine);
     for (const p of providers) this.providers.set(p.name, p);
     this.sessionKey = options.sessionKey ?? randomBytes(32);
+    this.store = options.store ?? new MemorySessionsProvider();
     /**
      * Every number is checked before it becomes policy (yourphr#698 item 2). These arrive straight
      * from configuration, and the two failures are not symmetrical:
@@ -199,6 +214,7 @@ export class SessionsManager extends BaseManager {
   override async initialize(config: Record<string, unknown> = {}): Promise<void> {
     // A factor nobody provides cannot be satisfied — refuse to boot rather than sign nobody in at runtime.
     for (const f of this.factors) if (!this.providers.has(f)) throw new Error(`sessions: auth.factors names "${f}" but no such auth provider is registered (have: ${[...this.providers.keys()].join(', ') || 'none'})`);
+    await this.store.initialize();
     if (this.credentials) await this.credentials.initialize((rejected) => this.raiseRejectedCredentials(rejected));
     this.currentPasskeys(); // says at start whether passkeys are on, and why not
     await super.initialize(config);
@@ -322,7 +338,7 @@ export class SessionsManager extends BaseManager {
     this.throttle.clear(`acct:${stored.username}`);
     this.engine.managers.users.onSignedIn(stored.username);
     await this.recordAccountEvent(stored.username, ACCOUNT_EVENT_CATEGORIES.passkeySignIn, nowSeconds);
-    return { ok: true, token: this.mint(stored.username, stored.tokenGeneration, nowSeconds) };
+    return { ok: true, token: await this.mint(stored.username, stored.tokenGeneration, nowSeconds) };
   }
 
   /** Options for confirming "it is you" with a passkey the signed-in person already has (decision 2). */
@@ -460,7 +476,7 @@ export class SessionsManager extends BaseManager {
     this.throttle.clear(accountKey);
     users.onSignedIn(username);
     await this.recordAccountEvent(username, ACCOUNT_EVENT_CATEGORIES.signedIn, nowSeconds);
-    return { ok: true, token: this.mint(username, generation, nowSeconds) };
+    return { ok: true, token: await this.mint(username, generation, nowSeconds) };
   }
 
   /**
@@ -509,13 +525,31 @@ export class SessionsManager extends BaseManager {
     return true;
   }
 
-  private mint(username: string, generation: number, nowSeconds: number): string {
-    return issueToken(this.sessionKey, { u: username, g: generation, iat: nowSeconds, exp: nowSeconds + this.policy.slidingSeconds, cap: nowSeconds + this.policy.absoluteSeconds });
+  /**
+   * A new session: its record first, then the token that names it (yourphr#814). Expired records
+   * are swept here, so the table holds only sessions that could still be used.
+   */
+  private async mint(username: string, generation: number, nowSeconds: number): Promise<string> {
+    await this.store.prune(nowSeconds);
+    const sid = randomBytes(24).toString('base64url');
+    const exp = nowSeconds + this.policy.slidingSeconds;
+    const cap = nowSeconds + this.policy.absoluteSeconds;
+    await this.store.create({ sid, username, generation, createdAt: nowSeconds, lastSeenAt: nowSeconds, expiresAt: exp, capAt: cap });
+    return issueToken(this.sessionKey, { u: username, sid, g: generation, iat: nowSeconds, exp, cap });
+  }
+
+  /** The record a token's claims name, if it is still live for exactly that account and generation. */
+  private async liveRecord(claims: SessionClaims, nowSeconds: number): Promise<SessionRecord | undefined> {
+    const record = await this.store.get(claims.sid);
+    if (!record || record.username !== claims.u || record.generation !== claims.g) return undefined;
+    if (nowSeconds >= record.expiresAt || nowSeconds >= record.capAt) return undefined;
+    return record;
   }
 
   /**
    * Verify a session. Refuses: bad signature, past sliding expiry, past absolute cap, and a
-   * generation behind the account's (yourphr#508). Inside the renewal half of the window a fresh
+   * generation behind the account's (yourphr#508), and a session whose server-side record is gone
+   * or expired — signed out, revoked, or from before yourphr#814 (no `sid`). Inside the renewal half of the window a fresh
    * token comes back (sliding TTL, capped — yourphr#445). Answers the principal the request context is built from.
    */
   async verify(token: string, nowSeconds = Math.floor(Date.now() / 1000)): Promise<{ ok: true; principal: Principal; renewed?: string } | { ok: false }> {
@@ -523,9 +557,13 @@ export class SessionsManager extends BaseManager {
     if (!claims || nowSeconds >= claims.exp || nowSeconds >= claims.cap) return { ok: false };
     const stored = await this.engine.managers.users.record(claims.u);
     if (!stored || claims.g < stored.tokenGeneration) return { ok: false };
+    if (!(await this.liveRecord(claims, nowSeconds))) return { ok: false };
     let renewed: string | undefined;
     if (claims.exp - nowSeconds < this.policy.slidingSeconds / 2) {
-      renewed = issueToken(this.sessionKey, { ...claims, exp: Math.min(nowSeconds + this.policy.slidingSeconds, claims.cap) });
+      const exp = Math.min(nowSeconds + this.policy.slidingSeconds, claims.cap);
+      renewed = issueToken(this.sessionKey, { ...claims, exp });
+      // The record moves with the token, so the server's expiry stays the authoritative one.
+      await this.store.touch(claims.sid, nowSeconds, exp);
     }
     // The role is resolved through the Users door, not read raw off the record (yourphr#648): a
     // stored name this instance no longer defines has to behave as the least-privileged role, the
@@ -534,23 +572,62 @@ export class SessionsManager extends BaseManager {
     const role = (await this.engine.managers.users.roleOf(claims.u)) ?? stored.role;
     // Read live, like the role: unmarking a test account takes effect on the next request (yourphr#919).
     const isTest = stored.isTest === true;
-    return { ok: true, principal: { username: claims.u, role, tokenGeneration: claims.g, isTest }, ...(renewed ? { renewed } : {}) };
+    return { ok: true, principal: { username: claims.u, role, tokenGeneration: claims.g, isTest, sessionId: claims.sid }, ...(renewed ? { renewed } : {}) };
   }
 
   /** A fresh session for an account that just proved itself another way (after a password change). */
   async issueFor(username: string, nowSeconds = Math.floor(Date.now() / 1000)): Promise<string | undefined> {
     const stored = await this.engine.managers.users.record(username);
-    return stored ? this.mint(username, stored.tokenGeneration, nowSeconds) : undefined;
+    return stored ? await this.mint(username, stored.tokenGeneration, nowSeconds) : undefined;
   }
 
-  /** Ends every session of the caller, everywhere (yourphr#508's sign-out-everywhere). */
+  /**
+   * Sign-out (yourphr#814): ends the ONE session this token names, on the server. Needs no live
+   * session — an expired or already-ended token signs out quietly — but the token must carry this
+   * instance's signature, so nobody can end a session by guessing its id. Answers whether a
+   * session was ended.
+   */
+  async signOut(token: string): Promise<boolean> {
+    const claims = token ? decodeToken(this.sessionKey, token) : undefined;
+    if (!claims) return false;
+    return this.store.delete(claims.sid);
+  }
+
+  /**
+   * The caller's own signed-in sessions (yourphr#814), newest first — when each started and was
+   * last renewed, and which one is asking. Only sessions that could still be used are listed.
+   */
+  async listSessions(ctx: ApiContext, nowSeconds = Math.floor(Date.now() / 1000)): Promise<SessionView[]> {
+    this.requireOwnAccount(ctx);
+    const generation = (await this.engine.managers.users.record(ctx.username))?.tokenGeneration;
+    if (generation === undefined) return [];
+    const iso = (s: number): string => new Date(s * 1000).toISOString();
+    return (await this.store.listForUser(ctx.username))
+      .filter((r) => r.generation === generation && nowSeconds < r.expiresAt && nowSeconds < r.capAt)
+      .map((r) => ({ id: r.sid, created_at: iso(r.createdAt), last_seen_at: iso(r.lastSeenAt), expires_at: iso(Math.min(r.expiresAt, r.capAt)), current: r.sid === ctx.sessionId }));
+  }
+
+  /** Ends one of the caller's own sessions (yourphr#814). Someone else's, or none, is the same 404. */
+  async revokeSession(ctx: ApiContext, id: string): Promise<void> {
+    this.requireOwnAccount(ctx);
+    const record = typeof id === 'string' && id !== '' ? await this.store.get(id) : undefined;
+    if (!record || record.username !== ctx.username) throw new ApiError(404, 'no such session');
+    await this.store.delete(id);
+  }
+
+  /**
+   * Ends every session of the caller, everywhere (yourphr#508's sign-out-everywhere): the
+   * generation moves, and since yourphr#814 the records go too. Also used when an account is
+   * deleted, so a later account with the same name inherits nothing.
+   */
   async revokeAll(ctx: ApiContext): Promise<void> {
     ctx.requireAuthenticated();
     await this.engine.managers.users.bumpGeneration(ctx.username);
+    await this.store.deleteForUser(ctx.username);
   }
 
   async backup(): Promise<BackupData> {
-    return { manager: this.name, takenAt: new Date().toISOString(), payload: { note: 'sessions are per-process; nothing to carry' } };
+    return { manager: this.name, takenAt: new Date().toISOString(), payload: { note: 'sessions are not carried in a backup; after a restore everyone signs in again' } };
   }
 
   async restore(): Promise<void> {

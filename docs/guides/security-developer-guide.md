@@ -34,7 +34,14 @@ To add a permission: add it to the definitions with a description, grant it to `
 
 ## Sessions and sign-in
 
-- A session token is HMAC-signed claims under `yourphr.auth.session.secret` (generated into `<data>/.env` on first start). Revocation is real because the account's token generation is in the database: a password change or "sign out everywhere" bumps it and ends every session.
+- A session token is HMAC-signed claims under `yourphr.auth.session.secret` (generated into `<data>/.env` on first start). The claims are the account, a session id (`sid`), the account's token generation, and the expiry times.
+- __Every session has a record on the server__ ([#814](https://github.com/jwilleke/yourphr/issues/814)), in the `auth_sessions` table of the encrypted app database (`SqliteSessionsProvider`, behind `SessionsManager`). This follows ngdpbase, which keeps its sessions in a server-side store. A token is accepted only while its record exists, belongs to the same account and generation, and has not expired. So:
+  - __Sign-out ends the session.__ `POST /api/auth/logout` deletes the record the token names, then clears the cookie. The same token is refused from then on, even though its signature and expiry are still good. An expired, already-ended or unsigned token still gets a cleared cookie and `200`. Ending a session needs this instance's signature on the token, so nobody can end someone else's session by guessing its id.
+  - __One session at a time.__ `GET /api/secure/account/sessions` lists the caller's own live sessions (started, last renewed, expires, which one is asking). `DELETE /api/secure/account/sessions/:id` ends one of them; someone else's id is `404`. Both refuse an agent token, and ending one is refused on the shared demo account. There is no screen for these yet.
+  - __Everything at once.__ A password change or "sign out everywhere" bumps the account's token generation, which ends every session; "sign out everywhere" and deleting the account also delete the records.
+  - The record is the authority on expiry. A renewal moves the record's sliding expiry with the token; records past their expiry are swept at the next sign-in.
+  - A token minted before #814 has no `sid` and is refused. Upgrading signs everyone out once.
+  - Without a store, `SessionsManager` keeps records in memory (`MemorySessionsProvider`), so a restart signs everyone out. The harnesses use that; the app always wires the SQLite store.
 - Sliding expiry (`yourphr.auth.session.sliding-seconds`) with an absolute cap (`absolute-seconds`).
 - The cookie is `yourphr_session`: `HttpOnly`, `SameSite=Strict`, and `Secure` when `yourphr.web.secure-cookies` is on.
 - `yourphr.auth.factors` is an __all-of__ list: every listed factor must pass.
@@ -68,7 +75,7 @@ To add a permission: add it to the definitions with a description, grant it to `
 ## How you know you are done
 
 - `npm run check:boundary`, `npm run check:store`, `npm run check:categories`, `npm run check:phi` pass.
-- The relevant harnesses pass: `npm run auth`, `npm run agent-tokens`, `npm run ssrf`.
+- The relevant harnesses pass: `npm run auth` (which includes "a token is refused after sign-out", [#814](https://github.com/jwilleke/yourphr/issues/814)), `npm run agent-tokens`, `npm run ssrf`.
 - When you change how records are scoped to an account, also run `npm run isolation -- --db <copy of a database> --a <user> --b <user>`. It needs a database holding two accounts and is not in CI.
 
 ## See also

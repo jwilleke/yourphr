@@ -28,7 +28,7 @@ In order, inside `createYourPhrServer`:
 
 1. Security headers (`applySecurityHeaders`, `src/security-headers.ts`): the CSP (`yourphr.web.csp.connect-src`) and HSTS (`yourphr.web.hsts.enabled`).
 2. The public routes above.
-3. For `/api/secure/*`: the session, else an agent token, else `401 unauthorized`. A session with less than half its sliding window left (`yourphr.auth.session.sliding-seconds`, capped by `absolute-seconds`) is renewed and returned in `X-Renewed-Token` and a new cookie. The request's `ApiContext` is built here.
+3. For `/api/secure/*`: the session, else an agent token, else `401 unauthorized`. A session is checked against its server-side record on every request, so a signed-out or ended session is `401` at once ([#814](https://github.com/jwilleke/yourphr/issues/814)). A session with less than half its sliding window left (`yourphr.auth.session.sliding-seconds`, capped by `absolute-seconds`) is renewed and returned in `X-Renewed-Token` and a new cookie. The request's `ApiContext` is built here.
 4. The demo admin's read-only guard (`DemoManager.refuseUnlessRead`), default-deny by method.
 5. Maintenance mode (`yourphr.features.maintenance.*`): `503` with `Retry-After: 300`, except for an `admin-system` caller when `allow-admins` is on.
 6. The agent-token gate: an agent reaches only a `GET` with an access category its token names, or a connected device's one write. Everything else is `403`.

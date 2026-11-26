@@ -474,8 +474,16 @@ export function createYourPhrServer(options: ServerOptions) {
         send(res, 200, {success: true, data: engine.has('settings') ? engine.managers.settings.publicInstance(ApiContext.anonymous(engine)) : {}});
         return;
       }
-      // Logout clears the HttpOnly cookie — the one thing JavaScript cannot do itself.
+      // Logout ends the session on the server (yourphr#814), then clears the HttpOnly cookie — the one
+      // thing JavaScript cannot do itself. The token is read the same way the session gate reads it
+      // (Bearer, else the cookie); an expired, ended or unsigned token still gets a cleared cookie.
       if (url.pathname === '/api/auth/logout' && req.method === 'POST') {
+        if (auth && engine.has('sessions')) {
+          const header = req.headers['authorization'] ?? '';
+          const bearer = typeof header === 'string' && header.toLowerCase().startsWith('bearer ') ? header.slice(7) : '';
+          const token = bearer !== '' ? bearer : readCookie(req.headers['cookie'], SESSION_COOKIE);
+          if (token) await engine.managers.sessions.signOut(token);
+        }
         res.setHeader('Set-Cookie', sessionCookie('', 0, auth?.secureCookies ?? false));
         send(res, 200, {success: true});
         return;
@@ -814,6 +822,23 @@ export function createYourPhrServer(options: ServerOptions) {
           send(res, 200, {success: true});
           return;
         }
+        // --- signed-in sessions (yourphr#814) ---
+        // The caller's own sessions, and ending one of them. A delegated credential is refused by the
+        // manager; on the shared demo account ending a session would sign out another visitor.
+        if (url.pathname === '/api/secure/account/sessions' && req.method === 'GET') {
+          send(res, 200, {success: true, data: await sessions.listSessions(ctx)});
+          return;
+        }
+        const sessionMatch = url.pathname.match(/^\/api\/secure\/account\/sessions\/([^/]+)$/);
+        if (sessionMatch && req.method === 'DELETE') {
+          if (engine.has('demo')) engine.managers.demo.refuseWrite(ctx, 'ending a session');
+          const id = decodeURIComponent(sessionMatch[1]!);
+          await sessions.revokeSession(ctx, id);
+          // Ending the session this request came in on is a sign-out: clear its cookie too.
+          if (id === ctx.sessionId) res.setHeader('Set-Cookie', sessionCookie('', 0, auth.secureCookies ?? false));
+          send(res, 200, {success: true});
+          return;
+        }
         // --- agent tokens (yourphr#695) ---
         // On the account page because that is where revocation already lives: the list a patient
         // reads to answer "what is out there, and when does it stop" is the same list they revoke
@@ -1004,6 +1029,9 @@ export function createYourPhrServer(options: ServerOptions) {
           if (engine.has('health')) await engine.managers.health.removeForUser(ctx);
           if (engine.has('audit')) await engine.managers.audit.removeForUser(ctx);
           await users.deleteSelf(ctx);
+          // Its sessions go with it (yourphr#814), so an account created later under the same name
+          // inherits none of them.
+          await engine.managers.sessions.revokeAll(ctx);
           res.setHeader('Set-Cookie', sessionCookie('', 0, auth.secureCookies ?? false));
           send(res, 200, {success: true});
           return;

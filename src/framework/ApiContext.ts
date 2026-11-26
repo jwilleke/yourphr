@@ -42,6 +42,8 @@ export interface Principal {
   tokenGeneration?: number;
   /** A test account (yourphr#919, ngdpbase#1805), read from the account at verification time. */
   isTest?: boolean;
+  /** The server-side session this request came in on (yourphr#814); absent for an agent or system caller. */
+  sessionId?: string;
   /**
    * Set when the caller is an AGENT holding a token the owner minted (yourphr#695), absent for an
    * ordinary session. ngdpbase carries the same fact under the same name.
@@ -73,6 +75,8 @@ export class ApiContext {
   /** What this caller may do, resolved once from the role at construction (yourphr#620). */
   readonly permissions: readonly Permission[];
   readonly tokenGeneration: number | undefined;
+  /** The session this request came in on (yourphr#814), so "my sessions" can mark this one. */
+  readonly sessionId: string | undefined;
   /**
    * Whether the caller is signed in to a test account (yourphr#919; ngdpbase#1805 carries the same
    * fact under the same name). An attribute, not a permission: it grants nothing. The catalog reads
@@ -95,6 +99,7 @@ export class ApiContext {
     // with no policy manager grants NOTHING: failing closed is the only safe direction here.
     this.permissions = Object.freeze(engine.has('policy') ? [...engine.managers.policy.permissionsFor(this.role)] : []);
     this.tokenGeneration = principal?.tokenGeneration;
+    this.sessionId = principal?.sessionId;
     this.isTest = principal?.isTest === true;
     this.system = system;
     // Copied, and the scope array with it: this list is the read ceiling, so sharing the caller's

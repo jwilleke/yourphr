@@ -20,6 +20,7 @@ import { PolicyManager } from '../src/framework/managers/PolicyManager.js';
 import { UsersManager } from '../src/framework/managers/UsersManager.js';
 import { SessionsManager, GENERIC_SIGNIN_ERROR, THROTTLED_SIGNIN_ERROR, decodeToken, issueToken, clientIp, Throttle } from '../src/framework/managers/SessionsManager.js';
 import { SqliteUsersProvider } from '../src/framework/providers/SqliteUsersProvider.js';
+import { SqliteSessionsProvider } from '../src/framework/providers/SqliteSessionsProvider.js';
 import { PasswordAuthProvider, hashPassword, verifyPassword, isLegacyBcrypt } from '../src/framework/providers/PasswordAuthProvider.js';
 import { BaseAuthProvider, type AuthResult } from '../src/framework/providers/BaseAuthProvider.js';
 import type { UserRecord } from '../src/framework/providers/BaseUsersProvider.js';
@@ -46,7 +47,7 @@ async function boot(options: { session?: { slidingSeconds: number; absoluteSecon
   const configEnv = options.minPassword === undefined ? {} : { YOURPHR_AUTH_PASSWORD_MIN_LENGTH: String(options.minPassword) };
   const config = new ConfigurationManager(engine, new FileConfigProvider(dir), { env: configEnv });
   const users = new UsersManager(engine, new SqliteUsersProvider(db), new PasswordAuthProvider());
-  const sessions = new SessionsManager(engine, [new PasswordAuthProvider()], { sessionKey: options.sessionKey ?? randomBytes(32), session: options.session, throttle: options.throttle, trustedProxies: options.trustedProxies, factors: options.factors });
+  const sessions = new SessionsManager(engine, [new PasswordAuthProvider()], { store: new SqliteSessionsProvider(db), sessionKey: options.sessionKey ?? randomBytes(32), session: options.session, throttle: options.throttle, trustedProxies: options.trustedProxies, factors: options.factors });
   const recordsFile = join(dir, 'records.db');
   engine.register('configuration', config).register('policy', new PolicyManager(engine)).register('users', users).register('sessions', sessions)
     .register('records', new RecordsManager(engine, new SqliteRecordsProvider(recordsFile, undefined)));
@@ -162,11 +163,41 @@ async function main(): Promise<void> {
   // --- token internals: no algorithm agility to abuse ---
   {
     const key = randomBytes(32);
-    const token = issueToken(key, { u: 'alice', g: 0, iat: 1, exp: 100, cap: 200 });
+    const token = issueToken(key, { u: 'alice', sid: 's1', g: 0, iat: 1, exp: 100, cap: 200 });
     check('a token is payload.signature, nothing else', token.split('.').length === 2);
     check('the signature is keyed: another key refuses it', decodeToken(randomBytes(32), token) === undefined);
     const [payload] = token.split('.');
     check('claims without the required fields are refused', decodeToken(key, `${Buffer.from('{"u":"x"}').toString('base64url')}.${token.split('.')[1]}`) === undefined && !!payload);
+    // yourphr#814: a token from before server-side sessions carries no `sid`; correctly signed, it is still refused.
+    const old = issueToken(key, { u: 'alice', g: 0, iat: 1, exp: 100, cap: 200 } as never);
+    check('a correctly signed token with no session id (minted before #814) is refused', decodeToken(key, old) === undefined);
+  }
+
+  // --- server-side sessions (yourphr#814): signing out ends the session, on the server ---
+  {
+    const key = randomBytes(32);
+    const t = await boot({ sessionKey: key });
+    await t.users.createUser(t.sys, 'alice', PASSWORD);
+    const phone = ((await t.sessions.signIn('alice', { password: PASSWORD }, REQ)) as { token: string }).token;
+    const laptop = ((await t.sessions.signIn('alice', { password: PASSWORD }, REQ)) as { token: string }).token;
+    check('#814: every sign-in writes its own session record to the app database',
+      (t.db.prepare('SELECT COUNT(*) AS n FROM auth_sessions WHERE username = ?').get('alice') as { n: number }).n === 2);
+    check('#814: signing out answers that a session was ended', await t.sessions.signOut(phone));
+    check('#814: a token is REJECTED after sign-out, though its signature and expiry are still good', !(await t.sessions.verify(phone)).ok);
+    check('#814: signing out one device leaves the other signed in', (await t.sessions.verify(laptop)).ok);
+    check('#814: signing out twice is quiet, and a garbage or forged token ends nothing',
+      !(await t.sessions.signOut(phone)) && !(await t.sessions.signOut('not-a-token')) && !(await t.sessions.signOut(issueToken(randomBytes(32), decodeToken(key, laptop)!))) && (await t.sessions.verify(laptop)).ok);
+    // A restart with the same key (yourphr#815) keeps live sessions and does not revive an ended one.
+    const restarted = new SessionsManager(t.engine, [new PasswordAuthProvider()], { store: new SqliteSessionsProvider(t.db), sessionKey: key });
+    check('#814: after a restart the live session still verifies and the signed-out one stays refused',
+      (await restarted.verify(laptop)).ok && !(await restarted.verify(phone)).ok);
+    t.db.prepare('DELETE FROM auth_sessions').run();
+    check('#814: a token whose record is gone is refused (the record, not the token, decides)', !(await t.sessions.verify(laptop)).ok);
+    const expiring = ((await t.sessions.signIn('alice', { password: PASSWORD }, REQ, 1000)) as { token: string }).token;
+    await t.sessions.signIn('alice', { password: PASSWORD }, REQ, 1000 + 60 * 60 * 13);
+    check('#814: a new sign-in sweeps records past their expiry', !(await t.sessions.verify(expiring, 1001)).ok
+      && (t.db.prepare('SELECT COUNT(*) AS n FROM auth_sessions').get() as { n: number }).n === 1);
+    await t.close();
   }
 
   // --- all-of factors (the doc's MFA-bypass warning), proven against a fake second factor ---
@@ -261,6 +292,24 @@ async function main(): Promise<void> {
     await new Promise((r) => setTimeout(r, 11_000));
     const renewedResponse = await fetch(base + LIST, authed(aliceToken));
     check('the wire: past the renewal half, a fresh token rides back in X-Renewed-Token', renewedResponse.status === 200 && !!renewedResponse.headers.get('x-renewed-token'));
+    // yourphr#814: sign-out ends the session itself, not only the cookie.
+    const bobLogout = await fetch(base + '/api/auth/logout', { method: 'POST', headers: { cookie: `yourphr_session=${bobToken}` } });
+    check('the wire (#814): sign-out clears the cookie', bobLogout.status === 200 && /yourphr_session=;.*Max-Age=0/.test(bobLogout.headers.get('set-cookie') ?? ''));
+    check('the wire (#814): after sign-out the SAME token is 401, by Bearer and by cookie',
+      (await fetch(base + LIST, authed(bobToken))).status === 401 && (await fetch(base + LIST, { headers: { cookie: `yourphr_session=${bobToken}` } })).status === 401);
+    check('the wire (#814): sign-out with no token or a garbage one still answers 200',
+      (await fetch(base + '/api/auth/logout', { method: 'POST' })).status === 200 && (await fetch(base + '/api/auth/logout', { method: 'POST', headers: { authorization: 'Bearer junk' } })).status === 200);
+    const bobAgain = ((await (await signIn('bob', PASSWORD)).json()) as { data: string }).data;
+    check('the wire (#814): and signing in again works', (await fetch(base + LIST, authed(bobAgain))).status === 200);
+    const bobSecond = ((await (await signIn('bob', PASSWORD)).json()) as { data: string }).data;
+    const listed = (await (await fetch(base + '/api/secure/account/sessions', authed(bobAgain))).json()) as { data: { id: string; current: boolean }[] };
+    check('the wire (#814): "my sessions" lists both, marking the one asking', listed.data.length === 2 && listed.data.filter((x) => x.current).length === 1);
+    const other = listed.data.find((x) => !x.current)!;
+    check('the wire (#814): nobody else can end it — alice gets 404 for bob\'s session',
+      (await fetch(base + `/api/secure/account/sessions/${encodeURIComponent(other.id)}`, { method: 'DELETE', ...authed(aliceToken) })).status === 404 && (await fetch(base + LIST, authed(bobSecond))).status === 200);
+    const ended = await fetch(base + `/api/secure/account/sessions/${encodeURIComponent(other.id)}`, { method: 'DELETE', ...authed(bobAgain) });
+    check('the wire (#814): ending one session from the list makes its token 401, and leaves this one signed in',
+      ended.status === 200 && (await fetch(base + LIST, authed(bobSecond))).status === 401 && (await fetch(base + LIST, authed(bobAgain))).status === 200);
     await t.sessions.revokeAll(t.as('alice'));
     check('the wire: after sign-out-everywhere the token is 401 mid-flight', (await fetch(base + LIST, authed(aliceToken))).status === 401);
     server.close();
