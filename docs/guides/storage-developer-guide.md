@@ -70,4 +70,4 @@ To add one: append it to the right registry with a new id, test it in `npm run m
 
 - The app database file is still called `spike.db`, and the dev template calls it `fasten.db`; renaming is owed by [#676](https://github.com/jwilleke/yourphr/issues/676).
 - `BackupManager` has one exporter today, so a snapshot is consistent; with several, per-manager `backup()` would give a torn snapshot, and quiescing is not designed.
-- [recovery/README.md](../recovery/README.md) describes the Go stack's backup: at-rest encryption "on by default", backup and restore refused while it is on, every backup a plaintext gzipped tar of the whole data root. The TypeScript server ships encryption off, always encrypts backups under `yourphr.backup.encryption.key`, refuses without that key, and does not gzip.
+- The recovery pages (`docs/recovery/`) describe the TypeScript server's backup and restore, checked against this code. `.env.*.example` templates still mention Go-era keys such as `YOURPHR_BACKUP_LABEL` and `YOURPHR_DATABASE_ENCRYPTION_ENABLED`; rewriting those files is [#676](https://github.com/jwilleke/yourphr/issues/676).

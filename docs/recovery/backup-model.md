@@ -1,62 +1,46 @@
 # The backup model
 
-The rule, decided 2026-08-03 ([#466](https://github.com/jwilleke/yourphr/issues/466)):
+The rule the TypeScript server actually follows:
 
-> __`<data root>/` is exactly what a backup contains. Everything in that path is backed up; nothing outside it is.__
+> __A backup is one encrypted SQLite file.__ It holds the tables from this instance's databases, plus the operator's settings overrides, all written under the backup key. It is not a copy of the data directory, and it is not a gzipped tar.
 
-One sentence, no exclusion list. An exclusion list would weaken it to "everything except the bits we remembered", and the bit nobody remembers is the one that matters at restore time.
+The Go stack backed up the whole data root as a `.tar.gz`. That rule does not describe v3, and following it would make you think `.env`, notification files, or a legal-document override in `config/` were inside the backup. They are not.
 
-## Why it needed deciding
+## What a backup contains
 
-The data root and the backup contents were different things, and nobody had noticed.
+The exporter (`src/app/providers/sqlite-backup.ts`) opens the live databases and copies schema and rows into a new file encrypted with `YOURPHR_BACKUP_ENCRYPTION_KEY`. One transaction, so the snapshot is consistent against live writes. The copy runs on a worker thread.
 
-`<data root>` holds:
+| In the file | Source | Notes |
+|---|---|---|
+| Medical records, their history, and the search index | `records.db` | Tables `resources`, `resource_history`, `search_index`, `search_text`, `text_rowids`, and that file's migration ledger |
+| Accounts, sources, provider tokens, the catalog, jobs, favorites, passkey rows, the access log, and the rest of the app database | `spike.db` | Everything in that file that is not a records table or a device-sample table |
+| Raw connected-device samples | `phd-samples.db` | Only when that file existed at backup time. Every table in it is named with the `phd_` prefix, so a restore can send them back to that file and nowhere else |
+| Settings overrides | the `backup_payloads` table | Today this is the configuration manager's payload: whatever the operator changed in `<data>/config/app-custom-config.json`. A restore replaces this instance's overrides with those from the backup, not a blend. Keys this version does not know are dropped |
 
-```text
-fasten.db  fasten.db-wal  fasten.db-shm   the records
-.jwt_issuer_key                           session signing key
-config/app-custom-config.json             operator contact, theme, overrides
-```
+The databases themselves are encrypted at rest with SQLite3 Multiple Ciphers (the SQLCipher compatible cipher) when `YOURPHR_DATABASE_ENCRYPTION_KEY` is set, and stored in the clear when that key is empty. The backup is encrypted either way. The backup key and the database key are separate secrets: the file that travels and the file that stays should not fall to the same compromise. They may be the same value if you choose; they are never assumed to be.
 
-A backup held __the database only__ — `VACUUM INTO`, gzipped.
+## What a backup does not contain
 
-So restoring onto a fresh instance returned the records and lost the operator contact, the theme, the backup schedule, and any legal-document override. The instance came back as *records without identity*.
-
-## What follows from the rule
-
-__The cache lives outside the data root.__ Disposable, regenerable, potentially large. Under the rule it would otherwise be backed up. This settles an open question: `cache.location` does __not__ derive under the data root.
-
-__Backups live outside the data root__, at an admin-chosen path. Otherwise each backup contains every previous backup.
-
-__A destination must be provable before a schedule uses it__ ([#468](https://github.com/jwilleke/yourphr/issues/468)). A schedule pointing at a directory that does not exist fails silently at 02:00 every night, and is discovered when a backup is needed and absent.
-
-## `AllowedBackupRoots` was removed
-
-It was an allowlist of directories a backup destination could sit under. On a single-operator instance it constrained nobody: the endpoints are admin-only, and the same admin could widen the list from `/admin/config`.
-
-The separation it implied — deployment operator versus app admin — does not exist here. YourPHR's own Privacy Policy says the operator holds the records: one household, one server, one person. A control that only stops someone who can also rewrite the control is not a control.
-
-Its fourth rule made this plain: *whatever destination was saved previously is allowed*. An allowlist that grows by use is not an allowlist.
-
-__Retained:__ path hygiene — absolute, `filepath.Clean`ed, directory exists and is writable, failing with the real OS error. That is input validation, not authorization, and it is worth keeping.
-
-### CodeQL flags this, and the alerts are dismissed
-
-Removing the allowlist left 14 high `go/path-injection` alerts across `TestBackupDestination` and `WriteBackupArchive`: an admin-supplied string reaches `os.OpenFile`. The finding is __accurate__. It was dismissed as *won't fix* against this page ([#488](https://github.com/jwilleke/yourphr/issues/488)), because the exposure is an admin writing where they already could.
-
-That dismissal is the first thing to revisit if the threat model changes — more than one admin, an admin who is not the operator, a hosted or multi-tenant deployment, or a destination settable by anyone but an admin. Dismissed alerts are not re-raised by a scan, so nothing will remind you.
-
-Replacing it with a __test__ asks a better question. The allowlist asked *"are you permitted here?"* — one obvious answer on a family instance. A test asks *"does this actually work?"* — which nobody knows until it is tried.
+- __`<data>/.env`.__ The database key, the backup key, `YOURPHR_SESSION_SECRET`, `YOURPHR_CREDENTIALS_KEY`, and any other secret kept only in the environment are never written into the backup and never restored. A restore into a new instance needs those values supplied again. Without the original credentials key, passkey rows from the backup will not verify; people can still sign in with their password.
+- __The backup destination itself.__ Otherwise each backup would contain every previous backup. The default destination is `${YOURPHR_SLOW_STORAGE}/backups`. If you do not set the slow root, it is the data directory, which is convenient and also means a lost volume takes the backups with it.
+- __Notification files__, and any other file under the data directory that is not one of the databases or the configuration overrides — including a custom privacy policy or terms file you may have placed in `config/`.
+- __Last-run health__ (`<data>/.backup_health.json`). It is rewritten by the next backup outcome; it does not travel in the file.
 
 ## A backup contains live credentials
 
-This was already true before the scope expanded, and is the most important thing on this page.
+This is the most important thing on this page.
 
-The database holds `source_credentials`: OAuth access tokens, refresh tokens and `client_secret` for every connected provider. __A refresh token grants ongoing access to that patient's records at Epic or CMS until it is revoked__ — it is not a stale artifact of a past session.
+The app database holds OAuth access tokens, refresh tokens and `client_secret` for every connected provider. __A refresh token grants ongoing access to that patient's records at a hospital or CMS until it is revoked__ — it is not a stale artifact of a past session. Those rows are inside the encrypted backup.
 
-Expanding to the whole data root adds the JWT signing key and anything an operator keeps in the config store. Meaningful, but the crown jewels were already in there.
+The backup key is what keeps that file from being readable if it is copied. Anyone who has both the file and the key can use those tokens. Record the key off the instance, and treat the file as you would treat the database.
 
-Note the interaction with at-rest encryption: while `database.encryption.enabled` is on, backup and restore are refused ([#367](https://github.com/jwilleke/yourphr/issues/367)) — so in practice __every backup that exists is plaintext__. Encrypting the artifact itself ([#461](https://github.com/jwilleke/yourphr/issues/461)) is what resolves this, and the rule on this page makes it load-bearing rather than optional.
+## Where backups should live
+
+The databases run in WAL mode and must sit on the fast storage root (`YOURPHR_FAST_STORAGE`; default `./data`, or `/opt/yourphr/data` in the published image). The server refuses to open them on NFS or SMB.
+
+Backups may, and for a real instance should, live somewhere else: a NAS mount, another disk, a folder the instance can write to that would survive the data volume being destroyed. Set `YOURPHR_SLOW_STORAGE` or point __Admin → Database__ at that path. Prove the path with __Test path__ (a small file is written and then removed) before you rely on a schedule.
+
+A destination that looks like a NAS mount is a plain empty directory when the mount is gone, and writes to it can succeed. That is why the test, and why you also keep a copy the instance cannot write to.
 
 ## Threat model, stated plainly
 
@@ -67,14 +51,11 @@ Nobody is targeting one family's records. The realistic exposures are undramatic
 - ransomware sweeping every writable path it can reach
 - a backup copied somewhere convenient and forgotten
 
-None of these are addressed by an allowlist. All of them are addressed by encrypting the artifact.
+Encrypting the backup, keeping the backup key off the data volume, and keeping at least one copy the instance cannot write to, are what address those. An allowlist of destination folders would not.
 
 ## Related
 
-- [#467](https://github.com/jwilleke/yourphr/issues/467) — back up the whole data root
-- [#468](https://github.com/jwilleke/yourphr/issues/468) — test a destination before a schedule uses it
-- [#469](https://github.com/jwilleke/yourphr/issues/469) — remove `AllowedBackupRoots`, keep path hygiene
-- [#461](https://github.com/jwilleke/yourphr/issues/461) — encrypted backups
-- [#367](https://github.com/jwilleke/yourphr/issues/367) — the encryption/backup exclusion this eventually lifts
 - [`README.md`](README.md) — how to actually run a backup or restore
 - [`data-recovery.md`](data-recovery.md) — the restore drill: test recovery, not backup
+- [`../guides/storage-developer-guide.md`](../guides/storage-developer-guide.md) — where each file lives, and how a staged restore is applied
+- [`../deployment/README.md`](../deployment/README.md) — the two encryption keys, and what the data volume holds

@@ -58,14 +58,14 @@ Two unprefixed variables are bound explicitly because they describe how the app 
 A value may name a variable instead of containing one:
 
 ```json
-"jwt.issuer.key": "${YOURPHR_JWT_ISSUER_KEY}",
-"database.location": "${DATA_ROOT}/fasten.db"
+"yourphr.backup.destination": "${YOURPHR_SLOW_STORAGE}/backups",
+"yourphr.database.location": "${YOURPHR_FAST_STORAGE}/spike.db"
 ```
 
 - `$VAR` — __strict__. An unset variable is a startup error naming the key and the variable, because a bare reference asserts the value comes from somewhere.
-- `${VAR}` — __lenient__. Resolves to empty when unset, which is what lets the shipped file name a secret without holding one.
+- `${VAR}` — __lenient__, used for path templates. If the variable is unset, the placeholder is left intact and fails at the point of use. The storage roots are an exception: `YOURPHR_FAST_STORAGE` and `YOURPHR_SLOW_STORAGE` default to the data directory when they are not in the environment, so the shipped path templates resolve on a single-volume instance.
 
-This is how `jwt.issuer.key` is expressed. Unset resolves to empty, and empty already means "generate a real key and persist it" — so a stock install is secure with no operator action, and there is no placeholder sentinel to keep in sync.
+Secrets such as `YOURPHR_SESSION_SECRET` are not expressed this way. They are environment-owned, and when unset the server generates them into `<data>/.env` on first start.
 
 ## What is *not* configuration
 
@@ -77,9 +77,7 @@ Sandbox and production Blue Button credentials are *provisioned* from `YOURPHR_S
 
 __Those variables are deliberately NOT configuration keys__, and must not be added to the catalogue. They are provisioning inputs, consumed once and then ignored — the value in effect afterwards is the one in the catalog row, which an admin may have edited. Cataloguing them would put them on the Admin Configuration screen showing the environment's value while the row held a different one, so the screen would state something untrue. The unknown-key check allowlists them instead, and their provisioning status belongs on Admin → Provider Catalog, beside the row they created ([#471](https://github.com/jwilleke/yourphr/issues/471)).
 
-__Backup state__ — `.backup_settings.json`, `.backup_dest`, `.backup_health.json` — still has its own readers. All three live in the data root, so they are covered by a backup ([`recovery/backup-model.md`](../recovery/backup-model.md)).
-
-> __GAP: backup state should fold into the config store__ — [#455](https://github.com/jwilleke/yourphr/issues/455). Deferred because it touches backup and restore, where a mistake loses data.
+Last-run backup health is a derived file, `<data>/.backup_health.json`, rewritten by the next outcome; it is not a setting and is not inside a backup. The schedule, destination and retention *are* configuration (`yourphr.backup.schedule.*`, `yourphr.backup.destination`, `yourphr.backup.max-backups`) and travel in the backup's settings payload. There is no `.backup_settings.json`. See [`recovery/backup-model.md`](../recovery/backup-model.md).
 
 ## Admin → Configuration
 
@@ -117,7 +115,7 @@ Only keys in the shipped catalogue can be set. A free-form "add any property" fo
 At startup the server compares `app-custom-config.json` and every `YOURPHR_*` variable against the catalogue, and logs one warning per key that maps to no setting:
 
 ```text
-config: "operator.nmae" in /opt/fasten/db/config/app-custom-config.json is not a known setting and has no effect
+config: "operator.nmae" in /opt/yourphr/data/config/app-custom-config.json is not a known setting and has no effect
 config: environment variable YOURPHR_WEB_LISTEN_PORT does not map to any known setting and has no effect
 ```
 
@@ -193,10 +191,10 @@ Tests that keep the above true rather than aspirational:
 |---|---|
 | Retire `config.yaml` | [#470](https://github.com/jwilleke/yourphr/issues/470) — binary done; ConfigMap removal needs a release first. YAML layer and `--config` deleted in [#474](https://github.com/jwilleke/yourphr/issues/474) |
 | Warn on unknown keys from the custom file and the environment | __done__ — [#473](https://github.com/jwilleke/yourphr/issues/473) for surfacing them in the UI |
-| Fold backup state into the store | [#455](https://github.com/jwilleke/yourphr/issues/455) |
+| Fold backup schedule into the store | __done__ for schedule, destination and retention (`yourphr.backup.schedule.*`); last-run health stays in `<data>/.backup_health.json` |
 | Move ordinary settings out of environment on the reference deployment, leaving bootstrap and secrets | [#472](https://github.com/jwilleke/yourphr/issues/472) |
 
-On the last one, the win is smaller than it first appears. Of the five non-secret, non-bootstrap variables the reference deployment passes, three are __topology__ — cluster-internal DNS and "is a sidecar present" — which belong with the deployment that defines that cluster, whatever layer they sit in. Only `backup.label` and `medications.rxterms_enrich` are settings in the ordinary sense.
+On the last one, the win is smaller than it first appears. Of the five non-secret, non-bootstrap variables the reference deployment passes, three are __topology__ — cluster-internal DNS and "is a sidecar present" — which belong with the deployment that defines that cluster, whatever layer they sit in. Only settings such as `medications.rxterms_enrich` are settings in the ordinary sense. There is no `backup.label` in v3.
 
 That blocker is now cleared: [#467](https://github.com/jwilleke/yourphr/issues/467) shipped in v2.1.0, so `app-custom-config.json` __is__ covered by backups. Moving a value out of a versioned Git repo and into the config store no longer trades *recoverable* for *lost with the disk*.
 
