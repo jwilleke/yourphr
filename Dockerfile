@@ -22,14 +22,15 @@ COPY frontend ./
 #
 # `-c prod` IS LOAD-BEARING (yourphr#673). angular.json declares no defaultConfiguration, so a bare
 # `ng build` applies no fileReplacements and ships src/environments/environment.ts — the DEVELOPMENT
-# file, with production:false (enableProdMode never runs) and environment_name "sandbox". 3.0.0 and
-# 3.1.0 both shipped it, which is how a production PHR came to display "sandbox-3.1.0" and to tell
-# patients on the sources page that it "cannot access real patient information".
+# file, with production:false (enableProdMode never runs). 3.0.0 and 3.1.0 both shipped it, which is
+# how a production PHR came to display "sandbox-3.1.0" and to tell patients on the sources page that
+# it "cannot access real patient information". The sources-page claim no longer keys off a compiled
+# name (yourphr#674); `-c prod` is still required so production mode is actually enabled.
 #
 # The Go image built with `--configuration ${YOURPHR_ENV}`; that flag was lost when the frontend
 # build moved into this repository (yourphr#652). It is `prod` unconditionally now rather than a
-# build argument: one image serves every instance, and what an instance IS is runtime configuration
-# (yourphr.web.environment-name), never something compiled in.
+# build argument: one image serves every instance, and what an instance calls itself is runtime
+# configuration (yourphr.web.environment-name), never something compiled in.
 RUN yarn build -- -c prod
 # The tooth. `outputHashing: "all"` lives in the CONFIGURATIONS, not the base options, so hashed
 # filenames are the structural signature that a configuration was applied at all. Asserting on that

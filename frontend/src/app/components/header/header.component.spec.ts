@@ -1,7 +1,7 @@
 import { waitForAsync, ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { HttpClient, provideHttpClient, withInterceptorsFromDi, withXhr } from '@angular/common/http';
-import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { RouterModule } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 import { IconsModule } from 'src/app/icon-module';
@@ -51,5 +51,22 @@ describe('HeaderComponent', () => {
 
   it('should create', () => {
     expect(component).toBeTruthy();
+  });
+
+  it('sets support-request flavor from /api/version, not a compiled-in name (yourphr#674)', () => {
+    const httpMock = TestBed.inject(HttpTestingController);
+    const req = httpMock.expectOne((r) => /\/version$/.test(r.url) || r.url.endsWith('/version'));
+    expect(req.request.method).toBe('GET');
+    req.flush({ success: true, data: { version: '3.22.1', environment_name: 'willeke' } });
+    expect(component.newSupportRequest.flavor).toBe('willeke');
+  });
+
+  it('leaves support-request flavor empty when the instance has not named itself (yourphr#674)', () => {
+    const httpMock = TestBed.inject(HttpTestingController);
+    const req = httpMock.expectOne((r) => /\/version$/.test(r.url) || r.url.endsWith('/version'));
+    req.flush({ success: true, data: { version: '3.22.1', environment_name: '' } });
+    expect(component.newSupportRequest.flavor).toBe('');
+    expect(component.newSupportRequest.flavor).not.toBe('sandbox');
+    expect(component.newSupportRequest.flavor).not.toBe('prod');
   });
 });

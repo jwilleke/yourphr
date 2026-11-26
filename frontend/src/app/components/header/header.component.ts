@@ -133,11 +133,22 @@ export class HeaderComponent implements OnInit, OnDestroy {
     this.submitSuccess = false
     const newSupportRequest = new SupportRequest()
     newSupportRequest.dist_type = environment.environment_desktop ? 'desktop' : 'docker'
-    newSupportRequest.flavor = environment.environment_name
+    // Flavor is which instance filed the request (yourphr#674): the runtime name from /api/version,
+    // never a name compiled into the bundle. One image serves every instance, so a compiled name
+    // can only be a guess — and an empty answer is left empty rather than replaced with one.
+    newSupportRequest.flavor = ''
     newSupportRequest.version = versionInfo.version
     newSupportRequest.current_page = this.router.url.toString()
 
     this.newSupportRequest = newSupportRequest
+    this.fastenApi.getVersion().subscribe({
+      next: ({ environment_name }) => {
+        if (this.newSupportRequest === newSupportRequest) {
+          this.newSupportRequest.flavor = environment_name || ''
+        }
+      },
+      error: () => { /* leave flavor empty rather than guess a compiled-in name */ },
+    })
   }
   submitSupportForm() {
     this.loading = false

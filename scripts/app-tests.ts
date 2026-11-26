@@ -258,7 +258,7 @@ async function main(): Promise<void> {
   const markOff = await catJson('/api/secure/users/alice/test', adminToken, { method: 'PUT', body: JSON.stringify({ is_test: false }) });
   check('the admin marks and unmarks an account, effective on its next request; a boolean is required; a member may not (yourphr#919)',
     markBad.status === 400 && markByMember.status === 401 && markOn.status === 200 && aliceWhileTest === true && markOff.status === 200 && (await meOf(aliceToken)).test_account === false);
-  type Connectable = { data: { id: string; display: string; requires_user_consent: boolean; pre_connect_profile: string; medicare_class: boolean }[] };
+  type Connectable = { data: { id: string; display: string; requires_user_consent: boolean; pre_connect_profile: string; medicare_class: boolean; environment: string }[] };
   const connectableNow = (await (await fetch(`${base}/api/secure/provider-catalog/connectable`, authed(aliceToken))).json()) as Connectable;
   const connectableTest = (await (await fetch(`${base}/api/secure/provider-catalog/connectable`, authed(tessToken))).json()) as Connectable;
   const connectableAdmin = (await (await fetch(`${base}/api/secure/provider-catalog/connectable`, authed(adminToken))).json()) as Connectable;
@@ -266,8 +266,9 @@ async function main(): Promise<void> {
   check('connectable: a test account gets the enabled sandbox entries in ConnectableProvider shape with Go\'s policy; a real account, the admin included, the production ones (yourphr#919)',
     connectableTest.data.map((e) => e.display).join('|') === 'Fake Regional (Sandbox)' // the seeded sandbox is not enabled
       && connectableTest.data.find((e) => e.id === fakeId)?.requires_user_consent === true && connectableTest.data.find((e) => e.id === fakeId)?.pre_connect_profile === 'none'
-      && connectableNow.data.length === 1 && connectableNow.data[0]?.display === 'Seeded Production'
-      && connectableAdmin.data.map((e) => e.display).join('|') === 'Seeded Production' && sandboxGone.status !== 200);
+      && connectableTest.data.every((e) => e.environment === 'sandbox')
+      && connectableNow.data.length === 1 && connectableNow.data[0]?.display === 'Seeded Production' && connectableNow.data[0]?.environment === 'production'
+      && connectableAdmin.data.map((e) => e.display).join('|') === 'Seeded Production' && connectableAdmin.data[0]?.environment === 'production' && sandboxGone.status !== 200);
   const wrongKind = await catJson(`/api/secure/provider-catalog/${fakeId}/authorize`, aliceToken, { method: 'POST', body: JSON.stringify({ redirect_uri: 'http://localhost/sources/callback' }) });
   check('a real account asking to connect a sandbox entry is refused by the server, not only hidden (yourphr#919)', wrongKind.status === 403 && wrongKind.body.error_code === 'test_account_mismatch');
   const noRedirect = await catJson(`/api/secure/provider-catalog/${fakeId}/authorize`, tessToken, { method: 'POST', body: '{}' });
