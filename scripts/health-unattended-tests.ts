@@ -26,6 +26,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { openStores, type Stores } from '../src/app.js';
 import { ApiContext } from '../src/framework/ApiContext.js';
+import { TEST_DATABASE_KEY } from '../src/app/managers/__tests__/testDatabaseKey.js';
 import { createYourPhrServer } from '../src/server.js';
 
 const results: { name: string; ok: boolean; detail: string }[] = [];
@@ -45,7 +46,7 @@ for (const method of ['log', 'info', 'warn', 'error'] as const) {
 
 const PASSWORD = randomBytes(18).toString('base64url');
 const ENV = {
-  YOURPHR_DATABASE_ENCRYPTION_KEY: 'unit-key',
+  YOURPHR_DATABASE_ENCRYPTION_KEY: TEST_DATABASE_KEY,
   YOURPHR_BACKUP_ENCRYPTION_KEY: 'unit-backup-key',
   YOURPHR_AUTH_SIGNUP_ENABLED: 'true',
   YOURPHR_DEVICES_ENABLED: 'true',
